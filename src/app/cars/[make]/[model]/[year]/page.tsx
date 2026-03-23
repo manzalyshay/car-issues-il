@@ -1,0 +1,190 @@
+import type { Metadata } from 'next';
+import Link from 'next/link';
+import { notFound } from 'next/navigation';
+import { carDatabase, getMakeBySlug, getModelBySlug, getCategoryLabel } from '@/data/cars';
+import { getReviewsForCar, getAverageRating } from '@/lib/reviewsDb';
+import { getExpertReviewsForYear } from '@/lib/expertReviews';
+import StarRating from '@/components/StarRating';
+import ExpertReviewsSection from '@/components/ExpertReviewsSection';
+import CarYearClient from './CarYearClient';
+
+interface Props { params: Promise<{ make: string; model: string; year: string }> }
+
+export async function generateStaticParams() {
+  return carDatabase.flatMap((make) =>
+    make.models.flatMap((model) =>
+      model.years.map((year) => ({ make: make.slug, model: model.slug, year: String(year) })),
+    ),
+  );
+}
+
+export async function generateMetadata({ params }: Props): Promise<Metadata> {
+  const { make: makeSlug, model: modelSlug, year } = await params;
+  const make = getMakeBySlug(makeSlug);
+  if (!make) return {};
+  const model = getModelBySlug(make, modelSlug);
+  if (!model) return {};
+  const yearNum = parseInt(year);
+  const [avgRating, reviews] = await Promise.all([
+    getAverageRating(makeSlug, modelSlug),
+    getReviewsForCar(makeSlug, modelSlug, yearNum),
+  ]);
+
+  return {
+    title: `${make.nameHe} ${model.nameHe} ${year} — בעיות וביקורות`,
+    description: `בעיות נפוצות ב${make.nameHe} ${model.nameHe} ${year}. ${reviews.length} ביקורות מבעלי רכב בישראל.${avgRating ? ` דירוג ממוצע: ${avgRating.toFixed(1)}/5.` : ''}`,
+    openGraph: {
+      title: `${make.nameHe} ${model.nameHe} ${year} | CarIssues IL`,
+      description: `ביקורות ובעיות נפוצות`,
+    },
+  };
+}
+
+export default async function CarYearPage({ params }: Props) {
+  const { make: makeSlug, model: modelSlug, year } = await params;
+  const make = getMakeBySlug(makeSlug);
+  if (!make) notFound();
+  const model = getModelBySlug(make, modelSlug);
+  if (!model) notFound();
+  const yearNum = parseInt(year);
+  if (!model.years.includes(yearNum)) notFound();
+
+  const [reviews, { review: yearReview, isYearSpecific }] = await Promise.all([
+    getReviewsForCar(makeSlug, modelSlug, yearNum),
+    getExpertReviewsForYear(makeSlug, modelSlug, yearNum),
+  ]);
+  const avgRating = reviews.length
+    ? reviews.reduce((s, r) => s + r.rating, 0) / reviews.length
+    : null;
+
+  const ratingDist = [5, 4, 3, 2, 1].map((stars) => ({
+    stars,
+    count: reviews.filter((r) => r.rating === stars).length,
+  }));
+
+  const jsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'Product',
+    name: `${make.nameEn} ${model.nameEn} ${year}`,
+    brand: { '@type': 'Brand', name: make.nameEn },
+    ...(avgRating !== null && {
+      aggregateRating: {
+        '@type': 'AggregateRating',
+        ratingValue: avgRating.toFixed(1),
+        reviewCount: reviews.length,
+        bestRating: 5,
+        worstRating: 1,
+      },
+    }),
+    review: reviews.slice(0, 5).map((r) => ({
+      '@type': 'Review',
+      reviewRating: { '@type': 'Rating', ratingValue: r.rating, bestRating: 5 },
+      name: r.title,
+      reviewBody: r.body,
+      author: { '@type': 'Person', name: r.authorName },
+      datePublished: r.createdAt.split('T')[0],
+    })),
+  };
+
+  return (
+    <div style={{ padding: '48px 0 80px' }}>
+      <div className="container">
+        {/* Breadcrumb */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: 'var(--text-muted)', fontSize: '0.875rem', marginBottom: 24, flexWrap: 'wrap' }}>
+          <Link href="/" style={{ color: 'var(--text-muted)', textDecoration: 'none' }}>בית</Link>
+          <span>›</span>
+          <Link href="/cars" style={{ color: 'var(--text-muted)', textDecoration: 'none' }}>יצרנים</Link>
+          <span>›</span>
+          <Link href={`/cars/${make.slug}`} style={{ color: 'var(--text-muted)', textDecoration: 'none' }}>{make.nameHe}</Link>
+          <span>›</span>
+          <Link href={`/cars/${make.slug}/${model.slug}`} style={{ color: 'var(--text-muted)', textDecoration: 'none' }}>{model.nameHe}</Link>
+          <span>›</span>
+          <span style={{ color: 'var(--text-primary)' }}>{year}</span>
+        </div>
+
+        {/* Page header */}
+        <div style={{ marginBottom: 36 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 12 }}>
+            <span style={{ fontSize: 44 }}>{make.logoEmoji}</span>
+            <div>
+              <h1 style={{ fontSize: 'clamp(1.5rem, 4vw, 2.25rem)', fontWeight: 900, lineHeight: 1.15 }}>
+                {make.nameHe} {model.nameHe} {year}
+              </h1>
+              <p style={{ color: 'var(--text-secondary)', marginTop: 4 }}>
+                {make.nameEn} {model.nameEn} · {getCategoryLabel(model.category)}
+              </p>
+            </div>
+          </div>
+        </div>
+
+        {/* Rating overview + reviews client component */}
+        {avgRating !== null && (
+          <div className="card" style={{ padding: '28px 28px', marginBottom: 40 }}>
+            <div style={{ display: 'flex', gap: 40, flexWrap: 'wrap', alignItems: 'flex-start' }}>
+              {/* Big rating */}
+              <div style={{ textAlign: 'center', minWidth: 120 }}>
+                <div style={{ fontSize: '3.5rem', fontWeight: 900, color: 'var(--text-primary)', lineHeight: 1 }}>
+                  {avgRating.toFixed(1)}
+                </div>
+                <StarRating rating={avgRating} size={22} />
+                <div style={{ color: 'var(--text-muted)', fontSize: '0.8125rem', marginTop: 6 }}>
+                  {reviews.length} ביקורות
+                </div>
+              </div>
+
+              {/* Distribution */}
+              <div style={{ flex: 1, minWidth: 200 }}>
+                {ratingDist.map(({ stars, count }) => (
+                  <div key={stars} style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8 }}>
+                    <span style={{ width: 36, color: 'var(--text-muted)', fontSize: '0.8125rem', textAlign: 'center', flexShrink: 0 }}>
+                      {stars}★
+                    </span>
+                    <div style={{ flex: 1, height: 8, background: 'var(--bg-muted)', borderRadius: 9999, overflow: 'hidden' }}>
+                      <div
+                        style={{
+                          width: reviews.length ? `${(count / reviews.length) * 100}%` : '0%',
+                          height: '100%',
+                          background: stars >= 4 ? '#16a34a' : stars === 3 ? '#ca8a04' : 'var(--brand-red)',
+                          borderRadius: 9999,
+                          transition: 'width 0.6s ease',
+                        }}
+                      />
+                    </div>
+                    <span style={{ width: 24, color: 'var(--text-muted)', fontSize: '0.8125rem', textAlign: 'left', flexShrink: 0 }}>
+                      {count}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Year-specific AI summary — only shown when year-specific data was scraped */}
+        {isYearSpecific && (
+          <ExpertReviewsSection
+            review={yearReview}
+            makeNameHe={make.nameHe}
+            modelNameHe={model.nameHe}
+            year={yearNum}
+            isYearSpecific={true}
+          />
+        )}
+
+        {/* Client component handles reviews list + review form */}
+        <CarYearClient
+          makeSlug={makeSlug}
+          modelSlug={modelSlug}
+          year={yearNum}
+          initialReviews={reviews}
+        />
+
+        {/* JSON-LD */}
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+        />
+      </div>
+    </div>
+  );
+}

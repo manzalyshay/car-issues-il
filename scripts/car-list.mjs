@@ -1,0 +1,131 @@
+/**
+ * Shared car list for scraper scripts.
+ * Mirrors src/data/cars.ts — update both when adding models.
+ */
+
+const Y = 2025;
+const range = (from, to = Y) => Array.from({ length: to - from + 1 }, (_, i) => from + i);
+
+export const CAR_LIST = [
+  // Toyota
+  { make: 'toyota', model: 'corolla',      years: range(2014) },
+  { make: 'toyota', model: 'camry',        years: range(2015) },
+  { make: 'toyota', model: 'yaris',        years: range(2014) },
+  { make: 'toyota', model: 'rav4',         years: range(2013) },
+  { make: 'toyota', model: 'hilux',        years: range(2015) },
+  { make: 'toyota', model: 'chr',          years: range(2017) },
+  { make: 'toyota', model: 'prius',        years: range(2016) },
+  { make: 'toyota', model: 'land-cruiser', years: range(2016) },
+  // Hyundai
+  { make: 'hyundai', model: 'tucson',   years: range(2014) },
+  { make: 'hyundai', model: 'i20',      years: range(2014) },
+  { make: 'hyundai', model: 'i30',      years: range(2014) },
+  { make: 'hyundai', model: 'sonata',   years: range(2015) },
+  { make: 'hyundai', model: 'santa-fe', years: range(2013) },
+  { make: 'hyundai', model: 'ioniq-5',  years: range(2021) },
+  { make: 'hyundai', model: 'kona',     years: range(2017) },
+  { make: 'hyundai', model: 'elantra',  years: range(2014) },
+  // Kia
+  { make: 'kia', model: 'sportage', years: range(2014) },
+  { make: 'kia', model: 'ceed',     years: range(2014) },
+  { make: 'kia', model: 'cerato',   years: range(2014) },
+  { make: 'kia', model: 'sorento',  years: range(2014) },
+  { make: 'kia', model: 'picanto',  years: range(2014) },
+  { make: 'kia', model: 'ev6',      years: range(2021) },
+  { make: 'kia', model: 'niro',     years: range(2017) },
+  // Mazda
+  { make: 'mazda', model: 'mazda3', years: range(2014) },
+  { make: 'mazda', model: 'mazda6', years: range(2014) },
+  { make: 'mazda', model: 'cx5',    years: range(2013) },
+  { make: 'mazda', model: 'cx30',   years: range(2019) },
+  { make: 'mazda', model: 'mx5',    years: range(2015) },
+  // Volkswagen
+  { make: 'volkswagen', model: 'golf',   years: range(2014) },
+  { make: 'volkswagen', model: 'polo',   years: range(2014) },
+  { make: 'volkswagen', model: 'passat', years: range(2014) },
+  { make: 'volkswagen', model: 'tiguan', years: range(2014) },
+  { make: 'volkswagen', model: 'troc',   years: range(2018) },
+  { make: 'volkswagen', model: 'id4',    years: range(2021) },
+  // Skoda
+  { make: 'skoda', model: 'octavia', years: range(2013) },
+  { make: 'skoda', model: 'kodiaq',  years: range(2016) },
+  { make: 'skoda', model: 'superb',  years: range(2015) },
+  { make: 'skoda', model: 'karoq',   years: range(2018) },
+  { make: 'skoda', model: 'fabia',   years: range(2014) },
+  // Honda
+  { make: 'honda', model: 'civic', years: range(2014) },
+  { make: 'honda', model: 'hrv',   years: range(2016) },
+  { make: 'honda', model: 'crv',   years: range(2014) },
+  { make: 'honda', model: 'jazz',  years: range(2014) },
+  // Suzuki
+  { make: 'suzuki', model: 'swift',  years: range(2014) },
+  { make: 'suzuki', model: 'vitara', years: range(2015) },
+  { make: 'suzuki', model: 'scross', years: range(2014) },
+  { make: 'suzuki', model: 'jimny',  years: range(2018) },
+  // BMW
+  { make: 'bmw', model: 'series1', years: range(2014) },
+  { make: 'bmw', model: 'series3', years: range(2013) },
+  { make: 'bmw', model: 'series5', years: range(2013) },
+  { make: 'bmw', model: 'x1',      years: range(2014) },
+  { make: 'bmw', model: 'x3',      years: range(2014) },
+  { make: 'bmw', model: 'x5',      years: range(2014) },
+  { make: 'bmw', model: 'ix3',     years: range(2021) },
+  // Mercedes
+  { make: 'mercedes', model: 'a-class', years: range(2013) },
+  { make: 'mercedes', model: 'c-class', years: range(2014) },
+  { make: 'mercedes', model: 'e-class', years: range(2013) },
+  { make: 'mercedes', model: 'gla',     years: range(2014) },
+  { make: 'mercedes', model: 'glb',     years: range(2019) },
+  { make: 'mercedes', model: 'glc',     years: range(2015) },
+  { make: 'mercedes', model: 'eqc',     years: range(2020) },
+  // Audi
+  { make: 'audi', model: 'a3',    years: range(2013) },
+  { make: 'audi', model: 'a4',    years: range(2013) },
+  { make: 'audi', model: 'a6',    years: range(2013) },
+  { make: 'audi', model: 'q3',    years: range(2013) },
+  { make: 'audi', model: 'q5',    years: range(2013) },
+  { make: 'audi', model: 'etron', years: range(2020) },
+  // Ford
+  { make: 'ford', model: 'fiesta', years: range(2013, 2023) },
+  { make: 'ford', model: 'focus',  years: range(2013, 2022) },
+  { make: 'ford', model: 'kuga',   years: range(2013) },
+  { make: 'ford', model: 'puma',   years: range(2020) },
+  { make: 'ford', model: 'ranger', years: range(2013) },
+  // Nissan
+  { make: 'nissan', model: 'qashqai', years: range(2014) },
+  { make: 'nissan', model: 'juke',    years: range(2014) },
+  { make: 'nissan', model: 'note',    years: range(2014) },
+  { make: 'nissan', model: 'leaf',    years: range(2014) },
+  // Peugeot
+  { make: 'peugeot', model: '208',  years: range(2013) },
+  { make: 'peugeot', model: '308',  years: range(2013) },
+  { make: 'peugeot', model: '3008', years: range(2016) },
+  { make: 'peugeot', model: '5008', years: range(2017) },
+  { make: 'peugeot', model: 'e208', years: range(2020) },
+  // Renault
+  { make: 'renault', model: 'clio',   years: range(2014) },
+  { make: 'renault', model: 'megane', years: range(2014) },
+  { make: 'renault', model: 'kadjar', years: range(2015) },
+  { make: 'renault', model: 'arkana', years: range(2020) },
+  { make: 'renault', model: 'zoe',    years: range(2015) },
+  // Volvo
+  { make: 'volvo', model: 'xc40', years: range(2018) },
+  { make: 'volvo', model: 'xc60', years: range(2013) },
+  { make: 'volvo', model: 'xc90', years: range(2015) },
+  { make: 'volvo', model: 's60',  years: range(2013) },
+  { make: 'volvo', model: 'ex30', years: range(2023) },
+  // Jeep
+  { make: 'jeep', model: 'renegade', years: range(2015) },
+  { make: 'jeep', model: 'compass',  years: range(2017) },
+  { make: 'jeep', model: 'wrangler', years: range(2013) },
+  { make: 'jeep', model: 'cherokee', years: range(2014, 2023) },
+  // Mitsubishi
+  { make: 'mitsubishi', model: 'outlander',     years: range(2013) },
+  { make: 'mitsubishi', model: 'eclipse-cross', years: range(2018) },
+  { make: 'mitsubishi', model: 'asx',           years: range(2014) },
+  // Subaru
+  { make: 'subaru', model: 'forester', years: range(2013) },
+  { make: 'subaru', model: 'outback',  years: range(2013) },
+  { make: 'subaru', model: 'xv',       years: range(2013) },
+  { make: 'subaru', model: 'impreza',  years: range(2013) },
+];

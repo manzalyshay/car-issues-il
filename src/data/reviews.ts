@@ -1,0 +1,113 @@
+// ── Types & constants only — importable from client components ──────────────
+
+export interface Review {
+  id: string;
+  makeSlug: string;
+  modelSlug: string;
+  year: number;
+  authorName: string;
+  userId?: string;
+  rating: number; // 1-5
+  title: string;
+  body: string;
+  category: 'mechanical' | 'electrical' | 'comfort' | 'safety' | 'general';
+  mileage?: number;
+  createdAt: string; // ISO date string
+  helpful: number;
+  images?: string[];
+}
+
+export const CATEGORY_LABELS: Record<Review['category'], string> = {
+  mechanical: 'מכאני',
+  electrical: 'חשמל ואלקטרוניקה',
+  comfort: 'נוחות וגמר',
+  safety: 'בטיחות',
+  general: 'כללי',
+};
+
+export const SEED_REVIEWS: Review[] = [
+  {
+    id: 'seed_1',
+    makeSlug: 'toyota',
+    modelSlug: 'corolla',
+    year: 2020,
+    authorName: 'דוד כהן',
+    rating: 4,
+    title: 'רכב אמין אבל עם בעיה בשמן',
+    body: 'הקורולה שלי 2020 בדרך כלל מצוינת, אבל שמתי לב לצריכת שמן גבוהה יחסית לאחר 60,000 ק"מ. פנייה למוסך טויוטה — מסרו שזה בגבולות הנורמה אבל זה עדיין מטריד. מלבד זה הרכב מעולה, חסכוני מאוד.',
+    category: 'mechanical',
+    mileage: 68000,
+    createdAt: '2024-03-15T10:00:00Z',
+    helpful: 12,
+  },
+  {
+    id: 'seed_2',
+    makeSlug: 'toyota',
+    modelSlug: 'corolla',
+    year: 2020,
+    authorName: 'מיכל לוי',
+    rating: 5,
+    title: 'הרכב הטוב ביותר שהיה לי',
+    body: '3 שנים עם הקורולה ואין לי שום תלונות! אפס בעיות, ירידות מינימליות. צריכת דלק פנטסטית, בסביבות 6.5 ל/100 ק"מ בכביש. ממליצה בחום.',
+    category: 'general',
+    mileage: 45000,
+    createdAt: '2024-04-10T12:00:00Z',
+    helpful: 8,
+  },
+  {
+    id: 'seed_3',
+    makeSlug: 'hyundai',
+    modelSlug: 'tucson',
+    year: 2021,
+    authorName: 'יוסי אברהם',
+    rating: 3,
+    title: 'בעיות בתיבת ההילוכים DCT',
+    body: 'טוקסון 2021 עם תיבת DCT. בשנה הראשונה הרגשתי רעידות וגמגומים בנסיעה האיטית. פנייה לסוכנות — עדכנו תוכנה ועזר קצת, אבל הבעיה לא נפתרה לחלוטין. יונדאי ישראל מודעים לבעיה. זהירות.',
+    category: 'mechanical',
+    mileage: 32000,
+    createdAt: '2024-05-02T09:00:00Z',
+    helpful: 25,
+  },
+  {
+    id: 'seed_4',
+    makeSlug: 'volkswagen',
+    modelSlug: 'golf',
+    year: 2019,
+    authorName: 'רון ביטון',
+    rating: 2,
+    title: 'בעיות חשמל מתסכלות',
+    body: 'הגולף שלי 2019 סובל מבעיות חשמל חוזרות: מסוף הבטריה מתנתק, נורות אזהרה מגיחות ונעלמות. התיקון הגיע לאלפי שקלים שלא היו מכוסים אחרי תקופת האחריות. לא ממליץ.',
+    category: 'electrical',
+    mileage: 78000,
+    createdAt: '2024-02-20T14:00:00Z',
+    helpful: 31,
+  },
+  {
+    id: 'seed_5',
+    makeSlug: 'mazda',
+    modelSlug: 'cx5',
+    year: 2022,
+    authorName: 'שרה מזרחי',
+    rating: 5,
+    title: 'אחד הSUV הטובים בשוק',
+    body: 'CX-5 2022 — פשוט מדהים. נהיגה ספורטיבית, גמר מעולה, מנוע חזק וחסכוני. ביקרתי אותו לאחר 30,000 ק"מ ולא נמצאה שום בעיה. מאד מרוצה מהרכישה.',
+    category: 'general',
+    mileage: 30000,
+    createdAt: '2024-06-01T08:00:00Z',
+    helpful: 18,
+  },
+  {
+    id: 'seed_6',
+    makeSlug: 'kia',
+    modelSlug: 'sportage',
+    year: 2021,
+    authorName: 'אמיר שפירא',
+    rating: 4,
+    title: 'רכב טוב עם בעיה קלה בריפוד',
+    body: 'ספורטז\' 2021 — בכלל מרוצה מאוד. הבעיה היחידה שנתקלתי בה: ריפוד המושב הקדמי התחיל להתבלות לאחר שנה. קיה החליפה אותו בחינם במסגרת האחריות. שירות מצוין.',
+    category: 'comfort',
+    mileage: 40000,
+    createdAt: '2024-01-15T11:00:00Z',
+    helpful: 14,
+  },
+];

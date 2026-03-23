@@ -1,5 +1,93 @@
 @import "tailwindcss";
 
+/* ════════════════════════════════════════════════════════════════
+   Design Tokens — CarIssues IL
+   ════════════════════════════════════════════════════════════════ */
+
+:root {
+  --brand-red: #e63946;
+  --brand-red-dark: #c1121f;
+  --brand-gold-dark: #e76f51;
+  --bg-base: #f8f9fa;
+  --bg-card: #ffffff;
+  --bg-muted: #e9ecef;
+  --border: #dee2e6;
+  --border-strong: #adb5bd;
+  --text-primary: #1a1a2e;
+  --text-secondary: #495057;
+  --text-muted: #868e96;
+  --shadow-sm: 0 1px 3px rgba(0,0,0,.06), 0 1px 2px rgba(0,0,0,.04);
+  --shadow-md: 0 4px 16px rgba(0,0,0,.08);
+  --shadow-lg: 0 12px 40px rgba(0,0,0,.12);
+  --shadow-red: 0 0 24px rgba(230,57,70,.25);
+  --radius-full: 9999px;
+  --ease-smooth: cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; -webkit-font-smoothing: antialiased; }
+body {
+  background-color: var(--bg-base);
+  color: var(--text-primary);
+  font-family: 'Rubik', 'Assistant', system-ui, -apple-system, sans-serif;
+  line-height: 1.6;
+  direction: rtl;
+  min-height: 100vh;
+}
+h1,h2,h3,h4,h5,h6 { font-family: 'Rubik', 'Assistant', system-ui, sans-serif; font-weight: 700; line-height: 1.25; color: var(--text-primary); }
+a { color: inherit; text-decoration: none; }
+img { max-width: 100%; height: auto; display: block; }
+button { font-family: inherit; cursor: pointer; }
+
+.container { max-width: 1200px; margin: 0 auto; padding: 0 1.25rem; }
+
+.card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  box-shadow: var(--shadow-sm);
+  transition: box-shadow 0.2s var(--ease-smooth), border-color 0.2s var(--ease-smooth), transform 0.2s var(--ease-smooth);
+}
+.card:hover { box-shadow: var(--shadow-md); border-color: var(--border-strong); transform: translateY(-2px); }
+
+.btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 0.5rem;
+  height: 44px; padding: 0 1.5rem; border-radius: var(--radius-full);
+  font-size: 0.9375rem; font-weight: 600; border: none;
+  transition: all 0.2s var(--ease-smooth); white-space: nowrap; cursor: pointer;
+}
+.btn-primary { background: var(--brand-red); color: #fff; box-shadow: var(--shadow-red); }
+.btn-primary:hover { background: var(--brand-red-dark); transform: translateY(-1px); }
+.btn-outline { background: transparent; border: 1.5px solid var(--border-strong); color: var(--text-secondary); }
+.btn-outline:hover { border-color: var(--brand-red); color: var(--brand-red); }
+
+.badge {
+  display: inline-flex; align-items: center; gap: 4px;
+  height: 24px; padding: 0 10px; border-radius: var(--radius-full);
+  font-size: 0.75rem; font-weight: 600; letter-spacing: 0.02em;
+}
+.badge-red   { background: rgba(230,57,70,.1);  color: var(--brand-red); }
+.badge-green { background: rgba(34,197,94,.1);  color: #16a34a; }
+.badge-blue  { background: rgba(59,130,246,.1); color: #2563eb; }
+.badge-gray  { background: var(--bg-muted);     color: var(--text-muted); }
+
+@keyframes spin { to { transform: rotate(360deg); } }
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+@keyframes shimmer {
+  0% { background-position: -400px 0; }
+  100% { background-position: 400px 0; }
+}
+.skeleton {
+  background: linear-gradient(90deg, var(--bg-muted) 25%, #e2e5e9 50%, var(--bg-muted) 75%);
+  background-size: 800px 100%;
+  animation: shimmer 1.4s ease-in-out infinite;
+}
+@media (max-width: 640px) { .container { padding: 0 1rem; } }
+
 :root {
   --background: #ffffff;
   --foreground: #171717;
