@@ -8,72 +8,50 @@ on:
 jobs:
   scrape:
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 180   # 3 hours max — enough for all 1,113 entries
 
     steps:
-      - name: Scrape user reviews for all models
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build Next.js app
         env:
-          APP_URL: ${{ secrets.APP_URL }}
+          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
           SCRAPER_API_KEY: ${{ secrets.SCRAPER_API_KEY }}
-        run: |
-          # make_slug:model_slug pairs matching src/data/cars.ts
-          MODELS=(
-            "toyota:corolla"
-            "toyota:rav4"
-            "toyota:camry"
-            "toyota:yaris"
-            "toyota:c-hr"
-            "toyota:corolla-cross"
-            "hyundai:tucson"
-            "hyundai:elantra"
-            "hyundai:ioniq5"
-            "hyundai:kona"
-            "hyundai:i30"
-            "kia:sportage"
-            "kia:niro"
-            "kia:picanto"
-            "kia:stonic"
-            "mazda:cx-5"
-            "mazda:mazda3"
-            "mazda:cx-30"
-            "volkswagen:golf"
-            "volkswagen:tiguan"
-            "volkswagen:t-roc"
-            "volkswagen:polo"
-            "skoda:octavia"
-            "skoda:karoq"
-            "skoda:kodiaq"
-            "honda:civic"
-            "honda:hr-v"
-            "honda:jazz"
-            "bmw:3-series"
-            "bmw:x3"
-            "mercedes:c-class"
-            "mercedes:a-class"
-            "ford:kuga"
-            "ford:puma"
-            "nissan:qashqai"
-            "nissan:juke"
-            "peugeot:3008"
-            "renault:megane"
-            "subaru:forester"
-            "mitsubishi:outlander"
-          )
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+        run: npm run build
 
-          for entry in "${MODELS[@]}"; do
-            MAKE="${entry%%:*}"
-            MODEL="${entry##*:}"
+      - name: Start Next.js server
+        env:
+          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
+          SCRAPER_API_KEY: ${{ secrets.SCRAPER_API_KEY }}
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+        run: npm run start &
 
-            echo "→ $MAKE / $MODEL"
+      - name: Wait for server to be ready
+        run: npx wait-on http://localhost:3000 --timeout 60000
 
-            STATUS=$(curl -s -o /dev/null -w "%{http_code}" \
-              -X POST "$APP_URL/api/expert-reviews" \
-              -H "Content-Type: application/json" \
-              -H "x-api-key: $SCRAPER_API_KEY" \
-              -d "{\"makeSlug\":\"$MAKE\",\"modelSlug\":\"$MODEL\"}")
-
-            echo "  HTTP $STATUS"
-            sleep 4   # rate-limit Gemini free tier (15 RPM)
-          done
-
-          echo "✅ Done"
+      - name: Run stale scraper
+        env:
+          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
+          SCRAPER_API_KEY: ${{ secrets.SCRAPER_API_KEY }}
+          BASE_URL: http://localhost:3000
+          STALE_DAYS: 7
+          DELAY_MS: 1500
+        run: node scripts/scrape-stale.mjs
