@@ -7,6 +7,7 @@ import { getExpertReviewsForYear } from '@/lib/expertReviews';
 import StarRating from '@/components/StarRating';
 import ExpertReviewsSection from '@/components/ExpertReviewsSection';
 import CarYearClient from './CarYearClient';
+import MakeLogo from '@/components/MakeLogo';
 
 interface Props { params: Promise<{ make: string; model: string; year: string }> }
 
@@ -105,7 +106,7 @@ export default async function CarYearPage({ params }: Props) {
         {/* Page header */}
         <div style={{ marginBottom: 36 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 12 }}>
-            <span style={{ fontSize: 44 }}>{make.logoEmoji}</span>
+            <MakeLogo logoUrl={make.logoUrl} nameEn={make.nameEn} size={52} />
             <div>
               <h1 style={{ fontSize: 'clamp(1.5rem, 4vw, 2.25rem)', fontWeight: 900, lineHeight: 1.15 }}>
                 {make.nameHe} {model.nameHe} {year}

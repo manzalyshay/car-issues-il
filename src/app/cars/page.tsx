@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { carDatabase } from '@/data/cars';
+import MakeLogo from '@/components/MakeLogo';
 
 export const metadata: Metadata = {
   title: 'כל יצרני הרכב',
@@ -69,7 +70,7 @@ export default function CarsPage() {
                   className="card"
                   style={{ padding: '20px 20px', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 16 }}
                 >
-                  <span style={{ fontSize: 32, flexShrink: 0 }}>{make.logoEmoji}</span>
+                  <MakeLogo logoUrl={make.logoUrl} nameEn={make.nameEn} size={44} />
                   <div>
                     <div style={{ fontWeight: 700, color: 'var(--text-primary)', marginBottom: 2 }}>{make.nameHe}</div>
                     <div style={{ fontSize: '0.8125rem', color: 'var(--text-muted)' }}>{make.nameEn}</div>

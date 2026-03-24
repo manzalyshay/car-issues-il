@@ -128,4 +128,22 @@ export const CAR_LIST = [
   { make: 'subaru', model: 'outback',  years: range(2013) },
   { make: 'subaru', model: 'xv',       years: range(2013) },
   { make: 'subaru', model: 'impreza',  years: range(2013) },
+  // BYD
+  { make: 'byd', model: 'atto3',    years: range(2022) },
+  { make: 'byd', model: 'seal',     years: range(2023) },
+  { make: 'byd', model: 'dolphin',  years: range(2023) },
+  { make: 'byd', model: 'han',      years: range(2023) },
+  { make: 'byd', model: 'sealion6', years: range(2024) },
+  // MG
+  { make: 'mg', model: 'mg-zs', years: range(2018) },
+  { make: 'mg', model: 'mg4',   years: range(2023) },
+  { make: 'mg', model: 'mg5',   years: range(2021) },
+  { make: 'mg', model: 'hs',    years: range(2020) },
+  // Chery
+  { make: 'chery', model: 'tiggo7',  years: range(2021) },
+  { make: 'chery', model: 'tiggo8',  years: range(2021) },
+  { make: 'chery', model: 'arrizo6', years: range(2020) },
+  // Geely
+  { make: 'geely', model: 'coolray', years: range(2020) },
+  { make: 'geely', model: 'emgrand', years: range(2019) },
 ];

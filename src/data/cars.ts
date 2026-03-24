@@ -11,22 +11,26 @@ export interface CarMake {
   nameHe: string;
   nameEn: string;
   country: string;
-  logoEmoji: string;
+  /** URL to manufacturer logo (Simple Icons CDN or fallback). Empty = show initial badge. */
+  logoUrl: string;
   popular: boolean;
   models: CarModel[];
 }
+
+const SI = (slug: string) => `https://cdn.simpleicons.org/${slug}`;
 
 const currentYear = 2025;
 const recentYears = (from: number, to: number = currentYear) =>
   Array.from({ length: to - from + 1 }, (_, i) => from + i).reverse();
 
 export const carDatabase: CarMake[] = [
+  // ── Japanese ──────────────────────────────────────────────────────────────
   {
     slug: 'toyota',
     nameHe: 'טויוטה',
     nameEn: 'Toyota',
     country: 'יפן',
-    logoEmoji: '🚗',
+    logoUrl: SI('toyota'),
     popular: true,
     models: [
       { slug: 'corolla', nameHe: 'קורולה', nameEn: 'Corolla', years: recentYears(2014), category: 'sedan' },
@@ -40,11 +44,97 @@ export const carDatabase: CarMake[] = [
     ],
   },
   {
+    slug: 'honda',
+    nameHe: 'הונדה',
+    nameEn: 'Honda',
+    country: 'יפן',
+    logoUrl: SI('honda'),
+    popular: false,
+    models: [
+      { slug: 'civic', nameHe: 'סיוויק', nameEn: 'Civic', years: recentYears(2014), category: 'sedan' },
+      { slug: 'hrv',   nameHe: 'HR-V',   nameEn: 'HR-V',  years: recentYears(2016), category: 'suv' },
+      { slug: 'crv',   nameHe: 'CR-V',   nameEn: 'CR-V',  years: recentYears(2014), category: 'suv' },
+      { slug: 'jazz',  nameHe: "ג'אז",   nameEn: 'Jazz',  years: recentYears(2014), category: 'hatchback' },
+    ],
+  },
+  {
+    slug: 'nissan',
+    nameHe: 'ניסאן',
+    nameEn: 'Nissan',
+    country: 'יפן',
+    logoUrl: SI('nissan'),
+    popular: false,
+    models: [
+      { slug: 'qashqai', nameHe: 'קשקאי', nameEn: 'Qashqai', years: recentYears(2014), category: 'suv' },
+      { slug: 'juke',    nameHe: "ג'וק",  nameEn: 'Juke',    years: recentYears(2014), category: 'suv' },
+      { slug: 'note',    nameHe: 'נוט',    nameEn: 'Note',    years: recentYears(2014), category: 'hatchback' },
+      { slug: 'leaf',    nameHe: 'ליף',    nameEn: 'Leaf',    years: recentYears(2014), category: 'electric' },
+    ],
+  },
+  {
+    slug: 'mazda',
+    nameHe: 'מאזדה',
+    nameEn: 'Mazda',
+    country: 'יפן',
+    logoUrl: SI('mazda'),
+    popular: true,
+    models: [
+      { slug: 'mazda3', nameHe: 'מאזדה 3', nameEn: 'Mazda3', years: recentYears(2014), category: 'sedan' },
+      { slug: 'mazda6', nameHe: 'מאזדה 6', nameEn: 'Mazda6', years: recentYears(2014), category: 'sedan' },
+      { slug: 'cx5',    nameHe: 'CX-5',    nameEn: 'CX-5',   years: recentYears(2013), category: 'suv' },
+      { slug: 'cx30',   nameHe: 'CX-30',   nameEn: 'CX-30',  years: recentYears(2019), category: 'suv' },
+      { slug: 'mx5',    nameHe: 'MX-5',    nameEn: 'MX-5',   years: recentYears(2015), category: 'coupe' },
+    ],
+  },
+  {
+    slug: 'suzuki',
+    nameHe: 'סוזוקי',
+    nameEn: 'Suzuki',
+    country: 'יפן',
+    logoUrl: SI('suzuki'),
+    popular: false,
+    models: [
+      { slug: 'swift',   nameHe: 'סוויפט',  nameEn: 'Swift',   years: recentYears(2014), category: 'hatchback' },
+      { slug: 'vitara',  nameHe: 'ויטארה', nameEn: 'Vitara',  years: recentYears(2015), category: 'suv' },
+      { slug: 'scross',  nameHe: 'S-Cross', nameEn: 'S-Cross', years: recentYears(2014), category: 'suv' },
+      { slug: 'jimny',   nameHe: "ג'ימני",  nameEn: 'Jimny',   years: recentYears(2018), category: 'suv' },
+    ],
+  },
+  {
+    slug: 'mitsubishi',
+    nameHe: 'מיצובישי',
+    nameEn: 'Mitsubishi',
+    country: 'יפן',
+    logoUrl: SI('mitsubishi'),
+    popular: false,
+    models: [
+      { slug: 'outlander',     nameHe: 'אאוטלנדר',     nameEn: 'Outlander',    years: recentYears(2013), category: 'suv' },
+      { slug: 'eclipse-cross', nameHe: 'אקליפס קרוס', nameEn: 'Eclipse Cross', years: recentYears(2018), category: 'suv' },
+      { slug: 'asx',           nameHe: 'ASX',           nameEn: 'ASX',          years: recentYears(2014), category: 'suv' },
+    ],
+  },
+  {
+    slug: 'subaru',
+    nameHe: 'סובארו',
+    nameEn: 'Subaru',
+    country: 'יפן',
+    logoUrl: SI('subaru'),
+    popular: false,
+    models: [
+      { slug: 'forester', nameHe: 'פורסטר',  nameEn: 'Forester', years: recentYears(2013), category: 'suv' },
+      { slug: 'outback',  nameHe: 'אאוטבק', nameEn: 'Outback',  years: recentYears(2013), category: 'suv' },
+      { slug: 'xv',       nameHe: 'XV',       nameEn: 'XV',       years: recentYears(2013), category: 'suv' },
+      { slug: 'impreza',  nameHe: 'אימפרזה', nameEn: 'Impreza',  years: recentYears(2013), category: 'hatchback' },
+    ],
+  },
+
+  // ── Korean ────────────────────────────────────────────────────────────────
+  {
     slug: 'hyundai',
     nameHe: 'יונדאי',
     nameEn: 'Hyundai',
     country: 'קוריאה',
-    logoEmoji: '🚙',
+    logoUrl: SI('hyundai'),
     popular: true,
     models: [
       { slug: 'tucson',    nameHe: 'טוסון',    nameEn: 'Tucson',    years: recentYears(2014), category: 'suv' },
@@ -62,10 +152,10 @@ export const carDatabase: CarMake[] = [
     nameHe: 'קיה',
     nameEn: 'Kia',
     country: 'קוריאה',
-    logoEmoji: '🚗',
+    logoUrl: SI('kia'),
     popular: true,
     models: [
-      { slug: 'sportage', nameHe: 'ספורטז\'',  nameEn: 'Sportage', years: recentYears(2014), category: 'suv' },
+      { slug: 'sportage', nameHe: "ספורטז'",  nameEn: 'Sportage', years: recentYears(2014), category: 'suv' },
       { slug: 'ceed',     nameHe: 'סיד',       nameEn: "Cee'd",    years: recentYears(2014), category: 'hatchback' },
       { slug: 'cerato',   nameHe: 'סראטו',    nameEn: 'Cerato',   years: recentYears(2014), category: 'sedan' },
       { slug: 'sorento',  nameHe: 'סורנטו',   nameEn: 'Sorento',  years: recentYears(2014), category: 'suv' },
@@ -74,27 +164,14 @@ export const carDatabase: CarMake[] = [
       { slug: 'niro',     nameHe: 'נירו',     nameEn: 'Niro',     years: recentYears(2017), category: 'suv' },
     ],
   },
-  {
-    slug: 'mazda',
-    nameHe: 'מאזדה',
-    nameEn: 'Mazda',
-    country: 'יפן',
-    logoEmoji: '🚗',
-    popular: true,
-    models: [
-      { slug: 'mazda3', nameHe: 'מאזדה 3', nameEn: 'Mazda3', years: recentYears(2014), category: 'sedan' },
-      { slug: 'mazda6', nameHe: 'מאזדה 6', nameEn: 'Mazda6', years: recentYears(2014), category: 'sedan' },
-      { slug: 'cx5',    nameHe: 'CX-5',    nameEn: 'CX-5',   years: recentYears(2013), category: 'suv' },
-      { slug: 'cx30',   nameHe: 'CX-30',   nameEn: 'CX-30',  years: recentYears(2019), category: 'suv' },
-      { slug: 'mx5',    nameHe: 'MX-5',    nameEn: 'MX-5',   years: recentYears(2015), category: 'coupe' },
-    ],
-  },
+
+  // ── German ────────────────────────────────────────────────────────────────
   {
     slug: 'volkswagen',
     nameHe: 'פולקסווגן',
     nameEn: 'Volkswagen',
     country: 'גרמניה',
-    logoEmoji: '🚗',
+    logoUrl: SI('volkswagen'),
     popular: true,
     models: [
       { slug: 'golf',    nameHe: 'גולף',     nameEn: 'Golf',    years: recentYears(2014), category: 'hatchback' },
@@ -106,54 +183,11 @@ export const carDatabase: CarMake[] = [
     ],
   },
   {
-    slug: 'skoda',
-    nameHe: 'סקודה',
-    nameEn: 'Skoda',
-    country: 'צ\'כיה',
-    logoEmoji: '🚗',
-    popular: true,
-    models: [
-      { slug: 'octavia', nameHe: 'אוקטביה', nameEn: 'Octavia', years: recentYears(2013), category: 'sedan' },
-      { slug: 'kodiaq',  nameHe: 'קודיאק',  nameEn: 'Kodiaq',  years: recentYears(2016), category: 'suv' },
-      { slug: 'superb',  nameHe: 'סופרב',   nameEn: 'Superb',  years: recentYears(2015), category: 'sedan' },
-      { slug: 'karoq',   nameHe: 'קארוק',   nameEn: 'Karoq',   years: recentYears(2018), category: 'suv' },
-      { slug: 'fabia',   nameHe: 'פביה',    nameEn: 'Fabia',   years: recentYears(2014), category: 'hatchback' },
-    ],
-  },
-  {
-    slug: 'honda',
-    nameHe: 'הונדה',
-    nameEn: 'Honda',
-    country: 'יפן',
-    logoEmoji: '🚗',
-    popular: false,
-    models: [
-      { slug: 'civic', nameHe: 'סיוויק', nameEn: 'Civic', years: recentYears(2014), category: 'sedan' },
-      { slug: 'hrv',   nameHe: 'HR-V',   nameEn: 'HR-V',  years: recentYears(2016), category: 'suv' },
-      { slug: 'crv',   nameHe: 'CR-V',   nameEn: 'CR-V',  years: recentYears(2014), category: 'suv' },
-      { slug: 'jazz',  nameHe: 'ג\'אז',  nameEn: 'Jazz',  years: recentYears(2014), category: 'hatchback' },
-    ],
-  },
-  {
-    slug: 'suzuki',
-    nameHe: 'סוזוקי',
-    nameEn: 'Suzuki',
-    country: 'יפן',
-    logoEmoji: '🚙',
-    popular: false,
-    models: [
-      { slug: 'swift',   nameHe: 'סוויפט',  nameEn: 'Swift',   years: recentYears(2014), category: 'hatchback' },
-      { slug: 'vitara',  nameHe: 'ויטארה', nameEn: 'Vitara',  years: recentYears(2015), category: 'suv' },
-      { slug: 'scross',  nameHe: 'S-Cross', nameEn: 'S-Cross', years: recentYears(2014), category: 'suv' },
-      { slug: 'jimny',   nameHe: 'ג\'ימני', nameEn: 'Jimny',   years: recentYears(2018), category: 'suv' },
-    ],
-  },
-  {
     slug: 'bmw',
     nameHe: 'ב.מ.וו',
     nameEn: 'BMW',
     country: 'גרמניה',
-    logoEmoji: '🚗',
+    logoUrl: SI('bmw'),
     popular: true,
     models: [
       { slug: 'series1', nameHe: 'סדרה 1', nameEn: 'Series 1', years: recentYears(2014), category: 'hatchback' },
@@ -170,7 +204,7 @@ export const carDatabase: CarMake[] = [
     nameHe: 'מרצדס-בנץ',
     nameEn: 'Mercedes-Benz',
     country: 'גרמניה',
-    logoEmoji: '🚗',
+    logoUrl: SI('mercedesbenz'),
     popular: true,
     models: [
       { slug: 'a-class', nameHe: 'A-Class', nameEn: 'A-Class', years: recentYears(2013), category: 'hatchback' },
@@ -187,7 +221,7 @@ export const carDatabase: CarMake[] = [
     nameHe: 'אאודי',
     nameEn: 'Audi',
     country: 'גרמניה',
-    logoEmoji: '🚗',
+    logoUrl: SI('audi'),
     popular: true,
     models: [
       { slug: 'a3', nameHe: 'A3', nameEn: 'A3', years: recentYears(2013), category: 'hatchback' },
@@ -199,40 +233,28 @@ export const carDatabase: CarMake[] = [
     ],
   },
   {
-    slug: 'ford',
-    nameHe: 'פורד',
-    nameEn: 'Ford',
-    country: 'ארה"ב',
-    logoEmoji: '🚙',
-    popular: false,
+    slug: 'skoda',
+    nameHe: 'סקודה',
+    nameEn: 'Skoda',
+    country: "צ'כיה",
+    logoUrl: SI('skoda'),
+    popular: true,
     models: [
-      { slug: 'fiesta', nameHe: 'פיאסטה', nameEn: 'Fiesta', years: recentYears(2013, 2023), category: 'hatchback' },
-      { slug: 'focus',  nameHe: 'פוקוס',  nameEn: 'Focus',  years: recentYears(2013, 2022), category: 'hatchback' },
-      { slug: 'kuga',   nameHe: 'קוגה',   nameEn: 'Kuga',   years: recentYears(2013),       category: 'suv' },
-      { slug: 'puma',   nameHe: 'פומה',   nameEn: 'Puma',   years: recentYears(2020),       category: 'suv' },
-      { slug: 'ranger', nameHe: 'ריינג\'ר', nameEn: 'Ranger', years: recentYears(2013),     category: 'pickup' },
+      { slug: 'octavia', nameHe: 'אוקטביה', nameEn: 'Octavia', years: recentYears(2013), category: 'sedan' },
+      { slug: 'kodiaq',  nameHe: 'קודיאק',  nameEn: 'Kodiaq',  years: recentYears(2016), category: 'suv' },
+      { slug: 'superb',  nameHe: 'סופרב',   nameEn: 'Superb',  years: recentYears(2015), category: 'sedan' },
+      { slug: 'karoq',   nameHe: 'קארוק',   nameEn: 'Karoq',   years: recentYears(2018), category: 'suv' },
+      { slug: 'fabia',   nameHe: 'פביה',    nameEn: 'Fabia',   years: recentYears(2014), category: 'hatchback' },
     ],
   },
-  {
-    slug: 'nissan',
-    nameHe: 'ניסאן',
-    nameEn: 'Nissan',
-    country: 'יפן',
-    logoEmoji: '🚗',
-    popular: false,
-    models: [
-      { slug: 'qashqai', nameHe: 'קשקאי', nameEn: 'Qashqai', years: recentYears(2014), category: 'suv' },
-      { slug: 'juke',    nameHe: 'ג\'וק',  nameEn: 'Juke',    years: recentYears(2014), category: 'suv' },
-      { slug: 'note',    nameHe: 'נוט',    nameEn: 'Note',    years: recentYears(2014), category: 'hatchback' },
-      { slug: 'leaf',    nameHe: 'ליף',    nameEn: 'Leaf',    years: recentYears(2014), category: 'electric' },
-    ],
-  },
+
+  // ── French ────────────────────────────────────────────────────────────────
   {
     slug: 'peugeot',
     nameHe: "פיג'ו",
     nameEn: 'Peugeot',
     country: 'צרפת',
-    logoEmoji: '🚗',
+    logoUrl: SI('peugeot'),
     popular: false,
     models: [
       { slug: '208',  nameHe: '208',  nameEn: '208',  years: recentYears(2013), category: 'hatchback' },
@@ -247,22 +269,24 @@ export const carDatabase: CarMake[] = [
     nameHe: 'רנו',
     nameEn: 'Renault',
     country: 'צרפת',
-    logoEmoji: '🚗',
+    logoUrl: SI('renault'),
     popular: false,
     models: [
       { slug: 'clio',   nameHe: 'קליאו',  nameEn: 'Clio',   years: recentYears(2014), category: 'hatchback' },
       { slug: 'megane', nameHe: 'מגאן',   nameEn: 'Megane', years: recentYears(2014), category: 'hatchback' },
-      { slug: 'kadjar', nameHe: 'קדג\'ר', nameEn: 'Kadjar', years: recentYears(2015), category: 'suv' },
+      { slug: 'kadjar', nameHe: "קדג'ר", nameEn: 'Kadjar', years: recentYears(2015), category: 'suv' },
       { slug: 'arkana', nameHe: 'ארקנה',  nameEn: 'Arkana', years: recentYears(2020), category: 'suv' },
       { slug: 'zoe',    nameHe: 'זואי',   nameEn: 'Zoe',    years: recentYears(2015), category: 'electric' },
     ],
   },
+
+  // ── Swedish ───────────────────────────────────────────────────────────────
   {
     slug: 'volvo',
     nameHe: 'וולוו',
     nameEn: 'Volvo',
     country: 'שוודיה',
-    logoEmoji: '🚗',
+    logoUrl: SI('volvo'),
     popular: false,
     models: [
       { slug: 'xc40',  nameHe: 'XC40',  nameEn: 'XC40',  years: recentYears(2018), category: 'suv' },
@@ -272,45 +296,91 @@ export const carDatabase: CarMake[] = [
       { slug: 'ex30',  nameHe: 'EX30',  nameEn: 'EX30',  years: recentYears(2023), category: 'electric' },
     ],
   },
+
+  // ── American ──────────────────────────────────────────────────────────────
+  {
+    slug: 'ford',
+    nameHe: 'פורד',
+    nameEn: 'Ford',
+    country: 'ארה"ב',
+    logoUrl: SI('ford'),
+    popular: false,
+    models: [
+      { slug: 'fiesta', nameHe: 'פיאסטה', nameEn: 'Fiesta', years: recentYears(2013, 2023), category: 'hatchback' },
+      { slug: 'focus',  nameHe: 'פוקוס',  nameEn: 'Focus',  years: recentYears(2013, 2022), category: 'hatchback' },
+      { slug: 'kuga',   nameHe: 'קוגה',   nameEn: 'Kuga',   years: recentYears(2013),       category: 'suv' },
+      { slug: 'puma',   nameHe: 'פומה',   nameEn: 'Puma',   years: recentYears(2020),       category: 'suv' },
+      { slug: 'ranger', nameHe: "ריינג'ר", nameEn: 'Ranger', years: recentYears(2013),      category: 'pickup' },
+    ],
+  },
   {
     slug: 'jeep',
     nameHe: "ג'יפ",
     nameEn: 'Jeep',
     country: 'ארה"ב',
-    logoEmoji: '🚙',
+    logoUrl: SI('jeep'),
     popular: false,
     models: [
       { slug: 'renegade', nameHe: 'רנגייד',  nameEn: 'Renegade', years: recentYears(2015), category: 'suv' },
       { slug: 'compass',  nameHe: 'קומפס',   nameEn: 'Compass',  years: recentYears(2017), category: 'suv' },
       { slug: 'wrangler', nameHe: 'רנגלר',   nameEn: 'Wrangler', years: recentYears(2013), category: 'suv' },
-      { slug: 'cherokee', nameHe: 'צ\'רוקי', nameEn: 'Cherokee', years: recentYears(2014, 2023), category: 'suv' },
+      { slug: 'cherokee', nameHe: "צ'רוקי", nameEn: 'Cherokee', years: recentYears(2014, 2023), category: 'suv' },
+    ],
+  },
+
+  // ── Chinese ───────────────────────────────────────────────────────────────
+  {
+    slug: 'byd',
+    nameHe: 'BYD',
+    nameEn: 'BYD',
+    country: 'סין',
+    logoUrl: SI('byd'),
+    popular: true,
+    models: [
+      { slug: 'atto3',   nameHe: 'Atto 3',   nameEn: 'Atto 3',   years: recentYears(2022), category: 'electric' },
+      { slug: 'seal',    nameHe: 'Seal',      nameEn: 'Seal',     years: recentYears(2023), category: 'electric' },
+      { slug: 'dolphin', nameHe: 'Dolphin',   nameEn: 'Dolphin',  years: recentYears(2023), category: 'electric' },
+      { slug: 'han',     nameHe: 'Han',       nameEn: 'Han',      years: recentYears(2023), category: 'electric' },
+      { slug: 'sealion6', nameHe: 'Sealion 6', nameEn: 'Sealion 6', years: recentYears(2024), category: 'electric' },
     ],
   },
   {
-    slug: 'mitsubishi',
-    nameHe: 'מיצובישי',
-    nameEn: 'Mitsubishi',
-    country: 'יפן',
-    logoEmoji: '🚗',
-    popular: false,
+    slug: 'mg',
+    nameHe: 'MG',
+    nameEn: 'MG',
+    country: 'סין / בריטניה',
+    logoUrl: SI('mgmotor'),
+    popular: true,
     models: [
-      { slug: 'outlander',     nameHe: 'אאוטלנדר',     nameEn: 'Outlander',      years: recentYears(2013), category: 'suv' },
-      { slug: 'eclipse-cross', nameHe: 'אקליפס קרוס', nameEn: 'Eclipse Cross',   years: recentYears(2018), category: 'suv' },
-      { slug: 'asx',           nameHe: 'ASX',           nameEn: 'ASX',            years: recentYears(2014), category: 'suv' },
+      { slug: 'mg-zs',  nameHe: 'ZS',   nameEn: 'ZS',   years: recentYears(2018), category: 'suv' },
+      { slug: 'mg4',    nameHe: 'MG4',  nameEn: 'MG4',  years: recentYears(2023), category: 'electric' },
+      { slug: 'mg5',    nameHe: 'MG5',  nameEn: 'MG5',  years: recentYears(2021), category: 'sedan' },
+      { slug: 'hs',     nameHe: 'HS',   nameEn: 'HS',   years: recentYears(2020), category: 'suv' },
     ],
   },
   {
-    slug: 'subaru',
-    nameHe: 'סובארו',
-    nameEn: 'Subaru',
-    country: 'יפן',
-    logoEmoji: '🚗',
+    slug: 'chery',
+    nameHe: "צ'רי",
+    nameEn: 'Chery',
+    country: 'סין',
+    logoUrl: '',   // no Simple Icons entry — MakeLogo will show initial badge
     popular: false,
     models: [
-      { slug: 'forester', nameHe: 'פורסטר',  nameEn: 'Forester', years: recentYears(2013), category: 'suv' },
-      { slug: 'outback',  nameHe: 'אאוטבק', nameEn: 'Outback',  years: recentYears(2013), category: 'suv' },
-      { slug: 'xv',       nameHe: 'XV',       nameEn: 'XV',       years: recentYears(2013), category: 'suv' },
-      { slug: 'impreza',  nameHe: 'אימפרזה', nameEn: 'Impreza',  years: recentYears(2013), category: 'hatchback' },
+      { slug: 'tiggo7',  nameHe: 'Tiggo 7 Pro',  nameEn: 'Tiggo 7 Pro',  years: recentYears(2021), category: 'suv' },
+      { slug: 'tiggo8',  nameHe: 'Tiggo 8 Pro',  nameEn: 'Tiggo 8 Pro',  years: recentYears(2021), category: 'suv' },
+      { slug: 'arrizo6', nameHe: 'Arrizo 6 Pro', nameEn: 'Arrizo 6 Pro', years: recentYears(2020), category: 'sedan' },
+    ],
+  },
+  {
+    slug: 'geely',
+    nameHe: "ג'ילי",
+    nameEn: 'Geely',
+    country: 'סין',
+    logoUrl: SI('geely'),
+    popular: false,
+    models: [
+      { slug: 'coolray',  nameHe: 'Coolray',  nameEn: 'Coolray',  years: recentYears(2020), category: 'suv' },
+      { slug: 'emgrand',  nameHe: 'Emgrand',  nameEn: 'Emgrand',  years: recentYears(2019), category: 'sedan' },
     ],
   },
 ];
@@ -327,15 +397,10 @@ export function getPopularMakes(): CarMake[] {
   return carDatabase.filter((m) => m.popular);
 }
 
-export function getCategoryLabel(category: CarModel['category']): string {
-  const labels: Record<CarModel['category'], string> = {
-    sedan: 'סדאן',
-    suv: 'SUV',
-    hatchback: 'האצ\'בק',
-    pickup: 'טנדר',
-    van: 'ואן',
-    coupe: 'קופה',
-    electric: 'חשמלי',
+export function getCategoryLabel(cat: CarModel['category']): string {
+  const MAP: Record<CarModel['category'], string> = {
+    sedan: 'סדאן', suv: 'SUV', hatchback: "האצ'בק", pickup: 'פיקאפ',
+    van: 'ואן', coupe: 'קופה', electric: 'חשמלי',
   };
-  return labels[category] ?? category;
+  return MAP[cat] ?? cat;
 }

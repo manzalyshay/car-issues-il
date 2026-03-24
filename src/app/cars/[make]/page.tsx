@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { carDatabase, getMakeBySlug, getCategoryLabel } from '@/data/cars';
+import MakeLogo from '@/components/MakeLogo';
 
 interface Props { params: Promise<{ make: string }> }
 
@@ -53,7 +54,7 @@ export default async function MakePage({ params }: Props) {
             flexWrap: 'wrap',
           }}
         >
-          <div style={{ fontSize: 64 }}>{make.logoEmoji}</div>
+          <MakeLogo logoUrl={make.logoUrl} nameEn={make.nameEn} size={72} />
           <div>
             <h1 style={{ fontSize: '2rem', fontWeight: 900, marginBottom: 4 }}>{make.nameHe}</h1>
             <p style={{ color: 'var(--text-muted)', fontSize: '1rem', marginBottom: 12 }}>{make.nameEn} · {make.country}</p>

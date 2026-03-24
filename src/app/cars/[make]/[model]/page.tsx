@@ -6,6 +6,7 @@ import { getReviewsForModel } from '@/lib/reviewsDb';
 import { findCarModel } from '@/lib/sketchfab';
 import { getExpertReviews } from '@/lib/expertReviews';
 import StarRating from '@/components/StarRating';
+import MakeLogo from '@/components/MakeLogo';
 import YearGrid from '@/components/YearGrid';
 import Car3DViewer from '@/components/Car3DViewer';
 import ExpertReviewsSection from '@/components/ExpertReviewsSection';
@@ -67,7 +68,7 @@ export default async function ModelPage({ params }: Props) {
           {/* Left: title + badges */}
           <div style={{ flex: '1 1 240px', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 10 }}>
-              <span style={{ fontSize: 36 }}>{make.logoEmoji}</span>
+              <MakeLogo logoUrl={make.logoUrl} nameEn={make.nameEn} size={48} />
               <div>
                 <h1 style={{ fontSize: '1.75rem', fontWeight: 900 }}>{make.nameHe} {model.nameHe}</h1>
                 <p style={{ color: 'var(--text-muted)', fontSize: '0.9375rem' }}>{make.nameEn} {model.nameEn}</p>

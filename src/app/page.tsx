@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { carDatabase, getPopularMakes } from '@/data/cars';
 import { getCachedNews, CATEGORY_LABELS } from '@/lib/newsScraper';
+import MakeLogo from '@/components/MakeLogo';
 
 export default async function HomePage() {
   const popularMakes = getPopularMakes();
@@ -120,7 +121,9 @@ export default async function HomePage() {
                 className="card"
                 style={{ padding: '24px 16px', textAlign: 'center', textDecoration: 'none', display: 'block' }}
               >
-                <div style={{ fontSize: 40, marginBottom: 10 }}>{make.logoEmoji}</div>
+                <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 10 }}>
+                  <MakeLogo logoUrl={make.logoUrl} nameEn={make.nameEn} size={52} />
+                </div>
                 <div style={{ fontWeight: 700, color: 'var(--text-primary)', marginBottom: 4 }}>{make.nameHe}</div>
                 <div style={{ fontSize: '0.8125rem', color: 'var(--text-muted)' }}>{make.models.length} דגמים</div>
                 <div style={{ marginTop: 12, height: 24, borderRadius: 9999, background: 'rgba(230,57,70,.08)', color: 'var(--brand-red)', fontSize: '0.75rem', fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
