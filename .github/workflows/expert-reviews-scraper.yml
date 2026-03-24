@@ -4,54 +4,84 @@ on:
   schedule:
     - cron: '0 3 * * *'   # Every day at 03:00 UTC
   workflow_dispatch:        # Allow manual trigger from GitHub UI
+    inputs:
+      mode:
+        description: 'Scrape mode: all | generals | years'
+        required: false
+        default: 'all'
+
+env:
+  NEXT_PUBLIC_SUPABASE_URL:  ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+  NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
+  SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+  GROQ_API_KEY:              ${{ secrets.GROQ_API_KEY }}
+  SCRAPER_API_KEY:           ${{ secrets.SCRAPER_API_KEY }}
 
 jobs:
-  scrape:
+  # ── Step 1: Seed general (year=null) summaries — fast, top priority ──────
+  seed-generals:
     runs-on: ubuntu-latest
-    timeout-minutes: 180   # 3 hours max — enough for all 1,113 entries
+    timeout-minutes: 30   # ~120 models × 5s = ~10 min
+    if: ${{ github.event.inputs.mode != 'years' }}
 
     steps:
       - uses: actions/checkout@v4
-
       - uses: actions/setup-node@v4
         with:
           node-version: 20
           cache: npm
+      - run: npm ci
 
-      - name: Install dependencies
-        run: npm ci
+      - name: Seed general reviews (knowledge only — no scraping)
+        run: |
+          GENERAL_ONLY=true SKIP_EXISTING=true DELAY_MS=500 \
+            node scripts/seed-knowledge.mjs
+
+  # ── Step 2: Seed year-specific summaries (can run in parallel) ───────────
+  seed-years:
+    runs-on: ubuntu-latest
+    timeout-minutes: 360   # 1200 year slots × 5s = ~100 min
+    if: ${{ github.event.inputs.mode != 'generals' }}
+    needs: seed-generals   # start after generals are done
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
+
+      - name: Seed year-specific reviews (knowledge only — no scraping)
+        run: |
+          YEARS_ONLY=true SKIP_EXISTING=true DELAY_MS=500 \
+            node scripts/seed-knowledge.mjs
+
+  # ── Step 3: Daily enrichment — add real scraped data on top ──────────────
+  enrich-with-scraping:
+    runs-on: ubuntu-latest
+    timeout-minutes: 180
+    needs: seed-generals   # only after generals are seeded
+    if: ${{ github.event_name == 'schedule' }}  # only on daily cron, not manual
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
 
       - name: Build Next.js app
-        env:
-          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
-          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
-          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
-          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
-          SCRAPER_API_KEY: ${{ secrets.SCRAPER_API_KEY }}
-          CRON_SECRET: ${{ secrets.CRON_SECRET }}
         run: npm run build
 
       - name: Start Next.js server
-        env:
-          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
-          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
-          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
-          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
-          SCRAPER_API_KEY: ${{ secrets.SCRAPER_API_KEY }}
-          CRON_SECRET: ${{ secrets.CRON_SECRET }}
         run: npm run start &
 
-      - name: Wait for server to be ready
+      - name: Wait for server
         run: npx wait-on http://localhost:3000 --timeout 60000
 
-      - name: Run stale scraper
-        env:
-          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
-          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
-          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
-          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
-          SCRAPER_API_KEY: ${{ secrets.SCRAPER_API_KEY }}
-          BASE_URL: http://localhost:3000
-          STALE_DAYS: 7
-          DELAY_MS: 1500
-        run: node scripts/scrape-stale.mjs
+      - name: Run web scraper (stale entries only)
+        run: |
+          BASE_URL=http://localhost:3000 STALE_DAYS=14 DELAY_MS=2000 \
+            node scripts/scrape-stale.mjs
