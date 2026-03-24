@@ -138,7 +138,7 @@ async function groqKnowledge(makeHe, modelHe, makeEn, modelEn, year) {
 החזר JSON בלבד:
 {"summary_he":"2-3 משפטים","score":7,"pros":["יתרון 1","יתרון 2"],"cons":["חיסרון 1","חיסרון 2"]}`;
 
-  for (let attempt = 0; attempt < 2; attempt++) {
+  for (let attempt = 0; attempt < 3; attempt++) {
     try {
       const res = await fetch(GROQ_URL, {
         method: 'POST',
@@ -149,10 +149,16 @@ async function groqKnowledge(makeHe, modelHe, makeEn, modelEn, year) {
           temperature: 0.5,
           max_tokens: 500,
         }),
-        signal: AbortSignal.timeout(15000),
+        signal: AbortSignal.timeout(20000),
       });
       const json = await res.json();
-      if (json?.error) { await new Promise(r => setTimeout(r, 3000)); continue; }
+      if (json?.error) {
+        const isRateLimit = json.error?.type === 'tokens' || json.error?.code === 'rate_limit_exceeded';
+        const waitMs = isRateLimit ? 65000 : 4000;  // wait full minute on rate limit
+        process.stdout.write(isRateLimit ? `(rate-limit, wait ${waitMs/1000}s)` : `(err, retry)`);
+        await new Promise(r => setTimeout(r, waitMs));
+        continue;
+      }
       const text = (json?.choices?.[0]?.message?.content ?? '').trim();
       const clean = text.replace(/^```[a-z]*\n?/i, '').replace(/```$/i, '').trim();
       const parsed = JSON.parse(clean);
@@ -160,7 +166,7 @@ async function groqKnowledge(makeHe, modelHe, makeEn, modelEn, year) {
       if (!parsed.summary_he || parsed.summary_he.length < 20) continue;
       return parsed;
     } catch {
-      if (attempt === 0) await new Promise(r => setTimeout(r, 2000));
+      if (attempt < 2) await new Promise(r => setTimeout(r, 3000));
     }
   }
   return null;
