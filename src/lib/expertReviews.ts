@@ -477,6 +477,106 @@ async function searchEdmunds(makeEn: string, modelEn: string): Promise<UserPost[
   return posts;
 }
 
+// ── cars.com consumer reviews ─────────────────────────────────────────────────
+async function searchCarsCom(makeEn: string, modelEn: string, year?: number): Promise<UserPost[]> {
+  const posts: UserPost[] = [];
+  try {
+    const makeSlug  = makeEn.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
+    const modelSlug = modelEn.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
+    const yearPart  = year ? `-${year}` : '';
+    const url = `https://www.cars.com/research/${makeSlug}-${modelSlug}${yearPart}/consumer-reviews/`;
+    const res = await fetch(url, {
+      headers: { 'User-Agent': 'Mozilla/5.0', 'Accept-Language': 'en-US,en;q=0.9' },
+      signal: AbortSignal.timeout(10000),
+    });
+    if (!res.ok) return posts;
+    const html = await res.text();
+
+    // JSON-LD reviewBody
+    const reviewRe = /"reviewBody"\s*:\s*"([^"]{40,600})"/g;
+    let m;
+    while ((m = reviewRe.exec(html)) !== null && posts.length < 4) {
+      const body = m[1].replace(/\\n/g, ' ').replace(/\\"/g, '"').trim();
+      if (body.length > 40) {
+        posts.push({ title: `Consumer review: ${makeEn} ${modelEn}`, url, sourceName: 'Cars.com Reviews', snippet: body.slice(0, 300) });
+      }
+    }
+
+    // Fallback: inline review text blocks
+    if (posts.length === 0) {
+      const blockRe = /class="[^"]*review-content[^"]*"[^>]*>([\s\S]{40,600}?)<\/div>/gi;
+      while ((m = blockRe.exec(html)) !== null && posts.length < 3) {
+        const text = m[1].replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
+        if (text.length > 40) posts.push({ title: `Owner review: ${makeEn} ${modelEn}`, url, sourceName: 'Cars.com Reviews', snippet: text.slice(0, 300) });
+      }
+    }
+  } catch { /* ignore */ }
+  return posts;
+}
+
+// ── AutoExpress.co.uk (UK car magazine with long-term reviews) ─────────────────
+async function searchAutoExpress(makeEn: string, modelEn: string): Promise<UserPost[]> {
+  const posts: UserPost[] = [];
+  try {
+    const query = encodeURIComponent(`${makeEn} ${modelEn} review`);
+    const res = await fetch(
+      `https://www.autoexpress.co.uk/search?q=${query}`,
+      {
+        headers: { 'User-Agent': 'Mozilla/5.0', 'Accept-Language': 'en-GB,en;q=0.9' },
+        signal: AbortSignal.timeout(10000),
+      }
+    );
+    if (!res.ok) return posts;
+    const html = await res.text();
+
+    // Extract article links + snippets
+    const cardRe = /<a[^>]+href="(https:\/\/www\.autoexpress\.co\.uk\/[^"]+review[^"]*)"[^>]*>([\s\S]*?)<\/a>/gi;
+    let m;
+    while ((m = cardRe.exec(html)) !== null && posts.length < 4) {
+      const inner = m[2].replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
+      if (inner.length < 15) continue;
+      const titleMatch = /([A-Z][^.!?]{10,120})/.exec(inner);
+      const title = titleMatch ? titleMatch[1].trim() : `Review: ${makeEn} ${modelEn}`;
+      posts.push({ title, url: m[1], sourceName: 'Auto Express', snippet: inner.slice(0, 300) });
+    }
+  } catch { /* ignore */ }
+  return posts;
+}
+
+// ── WhatCar.com (UK buyer reviews) ────────────────────────────────────────────
+async function searchWhatCar(makeEn: string, modelEn: string): Promise<UserPost[]> {
+  const posts: UserPost[] = [];
+  try {
+    const makeSlug  = makeEn.toLowerCase().replace(/\s+/g, '-');
+    const modelSlug = modelEn.toLowerCase().replace(/\s+/g, '-');
+    const url = `https://www.whatcar.com/${makeSlug}/${modelSlug}/review/`;
+    const res = await fetch(url, {
+      headers: { 'User-Agent': 'Mozilla/5.0', 'Accept-Language': 'en-GB,en;q=0.9' },
+      signal: AbortSignal.timeout(10000),
+    });
+    if (!res.ok) return posts;
+    const html = await res.text();
+
+    // Extract verdict/summary paragraphs
+    const verdictRe = /class="[^"]*(?:verdict|summary|review-body)[^"]*"[^>]*>([\s\S]{40,600}?)<\/(?:div|p)>/gi;
+    let m;
+    while ((m = verdictRe.exec(html)) !== null && posts.length < 3) {
+      const text = m[1].replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
+      if (text.length > 40) posts.push({ title: `What Car verdict: ${makeEn} ${modelEn}`, url, sourceName: 'What Car?', snippet: text.slice(0, 300) });
+    }
+
+    // JSON-LD review body as fallback
+    if (posts.length === 0) {
+      const reviewRe = /"reviewBody"\s*:\s*"([^"]{40,600})"/g;
+      while ((m = reviewRe.exec(html)) !== null && posts.length < 2) {
+        const body = m[1].replace(/\\n/g, ' ').trim();
+        if (body.length > 40) posts.push({ title: `Buyer review: ${makeEn} ${modelEn}`, url, sourceName: 'What Car?', snippet: body.slice(0, 300) });
+      }
+    }
+  } catch { /* ignore */ }
+  return posts;
+}
+
 // ── "No real data" detection ──────────────────────────────────────────────────
 // Any of these phrases mean the LLM had nothing real to say — discard the output.
 const NO_DATA_PHRASES = [
@@ -723,7 +823,11 @@ export async function scrapeExpertReviews(
   year?: number,
 ): Promise<number> {
   // Gather user posts from all sources in parallel
-  const [redditPosts, tapuzPosts, onePosts, icarPosts, carzonePosts, carComplaintsPosts, edmundsPosts, drivePosts, rotterPosts, wallaPosts] = await Promise.all([
+  const [
+    redditPosts, tapuzPosts, onePosts, icarPosts, carzonePosts,
+    carComplaintsPosts, edmundsPosts, drivePosts, rotterPosts, wallaPosts,
+    carsComPosts, autoExpressPosts, whatCarPosts,
+  ] = await Promise.all([
     searchReddit(makeNameEn, modelNameEn, year),
     searchTapuz(makeNameHe, modelNameHe, year),
     searchOne(makeNameHe, modelNameHe),
@@ -734,10 +838,13 @@ export async function scrapeExpertReviews(
     searchDrive(makeNameHe, modelNameHe, year),
     searchRotter(makeNameHe, modelNameHe, year),
     searchWalla(makeNameHe, modelNameHe, year),
+    searchCarsCom(makeNameEn, modelNameEn, year),
+    searchAutoExpress(makeNameEn, modelNameEn),
+    searchWhatCar(makeNameEn, modelNameEn),
   ]);
 
   const localPosts  = [...icarPosts, ...drivePosts, ...wallaPosts, ...carzonePosts, ...tapuzPosts, ...rotterPosts, ...onePosts];  // Israeli sources
-  const globalPosts = [...redditPosts, ...carComplaintsPosts, ...edmundsPosts];                                                    // International
+  const globalPosts = [...redditPosts, ...carComplaintsPosts, ...edmundsPosts, ...carsComPosts, ...autoExpressPosts, ...whatCarPosts];  // International
 
   // Summarize each group independently, in parallel
   let [localOut, globalOut] = await Promise.all([
