@@ -103,6 +103,13 @@ export default async function ModelPage({ params }: Props) {
           )}
         </div>
 
+        {/* General AI summary */}
+        <ExpertReviewsSection
+          review={expertReview}
+          makeNameHe={make.nameHe}
+          modelNameHe={model.nameHe}
+        />
+
         {/* Year selector */}
         <h2 style={{ fontSize: '1.25rem', fontWeight: 700, marginBottom: 20 }}>בחר שנת ייצור</h2>
         <div style={{ marginBottom: 48 }}>
@@ -114,13 +121,6 @@ export default async function ModelPage({ params }: Props) {
             }))}
           />
         </div>
-
-        {/* General AI summary */}
-        <ExpertReviewsSection
-          review={expertReview}
-          makeNameHe={make.nameHe}
-          modelNameHe={model.nameHe}
-        />
 
         {/* JSON-LD */}
         <script

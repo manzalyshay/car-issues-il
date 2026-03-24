@@ -1,5 +1,11 @@
-import fs from 'fs';
-import path from 'path';
+import { createClient } from '@supabase/supabase-js';
+
+function getSupabase() {
+  return createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!,
+  );
+}
 
 export interface NewsArticle {
   id: string;
@@ -12,9 +18,6 @@ export interface NewsArticle {
   publishedAt: string;
   savedAt: string;
 }
-
-const DATA_DIR = path.join(process.cwd(), 'data');
-const NEWS_FILE = path.join(DATA_DIR, 'news.json');
 
 // Hebrew keywords for car-related articles
 const CAR_KEYWORDS = [
@@ -123,21 +126,46 @@ export async function scrapeCarNews(): Promise<NewsArticle[]> {
   }).sort((a, b) => new Date(b.publishedAt).getTime() - new Date(a.publishedAt).getTime());
 }
 
-export function getCachedNews(): NewsArticle[] {
-  if (!fs.existsSync(NEWS_FILE)) return SEED_NEWS;
+export async function getCachedNews(): Promise<NewsArticle[]> {
   try {
-    return JSON.parse(fs.readFileSync(NEWS_FILE, 'utf-8'));
+    const sb = getSupabase();
+    const { data } = await sb
+      .from('news_cache')
+      .select('*')
+      .order('published_at', { ascending: false })
+      .limit(200);
+    if (!data || data.length === 0) return SEED_NEWS;
+    return data.map((r: any) => ({
+      id: r.id,
+      title: r.title,
+      url: r.url,
+      summary: r.summary,
+      imageUrl: r.image_url,
+      source: r.source,
+      category: r.category,
+      publishedAt: r.published_at,
+      savedAt: r.scraped_at,
+    }));
   } catch {
     return SEED_NEWS;
   }
 }
 
-export function saveNewsCache(articles: NewsArticle[]): void {
-  if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR, { recursive: true });
-  const existing = getCachedNews();
-  const seen = new Set(existing.map((a) => a.url));
-  const merged = [...articles.filter((a) => !seen.has(a.url)), ...existing].slice(0, 200);
-  fs.writeFileSync(NEWS_FILE, JSON.stringify(merged, null, 2));
+export async function saveNewsCache(articles: NewsArticle[]): Promise<void> {
+  if (articles.length === 0) return;
+  const sb = getSupabase();
+  const rows = articles.map((a) => ({
+    title: a.title,
+    url: a.url,
+    summary: a.summary,
+    image_url: a.imageUrl,
+    source: a.source,
+    category: a.category,
+    published_at: a.publishedAt,
+    scraped_at: new Date().toISOString(),
+  }));
+  // upsert on url — skip duplicates
+  await sb.from('news_cache').upsert(rows, { onConflict: 'url', ignoreDuplicates: true });
 }
 
 // ── Seed news ────────────────────────────────────────────────────────────────
