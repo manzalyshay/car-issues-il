@@ -17,7 +17,7 @@ export const CAR_LIST = [
   { make: 'toyota', model: 'prius',        years: range(2016) },
   { make: 'toyota', model: 'land-cruiser', years: range(2016) },
   // Hyundai
-  { make: 'hyundai', model: 'tucson',   years: range(2014) },
+  { make: 'hyundai', model: 'tucson',  years: range(2014) },
   { make: 'hyundai', model: 'i20',      years: range(2014) },
   { make: 'hyundai', model: 'i30',      years: range(2014) },
   { make: 'hyundai', model: 'sonata',   years: range(2015) },

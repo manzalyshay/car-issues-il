@@ -47,7 +47,7 @@ export const carDatabase: CarMake[] = [
     logoEmoji: '🚙',
     popular: true,
     models: [
-      { slug: 'tucson',    nameHe: 'טוקסון',   nameEn: 'Tucson',    years: recentYears(2014), category: 'suv' },
+      { slug: 'tucson',    nameHe: 'טוסון',    nameEn: 'Tucson',    years: recentYears(2014), category: 'suv' },
       { slug: 'i20',       nameHe: 'i20',       nameEn: 'i20',       years: recentYears(2014), category: 'hatchback' },
       { slug: 'i30',       nameHe: 'i30',       nameEn: 'i30',       years: recentYears(2014), category: 'hatchback' },
       { slug: 'sonata',    nameHe: 'סונטה',    nameEn: 'Sonata',    years: recentYears(2015), category: 'sedan' },

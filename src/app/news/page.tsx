@@ -22,8 +22,8 @@ const CATEGORY_COLORS: Record<string, string> = {
   general: 'badge-gray',
 };
 
-export default function NewsPage() {
-  const allNews = getCachedNews();
+export default async function NewsPage() {
+  const allNews = await getCachedNews();
 
   // Separate hero and grid
   const hero = allNews.slice(0, 2);

@@ -2,9 +2,9 @@ import Link from 'next/link';
 import { carDatabase, getPopularMakes } from '@/data/cars';
 import { getCachedNews, CATEGORY_LABELS } from '@/lib/newsScraper';
 
-export default function HomePage() {
+export default async function HomePage() {
   const popularMakes = getPopularMakes();
-  const news = getCachedNews().slice(0, 6);
+  const news = (await getCachedNews()).slice(0, 6);
 
   return (
     <>
