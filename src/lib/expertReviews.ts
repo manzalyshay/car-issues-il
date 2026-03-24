@@ -73,19 +73,17 @@ const MAKE_SUBREDDITS: Record<string, string> = {
 async function fetchRedditSearch(url: string, posts: UserPost[], limit: number): Promise<void> {
   try {
     const res = await fetch(url, {
-      headers: { 'User-Agent': 'CarIssuesIL/1.0 (educational project)' },
-      signal: AbortSignal.timeout(10000),
+      headers: { 'User-Agent': 'Mozilla/5.0 (compatible; CarIssuesIL/1.0)' },
+      signal: AbortSignal.timeout(12000),
     });
     if (!res.ok) return;
     const json = await res.json() as any;
     for (const child of (json?.data?.children ?? [])) {
       const d = child.data;
       if (!d?.title || !d?.permalink) continue;
-      // Keep self posts or Reddit-internal links; skip pure link posts to external sites
-      if (d.is_self === false && !d.url?.includes('reddit.com')) continue;
-      // Skip very low-effort posts (tiny body AND low score)
-      if ((d.selftext?.length ?? 0) < 30 && (d.score ?? 0) < 5) continue;
-      const snippet = (d.selftext ?? d.title ?? '').replace(/\n+/g, ' ').slice(0, 300);
+      // Skip only posts with no content AND very low engagement
+      if ((d.selftext?.length ?? 0) < 10 && (d.score ?? 0) < 3 && !d.title) continue;
+      const snippet = (d.selftext ?? '').replace(/\n+/g, ' ').slice(0, 300) || d.title.slice(0, 300);
       posts.push({ title: d.title, url: `https://reddit.com${d.permalink}`, sourceName: `r/${d.subreddit}`, snippet, score: d.score ?? 0 });
       if (posts.length >= limit) return;
     }
@@ -662,48 +660,57 @@ export async function getExpertReviewsForYear(
   }
 }
 
-// ── Knowledge-based fallback (when no forum posts found at all) ───────────────
+// ── Knowledge-based fallback (guaranteed summary from LLM training data) ──────
 async function generateKnowledgeSummary(
   makeNameHe: string,
   modelNameHe: string,
   makeNameEn: string,
   modelNameEn: string,
+  year?: number,
 ): Promise<SummarizeOutput | null> {
   const apiKey = process.env.GROQ_API_KEY;
   if (!apiKey) return null;
 
-  const prompt = `אתה עוזר לכתיבת תוכן לאתר ביקורות רכב ישראלי.
+  const yearNote = year ? ` דגם ${year}` : '';
+  const prompt = `אתה מומחה רכב ישראלי שכותב סיכומים לאתר ביקורות רכב.
 
-לא נמצאו פוסטים מפורומים על ${makeNameHe} ${modelNameHe} (${makeNameEn} ${modelNameEn}).
+כתוב סיכום מקיף בעברית על ${makeNameHe} ${modelNameHe}${yearNote} (${makeNameEn} ${modelNameEn}${year ? ` ${year}` : ''}) עבור קונים ישראלים.
+השתמש בידע שלך על הדגם — מאפיינים ידועים, חוזקות, חולשות, מה בעלי הרכב בדרך כלל מדווחים עליו.
+זהו רכב ידוע ומוכר — יש לך ידע עליו.
+כתוב 2-3 משפטים ישירים ועניינים. אל תכתוב "אין מידע" — תמיד יש מה לומר על רכב מוכר.
+אל תשתמש במילה "סלון" — השתמש בסדאן/SUV/האצ'בק.
+אל תשתמש בביטויים עמומים כמו "יושבת" — הסבר במפורש.
 
-כתוב סיכום כללי קצר בעברית על הרכב הזה עבור קונים ישראלים — על בסיס הידע הכללי שלך על הדגם.
-הבהר שמדובר בסיכום כללי (לא דיווחי משתמשים ספציפיים).
-כתוב 2-3 משפטים, ציון, יתרונות וחסרונות ידועים.
-
-החזר JSON בלבד (ללא \`\`\` ולא markdown):
+החזר JSON בלבד:
 {"summary_he":"2-3 משפטים","score":7,"pros":["יתרון 1","יתרון 2"],"cons":["חיסרון 1","חיסרון 2"]}`;
 
-  try {
-    const res = await fetch(GROQ_URL, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${apiKey}` },
-      body: JSON.stringify({
-        model: 'llama-3.1-8b-instant',
-        messages: [{ role: 'user', content: prompt }],
-        temperature: 0.4,
-        max_tokens: 400,
-      }),
-    });
-    const json = await res.json() as any;
-    const text = (json?.choices?.[0]?.message?.content ?? '').trim();
-    const clean = text.replace(/^```[a-z]*\n?/i, '').replace(/```$/i, '').trim();
-    const parsed = JSON.parse(clean) as SummarizeOutput;
-    parsed.score = Math.min(10, Math.max(1, Number(parsed.score) || 5));
-    if (isEmptySummary(parsed.summary_he)) return null;
-    return parsed;
-  } catch {
-    return null;
+  for (let attempt = 0; attempt < 2; attempt++) {
+    try {
+      const res = await fetch(GROQ_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${apiKey}` },
+        body: JSON.stringify({
+          model: 'llama-3.1-8b-instant',
+          messages: [{ role: 'user', content: prompt }],
+          temperature: 0.5,
+          max_tokens: 500,
+        }),
+      });
+      const json = await res.json() as any;
+      const text = (json?.choices?.[0]?.message?.content ?? '').trim();
+      const clean = text.replace(/^```[a-z]*\n?/i, '').replace(/```$/i, '').trim();
+      const parsed = JSON.parse(clean) as SummarizeOutput;
+      parsed.score = Math.min(10, Math.max(1, Number(parsed.score) || 6));
+      parsed.pros = filterListItems(parsed.pros ?? []);
+      parsed.cons = filterListItems(parsed.cons ?? []);
+      // Only reject if truly empty — not just "no data" phrases, since LLM has real knowledge
+      if (!parsed.summary_he || parsed.summary_he.trim().length < 20) continue;
+      return parsed;
+    } catch {
+      if (attempt === 0) await new Promise(r => setTimeout(r, 2000));
+    }
   }
+  return null;
 }
 
 export async function scrapeExpertReviews(
@@ -738,10 +745,11 @@ export async function scrapeExpertReviews(
     globalPosts.length > 0 ? summarizeGroup(globalPosts, makeNameHe, modelNameHe, 'global') : null,
   ]);
 
-  // If no real posts found at all, fall back to general knowledge summary
-  if (!localOut && !globalOut) {
-    globalOut = await generateKnowledgeSummary(makeNameHe, modelNameHe, makeNameEn, modelNameEn);
-    if (!globalOut) return 0;
+  // Always guarantee a global summary using LLM knowledge — every car deserves a review.
+  // If real scraped posts produced a summary, use it. Otherwise fall back to LLM knowledge.
+  if (!globalOut) {
+    globalOut = await generateKnowledgeSummary(makeNameHe, modelNameHe, makeNameEn, modelNameEn, year);
+    if (!globalOut) return 0; // Only fail if Groq API is completely down
   }
 
   // Top score = weighted average of available scores
