@@ -876,39 +876,38 @@ export async function scrapeExpertReviews(
 
   const sb = getSupabase(true);
 
-  // For year-specific rows we need a different upsert key.
-  // The table has unique(make_slug, model_slug) for general rows (year=null).
-  // Year rows are inserted fresh (no unique constraint) — delete old one first.
+  // Always delete then insert — avoids the upsert conflict ambiguity between
+  // general rows (year=null) and year-specific rows sharing the same make_slug/model_slug.
+  const deleteQ = sb.from('expert_reviews')
+    .delete()
+    .eq('make_slug', makeSlug)
+    .eq('model_slug', modelSlug);
+
   if (year) {
-    await sb.from('expert_reviews')
-      .delete()
-      .eq('make_slug', makeSlug)
-      .eq('model_slug', modelSlug)
-      .eq('year', year);
+    await deleteQ.eq('year', year);
+  } else {
+    await deleteQ.is('year', null);
   }
 
-  const { error } = await sb.from('expert_reviews').upsert(
-    {
-      make_slug:           makeSlug,
-      model_slug:          modelSlug,
-      year:                year ?? null,
-      source_name:         primary?.sourceName ?? '',
-      source_url:          primary?.url ?? '',
-      original_title:      primary?.title ?? '',
-      summary_he:          localOut?.summary_he ?? globalOut?.summary_he ?? '',
-      local_summary_he:    localOut?.summary_he  ?? null,
-      global_summary_he:   globalOut?.summary_he ?? null,
-      local_score:         localOut?.score  ?? null,
-      global_score:        globalOut?.score ?? null,
-      top_score:           topScore,
-      pros:                allPros,
-      cons:                allCons,
-      local_post_count:    localPosts.length,
-      global_post_count:   globalPosts.length,
-      scraped_at:          new Date().toISOString(),
-    },
-    { onConflict: 'make_slug,model_slug' },
-  );
+  const { error } = await sb.from('expert_reviews').insert({
+    make_slug:           makeSlug,
+    model_slug:          modelSlug,
+    year:                year ?? null,
+    source_name:         primary?.sourceName ?? '',
+    source_url:          primary?.url ?? '',
+    original_title:      primary?.title ?? '',
+    summary_he:          localOut?.summary_he ?? globalOut?.summary_he ?? '',
+    local_summary_he:    localOut?.summary_he  ?? null,
+    global_summary_he:   globalOut?.summary_he ?? null,
+    local_score:         localOut?.score  ?? null,
+    global_score:        globalOut?.score ?? null,
+    top_score:           topScore,
+    pros:                allPros,
+    cons:                allCons,
+    local_post_count:    localPosts.length,
+    global_post_count:   globalPosts.length,
+    scraped_at:          new Date().toISOString(),
+  });
 
   return error ? 0 : 1;
 }
