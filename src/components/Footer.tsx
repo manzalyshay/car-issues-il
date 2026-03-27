@@ -24,7 +24,8 @@ export default function Footer() {
           {/* Brand */}
           <div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12 }}>
-              <span style={{ fontSize: 28 }}>🚗</span>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src="/logo.svg" alt="CarIssues IL" width={34} height={34} style={{ borderRadius: 8 }} />
               <span style={{ fontWeight: 800, fontSize: '1.15rem' }}>
                 CarIssues<span style={{ color: 'var(--brand-red)' }}>IL</span>
               </span>
@@ -42,7 +43,9 @@ export default function Footer() {
             <ul style={{ listStyle: 'none', padding: 0, display: 'flex', flexDirection: 'column', gap: 10 }}>
               {[
                 { href: '/cars', label: 'כל היצרנים' },
-                { href: '/news', label: 'חדשות רכב' },
+                { href: '/terms', label: 'תנאי שימוש' },
+                { href: '/privacy', label: 'מדיניות פרטיות' },
+                { href: '/contact', label: 'צור קשר' },
               ].map((l) => (
                 <li key={l.href}>
                   <Link

@@ -26,16 +26,8 @@ export default function Header() {
         <div className="container" style={{ height: 68, display: 'flex', alignItems: 'center', gap: 16, justifyContent: 'space-between' }}>
           {/* Logo */}
           <Link href="/" style={{ display: 'flex', alignItems: 'center', gap: 10, textDecoration: 'none', flexShrink: 0 }}>
-            <div
-              style={{
-                width: 38, height: 38, borderRadius: 10,
-                background: 'linear-gradient(135deg, var(--brand-red), var(--brand-gold-dark))',
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                fontSize: 20, boxShadow: 'var(--shadow-red)',
-              }}
-            >
-              🚗
-            </div>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/logo.svg" alt="CarIssues IL" width={38} height={38} style={{ borderRadius: 10, boxShadow: 'var(--shadow-red)', flexShrink: 0 }} />
             <div>
               <div style={{ fontWeight: 800, fontSize: '1.1rem', color: 'var(--text-primary)', lineHeight: 1.1 }}>
                 CarIssues<span style={{ color: 'var(--brand-red)' }}>IL</span>
@@ -78,9 +70,22 @@ export default function Header() {
                       ניהול
                     </Link>
                   )}
-                  <span style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', whiteSpace: 'nowrap' }}>
-                    שלום, {displayName(user)}
-                  </span>
+                  <Link
+                    href="/profile"
+                    style={{ display: 'flex', alignItems: 'center', gap: 7, textDecoration: 'none' }}
+                  >
+                    <div style={{
+                      width: 32, height: 32, borderRadius: '50%', flexShrink: 0,
+                      background: 'linear-gradient(135deg, var(--brand-red), var(--brand-gold-dark))',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      fontSize: '0.875rem', fontWeight: 800, color: '#fff',
+                    }}>
+                      {displayName(user).charAt(0).toUpperCase()}
+                    </div>
+                    <span style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', whiteSpace: 'nowrap' }}>
+                      {displayName(user)}
+                    </span>
+                  </Link>
                   <button
                     onClick={signOut}
                     className="btn btn-outline"
@@ -128,7 +133,9 @@ export default function Header() {
               {user ? (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                    <span style={{ fontSize: '0.875rem', color: 'var(--text-secondary)' }}>שלום, {displayName(user)}</span>
+                    <Link href="/profile" onClick={() => setMobileOpen(false)} style={{ fontSize: '0.875rem', fontWeight: 600, color: 'var(--text-secondary)', textDecoration: 'none' }}>
+                      👤 {displayName(user)}
+                    </Link>
                     <button onClick={signOut} className="btn btn-outline" style={{ height: 34, padding: '0 12px', fontSize: '0.8125rem' }}>יציאה</button>
                   </div>
                   {isAdmin && (
@@ -164,6 +171,5 @@ export default function Header() {
 
 const NAV_LINKS = [
   { href: '/cars', label: 'כל היצרנים' },
-  { href: '/news', label: 'חדשות רכב' },
   { href: '/cars#popular', label: 'דגמים פופולריים' },
 ];
