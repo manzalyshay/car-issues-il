@@ -98,6 +98,7 @@ export const CAR_LIST = [
   { make: 'nissan', model: 'leaf',    years: range(2014) },
   // Peugeot
   { make: 'peugeot', model: '208',  years: range(2013) },
+  { make: 'peugeot', model: '2008', years: range(2013) },
   { make: 'peugeot', model: '308',  years: range(2013) },
   { make: 'peugeot', model: '3008', years: range(2016) },
   { make: 'peugeot', model: '5008', years: range(2017) },

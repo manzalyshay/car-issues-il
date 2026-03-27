@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+  <rect width="100" height="100" rx="8" fill="white"/>
+  <!-- Cupra emblem: angular C shape in copper color -->
+  <!-- Outer shield/triangle pointing up -->
+  <polygon points="50,8 90,75 50,95 10,75" fill="#8B5E3C"/>
+  <!-- Inner cutout forming C shape: large white triangle -->
+  <polygon points="50,26 78,72 22,72" fill="white"/>
+  <!-- Small copper triangle inside to create the "C" gap at right -->
+  <polygon points="50,44 66,70 50,70" fill="#8B5E3C"/>
+</svg>

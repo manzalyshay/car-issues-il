@@ -31,17 +31,24 @@ function loadEnv() {
 }
 loadEnv();
 
-const GROQ_URL   = 'https://api.groq.com/openai/v1/chat/completions';
-const GROQ_KEY   = process.env.GROQ_API_KEY;
-const SB_URL     = process.env.NEXT_PUBLIC_SUPABASE_URL;
-const SB_KEY     = process.env.SUPABASE_SERVICE_ROLE_KEY;
-const SKIP       = process.env.SKIP_EXISTING === 'true';
-const DELAY_MS   = parseInt(process.env.DELAY_MS ?? '500');
-const GEN_ONLY   = process.env.GENERAL_ONLY === 'true';
-const YEARS_ONLY = process.env.YEARS_ONLY   === 'true';
+const GEMINI_URL  = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent`;
+const MISTRAL_URL = 'https://api.mistral.ai/v1/chat/completions';
+const GEMINI_KEY  = process.env.GEMINI_API_KEY;
+const MISTRAL_KEY = process.env.MISTRAL_API_KEY;
+const SB_URL      = process.env.NEXT_PUBLIC_SUPABASE_URL;
+const SB_KEY      = process.env.SUPABASE_SERVICE_ROLE_KEY;
+// Default SKIP_EXISTING=true so re-runs always continue where they left off
+const SKIP        = process.env.SKIP_EXISTING !== 'false';
+const DELAY_MS    = parseInt(process.env.DELAY_MS ?? '1200'); // ~50 req/min, safe under 60 RPM
+const GEN_ONLY    = process.env.GENERAL_ONLY === 'true';
+const YEARS_ONLY  = process.env.YEARS_ONLY   === 'true';
 
-if (!GROQ_KEY || !SB_URL || !SB_KEY) {
-  console.error('Missing GROQ_API_KEY, NEXT_PUBLIC_SUPABASE_URL, or SUPABASE_SERVICE_ROLE_KEY');
+if (!SB_URL || !SB_KEY) {
+  console.error('Missing NEXT_PUBLIC_SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY');
+  process.exit(1);
+}
+if (!GEMINI_KEY && !MISTRAL_KEY) {
+  console.error('Need at least one of: GEMINI_API_KEY, MISTRAL_API_KEY');
   process.exit(1);
 }
 
@@ -75,7 +82,7 @@ const HE_MODELS = {
   a3: 'A3', a4: 'A4', a6: 'A6', q3: 'Q3', q5: 'Q5', etron: 'e-tron',
   fiesta: 'פיאסטה', focus: 'פוקוס', kuga: 'קוגה', puma: 'פומה', ranger: "ריינג'ר",
   qashqai: 'קשקאי', juke: "ג'וק", note: 'נוט', leaf: 'ליף',
-  '208': '208', '308': '308', '3008': '3008', '5008': '5008', e208: 'e-208',
+  '208': '208', '2008': '2008', '308': '308', '3008': '3008', '5008': '5008', e208: 'e-208',
   clio: 'קליאו', megane: 'מגאן', kadjar: "קדג'ר", arkana: 'ארקנה', zoe: 'זואי',
   xc40: 'XC40', xc60: 'XC60', xc90: 'XC90', s60: 'S60', ex30: 'EX30',
   renegade: 'רנגייד', compass: 'קומפס', wrangler: 'רנגלר', cherokee: "צ'רוקי",
@@ -113,7 +120,7 @@ const EN_MODELS = {
   a3: 'A3', a4: 'A4', a6: 'A6', q3: 'Q3', q5: 'Q5', etron: 'e-tron',
   fiesta: 'Fiesta', focus: 'Focus', kuga: 'Kuga', puma: 'Puma', ranger: 'Ranger',
   qashqai: 'Qashqai', juke: 'Juke', note: 'Note', leaf: 'Leaf',
-  '208': '208', '308': '308', '3008': '3008', '5008': '5008', e208: 'e-208',
+  '208': '208', '2008': '2008', '308': '308', '3008': '3008', '5008': '5008', e208: 'e-208',
   clio: 'Clio', megane: 'Megane', kadjar: 'Kadjar', arkana: 'Arkana', zoe: 'Zoe',
   xc40: 'XC40', xc60: 'XC60', xc90: 'XC90', s60: 'S60', ex30: 'EX30',
   renegade: 'Renegade', compass: 'Compass', wrangler: 'Wrangler', cherokee: 'Cherokee',
@@ -125,26 +132,89 @@ const EN_MODELS = {
   coolray: 'Coolray', emgrand: 'Emgrand',
 };
 
-async function groqKnowledge(makeHe, modelHe, makeEn, modelEn, year) {
+function buildGlobalPrompt(makeHe, modelHe, makeEn, modelEn, year) {
   const yearNote = year ? ` דגם ${year}` : '';
-  const prompt = `אתה מומחה רכב ישראלי שכותב סיכומים לאתר ביקורות רכב.
+  const yearInstr = year ? `\nהתמקד ב-${year} ספציפית: שינויים, בעיות ידועות ושיפורים לאותה שנה.` : '';
+  return `אתה מומחה רכב ישראלי שכותב סיכומים לאתר ביקורות רכב.
 
 כתוב סיכום מקיף בעברית על ${makeHe} ${modelHe}${yearNote} (${makeEn} ${modelEn}${year ? ` ${year}` : ''}) עבור קונים ישראלים.
-השתמש בידע שלך על הדגם — מאפיינים ידועים, חוזקות, חולשות, מה בעלי הרכב בדרך כלל מדווחים עליו.
+השתמש בידע שלך על הדגם — מאפיינים ידועים, חוזקות, חולשות, מה בעלי הרכב בדרך כלל מדווחים עליו.${yearInstr}
 כתוב 2-3 משפטים ישירים ועניינים. אל תכתוב "אין מידע" — תמיד יש מה לומר על רכב מוכר.
 אל תשתמש במילה "סלון" — השתמש בסדאן/SUV/האצ'בק.
 אל תשתמש בביטויים עמומים כמו "יושבת" — הסבר במפורש.
 
-החזר JSON בלבד:
-{"summary_he":"2-3 משפטים","score":7,"pros":["יתרון 1","יתרון 2"],"cons":["חיסרון 1","חיסרון 2"]}`;
+ה-score צריך לשקף את איכות הרכב: 9-10 לרכבים מצוינים, 7-8 לטובים, 5-6 לבינוניים, 3-4 לגרועים.
+אל תיתן 7 לכולם — גוון לפי הדגם הספציפי.
 
-  for (let attempt = 0; attempt < 3; attempt++) {
+החזר JSON בלבד:
+{"summary_he":"2-3 משפטים","score":8,"pros":["יתרון 1","יתרון 2"],"cons":["חיסרון 1","חיסרון 2"]}`;
+}
+
+function buildIsraeliPrompt(makeHe, modelHe, makeEn, modelEn, year) {
+  const yearNote = year ? ` ${year}` : '';
+  const yearInstr = year ? `\nהתמקד על ${year} ספציפית — תקלות ידועות, מה שבעלים ישראלים מציינים לאותה שנה.` : '';
+  return `אתה עוזר לאתר ביקורות רכב ישראלי. כתוב סיכום מנקודת מבט של נהגים ישראלים בפועל.
+
+כתוב 2-3 משפטים בעברית שמשקפים מה בעלי ${makeHe} ${modelHe}${yearNote} (${makeEn} ${modelEn}) בישראל בדרך כלל מדווחים — בהתחשב בתנאי הנהיגה, האקלים, ורמת השירות בישראל.${yearInstr}
+
+חוקים:
+- כתוב בגוף שלישי: "בעלי הרכב בישראל מדווחים ש...", "נהגים ישראלים מציינים...", "תלונה נפוצה בישראל היא..."
+- התמקד בחוויה ישראלית: תנאי נהיגה עירוניים, חום, שירות, אמינות
+- אל תכתוב תיאור כללי של הרכב — כתוב מה הנהגים אומרים
+- אל תשתמש במילה "סלון" — השתמש בסדאן/SUV/האצ'בק
+- אסור לציין גדלי מנוע או נתונים טכניים ספציפיים — שמור על רמה כללית
+- ציון: 9-10 ממליצים בחום, 7-8 שביעות רצון כללית, 5-6 מעורב, 3-4 תלונות רבות
+
+החזר JSON בלבד:
+{"summary_he":"...","score":8,"pros":["...","..."],"cons":["...","..."]}`;
+}
+
+function parseJsonResponse(text) {
+  const clean = text.replace(/^```[a-z]*\n?/i, '').replace(/```$/i, '').trim();
+  const parsed = JSON.parse(clean);
+  parsed.score = Math.min(10, Math.max(1, Number(parsed.score) || 6));
+  if (!parsed.summary_he || parsed.summary_he.length < 20) return null;
+  return parsed;
+}
+
+async function tryGemini(prompt) {
+  if (!GEMINI_KEY) return { result: null, rateLimited: false };
+  for (let attempt = 0; attempt < 2; attempt++) {
     try {
-      const res = await fetch(GROQ_URL, {
+      const res = await fetch(`${GEMINI_URL}?key=${GEMINI_KEY}`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${GROQ_KEY}` },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          model: 'llama-3.1-8b-instant',
+          contents: [{ parts: [{ text: prompt }] }],
+          generationConfig: { temperature: 0.5, maxOutputTokens: 500 },
+        }),
+        signal: AbortSignal.timeout(20000),
+      });
+      const json = await res.json();
+      if (json?.error) {
+        const isRateLimit = res.status === 429 || json.error?.code === 429;
+        if (isRateLimit) return { result: null, rateLimited: true };
+        if (attempt < 1) { await new Promise(r => setTimeout(r, 3000)); continue; }
+        return { result: null, rateLimited: false };
+      }
+      const text = (json?.candidates?.[0]?.content?.parts?.[0]?.text ?? '').trim();
+      return { result: parseJsonResponse(text), rateLimited: false };
+    } catch {
+      if (attempt < 1) await new Promise(r => setTimeout(r, 3000));
+    }
+  }
+  return { result: null, rateLimited: false };
+}
+
+async function tryMistral(prompt) {
+  if (!MISTRAL_KEY) return { result: null, rateLimited: false };
+  for (let attempt = 0; attempt < 2; attempt++) {
+    try {
+      const res = await fetch(MISTRAL_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${MISTRAL_KEY}` },
+        body: JSON.stringify({
+          model: 'mistral-small-latest',
           messages: [{ role: 'user', content: prompt }],
           temperature: 0.5,
           max_tokens: 500,
@@ -153,47 +223,80 @@ async function groqKnowledge(makeHe, modelHe, makeEn, modelEn, year) {
       });
       const json = await res.json();
       if (json?.error) {
-        const isRateLimit = json.error?.type === 'tokens' || json.error?.code === 'rate_limit_exceeded';
-        const waitMs = isRateLimit ? 65000 : 4000;  // wait full minute on rate limit
-        process.stdout.write(isRateLimit ? `(rate-limit, wait ${waitMs/1000}s)` : `(err, retry)`);
-        await new Promise(r => setTimeout(r, waitMs));
-        continue;
+        const isRateLimit = res.status === 429;
+        if (isRateLimit) return { result: null, rateLimited: true };
+        if (attempt < 1) { await new Promise(r => setTimeout(r, 3000)); continue; }
+        return { result: null, rateLimited: false };
       }
       const text = (json?.choices?.[0]?.message?.content ?? '').trim();
-      const clean = text.replace(/^```[a-z]*\n?/i, '').replace(/```$/i, '').trim();
-      const parsed = JSON.parse(clean);
-      parsed.score = Math.min(10, Math.max(1, Number(parsed.score) || 6));
-      if (!parsed.summary_he || parsed.summary_he.length < 20) continue;
-      return parsed;
+      return { result: parseJsonResponse(text), rateLimited: false };
     } catch {
-      if (attempt < 2) await new Promise(r => setTimeout(r, 3000));
+      if (attempt < 1) await new Promise(r => setTimeout(r, 3000));
     }
+  }
+  return { result: null, rateLimited: false };
+}
+
+// Mistral-primary, Gemini fallback. Mistral has 60 RPM so no aggressive throttling needed.
+async function callLlm(prompt) {
+  for (let attempt = 0; attempt < 4; attempt++) {
+    const mistral = await tryMistral(prompt);
+    if (mistral.result) return mistral.result;
+    if (!mistral.rateLimited) {
+      const gemini = await tryGemini(prompt);
+      if (gemini.result) { process.stdout.write('(→gemini)'); return gemini.result; }
+      if (!gemini.rateLimited) return null;
+    }
+    const waitSec = mistral.rateLimited ? 15 : 60;
+    process.stdout.write(`(rl, wait ${waitSec}s)`);
+    await new Promise(r => setTimeout(r, waitSec * 1000));
   }
   return null;
 }
 
-async function saveRow(makeSlug, modelSlug, year, data) {
+async function getLlmSummary(makeHe, modelHe, makeEn, modelEn, year) {
+  return callLlm(buildGlobalPrompt(makeHe, modelHe, makeEn, modelEn, year));
+}
+
+async function getLlmIsraeliSummary(makeHe, modelHe, makeEn, modelEn, year) {
+  return callLlm(buildIsraeliPrompt(makeHe, modelHe, makeEn, modelEn, year));
+}
+
+// next_scrape_at for AI-knowledge rows: short interval so cron replaces them with real scraped data
+// General: 7 days, Recent year (≤3 years old): 7 days, Older year: 30 days
+function nextScrapeAt(year) {
+  const CURRENT_YEAR = new Date().getFullYear();
+  const days = (!year || CURRENT_YEAR - year <= 3) ? 7 : 30;
+  return new Date(Date.now() + days * 24 * 60 * 60 * 1000).toISOString();
+}
+
+async function saveRow(makeSlug, modelSlug, year, globalData, israeliData) {
   // Delete existing row first
   const del = sb.from('expert_reviews').delete()
     .eq('make_slug', makeSlug).eq('model_slug', modelSlug);
   if (year) await del.eq('year', year);
   else       await del.is('year', null);
 
+  const topScore = israeliData?.score != null
+    ? (israeliData.score + globalData.score) / 2
+    : globalData.score;
+
   const { error } = await sb.from('expert_reviews').insert({
     make_slug: makeSlug, model_slug: modelSlug,
     year: year ?? null,
     source_name: 'AI Knowledge', source_url: '', original_title: '',
-    summary_he:       data.summary_he,
-    local_summary_he: null,
-    global_summary_he: data.summary_he,
-    local_score:  null,
-    global_score: data.score,
-    top_score:    data.score,
-    pros: (data.pros ?? []).slice(0, 4),
-    cons: (data.cons ?? []).slice(0, 4),
+    summary_he:        israeliData?.summary_he ?? globalData.summary_he,
+    local_summary_he:  israeliData?.summary_he ?? null,
+    global_summary_he: globalData.summary_he,
+    local_score:       israeliData?.score ?? null,
+    global_score:      globalData.score,
+    top_score:         topScore,
+    pros: [...(israeliData?.pros ?? []), ...(globalData.pros ?? [])].slice(0, 4),
+    cons: [...(israeliData?.cons ?? []), ...(globalData.cons ?? [])].slice(0, 4),
     local_post_count:  0,
     global_post_count: 0,
     scraped_at: new Date().toISOString(),
+    next_scrape_at: nextScrapeAt(year),
   });
   return !error;
 }
@@ -231,7 +334,9 @@ if (!GEN_ONLY) {
 
 const totalGeneral    = [...new Set(CAR_LIST.map(c => `${c.make}/${c.model}`))].length;
 const totalYearSlots  = CAR_LIST.reduce((s, c) => s + c.years.length, 0);
-console.log(`\nKnowledge seeder — ${targets.length} entries (${DELAY_MS}ms delay each)`);
+const provider = GEMINI_KEY ? 'Gemini' : 'Mistral';
+console.log(`\nKnowledge seeder [${provider} → Mistral fallback] — ${targets.length} entries to seed (SKIP_EXISTING=${SKIP})`);
+console.log(`Note: re-runs automatically skip already-seeded entries (set SKIP_EXISTING=false to re-seed)`);
 console.log(`Est. time: ${Math.round(targets.length * (DELAY_MS + 4000) / 60000)} min\n`);
 
 let done = 0, saved = 0, failed = 0;
@@ -246,14 +351,22 @@ for (const { makeSlug, modelSlug, year } of targets) {
   const label = year ? `${makeSlug}/${modelSlug} ${year}` : `${makeSlug}/${modelSlug} (general)`;
   process.stdout.write(`[${done + 1}/${targets.length}] ${label.padEnd(44)}`);
 
-  const data = await groqKnowledge(makeHe, modelHe, makeEn, modelEn, year);
-  if (!data) {
+  const [globalData, israeliData] = await Promise.all([
+    getLlmSummary(makeHe, modelHe, makeEn, modelEn, year),
+    getLlmIsraeliSummary(makeHe, modelHe, makeEn, modelEn, year),
+  ]);
+  if (!globalData) {
     process.stdout.write('— (no data)\n');
     failed++;
   } else {
-    const ok = await saveRow(makeSlug, modelSlug, year, data);
-    if (ok) { process.stdout.write('✓\n'); saved++; }
-    else    { process.stdout.write('✗ (db error)\n'); failed++; }
+    const ok = await saveRow(makeSlug, modelSlug, year, globalData, israeliData ?? undefined);
+    if (ok) {
+      process.stdout.write(israeliData ? '✓ (🇮🇱+🌍)\n' : '✓ (🌍 only)\n');
+      saved++;
+    } else {
+      process.stdout.write('✗ (db error)\n');
+      failed++;
+    }
   }
 
   done++;

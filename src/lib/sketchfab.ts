@@ -109,7 +109,7 @@ const MODELS: Record<string, { uid: string; name: string }> = {
   'hyundai/sonata':       { uid: 'b1aefd7e65ac4562b0c976e66b045a54', name: 'Hyundai Sonata 2020' },
 
   // ── Mazda (additions) ─────────────────────────────────────────────────
-  'mazda/mazda6':         { uid: '49b344930b094b7bbafb32a10aff9a5d', name: 'Mazda 6 Estate 2020' },
+  // mazda6: Estate model was wrong (Israeli market has sedans) — removed until verified UID found
   'mazda/mx5':            { uid: 'a6b5e948430241008f3bee23c2f63624', name: 'Mazda MX-5 2019' },
 
   // ── Volkswagen (additions) ────────────────────────────────────────────
@@ -132,7 +132,7 @@ const MODELS: Record<string, { uid: string; name: string }> = {
   'mercedes/gla':         { uid: 'ab7b5df3ba634f38a14effde3d542466', name: 'Mercedes-Benz GLA-Class 2020' },
 
   // ── Audi (additions) ──────────────────────────────────────────────────
-  'audi/a4':              { uid: '60bb579ccc474effa132342b4f1cab47', name: 'Audi A4 B9 2022' },
+  // 'audi/a4' — removed: UID 60bb579ccc474effa132342b4f1cab47 showed wrong cars
   'audi/a6':              { uid: 'c9b7cf9c176b458785edd0b12e235364', name: 'Audi A6 C8' },
   'audi/q3':              { uid: '97dccbc18cfb4f1e973fc75e278c6f66', name: 'Audi Q3 2023' },
   'audi/etron':           { uid: '4602d4d118b24577881e21c63eaa5340', name: 'Audi e-tron 2020' },
