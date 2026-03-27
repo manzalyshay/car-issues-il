@@ -79,6 +79,16 @@ interface CloneForm {
   category: Review['category'];
 }
 
+interface RawPost {
+  id: string;
+  title: string;
+  url: string;
+  sourceName: string;
+  snippet: string;
+  scope: 'local' | 'global';
+  score?: number;
+}
+
 export default function AdminPage() {
   const { user, isAdmin, loading } = useAuth();
   const router = useRouter();
@@ -107,6 +117,14 @@ export default function AdminPage() {
   const [metrics, setMetrics] = useState<MetricsData | null>(null);
   const [metricsFetching, setMetricsFetching] = useState(false);
 
+  // ── Scrape Preview state ──────────────────────────────────────────────────────
+  const [previewKey, setPreviewKey] = useState<string | null>(null); // "makeSlug/modelSlug"
+  const [previewLoading, setPreviewLoading] = useState(false);
+  const [previewPosts, setPreviewPosts] = useState<RawPost[]>([]);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [summarizingFromPosts, setSummarizingFromPosts] = useState(false);
+  const [clonePost, setClonePost] = useState<{ post: RawPost; author: string; text: string } | null>(null);
+
   const getToken = useCallback(async () => {
     const { data } = await supabase.auth.getSession();
     return data.session?.access_token ?? '';
@@ -114,21 +132,27 @@ export default function AdminPage() {
 
   const fetchStatus = useCallback(async () => {
     setFetching(true);
-    const token = await getToken();
-    const res = await fetch('/api/admin', { headers: { Authorization: `Bearer ${token}` } });
-    if (res.ok) setModels(await res.json());
-    setFetching(false);
+    try {
+      const token = await getToken();
+      const res = await fetch('/api/admin', { headers: { Authorization: `Bearer ${token}` } });
+      if (res.ok) setModels(await res.json());
+    } catch { /* ignore */ } finally {
+      setFetching(false);
+    }
   }, [getToken]);
 
   const fetchUserReviews = useCallback(async () => {
     setReviewsFetching(true);
-    const { data } = await supabase
-      .from('reviews')
-      .select('*')
-      .order('created_at', { ascending: false })
-      .limit(200);
-    setUserReviews((data ?? []).map(dbToReview));
-    setReviewsFetching(false);
+    try {
+      const { data } = await supabase
+        .from('reviews')
+        .select('*')
+        .order('created_at', { ascending: false })
+        .limit(200);
+      setUserReviews((data ?? []).map(dbToReview));
+    } catch { /* ignore */ } finally {
+      setReviewsFetching(false);
+    }
   }, []);
 
   useEffect(() => {
@@ -176,6 +200,51 @@ export default function AdminPage() {
   useEffect(() => {
     if (isAdmin && tab === 'metrics') fetchMetrics();
   }, [isAdmin, tab, fetchMetrics]);
+
+  const fetchPreview = useCallback(async (makeSlug: string, modelSlug: string) => {
+    const key = `${makeSlug}/${modelSlug}`;
+    if (previewKey === key) { setPreviewKey(null); return; } // toggle off
+    setPreviewKey(key);
+    setPreviewPosts([]);
+    setSelectedIds(new Set());
+    setPreviewLoading(true);
+    try {
+      const token = await getToken();
+      const res = await fetch('/api/admin/scrape-preview', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ makeSlug, modelSlug }),
+      });
+      if (res.ok) {
+        const { posts } = await res.json();
+        setPreviewPosts(posts);
+        setSelectedIds(new Set(posts.map((p: RawPost) => p.id)));
+      }
+    } catch { /* ignore */ } finally {
+      setPreviewLoading(false);
+    }
+  }, [previewKey, getToken]);
+
+  const summarizeFromSelected = useCallback(async (makeSlug: string, modelSlug: string) => {
+    setSummarizingFromPosts(true);
+    try {
+      const token = await getToken();
+      const selected = previewPosts.filter((p) => selectedIds.has(p.id));
+      const res = await fetch('/api/admin', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({
+          action: 'summarize_from_posts',
+          makeSlug, modelSlug,
+          localPosts:  selected.filter((p) => p.scope === 'local'),
+          globalPosts: selected.filter((p) => p.scope === 'global'),
+        }),
+      });
+      if (res.ok) { setPreviewKey(null); fetchStatus(); }
+    } catch { /* ignore */ } finally {
+      setSummarizingFromPosts(false);
+    }
+  }, [previewPosts, selectedIds, getToken, fetchStatus]);
 
   const scrapeOne = async (makeSlug: string, modelSlug: string) => {
     const key = `${makeSlug}/${modelSlug}`;
@@ -400,6 +469,13 @@ export default function AdminPage() {
                                 מחק
                               </button>
                             )}
+                            <button
+                              onClick={() => fetchPreview(m.makeSlug, m.modelSlug)}
+                              disabled={bulkRunning || previewLoading}
+                              style={{ padding: '5px 12px', borderRadius: 6, border: '1px solid var(--border)', cursor: 'pointer', fontWeight: 600, fontSize: '0.8125rem', background: 'transparent', color: 'var(--text-secondary)' }}
+                            >
+                              {previewKey === `${m.makeSlug}/${m.modelSlug}` ? '✕' : '👁 תצוגה'}
+                            </button>
                           </div>
                         </td>
                       </tr>
@@ -408,6 +484,142 @@ export default function AdminPage() {
                 </tbody>
               </table>
               </div>
+              {previewKey && (() => {
+                const [previewMake, previewModel] = previewKey.split('/');
+                const localPosts  = previewPosts.filter((p) => p.scope === 'local');
+                const globalPosts = previewPosts.filter((p) => p.scope === 'global');
+                const selectedCount = previewPosts.filter((p) => selectedIds.has(p.id)).length;
+
+                return (
+                  <div style={{ padding: '24px', borderTop: '2px solid var(--brand-red)', background: 'var(--bg-muted)' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20, flexWrap: 'wrap', gap: 12 }}>
+                      <div>
+                        <h3 style={{ fontWeight: 800, fontSize: '1rem', margin: 0 }}>
+                          תצוגה מקדימה — {previewMake}/{previewModel}
+                        </h3>
+                        {!previewLoading && previewPosts.length > 0 && (
+                          <div style={{ fontSize: '0.8125rem', color: 'var(--text-muted)', marginTop: 4 }}>
+                            {selectedCount}/{previewPosts.length} פוסטים נבחרו
+                          </div>
+                        )}
+                      </div>
+                      <div style={{ display: 'flex', gap: 10 }}>
+                        {!previewLoading && previewPosts.length > 0 && (
+                          <>
+                            <button onClick={() => setSelectedIds(new Set(previewPosts.map((p) => p.id)))}
+                              style={{ padding: '6px 14px', borderRadius: 6, border: '1px solid var(--border)', background: 'transparent', cursor: 'pointer', fontSize: '0.8125rem', color: 'var(--text-secondary)' }}>
+                              בחר הכל
+                            </button>
+                            <button onClick={() => setSelectedIds(new Set())}
+                              style={{ padding: '6px 14px', borderRadius: 6, border: '1px solid var(--border)', background: 'transparent', cursor: 'pointer', fontSize: '0.8125rem', color: 'var(--text-secondary)' }}>
+                              נקה הכל
+                            </button>
+                            <button
+                              onClick={() => summarizeFromSelected(previewMake, previewModel)}
+                              disabled={summarizingFromPosts || selectedCount === 0}
+                              style={{ padding: '6px 16px', borderRadius: 6, border: 'none', background: 'var(--brand-red)', color: '#fff', cursor: 'pointer', fontWeight: 700, fontSize: '0.8125rem', opacity: summarizingFromPosts ? 0.6 : 1 }}
+                            >
+                              {summarizingFromPosts ? 'מסכם...' : `סכם ${selectedCount} פוסטים נבחרים`}
+                            </button>
+                          </>
+                        )}
+                        <button onClick={() => setPreviewKey(null)}
+                          style={{ padding: '6px 14px', borderRadius: 6, border: '1px solid var(--border)', background: 'transparent', cursor: 'pointer', fontSize: '0.8125rem', color: 'var(--text-muted)' }}>
+                          סגור
+                        </button>
+                      </div>
+                    </div>
+
+                    {previewLoading ? (
+                      <div style={{ textAlign: 'center', padding: 48, color: 'var(--text-muted)' }}>
+                        <div style={{ fontSize: '1.5rem', marginBottom: 8 }}>🔍</div>
+                        סורק פורומים ישראליים ובינלאומיים...
+                      </div>
+                    ) : previewPosts.length === 0 ? (
+                      <div style={{ textAlign: 'center', padding: 48, color: 'var(--text-muted)' }}>לא נמצאו פוסטים</div>
+                    ) : (
+                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(340px, 1fr))', gap: 24 }}>
+                        {(['local', 'global'] as const).map((scope) => {
+                          const scopePosts = scope === 'local' ? localPosts : globalPosts;
+                          if (scopePosts.length === 0) return null;
+                          return (
+                            <div key={scope}>
+                              <div style={{ fontWeight: 700, fontSize: '0.875rem', marginBottom: 12, color: scope === 'local' ? '#3b82f6' : '#8b5cf6' }}>
+                                {scope === 'local' ? '🇮🇱 ישראלי' : '🌍 בינלאומי'} — {scopePosts.length} פוסטים
+                              </div>
+                              <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                                {scopePosts.map((post) => {
+                                  const isSelected = selectedIds.has(post.id);
+                                  const isCloning = clonePost?.post.id === post.id;
+                                  return (
+                                    <div key={post.id} style={{
+                                      background: 'var(--bg-card)',
+                                      borderRadius: 10,
+                                      padding: '12px 14px',
+                                      border: `1px solid ${isSelected ? (scope === 'local' ? '#3b82f6' : '#8b5cf6') : 'var(--border)'}`,
+                                      opacity: isSelected ? 1 : 0.5,
+                                    }}>
+                                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 8, marginBottom: 6 }}>
+                                        <label style={{ display: 'flex', alignItems: 'flex-start', gap: 8, cursor: 'pointer', flex: 1 }}>
+                                          <input
+                                            type="checkbox"
+                                            checked={isSelected}
+                                            onChange={(e) => {
+                                              setSelectedIds((prev) => {
+                                                const next = new Set(prev);
+                                                if (e.target.checked) next.add(post.id); else next.delete(post.id);
+                                                return next;
+                                              });
+                                            }}
+                                            style={{ marginTop: 2, flexShrink: 0 }}
+                                          />
+                                          <div>
+                                            <div style={{ fontSize: '0.875rem', fontWeight: 600, lineHeight: 1.4 }}>{post.title}</div>
+                                            <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: 2 }}>
+                                              {post.sourceName}
+                                              {post.score != null && post.score > 0 && ` · ${post.score} pts`}
+                                            </div>
+                                          </div>
+                                        </label>
+                                        <div style={{ display: 'flex', gap: 6, flexShrink: 0 }}>
+                                          {post.url && (
+                                            <a href={post.url} target="_blank" rel="noopener noreferrer"
+                                              style={{ padding: '3px 8px', borderRadius: 4, border: '1px solid var(--border)', fontSize: '0.7rem', color: 'var(--text-muted)', textDecoration: 'none' }}>
+                                              🔗
+                                            </a>
+                                          )}
+                                          <button
+                                            onClick={() => setClonePost(isCloning ? null : { post, author: '', text: post.snippet || post.title })}
+                                            style={{ padding: '3px 8px', borderRadius: 4, border: 'none', background: isCloning ? 'var(--bg-muted)' : 'var(--brand-red)', color: isCloning ? 'var(--text-muted)' : '#fff', cursor: 'pointer', fontSize: '0.7rem', fontWeight: 700 }}>
+                                            {isCloning ? '✕' : 'שכפל'}
+                                          </button>
+                                        </div>
+                                      </div>
+                                      {post.snippet && (
+                                        <p style={{ fontSize: '0.8125rem', color: 'var(--text-muted)', margin: 0, lineHeight: 1.5, marginRight: 24 }}>
+                                          {post.snippet.slice(0, 180)}{post.snippet.length > 180 ? '…' : ''}
+                                        </p>
+                                      )}
+                                      {isCloning && clonePost && (
+                                        <CloneFromPostForm
+                                          post={post}
+                                          makeSlug={previewMake}
+                                          modelSlug={previewModel}
+                                          onDone={() => setClonePost(null)}
+                                        />
+                                      )}
+                                    </div>
+                                  );
+                                })}
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
+                );
+              })()}
             </div>
           </>
         )}
@@ -620,6 +832,76 @@ export default function AdminPage() {
           </>
         )}
       </div>
+    </div>
+  );
+}
+
+function CloneFromPostForm({ post, makeSlug, modelSlug, onDone }: {
+  post: { title: string; snippet: string; sourceName: string; url: string };
+  makeSlug: string;
+  modelSlug: string;
+  onDone: () => void;
+}) {
+  const [author, setAuthor] = useState('');
+  const [title, setTitle] = useState(post.title.slice(0, 120));
+  const [body, setBody] = useState(post.snippet || post.title);
+  const [submitting, setSubmitting] = useState(false);
+  const [done, setDone] = useState(false);
+
+  const make  = getMakeBySlug(makeSlug);
+  const model = make ? getModelBySlug(make, modelSlug) : null;
+  const years = model?.years ?? [];
+
+  const [year, setYear] = useState<number>(years[0] ?? new Date().getFullYear());
+  const [rating, setRating] = useState(4);
+
+  const submit = async () => {
+    if (!author.trim()) { alert('נדרש שם'); return; }
+    setSubmitting(true);
+    const res = await fetch('/api/reviews', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ makeSlug, modelSlug, year, rating, title, body, category: 'general', authorName: author.trim(), userId: null }),
+    });
+    setSubmitting(false);
+    if (res.ok) { setDone(true); setTimeout(onDone, 1200); }
+    else alert('שגיאה בשמירה');
+  };
+
+  if (done) return <div style={{ marginTop: 12, padding: '10px', background: 'rgba(22,163,74,0.1)', borderRadius: 8, fontSize: '0.875rem', color: '#16a34a', fontWeight: 700 }}>✓ נשמר</div>;
+
+  return (
+    <div style={{ marginTop: 12, padding: '14px', background: 'var(--bg-muted)', borderRadius: 8, borderTop: '2px solid var(--brand-red)' }}>
+      <div style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--brand-red)', marginBottom: 10 }}>פרסם כביקורת משתמש</div>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))', gap: 8, marginBottom: 8 }}>
+        <div>
+          <label style={{ fontSize: '0.75rem', fontWeight: 600, display: 'block', marginBottom: 3 }}>שם *</label>
+          <input value={author} onChange={(e) => setAuthor(e.target.value)} placeholder="שם מחבר" style={{ width: '100%', padding: '6px 10px', borderRadius: 6, border: '1px solid var(--border)', fontSize: '0.8125rem', background: 'var(--bg-card)', color: 'var(--text-primary)', boxSizing: 'border-box' as const }} />
+        </div>
+        <div>
+          <label style={{ fontSize: '0.75rem', fontWeight: 600, display: 'block', marginBottom: 3 }}>שנה</label>
+          <select value={year} onChange={(e) => setYear(Number(e.target.value))} style={{ width: '100%', padding: '6px 10px', borderRadius: 6, border: '1px solid var(--border)', fontSize: '0.8125rem', background: 'var(--bg-card)', color: 'var(--text-primary)' }}>
+            {years.slice(0, 15).map((y) => <option key={y} value={y}>{y}</option>)}
+          </select>
+        </div>
+        <div>
+          <label style={{ fontSize: '0.75rem', fontWeight: 600, display: 'block', marginBottom: 3 }}>דירוג</label>
+          <select value={rating} onChange={(e) => setRating(Number(e.target.value))} style={{ width: '100%', padding: '6px 10px', borderRadius: 6, border: '1px solid var(--border)', fontSize: '0.8125rem', background: 'var(--bg-card)', color: 'var(--text-primary)' }}>
+            {[5,4,3,2,1].map((r) => <option key={r} value={r}>{'★'.repeat(r)} ({r})</option>)}
+          </select>
+        </div>
+      </div>
+      <div style={{ marginBottom: 8 }}>
+        <label style={{ fontSize: '0.75rem', fontWeight: 600, display: 'block', marginBottom: 3 }}>כותרת</label>
+        <input value={title} onChange={(e) => setTitle(e.target.value)} style={{ width: '100%', padding: '6px 10px', borderRadius: 6, border: '1px solid var(--border)', fontSize: '0.8125rem', background: 'var(--bg-card)', color: 'var(--text-primary)', boxSizing: 'border-box' as const }} />
+      </div>
+      <div style={{ marginBottom: 10 }}>
+        <label style={{ fontSize: '0.75rem', fontWeight: 600, display: 'block', marginBottom: 3 }}>טקסט</label>
+        <textarea value={body} onChange={(e) => setBody(e.target.value)} rows={3} style={{ width: '100%', padding: '6px 10px', borderRadius: 6, border: '1px solid var(--border)', fontSize: '0.8125rem', background: 'var(--bg-card)', color: 'var(--text-primary)', resize: 'vertical' as const, boxSizing: 'border-box' as const }} />
+      </div>
+      <button onClick={submit} disabled={submitting} style={{ padding: '7px 20px', borderRadius: 6, border: 'none', background: 'var(--brand-red)', color: '#fff', cursor: 'pointer', fontWeight: 700, fontSize: '0.8125rem', opacity: submitting ? 0.6 : 1 }}>
+        {submitting ? 'שומר...' : 'פרסם ביקורת'}
+      </button>
     </div>
   );
 }

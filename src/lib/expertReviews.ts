@@ -42,7 +42,7 @@ export interface ExpertReview {
   scrapedAt: string;
 }
 
-interface UserPost {
+export interface UserPost {
   title: string;
   url: string;
   sourceName: string;
@@ -1098,6 +1098,114 @@ async function generateIsraeliKnowledgeSummary(
 {"summary_he":"...","score":8,"pros":["...","..."],"cons":["...","..."]}`;
 
   return callLlm(prompt, 0.6, 6);
+}
+
+export interface RawPost {
+  id: string;          // derived from url (used for selection)
+  title: string;
+  url: string;
+  sourceName: string;
+  snippet: string;
+  scope: 'local' | 'global';
+  score?: number;
+}
+
+export async function scrapeRawPosts(
+  makeNameHe: string, modelNameHe: string,
+  makeNameEn: string, modelNameEn: string,
+  year?: number,
+): Promise<{ local: RawPost[]; global: RawPost[] }> {
+  const [
+    redditPosts, tapuzPosts, onePosts, icarPosts, carzonePosts,
+    carComplaintsPosts, edmundsPosts, drivePosts, rotterPosts, wallaPosts,
+    carsComPosts, autoExpressPosts, whatCarPosts, carExpertPosts, carSalesPosts,
+    facebookPosts,
+  ] = await Promise.all([
+    searchReddit(makeNameEn, modelNameEn, year),
+    searchTapuz(makeNameHe, modelNameHe, year),
+    searchOne(makeNameHe, modelNameHe),
+    searchIcar(makeNameHe, modelNameHe, year),
+    searchCarzone(makeNameHe, modelNameHe, makeNameEn, modelNameEn, year),
+    searchCarComplaints(makeNameEn, modelNameEn),
+    searchEdmunds(makeNameEn, modelNameEn),
+    searchDrive(makeNameHe, modelNameHe, year),
+    searchRotter(makeNameHe, modelNameHe, year),
+    searchWalla(makeNameHe, modelNameHe, year),
+    searchCarsCom(makeNameEn, modelNameEn, year),
+    searchAutoExpress(makeNameEn, modelNameEn),
+    searchWhatCar(makeNameEn, modelNameEn),
+    searchCarExpertAu(makeNameEn, modelNameEn),
+    searchCarSalesAu(makeNameEn, modelNameEn),
+    searchFacebook(makeNameHe, modelNameHe, year),
+  ]);
+
+  const toRaw = (posts: UserPost[], scope: 'local' | 'global'): RawPost[] =>
+    posts.map((p) => ({
+      id: Buffer.from(p.url).toString('base64').slice(0, 16),
+      title: p.title,
+      url: p.url,
+      sourceName: p.sourceName,
+      snippet: p.snippet,
+      scope,
+      score: p.score,
+    }));
+
+  return {
+    local:  toRaw([...icarPosts, ...drivePosts, ...wallaPosts, ...carzonePosts, ...tapuzPosts, ...rotterPosts, ...onePosts, ...facebookPosts], 'local'),
+    global: toRaw([...redditPosts, ...carComplaintsPosts, ...edmundsPosts, ...carsComPosts, ...autoExpressPosts, ...whatCarPosts, ...carExpertPosts, ...carSalesPosts], 'global'),
+  };
+}
+
+export async function summarizeFromPosts(
+  makeSlug: string, modelSlug: string,
+  makeNameHe: string, modelNameHe: string,
+  makeNameEn: string, modelNameEn: string,
+  localPosts: RawPost[], globalPosts: RawPost[],
+): Promise<number> {
+  // Convert RawPost back to UserPost for summarizeGroup
+  const toUserPost = (p: RawPost): UserPost => ({ title: p.title, url: p.url, sourceName: p.sourceName, snippet: p.snippet, score: p.score });
+
+  let [localOut, globalOut] = await Promise.all([
+    localPosts.length  > 0 ? summarizeGroup(localPosts.map(toUserPost),  makeNameHe, modelNameHe, 'local')  : null,
+    globalPosts.length > 0 ? summarizeGroup(globalPosts.map(toUserPost), makeNameHe, modelNameHe, 'global') : null,
+  ]);
+
+  if (!globalOut) {
+    globalOut = await generateKnowledgeSummary(makeNameHe, modelNameHe, makeNameEn, modelNameEn);
+    if (!globalOut) return 0;
+  }
+  if (!localOut) {
+    localOut = await generateIsraeliKnowledgeSummary(makeNameHe, modelNameHe, makeNameEn, modelNameEn);
+  }
+
+  const scores: number[] = [];
+  if (localOut?.score  != null) scores.push(localOut.score);
+  if (globalOut?.score != null) scores.push(globalOut.score);
+  const topScore = scores.length > 0 ? scores.reduce((a, b) => a + b, 0) / scores.length : null;
+
+  const allPros = [...(localOut?.pros ?? []), ...(globalOut?.pros ?? [])].slice(0, 4);
+  const allCons = [...(localOut?.cons ?? []), ...(globalOut?.cons ?? [])].slice(0, 4);
+
+  const sb = getSupabase(true);
+  await sb.from('expert_reviews').delete().eq('make_slug', makeSlug).eq('model_slug', modelSlug).is('year', null);
+  const { error } = await sb.from('expert_reviews').insert({
+    make_slug:        makeSlug, model_slug:       modelSlug, year: null,
+    source_name:      localPosts[0]?.sourceName ?? globalPosts[0]?.sourceName ?? '',
+    source_url:       localPosts[0]?.url ?? globalPosts[0]?.url ?? '',
+    original_title:   localPosts[0]?.title ?? globalPosts[0]?.title ?? '',
+    summary_he:       localOut?.summary_he ?? globalOut?.summary_he ?? '',
+    local_summary_he: localOut?.summary_he  ?? null,
+    global_summary_he: globalOut?.summary_he ?? null,
+    local_score:      localOut?.score  ?? null,
+    global_score:     globalOut?.score ?? null,
+    top_score:        topScore,
+    pros:             allPros,
+    cons:             allCons,
+    local_post_count:  localPosts.length,
+    global_post_count: globalPosts.length,
+    scraped_at:       new Date().toISOString(),
+  });
+  return error ? 0 : 1;
 }
 
 export async function scrapeExpertReviews(

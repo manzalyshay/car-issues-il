@@ -61,7 +61,7 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
   if (!await isAdmin(req)) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
-  const { action, makeSlug, modelSlug } = await req.json();
+  const { action, makeSlug, modelSlug, localPosts = [], globalPosts = [] } = await req.json();
 
   if (action === 'delete') {
     const sb = getServiceClient();
@@ -87,6 +87,20 @@ export async function POST(req: NextRequest) {
       makeSlug, modelSlug,
       make.nameHe, model.nameHe,
       make.nameEn, model.nameEn,
+    );
+    return NextResponse.json({ ok: true, saved });
+  }
+
+  if (action === 'summarize_from_posts') {
+    const make  = getMakeBySlug(makeSlug);
+    const model = make ? getModelBySlug(make, modelSlug) : null;
+    if (!make || !model) return NextResponse.json({ error: 'Unknown car' }, { status: 404 });
+    const { summarizeFromPosts } = await import('@/lib/expertReviews');
+    const saved = await summarizeFromPosts(
+      makeSlug, modelSlug,
+      make.nameHe, model.nameHe,
+      make.nameEn, model.nameEn,
+      localPosts, globalPosts,
     );
     return NextResponse.json({ ok: true, saved });
   }
