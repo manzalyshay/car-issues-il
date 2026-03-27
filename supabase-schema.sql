@@ -88,10 +88,17 @@ create table if not exists expert_reviews (
   local_post_count   integer not null default 0,
   global_post_count  integer not null default 0,
   scraped_at         timestamptz not null default now(),
+  next_scrape_at     timestamptz,                    -- when this entry is due for a re-scrape (null = ASAP)
   unique (make_slug, model_slug)                     -- one general row per model
 );
 
 create index if not exists expert_reviews_make_model on expert_reviews (make_slug, model_slug);
+create index if not exists expert_reviews_next_scrape on expert_reviews (next_scrape_at asc nulls first);
+
+-- ── Migration: add next_scrape_at to existing tables ──────────────────────────
+-- Run this if the table already exists without the column:
+-- alter table expert_reviews add column if not exists next_scrape_at timestamptz;
+-- create index if not exists expert_reviews_next_scrape on expert_reviews (next_scrape_at asc nulls first);
 
 alter table expert_reviews enable row level security;
 create policy "public read expert_reviews" on expert_reviews for select using (true);

@@ -72,6 +72,16 @@ export async function addReview(
   return dbToReview(data);
 }
 
+export async function getReviewsByUser(userId: string): Promise<Review[]> {
+  const { data, error } = await supabase
+    .from('reviews')
+    .select('*')
+    .eq('user_id', userId)
+    .order('created_at', { ascending: false });
+  if (error) { console.error('getReviewsByUser:', error.message); return []; }
+  return (data ?? []).map(dbToReview);
+}
+
 // ── Likes (per-user) ──────────────────────────────────────────────────────────
 
 export async function getUserLikedReviews(userId: string): Promise<string[]> {
@@ -120,6 +130,7 @@ function dbToReview(row: Record<string, unknown>): Review {
     authorName: String(row.author),
     userId:     row.user_id ? String(row.user_id) : undefined,
     helpful:    Number(row.helpful ?? 0),
+    dislikes:   Number(row.dislikes ?? 0),
     createdAt:  String(row.created_at),
     images:     Array.isArray(row.images) ? (row.images as string[]) : [],
   };

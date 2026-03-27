@@ -11,11 +11,12 @@ on:
         default: 'all'
 
 env:
-  NEXT_PUBLIC_SUPABASE_URL:  ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+  NEXT_PUBLIC_SUPABASE_URL:      ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
   NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
-  SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
-  GROQ_API_KEY:              ${{ secrets.GROQ_API_KEY }}
-  SCRAPER_API_KEY:           ${{ secrets.SCRAPER_API_KEY }}
+  SUPABASE_SERVICE_ROLE_KEY:     ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+  GEMINI_API_KEY:                ${{ secrets.GEMINI_API_KEY }}
+  MISTRAL_API_KEY:               ${{ secrets.MISTRAL_API_KEY }}
+  SCRAPER_API_KEY:               ${{ secrets.SCRAPER_API_KEY }}
 
 jobs:
   # ── Step 1: Seed general (year=null) summaries — fast, top priority ──────
@@ -83,5 +84,5 @@ jobs:
 
       - name: Run web scraper (stale entries only)
         run: |
-          BASE_URL=http://localhost:3000 STALE_DAYS=14 DELAY_MS=2000 \
+          BASE_URL=http://localhost:3000 STALE_DAYS=14 DELAY_MS=4000 \
             node scripts/scrape-stale.mjs

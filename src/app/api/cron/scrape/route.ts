@@ -2,10 +2,9 @@
  * /api/cron/scrape
  *
  * Called automatically by Vercel Cron every hour (see vercel.json).
- * Each call scrapes the 10 entries with the oldest (or missing) scraped_at.
+ * Each call scrapes up to 10 entries that are due (next_scrape_at is null or in the past).
  * Covers both general (year=null) and year-specific rows.
- *
- * Full rotation of all ~1,113 entries happens every ~5 days.
+ * Intervals: AI-knowledge rows=7d, recent year rows=14d, general=30d, old year rows=90d.
  *
  * Security: Vercel automatically sends the CRON_SECRET as
  *   Authorization: Bearer <CRON_SECRET>
@@ -36,15 +35,18 @@ export async function GET(req: NextRequest) {
   // Fetch all existing rows (general + year-specific)
   const { data: existing } = await sb
     .from('expert_reviews')
-    .select('make_slug,model_slug,year,scraped_at')
-    .order('scraped_at', { ascending: true });
+    .select('make_slug,model_slug,year,scraped_at,next_scrape_at')
+    .order('next_scrape_at', { ascending: true, nullsFirst: true });
 
-  const scrapedMap = new Map(
+  // Map: key → next_scrape_at (null = never scraped = highest priority)
+  const nextScrapeMap = new Map(
     (existing ?? []).map((r: any) => [
       `${r.make_slug}/${r.model_slug}/${r.year ?? 'general'}`,
-      r.scraped_at as string,
+      (r.next_scrape_at ?? null) as string | null,
     ])
   );
+
+  const now = new Date();
 
   // Build full target list: general + all year-specific rows from carDatabase
   interface Target {
@@ -53,7 +55,7 @@ export async function GET(req: NextRequest) {
     year: number | null;
     make: (typeof carDatabase)[0];
     model: (typeof carDatabase)[0]['models'][0];
-    scrapedAt: string | null;
+    nextScrapeAt: string | null;
   }
 
   const allTargets: Target[] = [];
@@ -67,7 +69,7 @@ export async function GET(req: NextRequest) {
         year: null,
         make,
         model,
-        scrapedAt: scrapedMap.get(`${make.slug}/${model.slug}/general`) ?? null,
+        nextScrapeAt: nextScrapeMap.get(`${make.slug}/${model.slug}/general`) ?? null,
       });
       // Year-specific rows
       for (const year of model.years) {
@@ -77,21 +79,26 @@ export async function GET(req: NextRequest) {
           year,
           make,
           model,
-          scrapedAt: scrapedMap.get(`${make.slug}/${model.slug}/${year}`) ?? null,
+          nextScrapeAt: nextScrapeMap.get(`${make.slug}/${model.slug}/${year}`) ?? null,
         });
       }
     }
   }
 
-  // Sort: never-scraped first, then oldest scraped_at
+  // Sort: never-scraped (null) first, then by next_scrape_at ascending (most overdue first)
   allTargets.sort((a, b) => {
-    if (!a.scrapedAt && !b.scrapedAt) return 0;
-    if (!a.scrapedAt) return -1;
-    if (!b.scrapedAt) return 1;
-    return new Date(a.scrapedAt).getTime() - new Date(b.scrapedAt).getTime();
+    if (!a.nextScrapeAt && !b.nextScrapeAt) return 0;
+    if (!a.nextScrapeAt) return -1;
+    if (!b.nextScrapeAt) return 1;
+    return new Date(a.nextScrapeAt).getTime() - new Date(b.nextScrapeAt).getTime();
   });
 
-  const batch = allTargets.slice(0, BATCH_SIZE);
+  // Only process entries that are due (next_scrape_at is null or in the past)
+  const dueTargets = allTargets.filter(
+    (t) => !t.nextScrapeAt || new Date(t.nextScrapeAt) <= now,
+  );
+
+  const batch = dueTargets.slice(0, BATCH_SIZE);
   const results: { key: string; saved: number }[] = [];
 
   for (const { makeSlug, modelSlug, year, make, model } of batch) {
@@ -109,8 +116,9 @@ export async function GET(req: NextRequest) {
   return NextResponse.json({
     processed: results.length,
     saved: results.filter((r) => r.saved > 0).length,
+    due: dueTargets.length,
     results,
-    nextBatch: allTargets.slice(BATCH_SIZE, BATCH_SIZE + 3).map((m) =>
+    nextBatch: dueTargets.slice(BATCH_SIZE, BATCH_SIZE + 3).map((m) =>
       m.year ? `${m.makeSlug}/${m.modelSlug}/${m.year}` : `${m.makeSlug}/${m.modelSlug}`
     ),
   });

@@ -1,11 +1,9 @@
 import Link from 'next/link';
 import { carDatabase, getPopularMakes } from '@/data/cars';
-import { getCachedNews, CATEGORY_LABELS } from '@/lib/newsScraper';
 import MakeLogo from '@/components/MakeLogo';
 
 export default async function HomePage() {
   const popularMakes = getPopularMakes();
-  const news = (await getCachedNews()).slice(0, 6);
 
   return (
     <>
@@ -77,12 +75,6 @@ export default async function HomePage() {
             <Link href="/cars" className="btn btn-primary" style={{ fontSize: '1rem', height: 52, padding: '0 32px' }}>
               🔍 חפש לפי יצרן
             </Link>
-            <Link href="/news"
-              className="btn"
-              style={{ background: 'rgba(255,255,255,.12)', color: '#fff', fontSize: '1rem', height: 52, padding: '0 32px', border: '1px solid rgba(255,255,255,.2)' }}
-            >
-              📰 חדשות רכב
-            </Link>
           </div>
 
           <div style={{ display: 'flex', justifyContent: 'center', gap: 48, marginTop: 56, flexWrap: 'wrap' }}>
@@ -153,53 +145,6 @@ export default async function HomePage() {
         </div>
       </section>
 
-      {/* ── Latest News ── */}
-      <section style={{ padding: '64px 0' }}>
-        <div className="container">
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 32 }}>
-            <div>
-              <h2 style={{ fontSize: '1.75rem', fontWeight: 800 }}>חדשות רכב</h2>
-              <p style={{ color: 'var(--text-muted)', marginTop: 4 }}>עדכונים, ריקולים וחדשות מהשוק בישראל</p>
-            </div>
-            <Link href="/news" style={{ color: 'var(--brand-red)', fontWeight: 600, fontSize: '0.9375rem', textDecoration: 'none' }}>
-              כל החדשות ←
-            </Link>
-          </div>
-
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: 24 }}>
-            {news.map((article) => (
-              <a
-                key={article.id}
-                href={article.url === '#' ? undefined : article.url}
-                target={article.url === '#' ? undefined : '_blank'}
-                rel="noopener noreferrer"
-                className="card"
-                style={{ textDecoration: 'none', display: 'flex', flexDirection: 'column', padding: 20 }}
-              >
-                {article.imageUrl && (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img src={article.imageUrl} alt={article.title} style={{ width: '100%', height: 160, objectFit: 'cover', borderRadius: 10, marginBottom: 14 }} />
-                )}
-                <div style={{ display: 'flex', gap: 8, marginBottom: 10, flexWrap: 'wrap' }}>
-                  <span className="badge badge-red">{CATEGORY_LABELS[article.category]}</span>
-                  <span className="badge badge-gray">{article.source}</span>
-                </div>
-                <h3 style={{ fontWeight: 700, fontSize: '0.9375rem', lineHeight: 1.45, marginBottom: 8, color: 'var(--text-primary)' }}>
-                  {article.title}
-                </h3>
-                {article.summary && (
-                  <p style={{ color: 'var(--text-secondary)', fontSize: '0.8125rem', lineHeight: 1.6, flex: 1 }}>
-                    {article.summary.slice(0, 120)}{article.summary.length > 120 ? '…' : ''}
-                  </p>
-                )}
-                <div style={{ marginTop: 12, fontSize: '0.75rem', color: 'var(--text-muted)' }}>
-                  {new Date(article.publishedAt).toLocaleDateString('he-IL', { day: 'numeric', month: 'long', year: 'numeric' })}
-                </div>
-              </a>
-            ))}
-          </div>
-        </div>
-      </section>
     </>
   );
 }

@@ -7,9 +7,9 @@ import { findCarModel } from '@/lib/sketchfab';
 import { getExpertReviews } from '@/lib/expertReviews';
 import StarRating from '@/components/StarRating';
 import MakeLogo from '@/components/MakeLogo';
-import YearGrid from '@/components/YearGrid';
 import Car3DViewer from '@/components/Car3DViewer';
 import ExpertReviewsSection from '@/components/ExpertReviewsSection';
+import ModelReviewsSection from './ModelReviewsSection';
 
 interface Props { params: Promise<{ make: string; model: string }> }
 
@@ -104,22 +104,22 @@ export default async function ModelPage({ params }: Props) {
           )}
         </div>
 
-        {/* General AI summary */}
+        {/* General AI summary — combined score includes user reviews */}
         <ExpertReviewsSection
           review={expertReview}
           makeNameHe={make.nameHe}
           modelNameHe={model.nameHe}
+          userAvgRating={avgRating}
+          userReviewCount={allReviews.length}
         />
 
-        {/* Year selector */}
-        <h2 style={{ fontSize: '1.25rem', fontWeight: 700, marginBottom: 20 }}>בחר שנת ייצור</h2>
+        {/* Inline reviews with year filter */}
         <div style={{ marginBottom: 48 }}>
-          <YearGrid
-            years={model.years.map((year) => ({
-              year,
-              reviewCount: allReviews.filter((r) => r.year === year).length,
-              href: `/cars/${make.slug}/${model.slug}/${year}`,
-            }))}
+          <ModelReviewsSection
+            makeSlug={makeSlug}
+            modelSlug={modelSlug}
+            years={model.years}
+            initialReviews={allReviews}
           />
         </div>
 

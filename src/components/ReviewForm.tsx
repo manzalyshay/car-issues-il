@@ -1,14 +1,27 @@
 'use client';
 
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import StarRating from './StarRating';
 import type { Review } from '@/data/reviews';
 import { useAuth, displayName } from '@/lib/authContext';
 
+const TURNSTILE_SITE_KEY = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY ?? '';
+
+declare global {
+  interface Window {
+    turnstile?: {
+      render: (el: HTMLElement, opts: Record<string, unknown>) => string;
+      reset: (id: string) => void;
+      remove: (id: string) => void;
+    };
+  }
+}
+
 interface Props {
   makeSlug: string;
   modelSlug: string;
-  year: number;
+  year?: number;           // if omitted, a year selector is shown
+  years?: number[];        // available years for selector
   onSuccess: (review: Review) => void;
 }
 
@@ -34,10 +47,11 @@ async function uploadToCloudinary(file: File): Promise<string> {
   return data.secure_url as string;
 }
 
-export default function ReviewForm({ makeSlug, modelSlug, year, onSuccess }: Props) {
+export default function ReviewForm({ makeSlug, modelSlug, year: yearProp, years, onSuccess }: Props) {
   const { user } = useAuth();
 
   const [authorName, setAuthorName] = useState('');
+  const [selectedYear, setSelectedYear] = useState<number | ''>(yearProp ?? '');
   const [rating, setRating]         = useState(5);
   const [title, setTitle]           = useState('');
   const [body, setBody]             = useState('');
@@ -49,6 +63,44 @@ export default function ReviewForm({ makeSlug, modelSlug, year, onSuccess }: Pro
   const [error, setError]           = useState('');
   const [success, setSuccess]       = useState(false);
   const fileInputRef                = useRef<HTMLInputElement>(null);
+  const captchaRef                  = useRef<HTMLDivElement>(null);
+  const captchaWidgetId             = useRef<string | null>(null);
+  const captchaToken                = useRef<string>('');
+
+  // Load Turnstile widget (only for guests; logged-in users are trusted)
+  useEffect(() => {
+    if (user || !TURNSTILE_SITE_KEY) return;
+    const scriptId = 'cf-turnstile-script';
+    const load = () => {
+      if (!captchaRef.current || !window.turnstile) return;
+      captchaWidgetId.current = window.turnstile.render(captchaRef.current, {
+        sitekey: TURNSTILE_SITE_KEY,
+        theme: 'auto',
+        language: 'he',
+        callback: (token: string) => { captchaToken.current = token; },
+        'expired-callback': () => { captchaToken.current = ''; },
+      });
+    };
+    if (window.turnstile) { load(); return; }
+    if (!document.getElementById(scriptId)) {
+      const s = document.createElement('script');
+      s.id = scriptId;
+      s.src = 'https://challenges.cloudflare.com/turnstile/v0/api.js';
+      s.async = true;
+      s.defer = true;
+      s.onload = load;
+      document.head.appendChild(s);
+    } else {
+      const interval = setInterval(() => { if (window.turnstile) { clearInterval(interval); load(); } }, 200);
+    }
+    return () => {
+      if (captchaWidgetId.current && window.turnstile) {
+        window.turnstile.remove(captchaWidgetId.current);
+      }
+    };
+  }, [user]);
+
+  const year = yearProp ?? (selectedYear !== '' ? selectedYear : undefined);
 
   const effectiveName = user ? displayName(user) : authorName;
 
@@ -77,6 +129,14 @@ export default function ReviewForm({ makeSlug, modelSlug, year, onSuccess }: Pro
     if (!effectiveName.trim()) { setError('אנא הזן שם.'); return; }
     if (!title.trim() || !body.trim()) { setError('אנא מלא את כל השדות החובה.'); return; }
 
+    if (!year) { setError('אנא בחר שנת ייצור.'); return; }
+
+    // CAPTCHA check for guests only
+    if (!user && TURNSTILE_SITE_KEY && !captchaToken.current) {
+      setError('אנא אמת שאינך רובוט.');
+      return;
+    }
+
     setLoading(true);
     setError('');
 
@@ -94,6 +154,7 @@ export default function ReviewForm({ makeSlug, modelSlug, year, onSuccess }: Pro
           category,
           mileage: mileage ? parseInt(mileage) : undefined,
           images,
+          captchaToken: captchaToken.current || undefined,
         }),
       });
 
@@ -103,6 +164,7 @@ export default function ReviewForm({ makeSlug, modelSlug, year, onSuccess }: Pro
       onSuccess(data.review);
       setAuthorName(''); setTitle(''); setBody(''); setMileage('');
       setRating(5); setCategory('general'); setImages([]);
+      if (!yearProp) setSelectedYear('');
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'שגיאה לא ידועה');
     } finally {
@@ -124,6 +186,22 @@ export default function ReviewForm({ makeSlug, modelSlug, year, onSuccess }: Pro
   return (
     <form onSubmit={handleSubmit} className="card" style={{ padding: 28 }}>
       <h3 style={{ fontWeight: 700, fontSize: '1.1rem', marginBottom: 20 }}>✏️ כתוב ביקורת</h3>
+
+      {/* Year selector — only when year not fixed by page */}
+      {!yearProp && years && years.length > 0 && (
+        <div style={{ marginBottom: 16 }}>
+          <label style={labelStyle}>שנת ייצור <span style={{ color: 'var(--brand-red)' }}>*</span></label>
+          <select
+            value={selectedYear}
+            onChange={(e) => setSelectedYear(e.target.value ? Number(e.target.value) : '')}
+            style={{ ...inputStyle, cursor: 'pointer' }}
+            required
+          >
+            <option value="">— בחר שנה —</option>
+            {years.map((y) => <option key={y} value={y}>{y}</option>)}
+          </select>
+        </div>
+      )}
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 16, marginBottom: 16 }}>
         {/* Author — shown only for guests */}
@@ -253,6 +331,13 @@ export default function ReviewForm({ makeSlug, modelSlug, year, onSuccess }: Pro
           onChange={handleImageChange}
         />
       </div>
+
+      {/* Turnstile CAPTCHA — only for guests when site key is configured */}
+      {!user && TURNSTILE_SITE_KEY && (
+        <div style={{ marginBottom: 16 }}>
+          <div ref={captchaRef} />
+        </div>
+      )}
 
       {error && <p style={{ color: 'var(--brand-red)', fontSize: '0.875rem', marginBottom: 12 }}>⚠️ {error}</p>}
 

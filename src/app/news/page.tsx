@@ -4,30 +4,28 @@ import { getCachedNews, CATEGORY_LABELS } from '@/lib/newsScraper';
 import type { NewsArticle } from '@/lib/newsScraper';
 
 export const metadata: Metadata = {
-  title: 'חדשות רכב בישראל',
-  description: 'כל חדשות הרכב בעברית — ריקולים, מבחני דרך, עדכוני שוק, ורכבים חשמליים.',
+  title: 'חדשות וביקורות רכב',
+  description: 'ביקורות רכב, השקות ועדכוני שוק מאתרי הרכב המובילים בישראל ובעולם.',
   openGraph: { title: 'חדשות רכב | CarIssues IL' },
 };
 
-export const revalidate = 3600; // revalidate every hour
+export const revalidate = 3600;
 
-const CATEGORY_ORDER = ['recall', 'safety', 'electric', 'test', 'market', 'tips', 'general'] as const;
 const CATEGORY_COLORS: Record<string, string> = {
-  recall:  'badge-red',
-  safety:  'badge-red',
+  recall:   'badge-red',
+  safety:   'badge-red',
   electric: 'badge-blue',
-  test:    'badge-blue',
-  market:  'badge-gray',
-  tips:    'badge-green',
-  general: 'badge-gray',
+  test:     'badge-blue',
+  launch:   'badge-blue',
+  market:   'badge-gray',
+  tips:     'badge-green',
+  general:  'badge-gray',
 };
 
 export default async function NewsPage() {
   const allNews = await getCachedNews();
-
-  // Separate hero and grid
-  const hero = allNews.slice(0, 2);
-  const grid = allNews.slice(2);
+  const heNews = allNews.filter((a) => a.sourceLang === 'he');
+  const enNews = allNews.filter((a) => a.sourceLang === 'en');
 
   return (
     <div style={{ padding: '48px 0 80px' }}>
@@ -41,41 +39,56 @@ export default async function NewsPage() {
 
         <div style={{ marginBottom: 40 }}>
           <h1 style={{ fontSize: 'clamp(1.75rem, 4vw, 2.5rem)', fontWeight: 800, marginBottom: 8 }}>
-            חדשות רכב בישראל
+            ביקורות וחדשות רכב
           </h1>
           <p style={{ color: 'var(--text-secondary)', fontSize: '1.0625rem' }}>
-            {allNews.length} מאמרים · מעודכן אוטומטית
+            מאתרי הרכב המובילים בישראל ובעולם · מעודכן אוטומטית
           </p>
         </div>
 
-        {/* Category filter bar */}
-        <div style={{ display: 'flex', gap: 8, marginBottom: 40, flexWrap: 'wrap' }}>
-          {CATEGORY_ORDER.map((cat) => (
-            <span key={cat} className={`badge ${CATEGORY_COLORS[cat]}`} style={{ height: 28, fontSize: '0.8rem', padding: '0 12px' }}>
-              {CATEGORY_LABELS[cat]}
-            </span>
-          ))}
-        </div>
-
-        {/* Hero articles */}
-        {hero.length > 0 && (
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: 24, marginBottom: 48 }}>
-            {hero.map((article) => (
-              <HeroCard key={article.id} article={article} />
-            ))}
-          </div>
-        )}
-
-        {/* Grid */}
-        {grid.length > 0 && (
-          <>
-            <h2 style={{ fontSize: '1.25rem', fontWeight: 700, marginBottom: 24 }}>עוד מאמרים</h2>
+        {/* Hebrew / Israeli section */}
+        {heNews.length > 0 && (
+          <section style={{ marginBottom: 56 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 24 }}>
+              <div style={{ width: 4, height: 24, borderRadius: 2, background: 'var(--brand-red)', flexShrink: 0 }} />
+              <h2 style={{ fontSize: '1.25rem', fontWeight: 800, margin: 0 }}>🇮🇱 ביקורות ישראליות</h2>
+              <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', background: 'var(--bg-muted)', padding: '2px 10px', borderRadius: 999 }}>
+                {heNews.length} מאמרים
+              </span>
+            </div>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 20 }}>
-              {grid.map((article) => (
-                <SmallCard key={article.id} article={article} />
+              {heNews.slice(0, 6).map((article) => (
+                <ArticleCard key={article.id} article={article} />
               ))}
             </div>
-          </>
+          </section>
+        )}
+
+        {/* Global section */}
+        {enNews.length > 0 && (
+          <section>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 24 }}>
+              <div style={{ width: 4, height: 24, borderRadius: 2, background: '#8b5cf6', flexShrink: 0 }} />
+              <h2 style={{ fontSize: '1.25rem', fontWeight: 800, margin: 0 }}>🌍 ביקורות בינלאומיות</h2>
+              <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', background: 'var(--bg-muted)', padding: '2px 10px', borderRadius: 999 }}>
+                {enNews.length} מאמרים
+              </span>
+            </div>
+            {/* Hero row — first 2 as big cards */}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: 24, marginBottom: 20 }}>
+              {enNews.slice(0, 2).map((article) => (
+                <HeroCard key={article.id} article={article} />
+              ))}
+            </div>
+            {/* Rest as small cards */}
+            {enNews.length > 2 && (
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 20 }}>
+                {enNews.slice(2, 20).map((article) => (
+                  <ArticleCard key={article.id} article={article} />
+                ))}
+              </div>
+            )}
+          </section>
         )}
 
         {allNews.length === 0 && (
@@ -101,31 +114,25 @@ function HeroCard({ article }: { article: NewsArticle }) {
       <div style={{ height: 200, background: 'var(--bg-muted)', position: 'relative', overflow: 'hidden', borderRadius: '14px 14px 0 0' }}>
         {article.imageUrl ? (
           // eslint-disable-next-line @next/next/no-img-element
-          <img
-            src={article.imageUrl}
-            alt={article.title}
-            style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-          />
+          <img src={article.imageUrl} alt={article.title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
         ) : (
-          <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 48, opacity: 0.3 }}>
-            🚗
-          </div>
+          <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 56, opacity: 0.2 }}>🚗</div>
         )}
         <div style={{ position: 'absolute', top: 12, right: 12 }}>
           <span className={`badge ${CATEGORY_COLORS[article.category]}`}>{CATEGORY_LABELS[article.category]}</span>
         </div>
       </div>
-      <div style={{ padding: '20px 20px 20px', flex: 1, display: 'flex', flexDirection: 'column' }}>
-        <h2 style={{ fontWeight: 700, fontSize: '1.0625rem', lineHeight: 1.45, marginBottom: 10, color: 'var(--text-primary)' }}>
+      <div style={{ padding: '18px 20px 20px', flex: 1, display: 'flex', flexDirection: 'column' }}>
+        <h3 style={{ fontWeight: 700, fontSize: '1rem', lineHeight: 1.45, marginBottom: 10, color: 'var(--text-primary)' }}>
           {article.title}
-        </h2>
+        </h3>
         {article.summary && (
           <p style={{ color: 'var(--text-secondary)', fontSize: '0.875rem', lineHeight: 1.6, flex: 1 }}>
-            {article.summary.slice(0, 180)}{article.summary.length > 180 ? '…' : ''}
+            {article.summary.slice(0, 160)}{article.summary.length > 160 ? '…' : ''}
           </p>
         )}
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 16 }}>
-          <span className="badge badge-gray">{article.source}</span>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 14 }}>
+          <span className="badge badge-gray" style={{ fontSize: '0.7rem' }}>{article.source}</span>
           <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
             {new Date(article.publishedAt).toLocaleDateString('he-IL', { day: 'numeric', month: 'long' })}
           </span>
@@ -135,27 +142,23 @@ function HeroCard({ article }: { article: NewsArticle }) {
   );
 }
 
-function SmallCard({ article }: { article: NewsArticle }) {
+function ArticleCard({ article }: { article: NewsArticle }) {
   return (
     <a
       href={article.url === '#' ? undefined : article.url}
       target={article.url === '#' ? undefined : '_blank'}
       rel="noopener noreferrer"
       className="card"
-      style={{ textDecoration: 'none', display: 'flex', gap: 14, padding: '16px 16px', alignItems: 'flex-start' }}
+      style={{ textDecoration: 'none', display: 'flex', gap: 14, padding: '16px', alignItems: 'flex-start' }}
     >
-      {article.imageUrl ? (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img
-          src={article.imageUrl}
-          alt=""
-          style={{ width: 72, height: 72, objectFit: 'cover', borderRadius: 8, flexShrink: 0 }}
-        />
-      ) : (
-        <div style={{ width: 72, height: 72, borderRadius: 8, background: 'var(--bg-muted)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 28, flexShrink: 0, opacity: 0.5 }}>
-          🚗
-        </div>
-      )}
+      <div style={{ width: 80, height: 80, borderRadius: 10, overflow: 'hidden', flexShrink: 0, background: 'var(--bg-muted)' }}>
+        {article.imageUrl ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={article.imageUrl} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+        ) : (
+          <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 30, opacity: 0.3 }}>🚗</div>
+        )}
+      </div>
       <div style={{ flex: 1, minWidth: 0 }}>
         <div style={{ marginBottom: 6 }}>
           <span className={`badge ${CATEGORY_COLORS[article.category]}`} style={{ fontSize: '0.65rem' }}>

@@ -14,35 +14,63 @@ export interface NewsArticle {
   summary: string;
   imageUrl: string;
   source: string;
-  category: 'test' | 'recall' | 'safety' | 'electric' | 'market' | 'tips' | 'general';
+  sourceLang: 'he' | 'en';
+  category: 'test' | 'recall' | 'safety' | 'electric' | 'market' | 'launch' | 'tips' | 'general';
   publishedAt: string;
   savedAt: string;
 }
 
-// Hebrew keywords for car-related articles
-const CAR_KEYWORDS = [
-  'רכב', 'רכבים', 'מכונית', 'מכוניות', 'אוטו', 'מנוע', 'גיר', 'גלגלים', 'בטיחות',
-  'נסיעה', 'נהיגה', 'נהג', 'תאונה', 'ביטוח', 'רישוי', 'חשמלי', 'היברידי',
-  'SUV', 'סדאן', 'טסלה', 'טויוטה', 'יונדאי', 'קיה', 'פולקסווגן', 'BMW', 'מרצדס',
-  'מאזדה', 'סובארו', 'ניסאן', 'רנו', 'פיג\'ו', 'קריאה', 'ריקול', 'תזכורת',
-  'דלק', 'בנזין', 'דיזל', 'חשמל', 'טעינה', 'עמדת טעינה',
+// ── Source definitions ────────────────────────────────────────────────────────
+
+const SOURCES: { url: string; name: string; lang: 'he' | 'en'; filterCars: boolean }[] = [
+  // Israeli — general RSS, filter to car content only
+  { url: 'https://rss.walla.co.il/feed/22',                   name: 'וואלה! רכב',     lang: 'he', filterCars: true  },
+  { url: 'https://www.ynet.co.il/Integration/StoryRss2.xml',   name: 'Ynet רכב',       lang: 'he', filterCars: true  },
+
+  // Global — dedicated car publications, all content is car-related
+  { url: 'https://www.caranddriver.com/rss/all.xml/',           name: 'Car and Driver',  lang: 'en', filterCars: false },
+  { url: 'https://www.autocar.co.uk/rss',                       name: 'Autocar',         lang: 'en', filterCars: false },
+  { url: 'https://www.autoexpress.co.uk/feed/all',              name: 'Auto Express',    lang: 'en', filterCars: false },
+  { url: 'https://www.carscoops.com/feed/',                     name: 'Carscoops',       lang: 'en', filterCars: false },
+  { url: 'https://www.motor1.com/rss/news/all/',                name: 'Motor1',          lang: 'en', filterCars: false },
+  { url: 'https://electrek.co/feed/',                           name: 'Electrek',        lang: 'en', filterCars: false },
+  { url: 'https://www.roadandtrack.com/rss/all.xml/',           name: 'Road & Track',    lang: 'en', filterCars: false },
 ];
 
+// ── Car keyword filter (Hebrew sources only) ──────────────────────────────────
+
+const CAR_KEYWORDS_HE = [
+  'רכב', 'מכונית', 'מכוניות', 'אוטו', 'נהיגה', 'נהג', 'מנוע',
+  'ריקול', 'קריאה לתיקון', 'חשמלי', 'היברידי', 'גיר',
+  'SUV', 'סדאן', 'האצ\'בק', 'קרוסאובר',
+  'טסלה', 'טויוטה', 'יונדאי', 'קיה', 'פולקסווגן', 'ב.מ.וו', 'מרצדס',
+  'מאזדה', 'הונדה', 'ניסאן', 'רנו', 'פיג\'ו', 'סקודה', 'אאודי',
+  'מבחן דרכים', 'מבחן רכב', 'השקה', 'נסיעת מבחן',
+  'בטיחות רכב', 'ביטוח רכב', 'רישוי',
+  'טעינה', 'עמדת טעינה', 'EV', 'EV ',
+  'דלק', 'בנזין', 'דיזל',
+];
+
+function isCarRelated(title: string, summary: string): boolean {
+  const text = `${title} ${summary}`;
+  return CAR_KEYWORDS_HE.some((kw) => text.includes(kw));
+}
+
+// ── Category detection ────────────────────────────────────────────────────────
+
 function detectCategory(text: string): NewsArticle['category'] {
-  const lower = text.toLowerCase();
-  if (lower.includes('ריקול') || lower.includes('קריאה') || lower.includes('recall')) return 'recall';
-  if (lower.includes('בטיחות') || lower.includes('תאונה') || lower.includes('safety')) return 'safety';
-  if (lower.includes('חשמלי') || lower.includes('EV') || lower.includes('טסלה') || lower.includes('טעינה')) return 'electric';
-  if (lower.includes('מחיר') || lower.includes('שוק') || lower.includes('מכירות')) return 'market';
-  if (lower.includes('טיפ') || lower.includes('תחזוקה') || lower.includes('אחריות')) return 'tips';
-  if (lower.includes('מבחן') || lower.includes('נסיעת מבחן')) return 'test';
+  const t = text.toLowerCase();
+  if (t.includes('ריקול') || t.includes('קריאה לתיקון') || t.includes('recall')) return 'recall';
+  if (t.includes('בטיחות') || t.includes('תאונה') || t.includes('crash') || t.includes('safety')) return 'safety';
+  if (t.includes('חשמלי') || t.includes('ev ') || t.includes('electric') || t.includes('טעינה') || t.includes('charging')) return 'electric';
+  if (t.includes('השקה') || t.includes('חדש') || t.includes('launch') || t.includes('reveal') || t.includes('debut') || t.includes('unveiled') || t.includes('new ')) return 'launch';
+  if (t.includes('מבחן') || t.includes('נסיעת מבחן') || t.includes('review') || t.includes('test drive') || t.includes('first drive')) return 'test';
+  if (t.includes('מחיר') || t.includes('שוק') || t.includes('price') || t.includes('sales') || t.includes('market')) return 'market';
+  if (t.includes('טיפ') || t.includes('תחזוקה') || t.includes('tips') || t.includes('maintenance')) return 'tips';
   return 'general';
 }
 
-function isCarRelated(title: string, summary: string): boolean {
-  const text = `${title} ${summary}`.toLowerCase();
-  return CAR_KEYWORDS.some((kw) => text.includes(kw.toLowerCase()));
-}
+// ── RSS helpers ───────────────────────────────────────────────────────────────
 
 function extractTag(xml: string, tag: string): string {
   const re = new RegExp(`<${tag}[^>]*>\\s*(?:<!\\[CDATA\\[)?([\\s\\S]*?)(?:\\]\\]>)?\\s*<\\/${tag}>`, 'i');
@@ -51,13 +79,17 @@ function extractTag(xml: string, tag: string): string {
 }
 
 function extractImage(item: string): string {
+  // Prefer media:content, then media:thumbnail, then enclosure, then first <img>
   let m = item.match(/<media:content[^>]+url="([^"]+)"/i);
   if (m) return m[1];
   m = item.match(/<media:thumbnail[^>]+url="([^"]+)"/i);
   if (m) return m[1];
-  m = item.match(/<enclosure[^>]+url="([^"]+)"/i);
+  m = item.match(/<enclosure[^>]+url="([^"]+\.(jpe?g|png|webp)[^"]*)"/i);
   if (m) return m[1];
   m = item.match(/<img[^>]+src="([^"]+)"/i);
+  if (m) return m[1];
+  // og:image in CDATA description
+  m = item.match(/og:image[^"]*"([^"]+)"/i);
   if (m) return m[1];
   return '';
 }
@@ -65,26 +97,22 @@ function extractImage(item: string): string {
 function stripHtml(html: string): string {
   return html
     .replace(/<[^>]*>/g, ' ')
-    .replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&nbsp;/g, ' ')
+    .replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&nbsp;/g, ' ').replace(/&#\d+;/g, '')
     .replace(/\s+/g, ' ').trim();
 }
 
-const SOURCES = [
-  { url: 'https://www.ynet.co.il/Integration/StoryRss2.xml', name: 'ynet' },
-  { url: 'https://rss.walla.co.il/feed/22', name: 'וואלה!' },
-  { url: 'https://www.mako.co.il/rss/31.xml', name: 'N12' },
-];
+// ── Main scraper ──────────────────────────────────────────────────────────────
 
 export async function scrapeCarNews(): Promise<NewsArticle[]> {
   const articles: NewsArticle[] = [];
 
-  for (const source of SOURCES) {
+  await Promise.all(SOURCES.map(async (source) => {
     try {
       const resp = await fetch(source.url, {
         headers: { 'User-Agent': 'CarIssuesIL/1.0', Accept: 'application/rss+xml, application/xml, */*' },
-        signal: AbortSignal.timeout(10000),
+        signal: AbortSignal.timeout(12000),
       });
-      if (!resp.ok) continue;
+      if (!resp.ok) return;
       const xml = await resp.text();
 
       const itemRe = /<item>([\s\S]*?)<\/item>/gi;
@@ -95,8 +123,10 @@ export async function scrapeCarNews(): Promise<NewsArticle[]> {
         const url = (extractTag(item, 'link') || item.match(/<link>([^<]+)<\/link>/i)?.[1] || '').trim();
         const description = stripHtml(extractTag(item, 'description') || '');
         const pubDate = extractTag(item, 'pubDate') || '';
-        if (!title || !url) continue;
-        if (!isCarRelated(title, description)) continue;
+        if (!title || !url || url === '#') continue;
+
+        // Filter Hebrew general-news sources to car content only
+        if (source.filterCars && !isCarRelated(title, description)) continue;
 
         const publishedAt = pubDate ? new Date(pubDate).toISOString() : new Date().toISOString();
 
@@ -107,6 +137,7 @@ export async function scrapeCarNews(): Promise<NewsArticle[]> {
           summary: description.slice(0, 400),
           imageUrl: extractImage(item),
           source: source.name,
+          sourceLang: source.lang,
           category: detectCategory(`${title} ${description}`),
           publishedAt,
           savedAt: new Date().toISOString(),
@@ -115,16 +146,16 @@ export async function scrapeCarNews(): Promise<NewsArticle[]> {
     } catch {
       // Source unavailable — skip silently
     }
-  }
+  }));
 
-  // Deduplicate by URL
+  // Deduplicate by URL, sort newest first
   const seen = new Set<string>();
-  return articles.filter((a) => {
-    if (seen.has(a.url)) return false;
-    seen.add(a.url);
-    return true;
-  }).sort((a, b) => new Date(b.publishedAt).getTime() - new Date(a.publishedAt).getTime());
+  return articles
+    .filter((a) => { if (seen.has(a.url)) return false; seen.add(a.url); return true; })
+    .sort((a, b) => new Date(b.publishedAt).getTime() - new Date(a.publishedAt).getTime());
 }
+
+// ── DB cache ──────────────────────────────────────────────────────────────────
 
 export async function getCachedNews(): Promise<NewsArticle[]> {
   try {
@@ -142,6 +173,7 @@ export async function getCachedNews(): Promise<NewsArticle[]> {
       summary: r.summary,
       imageUrl: r.image_url,
       source: r.source,
+      sourceLang: (r.source_lang ?? 'he') as 'he' | 'en',
       category: r.category,
       publishedAt: r.published_at,
       savedAt: r.scraped_at,
@@ -160,23 +192,37 @@ export async function saveNewsCache(articles: NewsArticle[]): Promise<void> {
     summary: a.summary,
     image_url: a.imageUrl,
     source: a.source,
+    source_lang: a.sourceLang,
     category: a.category,
     published_at: a.publishedAt,
     scraped_at: new Date().toISOString(),
   }));
-  // upsert on url — skip duplicates
   await sb.from('news_cache').upsert(rows, { onConflict: 'url', ignoreDuplicates: true });
 }
 
-// ── Seed news ────────────────────────────────────────────────────────────────
+// ── Category metadata ─────────────────────────────────────────────────────────
+
+export const CATEGORY_LABELS: Record<NewsArticle['category'], string> = {
+  test:     'מבחן דרכים',
+  launch:   'השקה',
+  recall:   'ריקול',
+  safety:   'בטיחות',
+  electric: 'חשמלי',
+  market:   'שוק הרכב',
+  tips:     'טיפים',
+  general:  'כללי',
+};
+
+// ── Seed data (shown only when DB is completely empty) ────────────────────────
 export const SEED_NEWS: NewsArticle[] = [
   {
     id: 'seed_n1',
     title: 'יונדאי מוציאה קריאה לתיקון 15,000 רכבי טוקסון בישראל',
     url: '#',
-    summary: 'יונדאי ישראל הודיעה על קריאה לתיקון לרכבי טוקסון מדגמי 2019-2021 עקב ליקוי פוטנציאלי בבלמים. בעלי הרכבים יקבלו הודעה ישירה.',
+    summary: 'יונדאי ישראל הודיעה על קריאה לתיקון לרכבי טוקסון מדגמי 2019-2021 עקב ליקוי פוטנציאלי בבלמים.',
     imageUrl: '',
-    source: 'דרייב',
+    source: 'וואלה! רכב',
+    sourceLang: 'he',
     category: 'recall',
     publishedAt: new Date(Date.now() - 2 * 864e5).toISOString(),
     savedAt: new Date().toISOString(),
@@ -185,54 +231,12 @@ export const SEED_NEWS: NewsArticle[] = [
     id: 'seed_n2',
     title: 'מבחן דרכים: מאזדה CX-5 2024 — האם שווה המחיר?',
     url: '#',
-    summary: 'יצאנו לנסיעת מבחן עם CX-5 2024 המחודשת. ניכרים שיפורים משמעותיים בנוחות ובמערכות הבטיחות, אך המחיר עלה ב-15% לעומת שנה שעברה.',
+    summary: 'יצאנו לנסיעת מבחן עם CX-5 2024 המחודשת. ניכרים שיפורים משמעותיים בנוחות ובמערכות הבטיחות.',
     imageUrl: '',
-    source: 'automarket',
+    source: 'Ynet רכב',
+    sourceLang: 'he',
     category: 'test',
     publishedAt: new Date(Date.now() - 5 * 864e5).toISOString(),
     savedAt: new Date().toISOString(),
   },
-  {
-    id: 'seed_n3',
-    title: '10 בעיות נפוצות ברכבים חשמליים בישראל — ומה לעשות',
-    url: '#',
-    summary: 'עם גידול ברכישת רכבים חשמליים בישראל, יותר ויותר בעלים מדווחים על בעיות ספציפיות. כינסנו את הנפוצות ביותר עם פתרונות.',
-    imageUrl: '',
-    source: 'Walla! רכב',
-    category: 'electric',
-    publishedAt: new Date(Date.now() - 7 * 864e5).toISOString(),
-    savedAt: new Date().toISOString(),
-  },
-  {
-    id: 'seed_n4',
-    title: 'מדריך: כיצד לבדוק רכב יד שנייה לפני הרכישה',
-    url: '#',
-    summary: 'קניית רכב יד שנייה בישראל מצריכה בדיקה מקיפה. הנה הצ\'קליסט המלא: בדיקת קילומטרז\', היסטוריה, בדיקת מוסך ועוד.',
-    imageUrl: '',
-    source: 'Ynet רכב',
-    category: 'tips',
-    publishedAt: new Date(Date.now() - 10 * 864e5).toISOString(),
-    savedAt: new Date().toISOString(),
-  },
-  {
-    id: 'seed_n5',
-    title: 'פולקסווגן ישראל: מחיר הGolf GTI עולה ב-8,000 שקל',
-    url: '#',
-    summary: 'פולקסווגן ישראל עדכנה מחירים לחלק מהדגמים, כאשר Golf GTI קופץ ל-189,000 שקל. הנציגות מסבירה את העלייה בשינויי שע"ח.',
-    imageUrl: '',
-    source: 'TheMarker רכב',
-    category: 'market',
-    publishedAt: new Date(Date.now() - 14 * 864e5).toISOString(),
-    savedAt: new Date().toISOString(),
-  },
 ];
-
-export const CATEGORY_LABELS: Record<NewsArticle['category'], string> = {
-  test: 'מבחן דרכים',
-  recall: 'ריקול',
-  safety: 'בטיחות',
-  electric: 'חשמלי',
-  market: 'שוק הרכב',
-  tips: 'טיפים',
-  general: 'כללי',
-};

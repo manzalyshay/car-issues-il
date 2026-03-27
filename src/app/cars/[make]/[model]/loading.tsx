@@ -1,14 +1,22 @@
+import CarRepairLoader from '@/components/CarRepairLoader';
+
 export default function Loading() {
   return (
     <div style={{ padding: '48px 0 80px' }}>
       <div className="container">
-        <div style={{ marginBottom: 40 }}>
-          <div className="skeleton" style={{ width: 240, height: 16, borderRadius: 8, marginBottom: 16 }} />
-          <div className="skeleton" style={{ width: 300, height: 36, borderRadius: 8, marginBottom: 8 }} />
-          <div className="skeleton" style={{ width: 160, height: 20, borderRadius: 8 }} />
+        {/* Breadcrumb skeleton */}
+        <div style={{ display: 'flex', gap: 8, marginBottom: 32 }}>
+          {[80, 60, 90, 80].map((w, i) => (
+            <div key={i} className="skeleton" style={{ width: w, height: 14, borderRadius: 6 }} />
+          ))}
         </div>
-        <div style={{ marginBottom: 24 }}>
-          <div className="skeleton" style={{ width: 100, height: 24, borderRadius: 8, marginBottom: 16 }} />
+
+        {/* Car repair animation */}
+        <CarRepairLoader text="טוען פרטי הדגם" />
+
+        {/* Content skeleton below */}
+        <div style={{ marginTop: 24 }}>
+          <div className="skeleton" style={{ width: 180, height: 22, borderRadius: 8, marginBottom: 16 }} />
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(100px, 1fr))', gap: 10 }}>
             {[...Array(10)].map((_, i) => (
               <div key={i} className="skeleton" style={{ height: 52, borderRadius: 10 }} />

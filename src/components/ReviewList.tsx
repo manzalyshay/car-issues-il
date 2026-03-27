@@ -10,6 +10,7 @@ import { supabase } from '@/lib/supabase';
 interface Props {
   reviews: Review[];
   onHelpful?: (id: string, delta: number) => void;
+  onDislike?: (id: string, delta: number) => void;
 }
 
 const FILTER_OPTIONS = [
@@ -22,32 +23,134 @@ const FILTER_OPTIONS = [
 ];
 
 const LS_KEY = 'car_liked_reviews';
+const LS_DISLIKE_KEY = 'car_disliked_reviews';
 
-function getLocalLikes(): Set<string> {
-  try { return new Set(JSON.parse(localStorage.getItem(LS_KEY) ?? '[]')); }
+function getLocalSet(key: string): Set<string> {
+  try { return new Set(JSON.parse(localStorage.getItem(key) ?? '[]')); }
   catch { return new Set(); }
 }
-function saveLocalLike(id: string) {
-  const set = getLocalLikes();
+function saveLocalItem(key: string, id: string) {
+  const set = getLocalSet(key);
   set.add(id);
-  localStorage.setItem(LS_KEY, JSON.stringify([...set]));
+  localStorage.setItem(key, JSON.stringify([...set]));
 }
-function removeLocalLike(id: string) {
-  const set = getLocalLikes();
+function removeLocalItem(key: string, id: string) {
+  const set = getLocalSet(key);
   set.delete(id);
-  localStorage.setItem(LS_KEY, JSON.stringify([...set]));
+  localStorage.setItem(key, JSON.stringify([...set]));
+}
+const getLocalLikes = () => getLocalSet(LS_KEY);
+const saveLocalLike = (id: string) => saveLocalItem(LS_KEY, id);
+const removeLocalLike = (id: string) => removeLocalItem(LS_KEY, id);
+const getLocalDislikes = () => getLocalSet(LS_DISLIKE_KEY);
+const saveLocalDislike = (id: string) => saveLocalItem(LS_DISLIKE_KEY, id);
+const removeLocalDislike = (id: string) => removeLocalItem(LS_DISLIKE_KEY, id);
+
+const REPORT_REASONS = [
+  { value: 'spam',      label: 'ספאם' },
+  { value: 'fake',      label: 'ביקורת מזויפת' },
+  { value: 'offensive', label: 'תוכן פוגעני' },
+  { value: 'wrong_car', label: 'רכב שגוי' },
+  { value: 'other',     label: 'אחר' },
+];
+
+function ReportButton({ reviewId }: { reviewId: string }) {
+  const [open, setOpen]   = useState(false);
+  const [reason, setReason] = useState('spam');
+  const [sent, setSent]   = useState(false);
+  const [busy, setBusy]   = useState(false);
+
+  const submit = async () => {
+    setBusy(true);
+    await fetch(`/api/reviews/${reviewId}/report`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ reason }),
+    });
+    setSent(true);
+    setBusy(false);
+  };
+
+  if (sent) return <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>✓ דווח</span>;
+
+  return (
+    <div style={{ position: 'relative', marginRight: 'auto' }}>
+      <button
+        onClick={() => setOpen((v) => !v)}
+        style={{
+          background: 'none', border: 'none', cursor: 'pointer',
+          color: 'var(--text-muted)', fontSize: '0.75rem', padding: '4px 8px',
+          borderRadius: 6, fontFamily: 'inherit',
+          transition: 'color 0.15s',
+        }}
+        onMouseEnter={(e) => ((e.target as HTMLElement).style.color = 'var(--brand-red)')}
+        onMouseLeave={(e) => ((e.target as HTMLElement).style.color = 'var(--text-muted)')}
+        title="דווח על ביקורת"
+      >
+        ⚑ דווח
+      </button>
+      {open && (
+        <div style={{
+          position: 'absolute', bottom: '100%', right: 0, zIndex: 50,
+          background: 'var(--bg-card)', border: '1px solid var(--border)',
+          borderRadius: 10, padding: 12, minWidth: 180,
+          boxShadow: 'var(--shadow-md)',
+        }}>
+          <p style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-muted)', marginBottom: 8 }}>סיבת הדיווח:</p>
+          <select
+            value={reason}
+            onChange={(e) => setReason(e.target.value)}
+            style={{
+              width: '100%', height: 34, padding: '0 8px', marginBottom: 8,
+              border: '1px solid var(--border)', borderRadius: 6,
+              background: 'var(--bg-base)', color: 'var(--text-primary)',
+              fontSize: '0.8125rem', fontFamily: 'inherit',
+            }}
+          >
+            {REPORT_REASONS.map((r) => <option key={r.value} value={r.value}>{r.label}</option>)}
+          </select>
+          <div style={{ display: 'flex', gap: 6 }}>
+            <button
+              onClick={submit}
+              disabled={busy}
+              style={{
+                flex: 1, height: 30, borderRadius: 6, border: 'none',
+                background: 'var(--brand-red)', color: '#fff',
+                fontSize: '0.8125rem', fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit',
+              }}
+            >
+              {busy ? '...' : 'שלח'}
+            </button>
+            <button
+              onClick={() => setOpen(false)}
+              style={{
+                height: 30, padding: '0 10px', borderRadius: 6,
+                border: '1px solid var(--border)', background: 'transparent',
+                fontSize: '0.8125rem', cursor: 'pointer', fontFamily: 'inherit',
+                color: 'var(--text-secondary)',
+              }}
+            >
+              ביטול
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
 }
 
-export default function ReviewList({ reviews, onHelpful }: Props) {
+export default function ReviewList({ reviews, onHelpful, onDislike }: Props) {
   const { user } = useAuth();
-  const [filter, setFilter]   = useState<string>('all');
-  const [sort, setSort]       = useState<'newest' | 'helpful' | 'rating'>('newest');
-  const [liked, setLiked]     = useState<Set<string>>(new Set());
+  const [filter, setFilter]     = useState<string>('all');
+  const [sort, setSort]         = useState<'newest' | 'helpful' | 'rating'>('newest');
+  const [liked, setLiked]       = useState<Set<string>>(new Set());
+  const [disliked, setDisliked] = useState<Set<string>>(new Set());
   const [lightbox, setLightbox] = useState<string | null>(null);
 
-  // Initialise liked state from localStorage + DB
+  // Initialise liked/disliked state from localStorage
   useEffect(() => {
     setLiked(getLocalLikes());
+    setDisliked(getLocalDislikes());
   }, []);
 
   useEffect(() => {
@@ -59,10 +162,28 @@ export default function ReviewList({ reviews, onHelpful }: Props) {
       .then(({ data }) => {
         if (data) setLiked((prev) => new Set([...prev, ...data.map((r: { review_id: string }) => r.review_id)]));
       });
+    supabase
+      .from('review_dislikes')
+      .select('review_id')
+      .eq('user_id', user.id)
+      .then(({ data }) => {
+        if (data) setDisliked((prev) => new Set([...prev, ...data.map((r: { review_id: string }) => r.review_id)]));
+      });
   }, [user]);
 
   const handleLike = async (review: Review) => {
     const alreadyLiked = liked.has(review.id);
+    // Remove dislike if exists
+    if (disliked.has(review.id)) {
+      if (user) {
+        await supabase.from('review_dislikes').delete().eq('review_id', review.id).eq('user_id', user.id);
+      } else {
+        removeLocalDislike(review.id);
+      }
+      await fetch(`/api/reviews/${review.id}/dislike`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ delta: -1 }) });
+      setDisliked((prev) => { const s = new Set(prev); s.delete(review.id); return s; });
+      onDislike?.(review.id, -1);
+    }
 
     if (user) {
       // Logged-in: toggle in DB
@@ -89,6 +210,47 @@ export default function ReviewList({ reviews, onHelpful }: Props) {
         setLiked((prev) => new Set([...prev, review.id]));
         await fetch(`/api/reviews/${review.id}/helpful`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ delta: 1 }) });
         onHelpful?.(review.id, 1);
+      }
+    }
+  };
+
+  const handleDislike = async (review: Review) => {
+    const alreadyDisliked = disliked.has(review.id);
+    // Remove like if exists
+    if (liked.has(review.id)) {
+      if (user) {
+        await supabase.from('review_likes').delete().eq('review_id', review.id).eq('user_id', user.id);
+      } else {
+        removeLocalLike(review.id);
+      }
+      await fetch(`/api/reviews/${review.id}/helpful`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ delta: -1 }) });
+      setLiked((prev) => { const s = new Set(prev); s.delete(review.id); return s; });
+      onHelpful?.(review.id, -1);
+    }
+
+    if (user) {
+      if (alreadyDisliked) {
+        await supabase.from('review_dislikes').delete().eq('review_id', review.id).eq('user_id', user.id);
+        await fetch(`/api/reviews/${review.id}/dislike`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ delta: -1 }) });
+        setDisliked((prev) => { const s = new Set(prev); s.delete(review.id); return s; });
+        onDislike?.(review.id, -1);
+      } else {
+        await supabase.from('review_dislikes').insert({ review_id: review.id, user_id: user.id });
+        await fetch(`/api/reviews/${review.id}/dislike`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ delta: 1 }) });
+        setDisliked((prev) => new Set([...prev, review.id]));
+        onDislike?.(review.id, 1);
+      }
+    } else {
+      if (alreadyDisliked) {
+        removeLocalDislike(review.id);
+        setDisliked((prev) => { const s = new Set(prev); s.delete(review.id); return s; });
+        await fetch(`/api/reviews/${review.id}/dislike`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ delta: -1 }) });
+        onDislike?.(review.id, -1);
+      } else {
+        saveLocalDislike(review.id);
+        setDisliked((prev) => new Set([...prev, review.id]));
+        await fetch(`/api/reviews/${review.id}/dislike`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ delta: 1 }) });
+        onDislike?.(review.id, 1);
       }
     }
   };
@@ -194,21 +356,36 @@ export default function ReviewList({ reviews, onHelpful }: Props) {
                   )}
 
                   {/* Footer */}
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
                     <button
                       onClick={() => handleLike(review)}
                       style={{
-                        display: 'flex', alignItems: 'center', gap: 6,
+                        display: 'flex', alignItems: 'center', gap: 5,
                         height: 30, padding: '0 12px', borderRadius: 9999,
-                        border: '1px solid var(--border)',
+                        border: `1.5px solid ${isLiked ? 'rgba(34,197,94,.4)' : 'var(--border)'}`,
                         background: isLiked ? 'rgba(34,197,94,.08)' : 'transparent',
                         color: isLiked ? '#16a34a' : 'var(--text-muted)',
                         fontSize: '0.8125rem', cursor: 'pointer',
                         fontFamily: 'inherit', transition: 'all 0.15s',
                       }}
                     >
-                      {isLiked ? '👍' : '👍'} {review.helpful} שימושי
+                      👍 <span style={{ fontWeight: 600 }}>{review.helpful ?? 0}</span>
                     </button>
+                    <button
+                      onClick={() => handleDislike(review)}
+                      style={{
+                        display: 'flex', alignItems: 'center', gap: 5,
+                        height: 30, padding: '0 12px', borderRadius: 9999,
+                        border: `1.5px solid ${disliked.has(review.id) ? 'rgba(230,57,70,.4)' : 'var(--border)'}`,
+                        background: disliked.has(review.id) ? 'rgba(230,57,70,.08)' : 'transparent',
+                        color: disliked.has(review.id) ? 'var(--brand-red)' : 'var(--text-muted)',
+                        fontSize: '0.8125rem', cursor: 'pointer',
+                        fontFamily: 'inherit', transition: 'all 0.15s',
+                      }}
+                    >
+                      👎 <span style={{ fontWeight: 600 }}>{review.dislikes ?? 0}</span>
+                    </button>
+                    <ReportButton reviewId={review.id} />
                   </div>
                 </article>
               );

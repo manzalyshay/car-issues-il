@@ -86,7 +86,50 @@ button { font-family: inherit; cursor: pointer; }
   background-size: 800px 100%;
   animation: shimmer 1.4s ease-in-out infinite;
 }
-@media (max-width: 640px) { .container { padding: 0 1rem; } }
+
+/* ── Car Repair Loader ────────────────────────────────────────────── */
+@keyframes car-bounce {
+  0%, 100% { transform: translateY(0); }
+  50%       { transform: translateY(-6px); }
+}
+@keyframes wrench-spin {
+  0%   { transform: rotate(-30deg); }
+  50%  { transform: rotate(30deg); }
+  100% { transform: rotate(-30deg); }
+}
+@keyframes spark-pop {
+  0%, 100% { opacity: 0; transform: scale(0.4) translate(0,0); }
+  40%       { opacity: 1; transform: scale(1) translate(6px,-8px); }
+  70%       { opacity: 0.6; transform: scale(0.8) translate(10px,-4px); }
+}
+@keyframes dot-blink {
+  0%, 100% { opacity: 0.2; }
+  50%       { opacity: 1; }
+}
+.car-loader-car    { animation: car-bounce 1.4s ease-in-out infinite; }
+.car-loader-wrench { animation: wrench-spin 1s ease-in-out infinite; transform-origin: bottom center; }
+.car-loader-spark  { animation: spark-pop 1.4s ease-in-out infinite; }
+.car-loader-spark:nth-child(2) { animation-delay: 0.3s; }
+.car-loader-spark:nth-child(3) { animation-delay: 0.6s; }
+.car-loader-dot    { animation: dot-blink 1.2s ease-in-out infinite; }
+.car-loader-dot:nth-child(2) { animation-delay: 0.2s; }
+.car-loader-dot:nth-child(3) { animation-delay: 0.4s; }
+
+@media (max-width: 640px) {
+  .container { padding: 0 1rem; }
+
+  /* Cards don't translate on mobile to avoid layout jank */
+  .card:hover { transform: none; }
+
+  /* Buttons full-width friendly */
+  .btn { min-height: 44px; }
+
+  /* Admin page table helper */
+  .admin-table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+}
+
+/* Prevent horizontal overflow globally */
+html, body { overflow-x: hidden; }
 
 :root {
   --background: #ffffff;

@@ -14,6 +14,7 @@ export interface Review {
   mileage?: number;
   createdAt: string; // ISO date string
   helpful: number;
+  dislikes?: number;
   images?: string[];
 }
 
