@@ -13,13 +13,12 @@ function getServiceClient() {
 async function isAdmin(req: NextRequest): Promise<boolean> {
   const token = req.headers.get('authorization')?.replace('Bearer ', '');
   if (!token) return false;
-  const sb = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-  );
-  const { data: { user } } = await sb.auth.getUser(token);
+  // Verify the JWT to get the user ID
+  const { data: { user } } = await getServiceClient().auth.getUser(token);
   if (!user) return false;
-  const { data } = await sb.from('profiles').select('is_admin').eq('id', user.id).single();
+  // Use service role to read profiles (bypasses RLS)
+  const { data } = await getServiceClient()
+    .from('profiles').select('is_admin').eq('id', user.id).single();
   return data?.is_admin === true;
 }
 
