@@ -25,7 +25,7 @@ export default function Footer() {
           <div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12 }}>
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src="/logo.svg" alt="CarIssues IL" width={34} height={34} style={{ borderRadius: 8 }} />
+              <img src="/favicon.svg" alt="CarIssues IL" width={34} height={34} style={{ borderRadius: 8 }} />
               <span style={{ fontWeight: 800, fontSize: '1.15rem' }}>
                 CarIssues<span style={{ color: 'var(--brand-red)' }}>IL</span>
               </span>
