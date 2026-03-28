@@ -39,6 +39,9 @@ export default function ProfilePage() {
   const { user, loading } = useAuth();
   const [reviews, setReviews] = useState<Review[]>([]);
   const [fetching, setFetching] = useState(false);
+  const [editingName, setEditingName] = useState(false);
+  const [nameInput, setNameInput] = useState('');
+  const [nameSaving, setNameSaving] = useState(false);
 
   useEffect(() => {
     if (!user) return;
@@ -102,7 +105,38 @@ export default function ProfilePage() {
             {displayName(user).charAt(0).toUpperCase()}
           </div>
           <div style={{ flex: 1 }}>
-            <h1 style={{ fontSize: '1.5rem', fontWeight: 800, marginBottom: 4 }}>{displayName(user)}</h1>
+            {editingName ? (
+              <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginBottom: 4, flexWrap: 'wrap' }}>
+                <input
+                  value={nameInput}
+                  onChange={e => setNameInput(e.target.value)}
+                  style={{ fontSize: '1.1rem', fontWeight: 700, padding: '4px 10px', borderRadius: 6, border: '1px solid var(--border)', background: 'var(--bg-card)', color: 'var(--text-primary)', minWidth: 160 }}
+                  autoFocus
+                />
+                <button
+                  disabled={nameSaving || !nameInput.trim()}
+                  onClick={async () => {
+                    setNameSaving(true);
+                    await supabase.auth.updateUser({ data: { display_name: nameInput.trim() } });
+                    setNameSaving(false);
+                    setEditingName(false);
+                  }}
+                  style={{ padding: '5px 14px', borderRadius: 6, border: 'none', background: 'var(--brand-red)', color: '#fff', fontWeight: 700, cursor: 'pointer', fontSize: '0.875rem' }}
+                >
+                  {nameSaving ? '...' : 'שמור'}
+                </button>
+                <button onClick={() => setEditingName(false)} style={{ padding: '5px 12px', borderRadius: 6, border: '1px solid var(--border)', background: 'transparent', cursor: 'pointer', fontSize: '0.875rem', color: 'var(--text-muted)' }}>
+                  ביטול
+                </button>
+              </div>
+            ) : (
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
+                <h1 style={{ fontSize: '1.5rem', fontWeight: 800, margin: 0 }}>{displayName(user)}</h1>
+                <button onClick={() => { setNameInput(displayName(user)); setEditingName(true); }} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)', fontSize: '0.85rem', padding: '2px 6px' }} title="ערוך שם">
+                  ✏️
+                </button>
+              </div>
+            )}
             <p style={{ color: 'var(--text-muted)', fontSize: '0.875rem', marginBottom: 8 }}>{user.email}</p>
             <div style={{ display: 'flex', gap: 20, flexWrap: 'wrap' }}>
               <div>
