@@ -11,6 +11,7 @@ export const metadata: Metadata = {
     default: 'CarIssues IL — בעיות רכב בישראל',
     template: '%s | CarIssues IL',
   },
+  icons: { icon: '/logo.svg', apple: '/logo.svg' },
   description: 'המאגר הגדול ביותר בישראל לבעיות רכב, ביקורות, וחוות דעת. מצאו בעיות נפוצות לפי יצרן, דגם ושנה.',
   keywords: ['בעיות רכב', 'ריקול', 'ביקורות רכב', 'ישראל', 'car issues', 'israel'],
   authors: [{ name: 'CarIssues IL' }],
