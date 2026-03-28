@@ -21,6 +21,8 @@ interface ModelRow {
   localPosts: number;
   globalPosts: number;
   scrapedAt: string | null;
+  hasLocalSummary: boolean;
+  hasGlobalSummary: boolean;
 }
 
 type ScrapeState = 'idle' | 'loading' | 'ok' | 'error';
@@ -83,7 +85,7 @@ export default function AdminPage() {
   const [scraping, setScraping] = useState<Record<string, ScrapeState>>({});
   const [bulkRunning, setBulkRunning] = useState(false);
   const [bulkProgress, setBulkProgress] = useState({ done: 0, total: 0 });
-  const [filter, setFilter] = useState<'all' | 'scraped' | 'missing'>('all');
+  const [filter, setFilter] = useState<'all' | 'scraped' | 'missing' | 'no_global' | 'no_local'>('all');
 
   // ── User Reviews tab state ───────────────────────────────────────────────────
   const [userReviews, setUserReviews] = useState<Review[]>([]);
@@ -280,9 +282,13 @@ export default function AdminPage() {
   const filtered = models.filter((m) => {
     if (filter === 'scraped') return m.scraped;
     if (filter === 'missing') return !m.scraped;
+    if (filter === 'no_global') return m.scraped && !m.hasGlobalSummary;
+    if (filter === 'no_local') return m.scraped && !m.hasLocalSummary;
     return true;
   });
   const missingModels = models.filter((m) => !m.scraped);
+  const missingGlobal = models.filter((m) => !m.hasGlobalSummary);
+  const missingLocal  = models.filter((m) => !m.hasLocalSummary);
   const scrapedCount = models.filter((m) => m.scraped).length;
 
   return (
@@ -332,10 +338,16 @@ export default function AdminPage() {
 
             <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', marginBottom: 24 }}>
               <button className="btn btn-primary" onClick={() => bulkScrape(missingModels)} disabled={bulkRunning || missingModels.length === 0}>
-                {bulkRunning ? `סורק... ${bulkProgress.done}/${bulkProgress.total}` : `סרוק חסרים (${missingModels.length})`}
+                {bulkRunning ? `מייצר... ${bulkProgress.done}/${bulkProgress.total}` : `✨ צור חסרים (${missingModels.length})`}
+              </button>
+              <button className="btn btn-primary" onClick={() => bulkScrape(missingGlobal)} disabled={bulkRunning || missingGlobal.length === 0} style={{ background: '#7c3aed' }}>
+                🌍 צור חסרי גלובלי ({missingGlobal.length})
+              </button>
+              <button className="btn btn-primary" onClick={() => bulkScrape(missingLocal)} disabled={bulkRunning || missingLocal.length === 0} style={{ background: '#0284c7' }}>
+                🇮🇱 צור חסרי ישראלי ({missingLocal.length})
               </button>
               <button className="btn btn-primary" onClick={() => bulkScrape(models)} disabled={bulkRunning} style={{ background: 'var(--text-secondary)' }}>
-                סרוק הכל ({models.length})
+                🔄 צור הכל ({models.length})
               </button>
               <button onClick={deleteAll} disabled={bulkRunning} style={{ padding: '10px 20px', borderRadius: 8, border: '1px solid var(--brand-red)', color: 'var(--brand-red)', background: 'transparent', cursor: 'pointer', fontWeight: 600 }}>
                 מחק הכל
@@ -345,10 +357,16 @@ export default function AdminPage() {
               </button>
             </div>
 
-            <div style={{ display: 'flex', gap: 8, marginBottom: 20 }}>
-              {(['all', 'scraped', 'missing'] as const).map((f) => (
+            <div style={{ display: 'flex', gap: 8, marginBottom: 20, flexWrap: 'wrap' }}>
+              {([
+                ['all',       'הכל'],
+                ['scraped',   'סוכמו'],
+                ['missing',   'חסרים'],
+                ['no_global', '🌍 חסר גלובלי'],
+                ['no_local',  '🇮🇱 חסר ישראלי'],
+              ] as const).map(([f, label]) => (
                 <button key={f} onClick={() => setFilter(f)} style={{ padding: '6px 16px', borderRadius: 9999, border: 'none', cursor: 'pointer', background: filter === f ? 'var(--brand-red)' : 'var(--bg-muted)', color: filter === f ? '#fff' : 'var(--text-secondary)', fontWeight: 600, fontSize: '0.875rem' }}>
-                  {f === 'all' ? 'הכל' : f === 'scraped' ? 'סוכמו' : 'חסרים'}
+                  {label}
                 </button>
               ))}
             </div>
@@ -360,8 +378,9 @@ export default function AdminPage() {
                   <tr style={{ borderBottom: '1px solid var(--border)', background: 'var(--bg-muted)' }}>
                     <th style={{ padding: '12px 16px', textAlign: 'right', fontWeight: 700 }}>דגם</th>
                     <th style={{ padding: '12px 16px', textAlign: 'center', fontWeight: 700 }}>ציון</th>
+                    <th style={{ padding: '12px 16px', textAlign: 'center', fontWeight: 700 }}>סיכומים</th>
                     <th style={{ padding: '12px 16px', textAlign: 'center', fontWeight: 700 }}>פוסטים 🇮🇱/🌍</th>
-                    <th style={{ padding: '12px 16px', textAlign: 'center', fontWeight: 700 }}>תאריך</th>
+                    <th style={{ padding: '12px 16px', textAlign: 'center', fontWeight: 700 }}>נוצר</th>
                     <th style={{ padding: '12px 16px', textAlign: 'center', fontWeight: 700 }}>פעולות</th>
                   </tr>
                 </thead>
@@ -382,6 +401,18 @@ export default function AdminPage() {
                             </span>
                           ) : <span style={{ color: 'var(--text-muted)' }}>—</span>}
                         </td>
+                        <td style={{ padding: '12px 16px', textAlign: 'center' }}>
+                          {m.scraped ? (
+                            <div style={{ display: 'flex', gap: 4, justifyContent: 'center' }}>
+                              <span title="ישראלי" style={{ fontSize: '0.75rem', padding: '2px 6px', borderRadius: 4, background: m.hasLocalSummary ? '#dbeafe' : 'var(--bg-muted)', color: m.hasLocalSummary ? '#1d4ed8' : 'var(--text-muted)', fontWeight: 700 }}>
+                                🇮🇱 {m.hasLocalSummary ? '✓' : '✗'}
+                              </span>
+                              <span title="גלובלי" style={{ fontSize: '0.75rem', padding: '2px 6px', borderRadius: 4, background: m.hasGlobalSummary ? '#ede9fe' : 'var(--bg-muted)', color: m.hasGlobalSummary ? '#7c3aed' : 'var(--text-muted)', fontWeight: 700 }}>
+                                🌍 {m.hasGlobalSummary ? '✓' : '✗'}
+                              </span>
+                            </div>
+                          ) : <span style={{ color: 'var(--text-muted)' }}>—</span>}
+                        </td>
                         <td style={{ padding: '12px 16px', textAlign: 'center', color: 'var(--text-muted)' }}>
                           {m.scraped ? `${m.localPosts} / ${m.globalPosts}` : '—'}
                         </td>
@@ -393,9 +424,9 @@ export default function AdminPage() {
                             <button
                               onClick={() => scrapeOne(m.makeSlug, m.modelSlug)}
                               disabled={state === 'loading' || bulkRunning}
-                              style={{ padding: '5px 12px', borderRadius: 6, border: 'none', cursor: 'pointer', fontWeight: 600, fontSize: '0.8125rem', background: state === 'ok' ? '#16a34a' : 'var(--brand-red)', color: '#fff', opacity: state === 'loading' ? 0.6 : 1 }}
+                              style={{ padding: '5px 12px', borderRadius: 6, border: 'none', cursor: 'pointer', fontWeight: 600, fontSize: '0.8125rem', background: state === 'ok' ? '#16a34a' : 'var(--brand-red)', color: '#fff', opacity: state === 'loading' ? 0.6 : 1, whiteSpace: 'nowrap' }}
                             >
-                              {state === 'loading' ? '...' : state === 'ok' ? '✓' : state === 'error' ? '✗' : 'סרוק'}
+                              {state === 'loading' ? '...' : state === 'ok' ? '✓' : state === 'error' ? '✗' : m.scraped ? '🔄 צור מחדש' : '✨ צור'}
                             </button>
                             {m.scraped && (
                               <button onClick={() => deleteOne(m.makeSlug, m.modelSlug)} disabled={bulkRunning} style={{ padding: '5px 12px', borderRadius: 6, border: '1px solid var(--border)', cursor: 'pointer', fontWeight: 600, fontSize: '0.8125rem', background: 'transparent', color: 'var(--text-muted)' }}>

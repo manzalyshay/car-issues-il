@@ -16,7 +16,7 @@ export async function GET(req: NextRequest) {
   const sb = getServiceClient();
   const { data: rows } = await sb
     .from('expert_reviews')
-    .select('make_slug,model_slug,local_score,global_score,top_score,local_post_count,global_post_count,scraped_at')
+    .select('make_slug,model_slug,local_score,global_score,top_score,local_post_count,global_post_count,scraped_at,local_summary_he,global_summary_he')
     .order('make_slug').order('model_slug');
 
   const scraped = new Map((rows ?? []).map((r: any) => [`${r.make_slug}/${r.model_slug}`, r]));
@@ -37,6 +37,8 @@ export async function GET(req: NextRequest) {
         localPosts: row?.local_post_count ?? 0,
         globalPosts: row?.global_post_count ?? 0,
         scrapedAt: row?.scraped_at ?? null,
+        hasLocalSummary: !!(row?.local_summary_he),
+        hasGlobalSummary: !!(row?.global_summary_he),
       };
     })
   );

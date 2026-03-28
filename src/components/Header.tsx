@@ -26,14 +26,7 @@ export default function Header() {
         <div className="container" style={{ height: 68, display: 'flex', alignItems: 'center', gap: 16, justifyContent: 'space-between' }}>
           {/* Logo */}
           <Link href="/" style={{ display: 'flex', alignItems: 'center', gap: 10, textDecoration: 'none', flexShrink: 0 }}>
-            <div style={{
-              width: 38, height: 38, borderRadius: 10,
-              background: 'linear-gradient(135deg, var(--brand-red), var(--brand-gold-dark))',
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              fontSize: 20, boxShadow: 'var(--shadow-red)', flexShrink: 0,
-            }}>
-              🚗
-            </div>
+            <img src="/favicon.svg" alt="CarIssuesIL" width={38} height={38} style={{ borderRadius: 10, boxShadow: 'var(--shadow-red)', flexShrink: 0 }} />
             <div>
               <div style={{ fontWeight: 800, fontSize: '1.1rem', color: 'var(--text-primary)', lineHeight: 1.1 }}>
                 CarIssues<span style={{ color: 'var(--brand-red)' }}>IL</span>
