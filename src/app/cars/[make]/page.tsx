@@ -14,10 +14,12 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { make: makeSlug } = await params;
   const make = getMakeBySlug(makeSlug);
   if (!make) return {};
+  const url = `https://carissues.co.il/cars/${make.slug}`;
   return {
     title: `${make.nameHe} — בעיות ודגמים`,
     description: `כל דגמי ${make.nameHe} (${make.nameEn}) עם ביקורות בעברית ובעיות נפוצות שדיווחו בעלי רכב בישראל.`,
-    openGraph: { title: `${make.nameHe} | CarIssues IL`, description: `בעיות ב${make.nameHe}` },
+    alternates: { canonical: url },
+    openGraph: { title: `${make.nameHe} | CarIssues IL`, description: `בעיות ב${make.nameHe}`, url },
   };
 }
 
@@ -104,10 +106,22 @@ export default async function MakePage({ params }: Props) {
           dangerouslySetInnerHTML={{
             __html: JSON.stringify({
               '@context': 'https://schema.org',
-              '@type': 'Brand',
-              name: make.nameEn,
-              url: `https://carissues.co.il/cars/${make.slug}`,
-              description: `Car reviews and issues for ${make.nameEn} vehicles in Israel`,
+              '@graph': [
+                {
+                  '@type': 'Brand',
+                  name: make.nameEn,
+                  url: `https://carissues.co.il/cars/${make.slug}`,
+                  description: `Car reviews and issues for ${make.nameEn} vehicles in Israel`,
+                },
+                {
+                  '@type': 'BreadcrumbList',
+                  itemListElement: [
+                    { '@type': 'ListItem', position: 1, name: 'בית', item: 'https://carissues.co.il' },
+                    { '@type': 'ListItem', position: 2, name: 'יצרנים', item: 'https://carissues.co.il/cars' },
+                    { '@type': 'ListItem', position: 3, name: make.nameHe, item: `https://carissues.co.il/cars/${make.slug}` },
+                  ],
+                },
+              ],
             }),
           }}
         />

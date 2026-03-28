@@ -10,6 +10,7 @@ import MakeLogo from '@/components/MakeLogo';
 import Car3DViewer from '@/components/Car3DViewer';
 import ExpertReviewsSection from '@/components/ExpertReviewsSection';
 import ModelReviewsSection from './ModelReviewsSection';
+import ShareButtons from '@/components/ShareButtons';
 
 interface Props { params: Promise<{ make: string; model: string }> }
 
@@ -25,10 +26,12 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   if (!make) return {};
   const model = getModelBySlug(make, modelSlug);
   if (!model) return {};
+  const url = `https://carissues.co.il/cars/${make.slug}/${model.slug}`;
   return {
     title: `${make.nameHe} ${model.nameHe} — בעיות וביקורות`,
-    description: `בעיות נפוצות ב${make.nameHe} ${model.nameHe}. ביקורות אמיתיות מבעלי רכב בישראל.`,
-    openGraph: { title: `${make.nameHe} ${model.nameHe} | CarIssues IL` },
+    description: `בעיות נפוצות ב${make.nameHe} ${model.nameHe} (${make.nameEn} ${model.nameEn}). ביקורות אמיתיות מבעלי רכב בישראל, דירוגים, יתרונות וחסרונות.`,
+    alternates: { canonical: url },
+    openGraph: { title: `${make.nameHe} ${model.nameHe} | CarIssues IL`, description: `ביקורות ובעיות נפוצות — ${make.nameHe} ${model.nameHe}`, url },
   };
 }
 
@@ -104,6 +107,11 @@ export default async function ModelPage({ params }: Props) {
           )}
         </div>
 
+        {/* Share */}
+        <div style={{ marginBottom: 32 }}>
+          <ShareButtons title={`${make.nameHe} ${model.nameHe} — ביקורות ובעיות נפוצות | CarIssues IL`} url={`https://carissues.co.il/cars/${make.slug}/${model.slug}`} />
+        </div>
+
         {/* General AI summary — combined score includes user reviews */}
         <ExpertReviewsSection
           review={expertReview}
@@ -129,18 +137,32 @@ export default async function ModelPage({ params }: Props) {
           dangerouslySetInnerHTML={{
             __html: JSON.stringify({
               '@context': 'https://schema.org',
-              '@type': 'Product',
-              name: `${make.nameEn} ${model.nameEn}`,
-              brand: { '@type': 'Brand', name: make.nameEn },
-              ...(avgRating !== null && {
-                aggregateRating: {
-                  '@type': 'AggregateRating',
-                  ratingValue: avgRating.toFixed(1),
-                  reviewCount: allReviews.length,
-                  bestRating: 5,
-                  worstRating: 1,
+              '@graph': [
+                {
+                  '@type': 'Product',
+                  name: `${make.nameEn} ${model.nameEn}`,
+                  brand: { '@type': 'Brand', name: make.nameEn },
+                  url: `https://carissues.co.il/cars/${make.slug}/${model.slug}`,
+                  ...(avgRating !== null && {
+                    aggregateRating: {
+                      '@type': 'AggregateRating',
+                      ratingValue: avgRating.toFixed(1),
+                      reviewCount: allReviews.length,
+                      bestRating: 5,
+                      worstRating: 1,
+                    },
+                  }),
                 },
-              }),
+                {
+                  '@type': 'BreadcrumbList',
+                  itemListElement: [
+                    { '@type': 'ListItem', position: 1, name: 'בית', item: 'https://carissues.co.il' },
+                    { '@type': 'ListItem', position: 2, name: 'יצרנים', item: 'https://carissues.co.il/cars' },
+                    { '@type': 'ListItem', position: 3, name: make.nameHe, item: `https://carissues.co.il/cars/${make.slug}` },
+                    { '@type': 'ListItem', position: 4, name: model.nameHe, item: `https://carissues.co.il/cars/${make.slug}/${model.slug}` },
+                  ],
+                },
+              ],
             }),
           }}
         />

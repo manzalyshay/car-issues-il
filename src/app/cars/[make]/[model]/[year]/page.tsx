@@ -8,6 +8,7 @@ import StarRating from '@/components/StarRating';
 import ExpertReviewsSection from '@/components/ExpertReviewsSection';
 import CarYearClient from './CarYearClient';
 import MakeLogo from '@/components/MakeLogo';
+import ShareButtons from '@/components/ShareButtons';
 
 interface Props { params: Promise<{ make: string; model: string; year: string }> }
 
@@ -31,12 +32,15 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     getReviewsForCar(makeSlug, modelSlug, yearNum),
   ]);
 
+  const url = `https://carissues.co.il/cars/${make.slug}/${model.slug}/${year}`;
   return {
     title: `${make.nameHe} ${model.nameHe} ${year} — בעיות וביקורות`,
-    description: `בעיות נפוצות ב${make.nameHe} ${model.nameHe} ${year}. ${reviews.length} ביקורות מבעלי רכב בישראל.${avgRating ? ` דירוג ממוצע: ${avgRating.toFixed(1)}/5.` : ''}`,
+    description: `בעיות נפוצות ב${make.nameHe} ${model.nameHe} ${year} (${make.nameEn} ${model.nameEn}). ${reviews.length > 0 ? `${reviews.length} ביקורות מבעלי רכב בישראל.` : 'ביקורות מבעלי רכב בישראל.'}${avgRating ? ` דירוג ממוצע: ${avgRating.toFixed(1)}/5.` : ''}`,
+    alternates: { canonical: url },
     openGraph: {
       title: `${make.nameHe} ${model.nameHe} ${year} | CarIssues IL`,
-      description: `ביקורות ובעיות נפוצות`,
+      description: `ביקורות ובעיות נפוצות — ${make.nameHe} ${model.nameHe} ${year}`,
+      url,
     },
   };
 }
@@ -65,26 +69,41 @@ export default async function CarYearPage({ params }: Props) {
 
   const jsonLd = {
     '@context': 'https://schema.org',
-    '@type': 'Product',
-    name: `${make.nameEn} ${model.nameEn} ${year}`,
-    brand: { '@type': 'Brand', name: make.nameEn },
-    ...(avgRating !== null && {
-      aggregateRating: {
-        '@type': 'AggregateRating',
-        ratingValue: avgRating.toFixed(1),
-        reviewCount: reviews.length,
-        bestRating: 5,
-        worstRating: 1,
+    '@graph': [
+      {
+        '@type': 'Product',
+        name: `${make.nameEn} ${model.nameEn} ${year}`,
+        brand: { '@type': 'Brand', name: make.nameEn },
+        url: `https://carissues.co.il/cars/${make.slug}/${model.slug}/${year}`,
+        ...(avgRating !== null && {
+          aggregateRating: {
+            '@type': 'AggregateRating',
+            ratingValue: avgRating.toFixed(1),
+            reviewCount: reviews.length,
+            bestRating: 5,
+            worstRating: 1,
+          },
+        }),
+        review: reviews.slice(0, 5).map((r) => ({
+          '@type': 'Review',
+          reviewRating: { '@type': 'Rating', ratingValue: r.rating, bestRating: 5 },
+          name: r.title,
+          reviewBody: r.body,
+          author: { '@type': 'Person', name: r.authorName },
+          datePublished: r.createdAt.split('T')[0],
+        })),
       },
-    }),
-    review: reviews.slice(0, 5).map((r) => ({
-      '@type': 'Review',
-      reviewRating: { '@type': 'Rating', ratingValue: r.rating, bestRating: 5 },
-      name: r.title,
-      reviewBody: r.body,
-      author: { '@type': 'Person', name: r.authorName },
-      datePublished: r.createdAt.split('T')[0],
-    })),
+      {
+        '@type': 'BreadcrumbList',
+        itemListElement: [
+          { '@type': 'ListItem', position: 1, name: 'בית', item: 'https://carissues.co.il' },
+          { '@type': 'ListItem', position: 2, name: 'יצרנים', item: 'https://carissues.co.il/cars' },
+          { '@type': 'ListItem', position: 3, name: make.nameHe, item: `https://carissues.co.il/cars/${make.slug}` },
+          { '@type': 'ListItem', position: 4, name: model.nameHe, item: `https://carissues.co.il/cars/${make.slug}/${model.slug}` },
+          { '@type': 'ListItem', position: 5, name: String(year), item: `https://carissues.co.il/cars/${make.slug}/${model.slug}/${year}` },
+        ],
+      },
+    ],
   };
 
   return (
@@ -116,6 +135,7 @@ export default async function CarYearPage({ params }: Props) {
               </p>
             </div>
           </div>
+          <ShareButtons title={`${make.nameHe} ${model.nameHe} ${year} — ביקורות ובעיות נפוצות | CarIssues IL`} url={`https://carissues.co.il/cars/${make.slug}/${model.slug}/${year}`} />
         </div>
 
         {/* Rating overview + reviews client component */}

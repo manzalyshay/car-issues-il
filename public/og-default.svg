@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#1a1a2e"/>
+      <stop offset="50%" stop-color="#2d1b2e"/>
+      <stop offset="100%" stop-color="#1a1d3b"/>
+    </linearGradient>
+    <linearGradient id="red" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#e63946"/>
+      <stop offset="100%" stop-color="#e76f51"/>
+    </linearGradient>
+  </defs>
+  <rect width="1200" height="630" fill="url(#bg)"/>
+  <!-- glow -->
+  <ellipse cx="600" cy="200" rx="500" ry="300" fill="rgba(230,57,70,0.15)"/>
+  <!-- logo box -->
+  <rect x="530" y="180" width="140" height="140" rx="32" fill="url(#red)"/>
+  <!-- car body -->
+  <rect x="553" y="275" width="94" height="26" rx="6" fill="white"/>
+  <path d="M568,275 L577,248 Q581,244 586,244 L617,244 Q622,244 626,248 L635,275 Z" fill="white"/>
+  <path d="M580,273 L586,255 Q588,253 590,253 L613,253 Q615,253 617,255 L623,273 Z" fill="rgba(230,57,70,0.7)"/>
+  <circle cx="572" cy="301" r="10" fill="url(#red)" stroke="white" stroke-width="5"/>
+  <circle cx="631" cy="301" r="10" fill="url(#red)" stroke="white" stroke-width="5"/>
+  <!-- title -->
+  <text x="600" y="390" text-anchor="middle" font-family="Arial, sans-serif" font-weight="900" font-size="72" fill="white">CarIssues<tspan fill="#e63946">IL</tspan></text>
+  <text x="600" y="450" text-anchor="middle" font-family="Arial, sans-serif" font-size="32" fill="rgba(255,255,255,0.6)">בעיות רכב בישראל</text>
+  <!-- tagline -->
+  <text x="600" y="530" text-anchor="middle" font-family="Arial, sans-serif" font-size="22" fill="rgba(255,255,255,0.4)">ביקורות אמיתיות · בעיות נפוצות · סיכומי AI</text>
+</svg>
