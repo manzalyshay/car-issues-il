@@ -82,16 +82,20 @@ export default function Footer() {
             borderTop: '1px solid var(--border)',
             paddingTop: 20,
             display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-            fontSize: '0.8125rem',
-            color: 'var(--text-muted)',
-            flexWrap: 'wrap',
+            flexDirection: 'column',
             gap: 8,
+            fontSize: '0.75rem',
+            color: 'var(--text-muted)',
           }}
         >
-          <span>© {new Date().getFullYear()} CarIssues IL. כל הזכויות שמורות.</span>
-          <span>בנוי עם ♥ לרווחת נהגי ישראל</span>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 8 }}>
+            <span>© {new Date().getFullYear()} CarIssues IL. כל הזכויות שמורות.</span>
+            <span>בנוי עם ♥ לרווחת נהגי ישראל</span>
+          </div>
+          <p style={{ margin: 0, fontSize: '0.7rem', opacity: 0.7 }}>
+            סמלי היצרנים הם סימני מסחר רשומים של בעליהם בהתאמה. האתר אינו קשור ליצרנים. מודלים תלת-ממדיים ב-Sketchfab מוצגים לפי רישיון CC BY 4.0 עם קרדיט ליוצרים.
+            האתר משתמש בעוגיות לצורך פונקציונליות בסיסית (התחברות). אין שימוש בעוגיות פרסומיות.
+          </p>
         </div>
       </div>
     </footer>

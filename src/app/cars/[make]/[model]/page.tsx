@@ -100,7 +100,7 @@ export default async function ModelPage({ params }: Props) {
               <Car3DViewer uid={sketchfabModel.uid} modelName={`${make.nameHe} ${model.nameHe}`} />
               <p style={{ fontSize: '0.7rem', color: 'var(--text-muted)', marginTop: 6, textAlign: 'center' }}>
                 <a href={sketchfabModel.viewerUrl} target="_blank" rel="noopener noreferrer" style={{ color: 'var(--text-muted)' }}>
-                  {sketchfabModel.name} · Sketchfab
+                  &ldquo;{sketchfabModel.name}&rdquo; by {sketchfabModel.author} · Sketchfab (CC BY 4.0)
                 </a>
               </p>
             </div>

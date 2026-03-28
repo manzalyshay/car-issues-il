@@ -3,9 +3,11 @@
 interface Props {
   uid: string;
   modelName: string;
+  author?: string;
+  viewerUrl?: string;
 }
 
-export default function Car3DViewer({ uid, modelName }: Props) {
+export default function Car3DViewer({ uid, modelName, author, viewerUrl }: Props) {
   const embedUrl = [
     `https://sketchfab.com/models/${uid}/embed`,
     'autostart=1',
