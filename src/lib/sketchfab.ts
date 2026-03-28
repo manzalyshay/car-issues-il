@@ -56,6 +56,7 @@ const MODELS: Record<string, { uid: string; name: string }> = {
   'skoda/octavia':        { uid: 'd46ed94b10b14e65a9a5320dc36c1ac4', name: 'Skoda Octavia 2021' },
   'skoda/karoq':          { uid: '7e359874ebe744158eddc37c9da8f487', name: 'Skoda Karoq 2019' },
   'skoda/kodiaq':         { uid: '466446dbeb994382bd625b7a393b2545', name: 'Skoda Kodiaq 2017' },
+  'skoda/kamiq':          { uid: '3ed82ec208424ae1ab01b90c195e2b6c', name: 'Skoda Kamiq' },
 
   // ── Honda (slug from cars.ts: hrv, no dash) ───────────────────────────────
   'honda/civic':          { uid: 'db60ed8ca5074803b8225fd213c423ea', name: 'Honda Civic Sedan 2022' },
@@ -132,7 +133,7 @@ const MODELS: Record<string, { uid: string; name: string }> = {
   'mercedes/gla':         { uid: 'ab7b5df3ba634f38a14effde3d542466', name: 'Mercedes-Benz GLA-Class 2020' },
 
   // ── Audi (additions) ──────────────────────────────────────────────────
-  // 'audi/a4' — removed: UID 60bb579ccc474effa132342b4f1cab47 showed wrong cars
+  'audi/a4':              { uid: '7ba4f7fa8f32436a9685a8abaa5da302', name: 'Audi A4 B9' },
   'audi/a6':              { uid: 'c9b7cf9c176b458785edd0b12e235364', name: 'Audi A6 C8' },
   'audi/q3':              { uid: 'a0159b9bee094c2d8f9b9d5694c94f45', name: 'Audi Q3 Sportback' },
   'audi/etron':           { uid: '4602d4d118b24577881e21c63eaa5340', name: 'Audi e-tron 2020' },
