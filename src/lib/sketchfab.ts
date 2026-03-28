@@ -65,7 +65,7 @@ const MODELS: Record<string, { uid: string; name: string }> = {
   // ── BMW (slugs from cars.ts: series3, series5, x1, x3, x5) ──────────────
   'bmw/series3':          { uid: '82534fdddd7e46e4bdb202d6c1d3c0e7', name: 'BMW 3 Series 2023' },
   'bmw/x3':               { uid: 'b5c660d8e39340538a06561eaca69b5f', name: 'BMW X3 xDrive 30i 2022' },
-  'bmw/x5':               { uid: 'f69204b6a40046e39368c4442d054060', name: 'BMW X5 2023' },
+  'bmw/x5':               { uid: '850fb32f984c4630969840fc61f44902', name: 'BMW X5 xDrive30d 2019' },
 
   // ── Mercedes ──────────────────────────────────────────────────────────────
   'mercedes/c-class':     { uid: '27d0ec784ceb4c80a03cc17ebea8acb4', name: 'Mercedes-Benz C-Class 2022' },
