@@ -1,25 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
 import { carDatabase, getMakeBySlug, getModelBySlug } from '@/data/cars';
 import { scrapeExpertReviews } from '@/lib/expertReviews';
+import { isAdmin, getServiceClient } from '@/lib/adminAuth';
 
-function getServiceClient() {
-  return createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!,
-  );
-}
-
-async function isAdmin(req: NextRequest): Promise<boolean> {
-  const token = req.headers.get('authorization')?.replace('Bearer ', '');
-  if (!token) return false;
-  // Verify the JWT to get the user ID
-  const { data: { user } } = await getServiceClient().auth.getUser(token);
-  if (!user) return false;
-  // Use service role to read profiles (bypasses RLS)
-  const { data } = await getServiceClient()
-    .from('profiles').select('is_admin').eq('id', user.id).single();
-  return data?.is_admin === true;
+function validateCar(makeSlug: string, modelSlug: string) {
+  const make  = getMakeBySlug(makeSlug);
+  const model = make ? getModelBySlug(make, modelSlug) : null;
+  return make && model ? { make, model } : null;
 }
 
 // GET /api/admin — scrape status for all models
@@ -79,27 +66,24 @@ export async function POST(req: NextRequest) {
   }
 
   if (action === 'scrape') {
-    const make = getMakeBySlug(makeSlug);
-    const model = make ? getModelBySlug(make, modelSlug) : null;
-    if (!make || !model) return NextResponse.json({ error: 'Unknown car' }, { status: 404 });
-
+    const car = validateCar(makeSlug, modelSlug);
+    if (!car) return NextResponse.json({ error: 'Unknown car' }, { status: 404 });
     const saved = await scrapeExpertReviews(
       makeSlug, modelSlug,
-      make.nameHe, model.nameHe,
-      make.nameEn, model.nameEn,
+      car.make.nameHe, car.model.nameHe,
+      car.make.nameEn, car.model.nameEn,
     );
     return NextResponse.json({ ok: true, saved });
   }
 
   if (action === 'summarize_from_posts') {
-    const make  = getMakeBySlug(makeSlug);
-    const model = make ? getModelBySlug(make, modelSlug) : null;
-    if (!make || !model) return NextResponse.json({ error: 'Unknown car' }, { status: 404 });
+    const car = validateCar(makeSlug, modelSlug);
+    if (!car) return NextResponse.json({ error: 'Unknown car' }, { status: 404 });
     const { summarizeFromPosts } = await import('@/lib/expertReviews');
     const saved = await summarizeFromPosts(
       makeSlug, modelSlug,
-      make.nameHe, model.nameHe,
-      make.nameEn, model.nameEn,
+      car.make.nameHe, car.model.nameHe,
+      car.make.nameEn, car.model.nameEn,
       localPosts, globalPosts,
     );
     return NextResponse.json({ ok: true, saved });

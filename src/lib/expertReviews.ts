@@ -1110,11 +1110,11 @@ export interface RawPost {
   score?: number;
 }
 
-export async function scrapeRawPosts(
+async function gatherUserPosts(
   makeNameHe: string, modelNameHe: string,
   makeNameEn: string, modelNameEn: string,
   year?: number,
-): Promise<{ local: RawPost[]; global: RawPost[] }> {
+): Promise<{ local: UserPost[]; global: UserPost[]; primary?: UserPost }> {
   const [
     redditPosts, tapuzPosts, onePosts, icarPosts, carzonePosts,
     carComplaintsPosts, edmundsPosts, drivePosts, rotterPosts, wallaPosts,
@@ -1138,22 +1138,25 @@ export async function scrapeRawPosts(
     searchCarSalesAu(makeNameEn, modelNameEn),
     searchFacebook(makeNameHe, modelNameHe, year),
   ]);
+  return {
+    local:   [...icarPosts, ...drivePosts, ...wallaPosts, ...carzonePosts, ...tapuzPosts, ...rotterPosts, ...onePosts, ...facebookPosts],
+    global:  [...redditPosts, ...carComplaintsPosts, ...edmundsPosts, ...carsComPosts, ...autoExpressPosts, ...whatCarPosts, ...carExpertPosts, ...carSalesPosts],
+    primary: tapuzPosts[0] ?? onePosts[0] ?? redditPosts[0],
+  };
+}
 
+export async function scrapeRawPosts(
+  makeNameHe: string, modelNameHe: string,
+  makeNameEn: string, modelNameEn: string,
+  year?: number,
+): Promise<{ local: RawPost[]; global: RawPost[] }> {
+  const { local, global: globalPosts } = await gatherUserPosts(makeNameHe, modelNameHe, makeNameEn, modelNameEn, year);
   const toRaw = (posts: UserPost[], scope: 'local' | 'global'): RawPost[] =>
     posts.map((p) => ({
       id: Buffer.from(p.url).toString('base64').slice(0, 16),
-      title: p.title,
-      url: p.url,
-      sourceName: p.sourceName,
-      snippet: p.snippet,
-      scope,
-      score: p.score,
+      title: p.title, url: p.url, sourceName: p.sourceName, snippet: p.snippet, scope, score: p.score,
     }));
-
-  return {
-    local:  toRaw([...icarPosts, ...drivePosts, ...wallaPosts, ...carzonePosts, ...tapuzPosts, ...rotterPosts, ...onePosts, ...facebookPosts], 'local'),
-    global: toRaw([...redditPosts, ...carComplaintsPosts, ...edmundsPosts, ...carsComPosts, ...autoExpressPosts, ...whatCarPosts, ...carExpertPosts, ...carSalesPosts], 'global'),
-  };
+  return { local: toRaw(local, 'local'), global: toRaw(globalPosts, 'global') };
 }
 
 export async function summarizeFromPosts(
@@ -1217,66 +1220,28 @@ export async function scrapeExpertReviews(
   modelNameEn: string,
   year?: number,
 ): Promise<number> {
-  // Gather user posts from all sources in parallel
-  const [
-    redditPosts, tapuzPosts, onePosts, icarPosts, carzonePosts,
-    carComplaintsPosts, edmundsPosts, drivePosts, rotterPosts, wallaPosts,
-    carsComPosts, autoExpressPosts, whatCarPosts, carExpertPosts, carSalesPosts,
-    facebookPosts,
-  ] = await Promise.all([
-    searchReddit(makeNameEn, modelNameEn, year),
-    searchTapuz(makeNameHe, modelNameHe, year),
-    searchOne(makeNameHe, modelNameHe),
-    searchIcar(makeNameHe, modelNameHe, year),
-    searchCarzone(makeNameHe, modelNameHe, makeNameEn, modelNameEn, year),
-    searchCarComplaints(makeNameEn, modelNameEn),
-    searchEdmunds(makeNameEn, modelNameEn),
-    searchDrive(makeNameHe, modelNameHe, year),
-    searchRotter(makeNameHe, modelNameHe, year),
-    searchWalla(makeNameHe, modelNameHe, year),
-    searchCarsCom(makeNameEn, modelNameEn, year),
-    searchAutoExpress(makeNameEn, modelNameEn),
-    searchWhatCar(makeNameEn, modelNameEn),
-    searchCarExpertAu(makeNameEn, modelNameEn),
-    searchCarSalesAu(makeNameEn, modelNameEn),
-    searchFacebook(makeNameHe, modelNameHe, year),
-  ]);
+  const { local: localPosts, global: globalPosts, primary } = await gatherUserPosts(
+    makeNameHe, modelNameHe, makeNameEn, modelNameEn, year,
+  );
 
-  const localPosts  = [...icarPosts, ...drivePosts, ...wallaPosts, ...carzonePosts, ...tapuzPosts, ...rotterPosts, ...onePosts, ...facebookPosts];  // Israeli sources
-  const globalPosts = [...redditPosts, ...carComplaintsPosts, ...edmundsPosts, ...carsComPosts, ...autoExpressPosts, ...whatCarPosts, ...carExpertPosts, ...carSalesPosts];  // International
-
-  // Summarize each group independently, in parallel
   let [localOut, globalOut] = await Promise.all([
     localPosts.length  > 0 ? summarizeGroup(localPosts,  makeNameHe, modelNameHe, 'local')  : null,
     globalPosts.length > 0 ? summarizeGroup(globalPosts, makeNameHe, modelNameHe, 'global') : null,
   ]);
 
-  // Always guarantee a global summary using LLM knowledge — every car deserves a review.
-  // If real scraped posts produced a summary, use it. Otherwise fall back to LLM knowledge.
   if (!globalOut) {
     globalOut = await generateKnowledgeSummary(makeNameHe, modelNameHe, makeNameEn, modelNameEn, year);
-    if (!globalOut) return 0; // Only fail if Groq API is completely down
+    if (!globalOut) return 0;
   }
-
-  // Always guarantee an Israeli summary too — fall back to knowledge-based with Israeli framing.
   if (!localOut) {
     localOut = await generateIsraeliKnowledgeSummary(makeNameHe, modelNameHe, makeNameEn, modelNameEn, year);
   }
 
-  // Top score = weighted average of available scores
-  const scores: number[] = [];
-  if (localOut?.score  != null) scores.push(localOut.score);
-  if (globalOut?.score != null) scores.push(globalOut.score);
-  const topScore = scores.length > 0
-    ? scores.reduce((a, b) => a + b, 0) / scores.length
-    : null;
+  const scores = [localOut?.score, globalOut?.score].filter((s): s is number => s != null);
+  const topScore = scores.length > 0 ? scores.reduce((a, b) => a + b, 0) / scores.length : null;
 
-  // Combined pros/cons (deduplicated by text)
   const allPros = [...(localOut?.pros ?? []), ...(globalOut?.pros ?? [])].slice(0, 4);
   const allCons = [...(localOut?.cons ?? []), ...(globalOut?.cons ?? [])].slice(0, 4);
-
-  // Primary source attribution
-  const primary = tapuzPosts[0] ?? onePosts[0] ?? redditPosts[0];
 
   const sb = getSupabase(true);
 

@@ -7,6 +7,7 @@ import { useAuth } from '@/lib/authContext';
 import { getMakeBySlug, getModelBySlug } from '@/data/cars';
 import { CATEGORY_LABELS } from '@/data/reviews';
 import type { Review } from '@/data/reviews';
+import type { RawPost } from '@/lib/expertReviews';
 
 interface ModelRow {
   makeSlug: string;
@@ -77,16 +78,6 @@ interface CloneForm {
   body: string;
   rating: number;
   category: Review['category'];
-}
-
-interface RawPost {
-  id: string;
-  title: string;
-  url: string;
-  sourceName: string;
-  snippet: string;
-  scope: 'local' | 'global';
-  score?: number;
 }
 
 export default function AdminPage() {
