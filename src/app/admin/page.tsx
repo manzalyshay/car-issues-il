@@ -217,8 +217,10 @@ export default function AdminPage() {
       });
       if (res.ok) {
         const { posts } = await res.json();
-        setPreviewPosts(posts);
-        setSelectedIds(new Set(posts.map((p: RawPost) => p.id)));
+        // posts is { local: RawPost[], global: RawPost[] } — flatten into a single array
+        const flat: RawPost[] = [...(posts.local ?? []), ...(posts.global ?? [])];
+        setPreviewPosts(flat);
+        setSelectedIds(new Set(flat.map((p) => p.id)));
       }
     } catch { /* ignore */ } finally {
       setPreviewLoading(false);
