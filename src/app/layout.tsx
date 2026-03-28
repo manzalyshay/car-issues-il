@@ -5,6 +5,7 @@ import Footer from '@/components/Footer';
 import { AuthProvider } from '@/lib/authContext';
 import NavigationProgress from '@/components/NavigationProgress';
 import PageViewTracker from '@/components/PageViewTracker';
+import { Analytics } from '@vercel/analytics/next';
 
 const BASE_URL = 'https://carissues.co.il';
 
@@ -81,6 +82,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <main className="flex-1">{children}</main>
           <Footer />
         </AuthProvider>
+        <Analytics />
       </body>
     </html>
   );
