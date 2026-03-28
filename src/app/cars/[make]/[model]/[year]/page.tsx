@@ -103,6 +103,31 @@ export default async function CarYearPage({ params }: Props) {
           { '@type': 'ListItem', position: 5, name: String(year), item: `https://carissues.co.il/cars/${make.slug}/${model.slug}/${year}` },
         ],
       },
+      ...(yearReview && (yearReview.pros.length > 0 || yearReview.cons.length > 0) ? [{
+        '@type': 'FAQPage',
+        mainEntity: [
+          yearReview.pros.length > 0 && {
+            '@type': 'Question',
+            name: `מה היתרונות של ${make.nameHe} ${model.nameHe} ${year}?`,
+            acceptedAnswer: { '@type': 'Answer', text: yearReview.pros.join('. ') },
+          },
+          yearReview.cons.length > 0 && {
+            '@type': 'Question',
+            name: `מה החסרונות של ${make.nameHe} ${model.nameHe} ${year}?`,
+            acceptedAnswer: { '@type': 'Answer', text: yearReview.cons.join('. ') },
+          },
+          yearReview.localSummaryHe && {
+            '@type': 'Question',
+            name: `מה אומרים בעלי ${make.nameHe} ${model.nameHe} ${year} בישראל?`,
+            acceptedAnswer: { '@type': 'Answer', text: yearReview.localSummaryHe },
+          },
+          avgRating !== null && reviews.length > 0 && {
+            '@type': 'Question',
+            name: `מה הדירוג של ${make.nameHe} ${model.nameHe} ${year}?`,
+            acceptedAnswer: { '@type': 'Answer', text: `${make.nameHe} ${model.nameHe} ${year} מקבל דירוג ממוצע של ${avgRating.toFixed(1)} מתוך 5 על בסיס ${reviews.length} ביקורות של בעלי רכב.` },
+          },
+        ].filter(Boolean),
+      }] : []),
     ],
   };
 

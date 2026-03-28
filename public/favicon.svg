@@ -1,19 +1,32 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
   <defs>
-    <linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
       <stop offset="0%" stop-color="#e63946"/>
       <stop offset="100%" stop-color="#e76f51"/>
     </linearGradient>
+    <linearGradient id="car" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#ff8c69"/>
+      <stop offset="100%" stop-color="#e63946"/>
+    </linearGradient>
   </defs>
-  <!-- red gradient background -->
-  <rect width="32" height="32" rx="7" fill="url(#g)"/>
-  <!-- car body (white) -->
-  <rect x="3" y="18" width="26" height="7" rx="2" fill="white"/>
-  <!-- car roof / cabin -->
-  <path d="M8,18 L11,11 Q12,10 13.5,10 L18.5,10 Q20,10 21,11 L24,18 Z" fill="white"/>
-  <!-- windshield (semi-transparent cutout) -->
-  <path d="M12,17.5 L14,12.5 Q14.5,12 15,12 L17,12 Q17.5,12 18,12.5 L20,17.5 Z" fill="rgba(230,57,70,0.7)"/>
+  <!-- background -->
+  <rect width="32" height="32" rx="7" fill="url(#bg)"/>
+  <!-- car body (side view, emoji-style) -->
+  <!-- main chassis -->
+  <rect x="2.5" y="19" width="27" height="7" rx="3.5" fill="white"/>
+  <!-- cabin / roof -->
+  <path d="M7,19 C7,19 9.5,11.5 11.5,10.5 C13,10 14,10 16,10 C18,10 19,10 20.5,10.5 C22.5,11.5 25,19 25,19 Z" fill="white"/>
+  <!-- windshield + rear window (blue tint) -->
+  <path d="M13.5,18.5 L15,13 Q15.5,12 16,12 L18,12 Q18.5,12 19,13 L20.5,18.5 Z" fill="rgba(100,180,255,0.75)"/>
+  <!-- front bumper detail -->
+  <rect x="22" y="21" width="4.5" height="2" rx="1" fill="rgba(0,0,0,0.12)"/>
+  <!-- headlight -->
+  <rect x="22.5" y="21.3" width="3" height="1.2" rx="0.6" fill="rgba(255,255,200,0.9)"/>
+  <!-- rear light -->
+  <rect x="5.5" y="21.3" width="2.5" height="1.2" rx="0.6" fill="rgba(255,80,80,0.9)"/>
   <!-- wheels -->
-  <circle cx="10" cy="25" r="2.8" fill="url(#g)" stroke="white" stroke-width="1.5"/>
-  <circle cx="22" cy="25" r="2.8" fill="url(#g)" stroke="white" stroke-width="1.5"/>
+  <circle cx="9.5" cy="26" r="3.2" fill="#333"/>
+  <circle cx="9.5" cy="26" r="1.5" fill="#aaa"/>
+  <circle cx="22.5" cy="26" r="3.2" fill="#333"/>
+  <circle cx="22.5" cy="26" r="1.5" fill="#aaa"/>
 </svg>

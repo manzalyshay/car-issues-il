@@ -162,6 +162,36 @@ export default async function ModelPage({ params }: Props) {
                     { '@type': 'ListItem', position: 4, name: model.nameHe, item: `https://carissues.co.il/cars/${make.slug}/${model.slug}` },
                   ],
                 },
+                ...(expertReview && (expertReview.pros.length > 0 || expertReview.cons.length > 0) ? [{
+                  '@type': 'FAQPage',
+                  mainEntity: [
+                    expertReview.pros.length > 0 && {
+                      '@type': 'Question',
+                      name: `מה היתרונות של ${make.nameHe} ${model.nameHe}?`,
+                      acceptedAnswer: { '@type': 'Answer', text: expertReview.pros.join('. ') },
+                    },
+                    expertReview.cons.length > 0 && {
+                      '@type': 'Question',
+                      name: `מה החסרונות של ${make.nameHe} ${model.nameHe}?`,
+                      acceptedAnswer: { '@type': 'Answer', text: expertReview.cons.join('. ') },
+                    },
+                    expertReview.localSummaryHe && {
+                      '@type': 'Question',
+                      name: `מה אומרים בעלי ${make.nameHe} ${model.nameHe} בישראל?`,
+                      acceptedAnswer: { '@type': 'Answer', text: expertReview.localSummaryHe },
+                    },
+                    expertReview.globalSummaryHe && {
+                      '@type': 'Question',
+                      name: `מה חוות הדעת הבינלאומית על ${make.nameHe} ${model.nameHe}?`,
+                      acceptedAnswer: { '@type': 'Answer', text: expertReview.globalSummaryHe },
+                    },
+                    expertReview.topScore !== null && {
+                      '@type': 'Question',
+                      name: `מה הציון של ${make.nameHe} ${model.nameHe}?`,
+                      acceptedAnswer: { '@type': 'Answer', text: `${make.nameHe} ${model.nameHe} קיבל ציון ${expertReview.topScore?.toFixed(1)} מתוך 10 בסיכום AI המבוסס על חוות דעת בעלי רכב בישראל ובעולם.` },
+                    },
+                  ].filter(Boolean),
+                }] : []),
               ],
             }),
           }}
