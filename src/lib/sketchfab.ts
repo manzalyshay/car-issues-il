@@ -20,7 +20,7 @@ const MODELS: Record<string, { uid: string; name: string }> = {
   'toyota/yaris':         { uid: 'b702373da1274645a8c57da1cac8bf4d', name: 'Toyota Yaris 2020' },
   'toyota/chr':           { uid: 'f426a2f495fc41c8aaef33574d232567', name: 'Toyota C-HR GR Sport 2021' },
   'toyota/hilux':         { uid: 'cb3d6d74f597429e99d8972e58d5040f', name: 'Toyota Hilux Double Cab 2021' },
-  'toyota/land-cruiser':  { uid: '3dfcd7904cdb4e52afa3ce59fa59e1a5', name: 'Toyota Land Cruiser 300 2022' },
+  'toyota/land-cruiser':  { uid: '1b085c709c304ace8017a9bb0c26ad48', name: 'Toyota Land Cruiser 300 2022' },
   'toyota/prius':         { uid: 'ad0d925cb51040798d96f166db8c7f80', name: 'Toyota Prius 2020' },
 
   // ── Hyundai ───────────────────────────────────────────────────────────────
@@ -55,7 +55,7 @@ const MODELS: Record<string, { uid: string; name: string }> = {
   // ── Skoda ─────────────────────────────────────────────────────────────────
   'skoda/octavia':        { uid: 'd46ed94b10b14e65a9a5320dc36c1ac4', name: 'Skoda Octavia 2021' },
   'skoda/karoq':          { uid: '7e359874ebe744158eddc37c9da8f487', name: 'Skoda Karoq 2019' },
-  'skoda/kodiaq':         { uid: 'ad0fb4edf2c245338ddfcc9639555584', name: 'Skoda Kodiaq 2022' },
+  'skoda/kodiaq':         { uid: '466446dbeb994382bd625b7a393b2545', name: 'Skoda Kodiaq 2017' },
 
   // ── Honda (slug from cars.ts: hrv, no dash) ───────────────────────────────
   'honda/civic':          { uid: 'db60ed8ca5074803b8225fd213c423ea', name: 'Honda Civic Sedan 2022' },
@@ -64,8 +64,8 @@ const MODELS: Record<string, { uid: string; name: string }> = {
 
   // ── BMW (slugs from cars.ts: series3, series5, x1, x3, x5) ──────────────
   'bmw/series3':          { uid: '82534fdddd7e46e4bdb202d6c1d3c0e7', name: 'BMW 3 Series 2023' },
-  'bmw/x3':               { uid: 'b5c660d8e39340538a06561eaca69b5f', name: 'BMW X3 xDrive 30i 2022' },
-  'bmw/x5':               { uid: '850fb32f984c4630969840fc61f44902', name: 'BMW X5 xDrive30d 2019' },
+  'bmw/x3':               { uid: '5142078aebec406688e19401985050ec', name: 'BMW X3 2020' },
+  'bmw/x5':               { uid: 'df829b3deb5a4be392746504120058a4', name: 'BMW X5 xDrive30d 2019' },
 
   // ── Mercedes ──────────────────────────────────────────────────────────────
   'mercedes/c-class':     { uid: '27d0ec784ceb4c80a03cc17ebea8acb4', name: 'Mercedes-Benz C-Class 2022' },
@@ -100,23 +100,23 @@ const MODELS: Record<string, { uid: string; name: string }> = {
   'audi/q5':              { uid: 'e89edf4f02ea4a0bbfb4fff7e9f1d7a4', name: 'Audi Q5 2021' },
 
   // ── Suzuki ────────────────────────────────────────────────────────────────
-  'suzuki/vitara':        { uid: '48ebe0fdaeae459e9b43b55e68a858c1', name: 'Suzuki Vitara 2018-2024' },
+  'suzuki/vitara':        { uid: 'ee5013f39f06491c952a31576b28440e', name: 'Suzuki Vitara' },
   'suzuki/swift':         { uid: 'beb15f9a28174dd79d0cab0c87fd0488', name: 'Suzuki Swift 2021' },
   'suzuki/scross':        { uid: 'fdfbcea62a7a490db85becfc0983604d', name: 'Suzuki S-Cross 2022' },
   'suzuki/jimny':         { uid: '2c95627ba090412b88883733bcaee568', name: 'Suzuki Jimny 2019' },
 
   // ── Hyundai (additions) ────────────────────────────────────────────────
-  'hyundai/sonata':       { uid: 'b1aefd7e65ac4562b0c976e66b045a54', name: 'Hyundai Sonata 2020' },
+  'hyundai/sonata':       { uid: '3fa9a81188344d53b7e2bb893082a3d7', name: 'Hyundai Sonata 2024' },
 
   // ── Mazda (additions) ─────────────────────────────────────────────────
   // mazda6: Estate model was wrong (Israeli market has sedans) — removed until verified UID found
-  'mazda/mx5':            { uid: 'a6b5e948430241008f3bee23c2f63624', name: 'Mazda MX-5 2019' },
+  'mazda/mx5':            { uid: 'e074e29ccc3847dca74ed5e9cb92d3e7', name: 'Mazda MX-5 Miata' },
 
   // ── Volkswagen (additions) ────────────────────────────────────────────
-  'volkswagen/passat':    { uid: 'f60b7b26af2f44358dbeff033d244e8b', name: 'Volkswagen Passat 2021' },
+  'volkswagen/passat':    { uid: 'f946c79a2e534137a5ffd30aa0173566', name: 'Volkswagen Passat Variant R-Line 2016' },
 
   // ── Skoda (additions) ─────────────────────────────────────────────────
-  'skoda/superb':         { uid: 'b41979349dc14884906ac8e6c7b51bd9', name: 'Skoda Superb 2020' },
+  'skoda/superb':         { uid: '2da5059c3068448b9541eafb930a45a0', name: 'Skoda Superb 2017' },
 
   // ── Honda (additions) ─────────────────────────────────────────────────
   'honda/crv':            { uid: '58185c81be4f44d8a9263729ffe13c6a', name: 'Honda CR-V 2021' },
@@ -134,7 +134,7 @@ const MODELS: Record<string, { uid: string; name: string }> = {
   // ── Audi (additions) ──────────────────────────────────────────────────
   // 'audi/a4' — removed: UID 60bb579ccc474effa132342b4f1cab47 showed wrong cars
   'audi/a6':              { uid: 'c9b7cf9c176b458785edd0b12e235364', name: 'Audi A6 C8' },
-  'audi/q3':              { uid: '97dccbc18cfb4f1e973fc75e278c6f66', name: 'Audi Q3 2023' },
+  'audi/q3':              { uid: 'a0159b9bee094c2d8f9b9d5694c94f45', name: 'Audi Q3 Sportback' },
   'audi/etron':           { uid: '4602d4d118b24577881e21c63eaa5340', name: 'Audi e-tron 2020' },
 
   // ── Ford (additions) ──────────────────────────────────────────────────

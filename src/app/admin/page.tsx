@@ -7,7 +7,6 @@ import { useAuth } from '@/lib/authContext';
 import { getMakeBySlug, getModelBySlug } from '@/data/cars';
 import { CATEGORY_LABELS } from '@/data/reviews';
 import type { Review } from '@/data/reviews';
-import type { RawPost } from '@/lib/expertReviews';
 
 interface ModelRow {
   makeSlug: string;
@@ -71,14 +70,6 @@ function dbToReview(row: Record<string, unknown>): Review {
   };
 }
 
-interface CloneForm {
-  reviewId: string;
-  authorName: string;
-  title: string;
-  body: string;
-  rating: number;
-  category: Review['category'];
-}
 
 export default function AdminPage() {
   const { user, isAdmin, loading } = useAuth();
@@ -96,9 +87,9 @@ export default function AdminPage() {
   // ── User Reviews tab state ───────────────────────────────────────────────────
   const [userReviews, setUserReviews] = useState<Review[]>([]);
   const [reviewsFetching, setReviewsFetching] = useState(false);
-  const [cloneForm, setCloneForm] = useState<CloneForm | null>(null);
-  const [cloneSubmitting, setCloneSubmitting] = useState(false);
-  const [cloneSuccess, setCloneSuccess] = useState<string | null>(null);
+  const [selectedReviews, setSelectedReviews] = useState<Set<string>>(new Set());
+  const [editReview, setEditReview] = useState<Review | null>(null);
+  const [editSaving, setEditSaving] = useState(false);
 
   // ── Reports tab state ────────────────────────────────────────────────────────
   const [reports, setReports] = useState<ReportRow[]>([]);
@@ -108,13 +99,6 @@ export default function AdminPage() {
   const [metrics, setMetrics] = useState<MetricsData | null>(null);
   const [metricsFetching, setMetricsFetching] = useState(false);
 
-  // ── Scrape Preview state ──────────────────────────────────────────────────────
-  const [previewKey, setPreviewKey] = useState<string | null>(null); // "makeSlug/modelSlug"
-  const [previewLoading, setPreviewLoading] = useState(false);
-  const [previewPosts, setPreviewPosts] = useState<RawPost[]>([]);
-  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
-  const [summarizingFromPosts, setSummarizingFromPosts] = useState(false);
-  const [clonePost, setClonePost] = useState<{ post: RawPost; author: string; text: string } | null>(null);
 
   const getToken = useCallback(async () => {
     const { data } = await supabase.auth.getSession();
@@ -192,52 +176,6 @@ export default function AdminPage() {
     if (isAdmin && tab === 'metrics') fetchMetrics();
   }, [isAdmin, tab, fetchMetrics]);
 
-  const fetchPreview = useCallback(async (makeSlug: string, modelSlug: string) => {
-    const key = `${makeSlug}/${modelSlug}`;
-    if (previewKey === key) { setPreviewKey(null); return; } // toggle off
-    setPreviewKey(key);
-    setPreviewPosts([]);
-    setSelectedIds(new Set());
-    setPreviewLoading(true);
-    try {
-      const token = await getToken();
-      const res = await fetch('/api/admin/scrape-preview', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ makeSlug, modelSlug }),
-      });
-      if (res.ok) {
-        const { posts } = await res.json();
-        // posts is { local: RawPost[], global: RawPost[] } — flatten into a single array
-        const flat: RawPost[] = [...(posts.local ?? []), ...(posts.global ?? [])];
-        setPreviewPosts(flat);
-        setSelectedIds(new Set(flat.map((p) => p.id)));
-      }
-    } catch { /* ignore */ } finally {
-      setPreviewLoading(false);
-    }
-  }, [previewKey, getToken]);
-
-  const summarizeFromSelected = useCallback(async (makeSlug: string, modelSlug: string) => {
-    setSummarizingFromPosts(true);
-    try {
-      const token = await getToken();
-      const selected = previewPosts.filter((p) => selectedIds.has(p.id));
-      const res = await fetch('/api/admin', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-        body: JSON.stringify({
-          action: 'summarize_from_posts',
-          makeSlug, modelSlug,
-          localPosts:  selected.filter((p) => p.scope === 'local'),
-          globalPosts: selected.filter((p) => p.scope === 'global'),
-        }),
-      });
-      if (res.ok) { setPreviewKey(null); fetchStatus(); }
-    } catch { /* ignore */ } finally {
-      setSummarizingFromPosts(false);
-    }
-  }, [previewPosts, selectedIds, getToken, fetchStatus]);
 
   const scrapeOne = async (makeSlug: string, modelSlug: string) => {
     const key = `${makeSlug}/${modelSlug}`;
@@ -294,43 +232,43 @@ export default function AdminPage() {
     fetchStatus();
   };
 
-  const openCloneForm = (review: Review) => {
-    setCloneSuccess(null);
-    setCloneForm({
-      reviewId: review.id,
-      authorName: '',
-      title: review.title,
-      body: review.body,
-      rating: review.rating,
-      category: review.category,
+  const deleteReview = async (id: string) => {
+    const token = await getToken();
+    await fetch('/api/admin', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+      body: JSON.stringify({ action: 'delete_review', reviewId: id }),
     });
+    setUserReviews((prev) => prev.filter((r) => r.id !== id));
+    setSelectedReviews((prev) => { const n = new Set(prev); n.delete(id); return n; });
   };
 
-  const submitClone = async (review: Review) => {
-    if (!cloneForm) return;
-    if (!cloneForm.authorName.trim()) { alert('נדרש שם'); return; }
-    setCloneSubmitting(true);
-    const res = await fetch('/api/reviews', {
+  const bulkDeleteReviews = async () => {
+    if (!confirm(`מחק ${selectedReviews.size} ביקורות?`)) return;
+    const ids = [...selectedReviews];
+    const token = await getToken();
+    await fetch('/api/admin', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        makeSlug: review.makeSlug,
-        modelSlug: review.modelSlug,
-        year: review.year,
-        authorName: cloneForm.authorName.trim(),
-        userId: null,
-        rating: cloneForm.rating,
-        title: cloneForm.title,
-        body: cloneForm.body,
-        category: cloneForm.category,
-        mileage: review.mileage,
-      }),
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+      body: JSON.stringify({ action: 'bulk_delete_reviews', ids }),
     });
-    setCloneSubmitting(false);
+    setUserReviews((prev) => prev.filter((r) => !ids.includes(r.id)));
+    setSelectedReviews(new Set());
+  };
+
+  const saveEditReview = async () => {
+    if (!editReview) return;
+    setEditSaving(true);
+    const token = await getToken();
+    const res = await fetch('/api/admin', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+      body: JSON.stringify({ action: 'edit_review', reviewId: editReview.id, title: editReview.title, body: editReview.body, rating: editReview.rating }),
+    });
+    setEditSaving(false);
     if (res.ok) {
-      setCloneSuccess(cloneForm.reviewId);
-      setCloneForm(null);
-      fetchUserReviews();
+      setUserReviews((prev) => prev.map((r) => r.id === editReview.id ? editReview : r));
+      setEditReview(null);
     } else {
       alert('שגיאה בשמירה');
     }
@@ -463,11 +401,11 @@ export default function AdminPage() {
                               </button>
                             )}
                             <button
-                              onClick={() => fetchPreview(m.makeSlug, m.modelSlug)}
-                              disabled={bulkRunning || previewLoading}
+                              onClick={() => router.push(`/admin/preview/${m.makeSlug}/${m.modelSlug}`)}
+                              disabled={bulkRunning}
                               style={{ padding: '5px 12px', borderRadius: 6, border: '1px solid var(--border)', cursor: 'pointer', fontWeight: 600, fontSize: '0.8125rem', background: 'transparent', color: 'var(--text-secondary)' }}
                             >
-                              {previewKey === `${m.makeSlug}/${m.modelSlug}` ? '✕' : '👁 תצוגה'}
+                              👁 תצוגה
                             </button>
                           </div>
                         </td>
@@ -477,143 +415,8 @@ export default function AdminPage() {
                 </tbody>
               </table>
               </div>
-              {previewKey && (() => {
-                const [previewMake, previewModel] = previewKey.split('/');
-                const localPosts  = previewPosts.filter((p) => p.scope === 'local');
-                const globalPosts = previewPosts.filter((p) => p.scope === 'global');
-                const selectedCount = previewPosts.filter((p) => selectedIds.has(p.id)).length;
-
-                return (
-                  <div style={{ padding: '24px', borderTop: '2px solid var(--brand-red)', background: 'var(--bg-muted)' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20, flexWrap: 'wrap', gap: 12 }}>
-                      <div>
-                        <h3 style={{ fontWeight: 800, fontSize: '1rem', margin: 0 }}>
-                          תצוגה מקדימה — {previewMake}/{previewModel}
-                        </h3>
-                        {!previewLoading && previewPosts.length > 0 && (
-                          <div style={{ fontSize: '0.8125rem', color: 'var(--text-muted)', marginTop: 4 }}>
-                            {selectedCount}/{previewPosts.length} פוסטים נבחרו
-                          </div>
-                        )}
-                      </div>
-                      <div style={{ display: 'flex', gap: 10 }}>
-                        {!previewLoading && previewPosts.length > 0 && (
-                          <>
-                            <button onClick={() => setSelectedIds(new Set(previewPosts.map((p) => p.id)))}
-                              style={{ padding: '6px 14px', borderRadius: 6, border: '1px solid var(--border)', background: 'transparent', cursor: 'pointer', fontSize: '0.8125rem', color: 'var(--text-secondary)' }}>
-                              בחר הכל
-                            </button>
-                            <button onClick={() => setSelectedIds(new Set())}
-                              style={{ padding: '6px 14px', borderRadius: 6, border: '1px solid var(--border)', background: 'transparent', cursor: 'pointer', fontSize: '0.8125rem', color: 'var(--text-secondary)' }}>
-                              נקה הכל
-                            </button>
-                            <button
-                              onClick={() => summarizeFromSelected(previewMake, previewModel)}
-                              disabled={summarizingFromPosts || selectedCount === 0}
-                              style={{ padding: '6px 16px', borderRadius: 6, border: 'none', background: 'var(--brand-red)', color: '#fff', cursor: 'pointer', fontWeight: 700, fontSize: '0.8125rem', opacity: summarizingFromPosts ? 0.6 : 1 }}
-                            >
-                              {summarizingFromPosts ? 'מסכם...' : `סכם ${selectedCount} פוסטים נבחרים`}
-                            </button>
-                          </>
-                        )}
-                        <button onClick={() => setPreviewKey(null)}
-                          style={{ padding: '6px 14px', borderRadius: 6, border: '1px solid var(--border)', background: 'transparent', cursor: 'pointer', fontSize: '0.8125rem', color: 'var(--text-muted)' }}>
-                          סגור
-                        </button>
-                      </div>
-                    </div>
-
-                    {previewLoading ? (
-                      <div style={{ textAlign: 'center', padding: 48, color: 'var(--text-muted)' }}>
-                        <div style={{ fontSize: '1.5rem', marginBottom: 8 }}>🔍</div>
-                        סורק פורומים ישראליים ובינלאומיים...
-                      </div>
-                    ) : previewPosts.length === 0 ? (
-                      <div style={{ textAlign: 'center', padding: 48, color: 'var(--text-muted)' }}>לא נמצאו פוסטים</div>
-                    ) : (
-                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(340px, 1fr))', gap: 24 }}>
-                        {(['local', 'global'] as const).map((scope) => {
-                          const scopePosts = scope === 'local' ? localPosts : globalPosts;
-                          if (scopePosts.length === 0) return null;
-                          return (
-                            <div key={scope}>
-                              <div style={{ fontWeight: 700, fontSize: '0.875rem', marginBottom: 12, color: scope === 'local' ? '#3b82f6' : '#8b5cf6' }}>
-                                {scope === 'local' ? '🇮🇱 ישראלי' : '🌍 בינלאומי'} — {scopePosts.length} פוסטים
-                              </div>
-                              <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-                                {scopePosts.map((post) => {
-                                  const isSelected = selectedIds.has(post.id);
-                                  const isCloning = clonePost?.post.id === post.id;
-                                  return (
-                                    <div key={post.id} style={{
-                                      background: 'var(--bg-card)',
-                                      borderRadius: 10,
-                                      padding: '12px 14px',
-                                      border: `1px solid ${isSelected ? (scope === 'local' ? '#3b82f6' : '#8b5cf6') : 'var(--border)'}`,
-                                      opacity: isSelected ? 1 : 0.5,
-                                    }}>
-                                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 8, marginBottom: 6 }}>
-                                        <label style={{ display: 'flex', alignItems: 'flex-start', gap: 8, cursor: 'pointer', flex: 1 }}>
-                                          <input
-                                            type="checkbox"
-                                            checked={isSelected}
-                                            onChange={(e) => {
-                                              setSelectedIds((prev) => {
-                                                const next = new Set(prev);
-                                                if (e.target.checked) next.add(post.id); else next.delete(post.id);
-                                                return next;
-                                              });
-                                            }}
-                                            style={{ marginTop: 2, flexShrink: 0 }}
-                                          />
-                                          <div>
-                                            <div style={{ fontSize: '0.875rem', fontWeight: 600, lineHeight: 1.4 }}>{post.title}</div>
-                                            <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: 2 }}>
-                                              {post.sourceName}
-                                              {post.score != null && post.score > 0 && ` · ${post.score} pts`}
-                                            </div>
-                                          </div>
-                                        </label>
-                                        <div style={{ display: 'flex', gap: 6, flexShrink: 0 }}>
-                                          {post.url && (
-                                            <a href={post.url} target="_blank" rel="noopener noreferrer"
-                                              style={{ padding: '3px 8px', borderRadius: 4, border: '1px solid var(--border)', fontSize: '0.7rem', color: 'var(--text-muted)', textDecoration: 'none' }}>
-                                              🔗
-                                            </a>
-                                          )}
-                                          <button
-                                            onClick={() => setClonePost(isCloning ? null : { post, author: '', text: post.snippet || post.title })}
-                                            style={{ padding: '3px 8px', borderRadius: 4, border: 'none', background: isCloning ? 'var(--bg-muted)' : 'var(--brand-red)', color: isCloning ? 'var(--text-muted)' : '#fff', cursor: 'pointer', fontSize: '0.7rem', fontWeight: 700 }}>
-                                            {isCloning ? '✕' : 'שכפל'}
-                                          </button>
-                                        </div>
-                                      </div>
-                                      {post.snippet && (
-                                        <p style={{ fontSize: '0.8125rem', color: 'var(--text-muted)', margin: 0, lineHeight: 1.5, marginRight: 24 }}>
-                                          {post.snippet.slice(0, 180)}{post.snippet.length > 180 ? '…' : ''}
-                                        </p>
-                                      )}
-                                      {isCloning && clonePost && (
-                                        <CloneFromPostForm
-                                          post={post}
-                                          makeSlug={previewMake}
-                                          modelSlug={previewModel}
-                                          onDone={() => setClonePost(null)}
-                                        />
-                                      )}
-                                    </div>
-                                  );
-                                })}
-                              </div>
-                            </div>
-                          );
-                        })}
-                      </div>
-                    )}
-                  </div>
-                );
-              })()}
             </div>
+
           </>
         )}
 
@@ -629,6 +432,18 @@ export default function AdminPage() {
               </button>
             </div>
 
+            {selectedReviews.size > 0 && (
+              <div style={{ display: 'flex', gap: 10, marginBottom: 16, alignItems: 'center' }}>
+                <span style={{ fontSize: '0.875rem', color: 'var(--text-muted)' }}>{selectedReviews.size} נבחרו</span>
+                <button onClick={bulkDeleteReviews} style={{ padding: '6px 16px', borderRadius: 6, border: 'none', background: 'var(--brand-red)', color: '#fff', cursor: 'pointer', fontWeight: 700, fontSize: '0.8125rem' }}>
+                  מחק נבחרות
+                </button>
+                <button onClick={() => setSelectedReviews(new Set())} style={{ padding: '6px 14px', borderRadius: 6, border: '1px solid var(--border)', background: 'transparent', cursor: 'pointer', fontSize: '0.8125rem', color: 'var(--text-secondary)' }}>
+                  בטל בחירה
+                </button>
+              </div>
+            )}
+
             {reviewsFetching ? (
               <div style={{ textAlign: 'center', padding: 64, color: 'var(--text-muted)' }}>טוען...</div>
             ) : userReviews.length === 0 ? (
@@ -636,101 +451,80 @@ export default function AdminPage() {
                 אין ביקורות עדיין
               </div>
             ) : (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
                 {userReviews.map((review) => {
                   const make = getMakeBySlug(review.makeSlug);
                   const model = make ? getModelBySlug(make, review.modelSlug) : null;
                   const carLabel = make && model
                     ? `${make.nameHe} ${model.nameHe} ${review.year}`
                     : `${review.makeSlug} ${review.modelSlug} ${review.year}`;
-                  const isCloning = cloneForm?.reviewId === review.id;
-                  const wasCloned = cloneSuccess === review.id;
+                  const isSelected = selectedReviews.has(review.id);
+                  const isEditing = editReview?.id === review.id;
 
                   return (
-                    <div key={review.id} className="card" style={{ padding: '20px 24px', border: isCloning ? '2px solid var(--brand-red)' : undefined }}>
-                      {/* Review header */}
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 12, marginBottom: 12, flexWrap: 'wrap' }}>
-                        <div>
-                          <div style={{ fontSize: '0.75rem', color: 'var(--brand-red)', fontWeight: 700, marginBottom: 3 }}>{carLabel}</div>
-                          <div style={{ fontWeight: 700, fontSize: '1rem' }}>{review.title}</div>
-                          <div style={{ fontSize: '0.8125rem', color: 'var(--text-muted)', marginTop: 2 }}>
-                            {review.authorName} · {review.userId ? '👤 משתמש רשום' : '🌐 אורח'} · {'★'.repeat(review.rating)}{'☆'.repeat(5 - review.rating)} ·{' '}
-                            {new Date(review.createdAt).toLocaleDateString('he-IL')}
+                    <div key={review.id} className="card" style={{ padding: '16px 20px', border: isSelected ? '2px solid var(--brand-red)' : undefined }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 12, flexWrap: 'wrap' }}>
+                        <label style={{ display: 'flex', alignItems: 'flex-start', gap: 10, cursor: 'pointer', flex: 1, minWidth: 0 }}>
+                          <input
+                            type="checkbox"
+                            checked={isSelected}
+                            onChange={(e) => setSelectedReviews((prev) => { const n = new Set(prev); e.target.checked ? n.add(review.id) : n.delete(review.id); return n; })}
+                            style={{ marginTop: 4, flexShrink: 0, width: 15, height: 15 }}
+                          />
+                          <div style={{ minWidth: 0 }}>
+                            <div style={{ fontSize: '0.75rem', color: 'var(--brand-red)', fontWeight: 700, marginBottom: 2 }}>{carLabel}</div>
+                            <div style={{ fontWeight: 700, fontSize: '0.9375rem' }}>{review.title}</div>
+                            <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginTop: 2 }}>
+                              {review.authorName} · {review.userId ? '👤' : '🌐'} · {'★'.repeat(review.rating)} · {new Date(review.createdAt).toLocaleDateString('he-IL')}
+                            </div>
                           </div>
-                        </div>
-                        <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexShrink: 0 }}>
-                          <span className="badge badge-gray" style={{ fontSize: '0.7rem' }}>{CATEGORY_LABELS[review.category]}</span>
-                          {wasCloned && <span style={{ fontSize: '0.8rem', color: '#16a34a', fontWeight: 700 }}>✓ שוכפל</span>}
+                        </label>
+                        <div style={{ display: 'flex', gap: 6, flexShrink: 0 }}>
+                          <span className="badge badge-gray" style={{ fontSize: '0.7rem', alignSelf: 'center' }}>{CATEGORY_LABELS[review.category]}</span>
                           <button
-                            onClick={() => isCloning ? setCloneForm(null) : openCloneForm(review)}
-                            style={{
-                              padding: '5px 14px', borderRadius: 6, border: isCloning ? '1px solid var(--border)' : 'none',
-                              cursor: 'pointer', fontWeight: 700, fontSize: '0.8125rem',
-                              background: isCloning ? 'transparent' : 'var(--brand-red)',
-                              color: isCloning ? 'var(--text-muted)' : '#fff',
-                            }}
+                            onClick={() => setEditReview(isEditing ? null : { ...review })}
+                            style={{ padding: '4px 12px', borderRadius: 6, border: '1px solid var(--border)', background: isEditing ? 'var(--bg-muted)' : 'transparent', cursor: 'pointer', fontWeight: 600, fontSize: '0.8rem', color: 'var(--text-secondary)' }}
                           >
-                            {isCloning ? 'ביטול' : 'פרסם כאורח'}
+                            {isEditing ? 'ביטול' : 'ערוך'}
+                          </button>
+                          <button
+                            onClick={() => { if (confirm('מחק ביקורת?')) deleteReview(review.id); }}
+                            style={{ padding: '4px 12px', borderRadius: 6, border: 'none', background: 'rgba(230,57,70,0.12)', color: 'var(--brand-red)', cursor: 'pointer', fontWeight: 700, fontSize: '0.8rem' }}
+                          >
+                            מחק
                           </button>
                         </div>
                       </div>
 
-                      {/* Review body */}
-                      <p style={{ fontSize: '0.9rem', lineHeight: 1.65, color: 'var(--text-secondary)', margin: 0 }}>
-                        {review.body}
-                      </p>
+                      {!isEditing && (
+                        <p style={{ fontSize: '0.875rem', lineHeight: 1.6, color: 'var(--text-secondary)', margin: '10px 0 0 25px' }}>
+                          {review.body}
+                        </p>
+                      )}
 
-                      {/* Clone form — inline below the review */}
-                      {isCloning && cloneForm && (
-                        <div style={{ marginTop: 16, padding: '20px', background: 'var(--bg-muted)', borderRadius: 10, borderTop: '2px solid var(--brand-red)' }}>
-                          <div style={{ fontSize: '0.8125rem', fontWeight: 700, color: 'var(--brand-red)', marginBottom: 14 }}>
-                            פרסום כאורח — ערוך לפי הצורך
-                          </div>
-                          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: 12, marginBottom: 12 }}>
+                      {isEditing && editReview && (
+                        <div style={{ marginTop: 14, padding: '16px', background: 'var(--bg-muted)', borderRadius: 8 }}>
+                          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: 10, marginBottom: 10 }}>
                             <div>
-                              <label style={{ fontSize: '0.8125rem', fontWeight: 600, display: 'block', marginBottom: 4 }}>שם מחבר *</label>
-                              <input
-                                value={cloneForm.authorName}
-                                onChange={(e) => setCloneForm({ ...cloneForm, authorName: e.target.value })}
-                                placeholder="שם שיופיע בביקורת"
-                                style={{ width: '100%', padding: '8px 12px', borderRadius: 8, border: '1px solid var(--border)', fontSize: '0.9rem', background: 'var(--bg-card)', color: 'var(--text-primary)', boxSizing: 'border-box' }}
-                              />
+                              <label style={{ fontSize: '0.75rem', fontWeight: 600, display: 'block', marginBottom: 3 }}>כותרת</label>
+                              <input value={editReview.title} onChange={(e) => setEditReview({ ...editReview, title: e.target.value })}
+                                style={{ width: '100%', padding: '7px 10px', borderRadius: 6, border: '1px solid var(--border)', fontSize: '0.875rem', background: 'var(--bg-card)', color: 'var(--text-primary)', boxSizing: 'border-box' as const }} />
                             </div>
                             <div>
-                              <label style={{ fontSize: '0.8125rem', fontWeight: 600, display: 'block', marginBottom: 4 }}>דירוג</label>
-                              <select
-                                value={cloneForm.rating}
-                                onChange={(e) => setCloneForm({ ...cloneForm, rating: Number(e.target.value) })}
-                                style={{ width: '100%', padding: '8px 12px', borderRadius: 8, border: '1px solid var(--border)', fontSize: '0.9rem', background: 'var(--bg-card)', color: 'var(--text-primary)' }}
-                              >
-                                {[5, 4, 3, 2, 1].map((r) => <option key={r} value={r}>{'★'.repeat(r)} ({r})</option>)}
+                              <label style={{ fontSize: '0.75rem', fontWeight: 600, display: 'block', marginBottom: 3 }}>דירוג</label>
+                              <select value={editReview.rating} onChange={(e) => setEditReview({ ...editReview, rating: Number(e.target.value) })}
+                                style={{ width: '100%', padding: '7px 10px', borderRadius: 6, border: '1px solid var(--border)', fontSize: '0.875rem', background: 'var(--bg-card)', color: 'var(--text-primary)' }}>
+                                {[5,4,3,2,1].map((r) => <option key={r} value={r}>{'★'.repeat(r)} ({r})</option>)}
                               </select>
                             </div>
                           </div>
                           <div style={{ marginBottom: 12 }}>
-                            <label style={{ fontSize: '0.8125rem', fontWeight: 600, display: 'block', marginBottom: 4 }}>כותרת</label>
-                            <input
-                              value={cloneForm.title}
-                              onChange={(e) => setCloneForm({ ...cloneForm, title: e.target.value })}
-                              style={{ width: '100%', padding: '8px 12px', borderRadius: 8, border: '1px solid var(--border)', fontSize: '0.9rem', background: 'var(--bg-card)', color: 'var(--text-primary)', boxSizing: 'border-box' }}
-                            />
+                            <label style={{ fontSize: '0.75rem', fontWeight: 600, display: 'block', marginBottom: 3 }}>תוכן</label>
+                            <textarea value={editReview.body} onChange={(e) => setEditReview({ ...editReview, body: e.target.value })} rows={4}
+                              style={{ width: '100%', padding: '7px 10px', borderRadius: 6, border: '1px solid var(--border)', fontSize: '0.875rem', background: 'var(--bg-card)', color: 'var(--text-primary)', resize: 'vertical' as const, boxSizing: 'border-box' as const }} />
                           </div>
-                          <div style={{ marginBottom: 16 }}>
-                            <label style={{ fontSize: '0.8125rem', fontWeight: 600, display: 'block', marginBottom: 4 }}>תוכן הביקורת</label>
-                            <textarea
-                              value={cloneForm.body}
-                              onChange={(e) => setCloneForm({ ...cloneForm, body: e.target.value })}
-                              rows={4}
-                              style={{ width: '100%', padding: '8px 12px', borderRadius: 8, border: '1px solid var(--border)', fontSize: '0.9rem', background: 'var(--bg-card)', color: 'var(--text-primary)', boxSizing: 'border-box', resize: 'vertical' }}
-                            />
-                          </div>
-                          <button
-                            onClick={() => submitClone(review)}
-                            disabled={cloneSubmitting || !cloneForm.authorName.trim()}
-                            className="btn btn-primary"
-                            style={{ opacity: cloneSubmitting ? 0.6 : 1 }}
-                          >
-                            {cloneSubmitting ? 'שומר...' : 'פרסם ביקורת'}
+                          <button onClick={saveEditReview} disabled={editSaving} className="btn btn-primary" style={{ opacity: editSaving ? 0.6 : 1 }}>
+                            {editSaving ? 'שומר...' : 'שמור שינויים'}
                           </button>
                         </div>
                       )}
@@ -829,75 +623,6 @@ export default function AdminPage() {
   );
 }
 
-function CloneFromPostForm({ post, makeSlug, modelSlug, onDone }: {
-  post: { title: string; snippet: string; sourceName: string; url: string };
-  makeSlug: string;
-  modelSlug: string;
-  onDone: () => void;
-}) {
-  const [author, setAuthor] = useState('');
-  const [title, setTitle] = useState(post.title.slice(0, 120));
-  const [body, setBody] = useState(post.snippet || post.title);
-  const [submitting, setSubmitting] = useState(false);
-  const [done, setDone] = useState(false);
-
-  const make  = getMakeBySlug(makeSlug);
-  const model = make ? getModelBySlug(make, modelSlug) : null;
-  const years = model?.years ?? [];
-
-  const [year, setYear] = useState<number>(years[0] ?? new Date().getFullYear());
-  const [rating, setRating] = useState(4);
-
-  const submit = async () => {
-    if (!author.trim()) { alert('נדרש שם'); return; }
-    setSubmitting(true);
-    const res = await fetch('/api/reviews', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ makeSlug, modelSlug, year, rating, title, body, category: 'general', authorName: author.trim(), userId: null }),
-    });
-    setSubmitting(false);
-    if (res.ok) { setDone(true); setTimeout(onDone, 1200); }
-    else alert('שגיאה בשמירה');
-  };
-
-  if (done) return <div style={{ marginTop: 12, padding: '10px', background: 'rgba(22,163,74,0.1)', borderRadius: 8, fontSize: '0.875rem', color: '#16a34a', fontWeight: 700 }}>✓ נשמר</div>;
-
-  return (
-    <div style={{ marginTop: 12, padding: '14px', background: 'var(--bg-muted)', borderRadius: 8, borderTop: '2px solid var(--brand-red)' }}>
-      <div style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--brand-red)', marginBottom: 10 }}>פרסם כביקורת משתמש</div>
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))', gap: 8, marginBottom: 8 }}>
-        <div>
-          <label style={{ fontSize: '0.75rem', fontWeight: 600, display: 'block', marginBottom: 3 }}>שם *</label>
-          <input value={author} onChange={(e) => setAuthor(e.target.value)} placeholder="שם מחבר" style={{ width: '100%', padding: '6px 10px', borderRadius: 6, border: '1px solid var(--border)', fontSize: '0.8125rem', background: 'var(--bg-card)', color: 'var(--text-primary)', boxSizing: 'border-box' as const }} />
-        </div>
-        <div>
-          <label style={{ fontSize: '0.75rem', fontWeight: 600, display: 'block', marginBottom: 3 }}>שנה</label>
-          <select value={year} onChange={(e) => setYear(Number(e.target.value))} style={{ width: '100%', padding: '6px 10px', borderRadius: 6, border: '1px solid var(--border)', fontSize: '0.8125rem', background: 'var(--bg-card)', color: 'var(--text-primary)' }}>
-            {years.slice(0, 15).map((y) => <option key={y} value={y}>{y}</option>)}
-          </select>
-        </div>
-        <div>
-          <label style={{ fontSize: '0.75rem', fontWeight: 600, display: 'block', marginBottom: 3 }}>דירוג</label>
-          <select value={rating} onChange={(e) => setRating(Number(e.target.value))} style={{ width: '100%', padding: '6px 10px', borderRadius: 6, border: '1px solid var(--border)', fontSize: '0.8125rem', background: 'var(--bg-card)', color: 'var(--text-primary)' }}>
-            {[5,4,3,2,1].map((r) => <option key={r} value={r}>{'★'.repeat(r)} ({r})</option>)}
-          </select>
-        </div>
-      </div>
-      <div style={{ marginBottom: 8 }}>
-        <label style={{ fontSize: '0.75rem', fontWeight: 600, display: 'block', marginBottom: 3 }}>כותרת</label>
-        <input value={title} onChange={(e) => setTitle(e.target.value)} style={{ width: '100%', padding: '6px 10px', borderRadius: 6, border: '1px solid var(--border)', fontSize: '0.8125rem', background: 'var(--bg-card)', color: 'var(--text-primary)', boxSizing: 'border-box' as const }} />
-      </div>
-      <div style={{ marginBottom: 10 }}>
-        <label style={{ fontSize: '0.75rem', fontWeight: 600, display: 'block', marginBottom: 3 }}>טקסט</label>
-        <textarea value={body} onChange={(e) => setBody(e.target.value)} rows={3} style={{ width: '100%', padding: '6px 10px', borderRadius: 6, border: '1px solid var(--border)', fontSize: '0.8125rem', background: 'var(--bg-card)', color: 'var(--text-primary)', resize: 'vertical' as const, boxSizing: 'border-box' as const }} />
-      </div>
-      <button onClick={submit} disabled={submitting} style={{ padding: '7px 20px', borderRadius: 6, border: 'none', background: 'var(--brand-red)', color: '#fff', cursor: 'pointer', fontWeight: 700, fontSize: '0.8125rem', opacity: submitting ? 0.6 : 1 }}>
-        {submitting ? 'שומר...' : 'פרסם ביקורת'}
-      </button>
-    </div>
-  );
-}
 
 const REASON_LABELS: Record<string, string> = {
   spam: 'ספאם',

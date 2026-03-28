@@ -59,74 +59,6 @@ function getSupabase(serviceRole = false) {
   return createClient(url, key);
 }
 
-// ── Reddit (free JSON API, no key) ────────────────────────────────────────────
-
-// Brand-specific subreddits for richer model discussions
-const MAKE_SUBREDDITS: Record<string, string> = {
-  'BMW': 'BMW', 'Mercedes': 'mercedes_benz', 'Mercedes-Benz': 'mercedes_benz',
-  'Jeep': 'Jeep', 'Mazda': 'mazda', 'Volkswagen': 'Volkswagen', 'Toyota': 'Toyota',
-  'Honda': 'Honda', 'Ford': 'Ford', 'Audi': 'Audi', 'Hyundai': 'hyundai',
-  'Kia': 'kia', 'Subaru': 'subaru', 'Volvo': 'Volvo', 'Renault': 'Renault',
-  'Peugeot': 'Peugeot', 'Nissan': 'Nissan', 'Skoda': 'skoda', 'Suzuki': 'suzuki',
-  'Mitsubishi': 'mitsubishi',
-};
-
-async function fetchRedditSearch(url: string, posts: UserPost[], limit: number): Promise<void> {
-  try {
-    const res = await fetch(url, {
-      headers: { 'User-Agent': 'Mozilla/5.0 (compatible; CarIssuesIL/1.0)' },
-      signal: AbortSignal.timeout(12000),
-    });
-    if (!res.ok) return;
-    const json = await res.json() as any;
-    for (const child of (json?.data?.children ?? [])) {
-      const d = child.data;
-      if (!d?.title || !d?.permalink) continue;
-      // Skip only posts with no content AND very low engagement
-      if ((d.selftext?.length ?? 0) < 10 && (d.score ?? 0) < 3 && !d.title) continue;
-      const snippet = (d.selftext ?? '').replace(/\n+/g, ' ').slice(0, 300) || d.title.slice(0, 300);
-      posts.push({ title: d.title, url: `https://reddit.com${d.permalink}`, sourceName: `r/${d.subreddit}`, snippet, score: d.score ?? 0 });
-      if (posts.length >= limit) return;
-    }
-  } catch { /* ignore */ }
-}
-
-async function searchReddit(makeEn: string, modelEn: string, year?: number): Promise<UserPost[]> {
-  const base = year ? `${makeEn} ${modelEn} ${year}` : `${makeEn} ${modelEn}`;
-  const posts: UserPost[] = [];
-
-  // General Reddit searches
-  const generalQueries = [
-    `${base} review owner experience`,
-    `${base} reliability problems`,
-    `${base} thoughts`,
-  ];
-  for (const q of generalQueries) {
-    await fetchRedditSearch(
-      `https://www.reddit.com/search.json?q=${encodeURIComponent(q)}&sort=top&t=all&limit=10&type=link`,
-      posts, 10,
-    );
-    if (posts.length >= 8) break;
-  }
-
-  // If still few results, try the brand subreddit directly
-  if (posts.length < 4) {
-    const sub = MAKE_SUBREDDITS[makeEn];
-    if (sub) {
-      await fetchRedditSearch(
-        `https://www.reddit.com/r/${sub}/search.json?q=${encodeURIComponent(modelEn)}&sort=top&restrict_sr=1&limit=10`,
-        posts, 10,
-      );
-    }
-  }
-
-  // Deduplicate by URL and sort by score
-  const seen = new Set<string>();
-  return posts
-    .filter((p) => { if (seen.has(p.url)) return false; seen.add(p.url); return true; })
-    .sort((a, b) => (b.score ?? 0) - (a.score ?? 0))
-    .slice(0, 8);
-}
 
 // ── Tapuz.co.il — XenForo cars forum (node 451, forum "מכוניות") ──────────────
 // Strategy:
@@ -521,82 +453,164 @@ async function searchCarzone(makeHe: string, modelHe: string, makeEn: string, mo
 }
 
 // ── CarComplaints.com (US car problems database — great for issues site) ──────
+// Overview page has complaint links → fetch individual pages for actual text
 async function searchCarComplaints(makeEn: string, modelEn: string): Promise<UserPost[]> {
   const posts: UserPost[] = [];
   try {
-    // CarComplaints URLs: /Make/Model/
-    const makeSlug = makeEn.replace(/[^a-z0-9]/gi, '_');
-    const modelSlug = modelEn.replace(/[^a-z0-9]/gi, '_');
-    const url = `https://www.carcomplaints.com/${makeSlug}/${modelSlug}/`;
-    const res = await fetch(url, {
-      headers: { 'User-Agent': 'Mozilla/5.0', 'Accept-Language': 'en-US,en;q=0.9' },
-      signal: AbortSignal.timeout(10000),
-    });
-    if (!res.ok) return posts;
-    const html = await res.text();
+    const headers   = { 'User-Agent': 'Mozilla/5.0', 'Accept-Language': 'en-US,en;q=0.9' };
+    const makeSlug  = makeEn.replace(/\s+/g, '_');
+    const modelSlug = modelEn.replace(/\s+/g, '_');
+    const baseUrl   = `https://www.carcomplaints.com`;
+    const listUrl   = `${baseUrl}/${makeSlug}/${modelSlug}/`;
 
-    // Extract complaint titles and snippets
-    const complaintRe = /<a[^>]+href="\/[^"]+\/complaint[^"]*"[^>]*>\s*([^<]{10,200})\s*<\/a>/gi;
-    const snippetRe = /<p[^>]*class="[^"]*complaint[^"]*"[^>]*>([^<]{20,400})<\/p>/gi;
+    const listRes = await fetch(listUrl, { headers, signal: AbortSignal.timeout(10000) });
+    if (!listRes.ok) return posts;
+    const listHtml = await listRes.text();
 
-    const titles: string[] = [];
+    // Extract individual complaint page links (e.g. /Honda/HR-V/2024/engine/stalls.shtml)
+    const linkRe = new RegExp(`href="(/${makeSlug}/${modelSlug}/[^"]+\\.shtml)"`, 'gi');
+    const links: string[] = [];
     let m;
-    while ((m = complaintRe.exec(html)) !== null && titles.length < 5) {
-      const t = m[1].trim();
-      if (t.length > 10) titles.push(t);
+    while ((m = linkRe.exec(listHtml)) !== null && links.length < 5) {
+      const href = m[1];
+      if (!links.includes(href)) links.push(href);
     }
+    if (links.length === 0) return posts;
 
-    const snippets: string[] = [];
-    while ((m = snippetRe.exec(html)) !== null && snippets.length < 5) {
-      snippets.push(m[1].trim().slice(0, 300));
-    }
+    // Fetch complaint pages in parallel and extract text paragraphs
+    const pages = await Promise.all(links.map(async (href) => {
+      try {
+        const res = await fetch(`${baseUrl}${href}`, { headers, signal: AbortSignal.timeout(8000) });
+        if (!res.ok) return null;
+        return { href, html: await res.text() };
+      } catch { return null; }
+    }));
 
-    for (let i = 0; i < titles.length; i++) {
-      posts.push({
-        title: titles[i],
-        url,
-        sourceName: 'CarComplaints.com',
-        snippet: snippets[i] ?? '',
-      });
-    }
-
-    // Also try to extract top complaints summary text
-    const summaryRe = /class="[^"]*(?:top-complaints|problems-summary)[^"]*"[^>]*>([\s\S]{40,600}?)<\/div>/i;
-    const sm = summaryRe.exec(html);
-    if (sm && posts.length === 0) {
-      const text = sm[1].replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
-      if (text.length > 40) {
-        posts.push({ title: `Top complaints: ${makeEn} ${modelEn}`, url, sourceName: 'CarComplaints.com', snippet: text.slice(0, 300) });
-      }
+    for (const page of pages) {
+      if (!page) continue;
+      const paras = [...page.html.matchAll(/<p[^>]*>([^<]{80,600})<\/p>/g)]
+        .map(p => p[1].trim())
+        .filter(p => !p.includes('cookie') && !p.includes('CarComplaints'));
+      if (paras.length === 0) continue;
+      const snippet = paras.slice(0, 3).join(' ').slice(0, 500);
+      const titleMatch = page.href.match(/\/([^/]+)\.shtml$/);
+      const title = titleMatch ? titleMatch[1].replace(/_/g, ' ') : `${makeEn} ${modelEn} complaint`;
+      posts.push({ title: `${makeEn} ${modelEn}: ${title}`, url: `${baseUrl}${page.href}`, sourceName: 'CarComplaints.com', snippet });
     }
   } catch { /* ignore */ }
   return posts;
 }
 
-// ── Edmunds owner reviews ──────────────────────────────────────────────────────
-async function searchEdmunds(makeEn: string, modelEn: string): Promise<UserPost[]> {
-  const posts: UserPost[] = [];
+// ── Scraper proxy (bypasses bot protection on sites like Edmunds) ─────────────
+// Set SCRAPER_API_KEY in .env.local to enable (ScraperAPI free tier: 1000 req/month)
+// https://www.scraperapi.com/
+function scraperUrl(targetUrl: string): string {
+  const key = process.env.SCRAPER_API_KEY;
+  if (!key) return targetUrl;
+  return `https://api.scraperapi.com/?api_key=${key}&url=${encodeURIComponent(targetUrl)}&render=false`;
+}
+
+// ── Edmunds consumer reviews ───────────────────────────────────────────────────
+async function fetchEdmundsPage(url: string, makeEn: string, modelEn: string, posts: UserPost[]): Promise<void> {
   try {
-    const makeSlug = makeEn.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
-    const modelSlug = modelEn.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
-    const url = `https://www.edmunds.com/${makeSlug}/${modelSlug}/review/`;
-    const res = await fetch(url, {
-      headers: { 'User-Agent': 'Mozilla/5.0', 'Accept-Language': 'en-US,en;q=0.9' },
-      signal: AbortSignal.timeout(10000),
+    const res = await fetch(scraperUrl(url), {
+      headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36', 'Accept-Language': 'en-US,en;q=0.9', 'Accept': 'text/html,application/xhtml+xml' },
+      signal: AbortSignal.timeout(15000),
     });
-    if (!res.ok) return posts;
+    if (!res.ok) return;
     const html = await res.text();
 
-    // Extract owner review snippets from JSON-LD or inline review text
-    const reviewRe = /"reviewBody"\s*:\s*"([^"]{30,500})"/g;
+    const reviewBodyRe = /"reviewBody"\s*:\s*"((?:[^"\\]|\\.)*)"/g;
+    const authorRe     = /"author"\s*:\s*\{[^}]*"name"\s*:\s*"([^"]+)"/g;
+    const titleRe      = /"name"\s*:\s*"([^"]{10,120})"/g;
+
+    const bodies: string[]  = [];
+    const authors: string[] = [];
+    const titles: string[]  = [];
     let m;
-    while ((m = reviewRe.exec(html)) !== null && posts.length < 4) {
-      const body = m[1].replace(/\\n/g, ' ').replace(/\\"/g, '"').trim();
-      if (body.length > 30) {
-        posts.push({ title: `Owner review: ${makeEn} ${modelEn}`, url, sourceName: 'Edmunds Owner Reviews', snippet: body.slice(0, 300) });
-      }
+    while ((m = reviewBodyRe.exec(html)) !== null) bodies.push(m[1].replace(/\\n/g, ' ').replace(/\\"/g, '"').replace(/\\u[\dA-Fa-f]{4}/g, '').trim());
+    while ((m = authorRe.exec(html))     !== null) authors.push(m[1]);
+    while ((m = titleRe.exec(html))      !== null && titles.length < bodies.length) titles.push(m[1]);
+
+    for (let i = 0; i < Math.min(bodies.length, 10); i++) {
+      const body = bodies[i];
+      if (body.length < 40) continue;
+      const author = authors[i] ?? `Reviewer ${i + 1}`;
+      const title  = titles[i]  ?? `${makeEn} ${modelEn} — ${author}`;
+      posts.push({ title, url, sourceName: 'Edmunds Consumer Reviews', snippet: body.slice(0, 500) });
     }
   } catch { /* ignore */ }
+}
+
+async function searchEdmunds(makeEn: string, modelEn: string, year?: number): Promise<UserPost[]> {
+  const posts: UserPost[] = [];
+  const makeSlug  = makeEn.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
+  const modelSlug = modelEn.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
+  const base = `https://www.edmunds.com/${makeSlug}/${modelSlug}`;
+
+  const currentYear = new Date().getFullYear();
+  const targetYear  = year ?? currentYear;
+  const years = [...new Set([targetYear, targetYear - 1, targetYear + 1, currentYear])].filter(y => y >= 2015 && y <= currentYear + 1);
+  const urls  = [...years.map(y => `${base}/${y}/consumer-reviews/`), `${base}/consumer-reviews/`];
+
+  await Promise.all(urls.map(url => fetchEdmundsPage(url, makeEn, modelEn, posts)));
+
+  const seen = new Set<string>();
+  return posts.filter(p => { const k = p.snippet.slice(0, 80); if (seen.has(k)) return false; seen.add(k); return true; }).slice(0, 15);
+}
+
+// ── NHTSA complaints API (US gov — free, no key, no blocking) ─────────────────
+// https://api.nhtsa.gov/complaints/complaintsByVehicle?make=honda&model=hr-v&modelYear=2026
+async function searchNHTSA(makeEn: string, modelEn: string, year?: number): Promise<UserPost[]> {
+  const posts: UserPost[] = [];
+  const make  = encodeURIComponent(makeEn);
+  // NHTSA uses various model name formats — try with and without hyphens/spaces
+  const modelVariants = [...new Set([
+    modelEn,
+    modelEn.replace(/-/g, ' '),
+    modelEn.replace(/-/g, ''),
+    modelEn.replace(/\s+/g, '-'),
+  ])];
+
+  const currentYear = new Date().getFullYear();
+  const years = year
+    ? [year, year - 1, year - 2]
+    : [currentYear, currentYear - 1, currentYear - 2];
+
+  const results = await Promise.all(
+    years.flatMap(y =>
+      modelVariants.map(async (mv) => {
+        try {
+          const url = `https://api.nhtsa.gov/complaints/complaintsByVehicle?make=${make}&model=${encodeURIComponent(mv)}&modelYear=${y}`;
+          const res = await fetch(url, { signal: AbortSignal.timeout(8000) });
+          if (!res.ok) return [];
+          const json = await res.json() as any;
+          return (json?.results ?? []) as any[];
+        } catch { return []; }
+      })
+    )
+  );
+
+  const seen = new Set<string>();
+  for (const batch of results) {
+    for (const c of batch) {
+      const text = (c.cdescr ?? '').trim();
+      if (text.length < 30) continue;
+      const key = text.slice(0, 60);
+      if (seen.has(key)) continue;
+      seen.add(key);
+      const component = c.components ? ` [${c.components}]` : '';
+      const yearStr   = c.modelYear ? ` ${c.modelYear}` : '';
+      posts.push({
+        title: `NHTSA complaint${component}: ${makeEn} ${modelEn}${yearStr}`,
+        url:   `https://www.nhtsa.gov/vehicle/${encodeURIComponent(makeEn)}/${encodeURIComponent(c.model ?? modelEn)}/${c.modelYear ?? year}/NG`,
+        sourceName: 'NHTSA Complaints',
+        snippet: text.slice(0, 500),
+      });
+      if (posts.length >= 10) break;
+    }
+    if (posts.length >= 10) break;
+  }
   return posts;
 }
 
@@ -695,6 +709,62 @@ async function searchWhatCar(makeEn: string, modelEn: string): Promise<UserPost[
         const body = m[1].replace(/\\n/g, ' ').trim();
         if (body.length > 40) posts.push({ title: `Buyer review: ${makeEn} ${modelEn}`, url, sourceName: 'What Car?', snippet: body.slice(0, 300) });
       }
+    }
+  } catch { /* ignore */ }
+  return posts;
+}
+
+// ── ZigWheels (Asian market owner reviews — JSON-LD, no blocking) ─────────────
+// List page links to individual review pages; each individual page embeds all
+// recent reviews in JSON-LD itemReviewed.review[] — so we only need one fetch.
+async function searchZigWheels(makeEn: string, modelEn: string): Promise<UserPost[]> {
+  const posts: UserPost[] = [];
+  try {
+    const headers = { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)', 'Accept-Language': 'en-US,en;q=0.9' };
+    const makeSlug  = makeEn.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
+    const modelSlug = modelEn.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
+    const listUrl   = `https://www.zigwheels.my/new-cars/${makeSlug}/${modelSlug}/user-reviews/`;
+
+    // Step 1: get list page, find first individual review URL
+    const listRes = await fetch(listUrl, { headers, signal: AbortSignal.timeout(10000) });
+    if (!listRes.ok) return posts;
+    const listHtml = await listRes.text();
+
+    const linkRe  = new RegExp(`href="(https://www\\.zigwheels\\.my/new-cars/${makeSlug}/${modelSlug}/user-reviews/[a-z0-9-]+)"`, 'g');
+    const reviewUrls: string[] = [];
+    let m;
+    while ((m = linkRe.exec(listHtml)) !== null && reviewUrls.length < 1) reviewUrls.push(m[1]);
+    if (reviewUrls.length === 0) return posts;
+
+    // Step 2: fetch first review page — its JSON-LD has itemReviewed.review[] with all recent reviews
+    const revRes = await fetch(reviewUrls[0], { headers, signal: AbortSignal.timeout(10000) });
+    if (!revRes.ok) return posts;
+    const revHtml = await revRes.text();
+
+    const ldBlocks = [...revHtml.matchAll(/<script type="application\/ld\+json">([\s\S]*?)<\/script>/g)];
+    for (const [, block] of ldBlocks) {
+      try {
+        const obj = JSON.parse(block);
+        if (obj['@type'] !== 'Review') continue;
+        const reviews: any[] = obj?.itemReviewed?.review ?? [];
+        for (const r of reviews.slice(0, 12)) {
+          const body = (r.reviewBody ?? r.description ?? '').trim();
+          if (body.length < 30) continue;
+          const title  = r.name ?? `${makeEn} ${modelEn} owner review`;
+          const author = r.author?.name ?? 'Owner';
+          const date   = r.datePublished ? ` (${r.datePublished})` : '';
+          // Give each review a unique URL using its title slug
+          const slug   = title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+          posts.push({
+            title:      `${title} — ${author}${date}`,
+            url:        `${listUrl}${slug}`,
+            sourceName: 'ZigWheels Owner Reviews',
+            snippet:    body.slice(0, 500),
+            score:      r.reviewRating?.ratingValue ?? undefined,
+          });
+        }
+        break;
+      } catch { /* ignore */ }
     }
   } catch { /* ignore */ }
   return posts;
@@ -1116,18 +1186,19 @@ async function gatherUserPosts(
   year?: number,
 ): Promise<{ local: UserPost[]; global: UserPost[]; primary?: UserPost }> {
   const [
-    redditPosts, tapuzPosts, onePosts, icarPosts, carzonePosts,
-    carComplaintsPosts, edmundsPosts, drivePosts, rotterPosts, wallaPosts,
+    tapuzPosts, onePosts, icarPosts, carzonePosts,
+    carComplaintsPosts, nhtsaPosts, edmundsPosts, zigWheelsPosts, drivePosts, rotterPosts, wallaPosts,
     carsComPosts, autoExpressPosts, whatCarPosts, carExpertPosts, carSalesPosts,
     facebookPosts,
   ] = await Promise.all([
-    searchReddit(makeNameEn, modelNameEn, year),
     searchTapuz(makeNameHe, modelNameHe, year),
     searchOne(makeNameHe, modelNameHe),
     searchIcar(makeNameHe, modelNameHe, year),
     searchCarzone(makeNameHe, modelNameHe, makeNameEn, modelNameEn, year),
     searchCarComplaints(makeNameEn, modelNameEn),
-    searchEdmunds(makeNameEn, modelNameEn),
+    searchNHTSA(makeNameEn, modelNameEn, year),
+    searchEdmunds(makeNameEn, modelNameEn, year),
+    searchZigWheels(makeNameEn, modelNameEn),
     searchDrive(makeNameHe, modelNameHe, year),
     searchRotter(makeNameHe, modelNameHe, year),
     searchWalla(makeNameHe, modelNameHe, year),
@@ -1140,8 +1211,8 @@ async function gatherUserPosts(
   ]);
   return {
     local:   [...icarPosts, ...drivePosts, ...wallaPosts, ...carzonePosts, ...tapuzPosts, ...rotterPosts, ...onePosts, ...facebookPosts],
-    global:  [...redditPosts, ...carComplaintsPosts, ...edmundsPosts, ...carsComPosts, ...autoExpressPosts, ...whatCarPosts, ...carExpertPosts, ...carSalesPosts],
-    primary: tapuzPosts[0] ?? onePosts[0] ?? redditPosts[0],
+    global:  [...zigWheelsPosts, ...edmundsPosts, ...nhtsaPosts, ...carComplaintsPosts, ...carsComPosts, ...autoExpressPosts, ...whatCarPosts, ...carExpertPosts, ...carSalesPosts],
+    primary: tapuzPosts[0] ?? onePosts[0] ?? zigWheelsPosts[0] ?? nhtsaPosts[0],
   };
 }
 
@@ -1149,13 +1220,22 @@ export async function scrapeRawPosts(
   makeNameHe: string, modelNameHe: string,
   makeNameEn: string, modelNameEn: string,
   year?: number,
+  blockedSources: string[] = [],
 ): Promise<{ local: RawPost[]; global: RawPost[] }> {
-  const { local, global: globalPosts } = await gatherUserPosts(makeNameHe, modelNameHe, makeNameEn, modelNameEn, year);
-  const toRaw = (posts: UserPost[], scope: 'local' | 'global'): RawPost[] =>
-    posts.map((p) => ({
-      id: Buffer.from(p.url).toString('base64').slice(0, 16),
-      title: p.title, url: p.url, sourceName: p.sourceName, snippet: p.snippet, scope, score: p.score,
-    }));
+  const timeout = new Promise<never>((_, reject) =>
+    setTimeout(() => reject(new Error('scrape timeout')), 35000),
+  );
+  const { local, global: globalPosts } = await Promise.race([
+    gatherUserPosts(makeNameHe, modelNameHe, makeNameEn, modelNameEn, year),
+    timeout,
+  ]);
+  const toRaw = (posts: UserPost[], scope: 'local' | 'global'): RawPost[] => {
+    const seen = new Set<string>();
+    return posts
+      .filter((p) => { if (seen.has(p.url)) return false; seen.add(p.url); return true; })
+      .filter((p) => blockedSources.length === 0 || !blockedSources.includes(p.sourceName))
+      .map((p) => ({ id: p.url, title: p.title, url: p.url, sourceName: p.sourceName, snippet: p.snippet, scope, score: p.score }));
+  };
   return { local: toRaw(local, 'local'), global: toRaw(globalPosts, 'global') };
 }
 

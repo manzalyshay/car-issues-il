@@ -74,12 +74,11 @@ export default function NavigationProgress() {
           width: `${width}%`,
           background: 'linear-gradient(90deg, var(--brand-red), #ff6b6b)',
           borderRadius: '0 2px 2px 0',
-          transition: width === 100
-            ? 'width 0.3s ease-out'
-            : 'width 0.6s cubic-bezier(0.1, 0.7, 0.3, 1)',
+          transitionProperty: 'width, opacity',
+          transitionDuration: width === 100 ? '0.3s, 0.3s' : '0.6s, 0.6s',
+          transitionTimingFunction: width === 100 ? 'ease-out, ease-out' : 'cubic-bezier(0.1, 0.7, 0.3, 1), ease',
           boxShadow: '0 0 8px rgba(230,57,70,0.6)',
           opacity: visible || width > 0 ? 1 : 0,
-          transitionProperty: 'width, opacity',
         }}
       />
     </div>

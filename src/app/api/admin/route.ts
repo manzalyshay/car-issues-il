@@ -48,7 +48,8 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
   if (!await isAdmin(req)) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
-  const { action, makeSlug, modelSlug, localPosts = [], globalPosts = [] } = await req.json();
+  const body = await req.json();
+  const { action, makeSlug, modelSlug, localPosts = [], globalPosts = [], reviewId, ids, title, body: reviewBody, rating } = body;
 
   if (action === 'delete') {
     const sb = getServiceClient();
@@ -74,6 +75,28 @@ export async function POST(req: NextRequest) {
       car.make.nameEn, car.model.nameEn,
     );
     return NextResponse.json({ ok: true, saved });
+  }
+
+  if (action === 'delete_review') {
+    if (!reviewId) return NextResponse.json({ error: 'Missing reviewId' }, { status: 400 });
+    await getServiceClient().from('reviews').delete().eq('id', reviewId);
+    return NextResponse.json({ ok: true });
+  }
+
+  if (action === 'bulk_delete_reviews') {
+    if (!Array.isArray(ids) || ids.length === 0) return NextResponse.json({ ok: true });
+    await getServiceClient().from('reviews').delete().in('id', ids);
+    return NextResponse.json({ ok: true });
+  }
+
+  if (action === 'edit_review') {
+    if (!reviewId) return NextResponse.json({ error: 'Missing reviewId' }, { status: 400 });
+    const updates: Record<string, unknown> = {};
+    if (title !== undefined)      updates.title  = title;
+    if (reviewBody !== undefined) updates.body   = reviewBody;
+    if (rating !== undefined)     updates.rating = rating;
+    await getServiceClient().from('reviews').update(updates).eq('id', reviewId);
+    return NextResponse.json({ ok: true });
   }
 
   if (action === 'summarize_from_posts') {
