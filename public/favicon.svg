@@ -5,6 +5,15 @@
       <stop offset="100%" stop-color="#e76f51"/>
     </linearGradient>
   </defs>
+  <!-- red gradient background -->
   <rect width="32" height="32" rx="7" fill="url(#g)"/>
-  <text x="16" y="23" text-anchor="middle" font-size="19" font-family="Apple Color Emoji,Segoe UI Emoji,Noto Color Emoji,sans-serif">🚗</text>
+  <!-- car body (white) -->
+  <rect x="3" y="18" width="26" height="7" rx="2" fill="white"/>
+  <!-- car roof / cabin -->
+  <path d="M8,18 L11,11 Q12,10 13.5,10 L18.5,10 Q20,10 21,11 L24,18 Z" fill="white"/>
+  <!-- windshield (semi-transparent cutout) -->
+  <path d="M12,17.5 L14,12.5 Q14.5,12 15,12 L17,12 Q17.5,12 18,12.5 L20,17.5 Z" fill="rgba(230,57,70,0.7)"/>
+  <!-- wheels -->
+  <circle cx="10" cy="25" r="2.8" fill="url(#g)" stroke="white" stroke-width="1.5"/>
+  <circle cx="22" cy="25" r="2.8" fill="url(#g)" stroke="white" stroke-width="1.5"/>
 </svg>
