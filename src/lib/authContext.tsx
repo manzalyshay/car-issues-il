@@ -32,11 +32,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true);
   const [isAdmin, setIsAdmin] = useState(false);
 
-  async function loadProfile(userId: string) {
+  async function loadProfile(token: string) {
     try {
-      const { data: { session } } = await supabase.auth.getSession();
-      const token = session?.access_token;
-      if (!token) { setIsAdmin(false); return; }
       const res = await fetch('/api/auth/profile', {
         headers: { Authorization: `Bearer ${token}` },
       });
@@ -52,17 +49,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }
 
   useEffect(() => {
-    supabase.auth.getSession().then(async ({ data }) => {
+    supabase.auth.getSession().then(({ data }) => {
       setSession(data.session);
       setUser(data.session?.user ?? null);
-      if (data.session?.user) await loadProfile(data.session.user.id);
-      setLoading(false);
+      setLoading(false); // unblock UI immediately — don't wait for profile
+      if (data.session?.access_token) loadProfile(data.session.access_token);
     });
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setSession(session);
       setUser(session?.user ?? null);
-      if (session?.user) await loadProfile(session.user.id);
+      if (session?.access_token) loadProfile(session.access_token);
       else setIsAdmin(false);
     });
 
