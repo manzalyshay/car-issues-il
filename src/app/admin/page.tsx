@@ -7,6 +7,7 @@ import { useAuth } from '@/lib/authContext';
 import { getMakeBySlug, getModelBySlug } from '@/data/cars';
 import { CATEGORY_LABELS } from '@/data/reviews';
 import type { Review } from '@/data/reviews';
+import AdminNav from '@/components/AdminNav';
 
 interface ModelRow {
   makeSlug: string;
@@ -288,6 +289,7 @@ export default function AdminPage() {
     <div style={{ padding: '40px 0 80px' }}>
       <div className="container">
         <h1 style={{ fontSize: '1.75rem', fontWeight: 900, marginBottom: 24 }}>פאנל ניהול</h1>
+        <AdminNav active="summaries" />
 
         {/* Tabs */}
         <div style={{ display: 'flex', gap: 2, marginBottom: 32, borderBottom: '2px solid var(--border)', overflowX: 'auto', flexShrink: 0 }}>
@@ -400,13 +402,6 @@ export default function AdminPage() {
                                 מחק
                               </button>
                             )}
-                            <button
-                              onClick={() => router.push(`/admin/preview/${m.makeSlug}/${m.modelSlug}`)}
-                              disabled={bulkRunning}
-                              style={{ padding: '5px 12px', borderRadius: 6, border: '1px solid var(--border)', cursor: 'pointer', fontWeight: 600, fontSize: '0.8125rem', background: 'transparent', color: 'var(--text-secondary)' }}
-                            >
-                              👁 תצוגה
-                            </button>
                           </div>
                         </td>
                       </tr>
