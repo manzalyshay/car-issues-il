@@ -68,7 +68,7 @@ export default async function HomePage() {
               lineHeight: 1.7,
             }}
           >
-            ביקורות אמיתיות של בעלי רכב בישראל. מצא בעיות נפוצות לפי יצרן, דגם ושנה — בעברית.
+            ביקורות אמיתיות של בעלי רכב בישראל. מצא בעיות נפוצות לפי יצרן, דגם ושנה.
           </p>
 
           <div style={{ display: 'flex', gap: 16, justifyContent: 'center', flexWrap: 'wrap' }}>
