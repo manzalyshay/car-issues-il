@@ -87,6 +87,7 @@ export const carDatabase: CarMake[] = [
     models: [
       { slug: 'mazda3', nameHe: 'מאזדה 3', nameEn: 'Mazda3', years: recentYears(2014), category: 'sedan' },
       { slug: 'mazda6', nameHe: 'מאזדה 6', nameEn: 'Mazda6', years: recentYears(2014), category: 'sedan' },
+      { slug: 'cx3',    nameHe: 'CX-3',    nameEn: 'CX-3',   years: recentYears(2015, 2023), category: 'suv' },
       { slug: 'cx5',    nameHe: 'CX-5',    nameEn: 'CX-5',   years: recentYears(2013), category: 'suv' },
       { slug: 'cx30',   nameHe: 'CX-30',   nameEn: 'CX-30',  years: recentYears(2019), category: 'suv' },
       { slug: 'mx5',    nameHe: 'MX-5',    nameEn: 'MX-5',   years: recentYears(2015), category: 'coupe' },
