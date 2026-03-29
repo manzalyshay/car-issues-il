@@ -81,7 +81,7 @@ export default async function HomePage() {
             {[
               { num: `${carDatabase.length}+`, label: 'יצרנים' },
               { num: `${carDatabase.reduce((s, m) => s + m.models.length, 0)}+`, label: 'דגמים' },
-              { num: '1,000+', label: 'ביקורות' },
+              { num: 'AI', label: 'מופעל בבינה מלאכותית' },
             ].map((s) => (
               <div key={s.label} style={{ textAlign: 'center' }}>
                 <div style={{ fontSize: '2rem', fontWeight: 800, color: '#fff', lineHeight: 1 }}>{s.num}</div>
