@@ -120,6 +120,27 @@ create policy "public helpful update" on reviews for update using (true) with ch
 
 -- News only written server-side (via service_role key, bypasses RLS)
 
+-- ── Scrape delete reasons table ───────────────────────────────────────────────
+-- Logs why admin deleted a scraped post — used to improve the scraper
+create table if not exists scrape_delete_reasons (
+  id          uuid primary key default gen_random_uuid(),
+  make_slug   text not null,
+  model_slug  text not null,
+  post_id     text not null,
+  post_url    text,
+  source_name text,
+  reason      text not null,   -- 'year_too_old' | 'year_mismatch' | 'wrong_model' | 'wrong_language' | 'spam' | 'irrelevant' | 'other'
+  reason_note text,
+  year_in_url integer,         -- year extracted from the post URL, if any
+  created_at  timestamptz not null default now()
+);
+
+create index if not exists scrape_delete_reasons_make_model on scrape_delete_reasons (make_slug, model_slug);
+create index if not exists scrape_delete_reasons_reason on scrape_delete_reasons (reason);
+
+alter table scrape_delete_reasons enable row level security;
+-- Writes only via service_role key
+
 -- ── Seed reviews ──────────────────────────────────────────────────────────────
 insert into reviews (make_slug, model_slug, year, rating, title, body, category, mileage, author) values
   ('toyota', 'corolla', 2020, 5, 'מכונית מעולה לישראל', 'נסעתי 80,000 ק"מ ללא שום בעיה. חסכונית בדלק ונוחה לנסיעות עירוניות. ממליץ בחום.', 'general', 80000, 'דני כהן'),

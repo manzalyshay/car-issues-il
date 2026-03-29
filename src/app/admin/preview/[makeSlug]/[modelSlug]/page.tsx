@@ -9,6 +9,16 @@ import type { RawPost } from '@/lib/expertReviews';
 
 type Post = RawPost & { cloned: boolean };
 
+const DELETE_REASONS = [
+  { value: 'year_too_old',  label: 'שנה ישנה מדי לאתר' },
+  { value: 'year_mismatch', label: 'שנה לא תואמת לדגם' },
+  { value: 'wrong_model',   label: 'לא קשור לדגם הזה' },
+  { value: 'wrong_language',label: 'שפה לא מתאימה' },
+  { value: 'spam',          label: 'ספאם / פרסומת' },
+  { value: 'irrelevant',    label: 'תוכן לא רלוונטי' },
+  { value: 'other',         label: 'אחר' },
+];
+
 function timeAgo(iso: string): string {
   const diff = Date.now() - new Date(iso).getTime();
   const m = Math.floor(diff / 60000);
@@ -36,6 +46,11 @@ export default function PreviewPage() {
   const [summarizing, setSummarizing] = useState(false);
   const [clonePost, setClonePost]     = useState<Post | null>(null);
   const [deletingIds, setDeletingIds] = useState<Set<string>>(new Set());
+
+  // Delete reason modal state
+  const [deleteModal, setDeleteModal]     = useState<Post | null>(null);
+  const [deleteReason, setDeleteReason]   = useState('year_too_old');
+  const [deleteNote, setDeleteNote]       = useState('');
 
   useEffect(() => {
     if (!loading && (!user || !isAdmin)) router.replace('/');
@@ -76,24 +91,29 @@ export default function PreviewPage() {
         body: JSON.stringify({ makeSlug, modelSlug }),
       });
       if (res.ok) {
-        const { posts: raw, newIds: freshIds, scrapedAt: ts } = await res.json();
+        const { posts: raw, newIds: freshIds, scrapedAt: ts, filteredCount } = await res.json();
         const flat: Post[] = [...(raw.local ?? []), ...(raw.global ?? [])];
         setPosts(flat);
         setNewIds(new Set(freshIds ?? []));
         setScrapedAt(ts ?? null);
         setFetched(true);
+        if (filteredCount > 0) {
+          console.info(`[scrape] Filtered ${filteredCount} posts with out-of-range years`);
+        }
       }
     } catch { /* ignore */ } finally { setFetching(false); }
   }, [make, model, makeSlug, modelSlug, getToken]);
 
-  const markInvalid = useCallback(async (post: Post) => {
+  const markInvalid = useCallback(async (post: Post, reason: string, reasonNote: string) => {
     setDeletingIds(prev => new Set(prev).add(post.id));
+    setDeleteModal(null);
+    setDeleteNote('');
     try {
       const token = await getToken();
       await fetch('/api/admin/scrape-preview', {
         method: 'DELETE',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ makeSlug, modelSlug, postId: post.id, sourceName: post.sourceName }),
+        body: JSON.stringify({ makeSlug, modelSlug, postId: post.id, sourceName: post.sourceName, postUrl: post.url, reason, reasonNote }),
       });
       setPosts(prev => prev.filter(p => p.id !== post.id));
       setNewIds(prev => { const n = new Set(prev); n.delete(post.id); return n; });
@@ -142,6 +162,75 @@ export default function PreviewPage() {
   return (
     <div style={{ padding: '40px 0 80px' }}>
       <div className="container">
+
+        {/* Delete reason modal */}
+        {deleteModal && (
+          <div style={{
+            position: 'fixed', inset: 0, zIndex: 1000,
+            background: 'rgba(0,0,0,0.55)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20,
+          }} onClick={() => setDeleteModal(null)}>
+            <div
+              onClick={e => e.stopPropagation()}
+              style={{ background: 'var(--bg-card)', borderRadius: 14, padding: 28, maxWidth: 460, width: '100%', boxShadow: '0 20px 60px rgba(0,0,0,0.3)' }}
+            >
+              <div style={{ fontWeight: 800, fontSize: '1.1rem', marginBottom: 6 }}>למה מוחקים את הפוסט הזה?</div>
+              <div style={{ fontSize: '0.8125rem', color: 'var(--text-muted)', marginBottom: 20, lineHeight: 1.5 }}>
+                זה עוזר לנו לשפר את מנוע הסריקה ולא להביא שוב תוצאות דומות.
+              </div>
+
+              <div style={{ fontWeight: 700, fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: 8, lineHeight: 1.4, padding: '8px 12px', background: 'var(--bg-muted)', borderRadius: 8, wordBreak: 'break-all' }}>
+                {deleteModal.title}
+                {deleteModal.url && (
+                  <div style={{ marginTop: 4, opacity: 0.7, fontSize: '0.7rem' }}>{deleteModal.url}</div>
+                )}
+              </div>
+
+              <div style={{ marginBottom: 16 }}>
+                <label style={{ fontSize: '0.8125rem', fontWeight: 600, display: 'block', marginBottom: 8 }}>סיבה *</label>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                  {DELETE_REASONS.map(r => (
+                    <label key={r.value} style={{ display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer', padding: '7px 10px', borderRadius: 8, background: deleteReason === r.value ? 'rgba(225,29,72,0.08)' : 'transparent', border: `1px solid ${deleteReason === r.value ? 'var(--brand-red)' : 'transparent'}` }}>
+                      <input
+                        type="radio"
+                        name="reason"
+                        value={r.value}
+                        checked={deleteReason === r.value}
+                        onChange={() => setDeleteReason(r.value)}
+                        style={{ accentColor: 'var(--brand-red)' }}
+                      />
+                      <span style={{ fontSize: '0.875rem' }}>{r.label}</span>
+                    </label>
+                  ))}
+                </div>
+              </div>
+
+              <div style={{ marginBottom: 20 }}>
+                <label style={{ fontSize: '0.8125rem', fontWeight: 600, display: 'block', marginBottom: 6 }}>הערה (אופציונלי)</label>
+                <input
+                  value={deleteNote}
+                  onChange={e => setDeleteNote(e.target.value)}
+                  placeholder="למשל: שנת 2002, אבל הקורולה שלנו מ-2014"
+                  style={{ width: '100%', padding: '8px 12px', borderRadius: 8, border: '1px solid var(--border)', fontSize: '0.875rem', background: 'var(--bg-card)', color: 'var(--text-primary)', boxSizing: 'border-box' }}
+                />
+              </div>
+
+              <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end' }}>
+                <button
+                  onClick={() => setDeleteModal(null)}
+                  style={{ padding: '8px 18px', borderRadius: 8, border: '1px solid var(--border)', background: 'transparent', cursor: 'pointer', fontWeight: 600, fontSize: '0.875rem', color: 'var(--text-secondary)' }}
+                >
+                  ביטול
+                </button>
+                <button
+                  onClick={() => markInvalid(deleteModal, deleteReason, deleteNote)}
+                  style={{ padding: '8px 22px', borderRadius: 8, border: 'none', background: '#e11d48', color: '#fff', cursor: 'pointer', fontWeight: 700, fontSize: '0.875rem' }}
+                >
+                  מחק פוסט
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Header */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 32, flexWrap: 'wrap' }}>
@@ -226,7 +315,7 @@ export default function PreviewPage() {
                                 </div>
                               </div>
                               <div style={{ display: 'flex', gap: 6, flexShrink: 0 }}>
-                                <button onClick={() => markInvalid(post)} disabled={isDeleting}
+                                <button onClick={() => { setDeleteReason('year_too_old'); setDeleteNote(''); setDeleteModal(post); }} disabled={isDeleting}
                                   style={{ padding: '4px 10px', borderRadius: 6, border: 'none', background: 'rgba(230,57,70,0.12)', color: '#e11d48', cursor: 'pointer', fontSize: '0.75rem', fontWeight: 700 }}>
                                   {isDeleting ? '...' : '✗'}
                                 </button>

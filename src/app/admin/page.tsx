@@ -674,10 +674,26 @@ function MetricsTab({ metrics, fetching, onRefresh }: { metrics: MetricsData | n
 
   return (
     <div>
-      <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 24 }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24, flexWrap: 'wrap', gap: 12 }}>
+        {/* Vercel Analytics link */}
+        <a
+          href="https://vercel.com/dashboard"
+          target="_blank"
+          rel="noopener noreferrer"
+          style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '8px 16px', borderRadius: 8, border: '1px solid var(--border)', background: 'var(--bg-muted)', cursor: 'pointer', fontWeight: 600, fontSize: '0.875rem', color: 'var(--text-primary)', textDecoration: 'none' }}
+        >
+          <span>▲</span>
+          <span>Vercel Analytics</span>
+          <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>(מדויק יותר · מדינות · מכשירים)</span>
+        </a>
         <button onClick={onRefresh} style={{ padding: '8px 16px', borderRadius: 8, border: '1px solid var(--border)', background: 'transparent', cursor: 'pointer', fontWeight: 600, fontSize: '0.875rem', color: 'var(--text-secondary)' }}>
           רענן
         </button>
+      </div>
+
+      {/* Note about session count */}
+      <div style={{ padding: '10px 16px', borderRadius: 8, background: 'rgba(245,158,11,0.08)', border: '1px solid rgba(245,158,11,0.25)', fontSize: '0.8125rem', color: 'var(--text-muted)', marginBottom: 24, lineHeight: 1.6 }}>
+        <strong style={{ color: 'var(--text-primary)' }}>מבקרים ייחודיים</strong> — מחושב לפי session ID מטבלת page_views שלנו. הספירה כוללת גם בוטים, סורקי גוגל ועכביש-אינטרנט. לנתונים מסוננים עם מדינות ומכשירים, השתמש ב-Vercel Analytics ↗
       </div>
 
       {/* KPI cards */}

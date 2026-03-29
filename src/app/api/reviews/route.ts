@@ -20,7 +20,7 @@ export async function POST(req: NextRequest) {
     const body = await req.json();
     const { makeSlug, modelSlug, year, authorName, userId, rating, title, body: reviewBody, category, mileage, images, captchaToken } = body;
 
-    if (!makeSlug || !modelSlug || !year || !authorName || !title || !reviewBody || !rating) {
+    if (!makeSlug || !modelSlug || !year || !authorName || !reviewBody || !rating) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
     }
     if (typeof rating !== 'number' || rating < 1 || rating > 5) {
@@ -41,7 +41,7 @@ export async function POST(req: NextRequest) {
       authorName: authorName.trim().slice(0, 50),
       userId: userId ?? undefined,
       rating,
-      title: title.trim().slice(0, 100),
+      title: (title ?? '').trim().slice(0, 100),
       body: reviewBody.trim().slice(0, 2000),
       category: category ?? 'general',
       mileage: mileage ? parseInt(mileage) : undefined,

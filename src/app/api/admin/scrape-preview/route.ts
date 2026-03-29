@@ -16,6 +16,13 @@ function dbToPost(r: any): RawPost & { cloned: boolean } {
   };
 }
 
+/** Extract a 4-digit year (1990–2099) from a URL, returns null if none found */
+function extractYearFromUrl(url: string | null | undefined): number | null {
+  if (!url) return null;
+  const match = url.match(/\b(199\d|20[0-9]{2})\b/);
+  return match ? parseInt(match[1]) : null;
+}
+
 // GET — load cached posts from DB
 export async function GET(req: NextRequest) {
   if (!await isAdmin(req)) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
@@ -71,8 +78,30 @@ export async function POST(req: NextRequest) {
 
   const result = await scrapeRawPosts(make.nameHe, model.nameHe, make.nameEn, model.nameEn, undefined, blockedSources);
 
+  // Filter posts with URLs that contain a year outside the car's valid year range
+  const minYear = model.years.length > 0 ? Math.min(...model.years) : 1990;
+  const maxYear = model.years.length > 0 ? Math.max(...model.years) : new Date().getFullYear() + 1;
+
+  let filteredCount = 0;
+  function filterByYear<T extends { url?: string }>(posts: T[]): T[] {
+    return posts.filter(p => {
+      const year = extractYearFromUrl(p.url);
+      if (year === null) return true; // no year in URL — keep
+      if (year < minYear || year > maxYear) {
+        filteredCount++;
+        return false;
+      }
+      return true;
+    });
+  }
+
+  const filteredResult = {
+    local:  filterByYear(result.local),
+    global: filterByYear(result.global),
+  };
+
   const now  = new Date().toISOString();
-  const allPosts = [...result.local, ...result.global];
+  const allPosts = [...filteredResult.local, ...filteredResult.global];
   const newIds: string[] = [];
 
   const rows = allPosts.map(p => {
@@ -113,14 +142,15 @@ export async function POST(req: NextRequest) {
     posts: { local: posts.filter(p => p.scope === 'local'), global: posts.filter(p => p.scope === 'global') },
     newIds,
     scrapedAt: now,
+    filteredCount,
   });
 }
 
-// DELETE — mark invalid: remove from DB + update source stats
+// DELETE — mark invalid: remove from DB + update source stats + save delete reason
 export async function DELETE(req: NextRequest) {
   if (!await isAdmin(req)) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
-  const { makeSlug, modelSlug, postId, sourceName } = await req.json();
+  const { makeSlug, modelSlug, postId, sourceName, postUrl, reason, reasonNote } = await req.json();
   const sb = getServiceClient();
 
   await sb.from('scraped_posts')
@@ -144,6 +174,21 @@ export async function DELETE(req: NextRequest) {
   } else {
     await sb.from('scrape_source_stats').insert({
       make_slug: makeSlug, model_slug: modelSlug, source_name: sourceName, invalid_count: 1,
+    });
+  }
+
+  // Save delete reason for scraper improvement
+  if (reason) {
+    const yearInUrl = extractYearFromUrl(postUrl);
+    await sb.from('scrape_delete_reasons').insert({
+      make_slug:   makeSlug,
+      model_slug:  modelSlug,
+      post_id:     postId,
+      post_url:    postUrl ?? null,
+      source_name: sourceName,
+      reason,
+      reason_note: reasonNote || null,
+      year_in_url: yearInUrl,
     });
   }
 
