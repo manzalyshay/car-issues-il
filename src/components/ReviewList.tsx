@@ -142,7 +142,10 @@ function ReportButton({ reviewId }: { reviewId: string }) {
 export default function ReviewList({ reviews, onHelpful, onDislike }: Props) {
   const { user } = useAuth();
   const [filter, setFilter]     = useState<string>('all');
+  const [yearFilter, setYearFilter] = useState<number | 'all'>('all');
   const [sort, setSort]         = useState<'newest' | 'helpful' | 'rating'>('newest');
+
+  const availableYears = Array.from(new Set(reviews.map((r) => r.year))).sort((a, b) => b - a);
   const [liked, setLiked]       = useState<Set<string>>(new Set());
   const [disliked, setDisliked] = useState<Set<string>>(new Set());
   const [lightbox, setLightbox] = useState<string | null>(null);
@@ -255,7 +258,10 @@ export default function ReviewList({ reviews, onHelpful, onDislike }: Props) {
     }
   };
 
-  const filtered = reviews.filter((r) => filter === 'all' || r.category === filter);
+  const filtered = reviews.filter((r) =>
+    (filter === 'all' || r.category === filter) &&
+    (yearFilter === 'all' || r.year === yearFilter)
+  );
   const sorted = [...filtered].sort((a, b) => {
     if (sort === 'newest')  return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
     if (sort === 'helpful') return (b.helpful || 0) - (a.helpful || 0);
@@ -283,6 +289,26 @@ export default function ReviewList({ reviews, onHelpful, onDislike }: Props) {
                 {o.label}
               </button>
             ))}
+            {availableYears.length > 1 && (
+              <>
+                <span style={{ width: 1, background: 'var(--border)', alignSelf: 'stretch', margin: '4px 2px' }} />
+                {availableYears.map((y) => (
+                  <button
+                    key={y}
+                    onClick={() => setYearFilter(yearFilter === y ? 'all' : y)}
+                    style={{
+                      height: 32, padding: '0 14px', borderRadius: 9999, border: '1.5px solid',
+                      borderColor: yearFilter === y ? '#2563eb' : 'var(--border)',
+                      background: yearFilter === y ? 'rgba(37,99,235,.08)' : 'transparent',
+                      color: yearFilter === y ? '#2563eb' : 'var(--text-secondary)',
+                      fontSize: '0.8125rem', fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit', transition: 'all 0.15s',
+                    }}
+                  >
+                    {y}
+                  </button>
+                ))}
+              </>
+            )}
           </div>
           <select
             value={sort}
@@ -315,9 +341,10 @@ export default function ReviewList({ reviews, onHelpful, onDislike }: Props) {
                   {/* Header */}
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12, flexWrap: 'wrap', gap: 8 }}>
                     <div>
-                      <h3 style={{ fontWeight: 700, fontSize: '1rem', marginBottom: 6 }}>{review.title}</h3>
+                      {review.title && <h3 style={{ fontWeight: 700, fontSize: '1rem', marginBottom: 6 }}>{review.title}</h3>}
                       <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
                         <StarRating rating={review.rating} size={15} />
+                        <span className="badge badge-blue">{review.year}</span>
                         <span className="badge badge-gray">{CATEGORY_LABELS[review.category]}</span>
                         {review.mileage && (
                           <span style={{ color: 'var(--text-muted)', fontSize: '0.8125rem' }}>

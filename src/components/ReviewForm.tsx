@@ -127,7 +127,7 @@ export default function ReviewForm({ makeSlug, modelSlug, year: yearProp, years,
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!effectiveName.trim()) { setError('אנא הזן שם.'); return; }
-    if (!title.trim() || !body.trim()) { setError('אנא מלא את כל השדות החובה.'); return; }
+    if (!body.trim()) { setError('אנא כתוב את תוכן הביקורת.'); return; }
 
     if (!year) { setError('אנא בחר שנת ייצור.'); return; }
 
@@ -253,14 +253,13 @@ export default function ReviewForm({ makeSlug, modelSlug, year: yearProp, years,
 
       {/* Title */}
       <div style={{ marginBottom: 16 }}>
-        <label style={labelStyle}>כותרת <span style={{ color: 'var(--brand-red)' }}>*</span></label>
+        <label style={labelStyle}>כותרת <span style={{ color: 'var(--text-muted)', fontWeight: 400 }}>(אופציונלי)</span></label>
         <input
           value={title}
           onChange={(e) => setTitle(e.target.value)}
           placeholder="סכם את הבעיה / החוויה בקצרה"
           maxLength={100}
           style={inputStyle}
-          required
         />
       </div>
 

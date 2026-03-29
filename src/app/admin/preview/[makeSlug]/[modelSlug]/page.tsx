@@ -160,7 +160,7 @@ export default function PreviewPage() {
         {/* Controls */}
         <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', marginBottom: 24, alignItems: 'center' }}>
           <button className="btn btn-primary" onClick={scrape} disabled={fetching}>
-            {fetching ? '⏳ סורק...' : fetched ? `🔄 סרוק מחדש${newCount > 0 ? ` · ${newCount} חדשים` : ''}` : '🔍 סרוק פורומים'}
+            {fetching ? '⏳ סורק...' : fetched ? `🔍 חפש פוסטים חדשים${newCount > 0 ? ` · ${newCount} חדשים` : ''}` : '🔍 סרוק פורומים'}
           </button>
           {posts.length > 0 && (
             <button onClick={summarizeSelected} disabled={summarizing || posts.length === 0}
@@ -243,8 +243,8 @@ export default function PreviewPage() {
                               </div>
                             </div>
                             {post.snippet && (
-                              <p style={{ fontSize: '0.875rem', color: 'var(--text-muted)', margin: '0 0 0 26px', lineHeight: 1.6 }}>
-                                {post.snippet.slice(0, 280)}{post.snippet.length > 280 ? '…' : ''}
+                              <p style={{ fontSize: '0.875rem', color: 'var(--text-muted)', margin: '0 0 0 26px', lineHeight: 1.6, whiteSpace: 'pre-wrap' }}>
+                                {post.snippet}
                               </p>
                             )}
                             {isCloning && (
