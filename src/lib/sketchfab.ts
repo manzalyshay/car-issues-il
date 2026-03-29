@@ -43,6 +43,7 @@ const MODELS: Record<string, { uid: string; name: string; author: string }> = {
   'kia/cerato':           { uid: '9edf724941444ed0af9c455973958295', name: 'Kia Forte (Cerato) 2019',      author: 'SQUIR3D' },
 
   // ── Mazda ─────────────────────────────────────────────────────────────────
+  'mazda/cx3':            { uid: 'fed92c1e2e9d4c688ce4c42b772f44bd', name: 'Mazda CX-3 2019',              author: 'SQUIR3D' },
   'mazda/cx5':            { uid: 'ea176c6ebe814be3b06641bf038f8642', name: 'Mazda CX-5 2020',              author: 'ItsDiyor' },
   'mazda/mazda3':         { uid: 'c0040e9d66fd4eb1b6df14a69df2bc86', name: 'Mazda 3 Sedan 2019',           author: 'SQUIR3D' },
   'mazda/cx30':           { uid: '664e1e0e8c8e48a99ac4ebccbff51b4e', name: 'Mazda CX-30 2021',             author: 'jiwaszkiewicz9' },
