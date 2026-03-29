@@ -65,6 +65,9 @@ export default function Header() {
             ))}
           </nav>
 
+          {/* Search — visible on mobile as compact icon */}
+          <div className="mobile-search" style={{ display: 'none', position: 'relative', flex: 1, maxWidth: 200 }}><SearchBox compact /></div>
+
           {/* Search + Auth (desktop only) */}
           <div className="desktop-auth" style={{ display: 'flex', alignItems: 'center', gap: 10, flexShrink: 0 }}>
             <SearchBox />
@@ -167,6 +170,7 @@ export default function Header() {
             .desktop-nav { display: none !important; }
             .desktop-auth { display: none !important; }
             .mobile-menu-btn { display: block !important; }
+            .mobile-search { display: block !important; }
           }
         `}</style>
       </header>

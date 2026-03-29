@@ -10,10 +10,11 @@ interface SearchResult {
   type: 'make' | 'model';
 }
 
-export default function SearchBox({ fullWidth = false }: { fullWidth?: boolean }) {
+export default function SearchBox({ fullWidth = false, compact = false }: { fullWidth?: boolean; compact?: boolean }) {
   const [query, setQuery] = useState('');
   const [results, setResults] = useState<SearchResult[]>([]);
   const [open, setOpen] = useState(false);
+  const [expanded, setExpanded] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
   const router = useRouter();
 
@@ -54,8 +55,20 @@ export default function SearchBox({ fullWidth = false }: { fullWidth?: boolean }
     router.push(href);
   };
 
+  if (compact && !expanded) {
+    return (
+      <button
+        onClick={() => { setExpanded(true); setTimeout(() => inputRef.current?.focus(), 50); }}
+        style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 8, fontSize: '1.2rem', color: 'var(--text-secondary)', display: 'flex', alignItems: 'center' }}
+        aria-label="חיפוש"
+      >
+        🔍
+      </button>
+    );
+  }
+
   return (
-    <div style={{ position: 'relative', width: fullWidth ? '100%' : 220 }}>
+    <div style={{ position: 'relative', width: fullWidth || compact ? '100%' : 220 }}>
       <div
         style={{
           display: 'flex',
@@ -88,7 +101,7 @@ export default function SearchBox({ fullWidth = false }: { fullWidth?: boolean }
             minWidth: 0,
           }}
           onFocus={() => results.length > 0 && setOpen(true)}
-          onBlur={() => setTimeout(() => setOpen(false), 150)}
+          onBlur={() => setTimeout(() => { setOpen(false); if (compact && !query) setExpanded(false); }, 150)}
         />
       </div>
 

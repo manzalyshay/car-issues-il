@@ -14,7 +14,7 @@ export interface SketchfabModel {
 
 const MODELS: Record<string, { uid: string; name: string; author: string }> = {
   // ── Toyota ────────────────────────────────────────────────────────────────
-  'toyota/corolla':       { uid: 'de9012121c0844039fb26a4ff2c75028', name: 'Toyota Corolla 2022',           author: 'desolka' },
+  'toyota/corolla':       { uid: '6d7d34ee42734d1ab28a6b1f1c5fc4fc', name: 'Toyota Corolla 2020',           author: 'ItsDiyor' },
   'toyota/rav4':          { uid: '18c2af638eaf4b13a3bb31f38278bdc3', name: 'Toyota RAV4 2022',              author: 'slowpoly' },
   'toyota/camry':         { uid: '147a0afe465144b5a474dc2f8c0a42cc', name: 'Toyota Camry Hybrid SE 2021',   author: 'SQUIR3D' },
   'toyota/yaris':         { uid: 'b702373da1274645a8c57da1cac8bf4d', name: 'Toyota Yaris 2020',             author: 'SQUIR3D' },
