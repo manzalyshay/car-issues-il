@@ -65,8 +65,8 @@ export default function Header() {
             ))}
           </nav>
 
-          {/* Search + Auth */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexShrink: 0 }}>
+          {/* Search + Auth (desktop only) */}
+          <div className="desktop-auth" style={{ display: 'flex', alignItems: 'center', gap: 10, flexShrink: 0 }}>
             <SearchBox />
             {!loading && (
               user ? (
@@ -165,6 +165,7 @@ export default function Header() {
         <style>{`
           @media (max-width: 768px) {
             .desktop-nav { display: none !important; }
+            .desktop-auth { display: none !important; }
             .mobile-menu-btn { display: block !important; }
           }
         `}</style>
