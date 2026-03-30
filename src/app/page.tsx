@@ -1,9 +1,9 @@
 import Link from 'next/link';
-import { carDatabase, getPopularMakes } from '@/data/cars';
+import { getAllMakes, getPopularMakes } from '@/lib/carsDb';
 import MakeLogo from '@/components/MakeLogo';
 
 export default async function HomePage() {
-  const popularMakes = getPopularMakes();
+  const [popularMakes, allMakes] = await Promise.all([getPopularMakes(), getAllMakes()]);
 
   return (
     <>
@@ -79,8 +79,8 @@ export default async function HomePage() {
 
           <div style={{ display: 'flex', justifyContent: 'center', gap: 48, marginTop: 56, flexWrap: 'wrap' }}>
             {[
-              { num: `${carDatabase.length}+`, label: 'יצרנים' },
-              { num: `${carDatabase.reduce((s, m) => s + m.models.length, 0)}+`, label: 'דגמים' },
+              { num: `${allMakes.length}+`, label: 'יצרנים' },
+              { num: `${allMakes.reduce((s, m) => s + m.models.length, 0)}+`, label: 'דגמים' },
               { num: 'AI', label: 'מופעל בבינה מלאכותית' },
             ].map((s) => (
               <div key={s.label} style={{ textAlign: 'center' }}>

@@ -13,7 +13,8 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
-import { carDatabase, getMakeBySlug, getModelBySlug } from '@/data/cars';
+import { getAllMakes } from '@/lib/carsDb';
+import type { CarMake, CarModel } from '@/lib/carsDb';
 import { scrapeExpertReviews } from '@/lib/expertReviews';
 
 const BATCH_SIZE = 10;
@@ -48,13 +49,15 @@ export async function GET(req: NextRequest) {
 
   const now = new Date();
 
+  const carDatabase = await getAllMakes();
+
   // Build full target list: general + all year-specific rows from carDatabase
   interface Target {
     makeSlug: string;
     modelSlug: string;
     year: number | null;
-    make: (typeof carDatabase)[0];
-    model: (typeof carDatabase)[0]['models'][0];
+    make: CarMake;
+    model: CarModel;
     nextScrapeAt: string | null;
   }
 

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getMakeBySlug, getModelBySlug } from '@/data/cars';
+import { getMakeBySlug, getModelBySlug } from '@/lib/carsDb';
 import { scrapeRawPosts, type RawPost } from '@/lib/expertReviews';
 import { isAdmin, getServiceClient } from '@/lib/adminAuth';
 
@@ -53,8 +53,8 @@ export async function POST(req: NextRequest) {
   if (!await isAdmin(req)) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
   const { makeSlug, modelSlug } = await req.json();
-  const make  = getMakeBySlug(makeSlug);
-  const model = make ? getModelBySlug(make, modelSlug) : null;
+  const make  = await getMakeBySlug(makeSlug);
+  const model = make ? await getModelBySlug(makeSlug, modelSlug) : null;
   if (!make || !model) return NextResponse.json({ error: 'Unknown car' }, { status: 404 });
 
   const sb = getServiceClient();

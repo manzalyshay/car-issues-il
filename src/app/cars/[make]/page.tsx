@@ -1,18 +1,19 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
-import { carDatabase, getMakeBySlug, getCategoryLabel } from '@/data/cars';
+import { getAllMakes, getMakeBySlug, getCategoryLabel } from '@/lib/carsDb';
 import MakeLogo from '@/components/MakeLogo';
 
 interface Props { params: Promise<{ make: string }> }
 
 export async function generateStaticParams() {
-  return carDatabase.map((m) => ({ make: m.slug }));
+  const makes = await getAllMakes();
+  return makes.map((m) => ({ make: m.slug }));
 }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { make: makeSlug } = await params;
-  const make = getMakeBySlug(makeSlug);
+  const make = await getMakeBySlug(makeSlug);
   if (!make) return {};
   const url = `https://carissues.co.il/cars/${make.slug}`;
   return {
@@ -25,7 +26,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
 export default async function MakePage({ params }: Props) {
   const { make: makeSlug } = await params;
-  const make = getMakeBySlug(makeSlug);
+  const make = await getMakeBySlug(makeSlug);
   if (!make) notFound();
 
   // Group models by category

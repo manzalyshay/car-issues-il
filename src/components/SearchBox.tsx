@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
-import { carDatabase } from '@/data/cars';
+import type { CarMake } from '@/lib/carsDb';
 
 interface SearchResult {
   label: string;
@@ -15,8 +15,13 @@ export default function SearchBox({ fullWidth = false, compact = false }: { full
   const [results, setResults] = useState<SearchResult[]>([]);
   const [open, setOpen] = useState(false);
   const [expanded, setExpanded] = useState(false);
+  const [carDatabase, setCarDatabase] = useState<CarMake[]>([]);
   const inputRef = useRef<HTMLInputElement>(null);
   const router = useRouter();
+
+  useEffect(() => {
+    fetch('/api/cars').then(r => r.json()).then(setCarDatabase);
+  }, []);
 
   useEffect(() => {
     if (!query.trim()) { setResults([]); setOpen(false); return; }

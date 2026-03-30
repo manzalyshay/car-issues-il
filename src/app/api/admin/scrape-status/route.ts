@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { carDatabase } from '@/data/cars';
+import { getAllMakes } from '@/lib/carsDb';
 import { isAdmin, getServiceClient } from '@/lib/adminAuth';
 
 export async function GET(req: NextRequest) {
@@ -24,6 +24,7 @@ export async function GET(req: NextRequest) {
     if (!s.scrapedAt || r.scraped_at > s.scrapedAt) s.scrapedAt = r.scraped_at;
   }
 
+  const carDatabase = await getAllMakes();
   const result = carDatabase.flatMap(make =>
     make.models.map(model => {
       const key   = `${make.slug}/${model.slug}`;

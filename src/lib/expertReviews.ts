@@ -17,7 +17,7 @@
  */
 
 import { createClient } from '@supabase/supabase-js';
-import { getMakeBySlug, getModelBySlug } from '@/data/cars';
+import { getMakeBySlug, getModelBySlug } from '@/lib/carsDb';
 
 const MISTRAL_URL = 'https://api.mistral.ai/v1/chat/completions';
 

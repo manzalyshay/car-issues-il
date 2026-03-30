@@ -1,0 +1,375 @@
+import { config } from 'dotenv';
+config({ path: '.env.local' });
+import { createClient } from '@supabase/supabase-js';
+
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.SUPABASE_SERVICE_ROLE_KEY!,
+);
+
+// ── Car data (mirrors src/data/cars.ts) ──────────────────────────────────────
+const currentYear = 2025;
+const ryr = (from: number, to: number = currentYear) =>
+  Array.from({ length: to - from + 1 }, (_, i) => from + i).reverse();
+const SI = (slug: string) => `https://cdn.simpleicons.org/${slug}`;
+
+const makes = [
+  { slug: 'toyota',      name_he: 'טויוטה',      name_en: 'Toyota',       country: 'יפן',          logo_url: SI('toyota'),         is_popular: true  },
+  { slug: 'honda',       name_he: 'הונדה',        name_en: 'Honda',        country: 'יפן',          logo_url: SI('honda'),          is_popular: false },
+  { slug: 'nissan',      name_he: 'ניסאן',        name_en: 'Nissan',       country: 'יפן',          logo_url: SI('nissan'),         is_popular: false },
+  { slug: 'mazda',       name_he: 'מאזדה',        name_en: 'Mazda',        country: 'יפן',          logo_url: SI('mazda'),          is_popular: true  },
+  { slug: 'suzuki',      name_he: 'סוזוקי',       name_en: 'Suzuki',       country: 'יפן',          logo_url: SI('suzuki'),         is_popular: false },
+  { slug: 'mitsubishi',  name_he: 'מיצובישי',     name_en: 'Mitsubishi',   country: 'יפן',          logo_url: SI('mitsubishi'),     is_popular: true  },
+  { slug: 'subaru',      name_he: 'סובארו',       name_en: 'Subaru',       country: 'יפן',          logo_url: SI('subaru'),         is_popular: false },
+  { slug: 'hyundai',     name_he: 'יונדאי',       name_en: 'Hyundai',      country: 'קוריאה',       logo_url: SI('hyundai'),        is_popular: true  },
+  { slug: 'kia',         name_he: 'קיה',          name_en: 'Kia',          country: 'קוריאה',       logo_url: SI('kia'),            is_popular: true  },
+  { slug: 'volkswagen',  name_he: 'פולקסווגן',    name_en: 'Volkswagen',   country: 'גרמניה',       logo_url: SI('volkswagen'),     is_popular: true  },
+  { slug: 'bmw',         name_he: 'ב.מ.וו',       name_en: 'BMW',          country: 'גרמניה',       logo_url: SI('bmw'),            is_popular: true  },
+  { slug: 'mercedes',    name_he: 'מרצדס-בנץ',    name_en: 'Mercedes-Benz',country: 'גרמניה',       logo_url: '/logo-mercedes.svg', is_popular: true  },
+  { slug: 'audi',        name_he: 'אאודי',        name_en: 'Audi',         country: 'גרמניה',       logo_url: SI('audi'),           is_popular: true  },
+  { slug: 'skoda',       name_he: 'סקודה',        name_en: 'Skoda',        country: "צ'כיה",        logo_url: SI('skoda'),          is_popular: true  },
+  { slug: 'peugeot',     name_he: "פיג'ו",        name_en: 'Peugeot',      country: 'צרפת',         logo_url: SI('peugeot'),        is_popular: false },
+  { slug: 'renault',     name_he: 'רנו',          name_en: 'Renault',      country: 'צרפת',         logo_url: SI('renault'),        is_popular: false },
+  { slug: 'volvo',       name_he: 'וולוו',        name_en: 'Volvo',        country: 'שוודיה',       logo_url: SI('volvo'),          is_popular: false },
+  { slug: 'ford',        name_he: 'פורד',         name_en: 'Ford',         country: 'ארה"ב',        logo_url: SI('ford'),           is_popular: false },
+  { slug: 'jeep',        name_he: "ג'יפ",         name_en: 'Jeep',         country: 'ארה"ב',        logo_url: SI('jeep'),           is_popular: false },
+  { slug: 'cupra',       name_he: 'קופרה',        name_en: 'Cupra',        country: 'ספרד',         logo_url: '/logo-cupra.svg',    is_popular: true  },
+  { slug: 'seat',        name_he: 'סיאט',         name_en: 'Seat',         country: 'ספרד',         logo_url: SI('seat'),           is_popular: false },
+  { slug: 'opel',        name_he: 'אופל',         name_en: 'Opel',         country: 'גרמניה',       logo_url: SI('opel'),           is_popular: false },
+  { slug: 'lexus',       name_he: 'לקסוס',        name_en: 'Lexus',        country: 'יפן',          logo_url: '',                   is_popular: false },
+  { slug: 'dacia',       name_he: 'דאצ׳יה',       name_en: 'Dacia',        country: 'רומניה',       logo_url: SI('dacia'),          is_popular: false },
+  { slug: 'byd',         name_he: 'BYD',          name_en: 'BYD',          country: 'סין',          logo_url: '/logo-byd.svg',      is_popular: true  },
+  { slug: 'mg',          name_he: 'MG',           name_en: 'MG',           country: 'סין / בריטניה',logo_url: SI('mg'),             is_popular: true  },
+  { slug: 'chery',       name_he: "צ'רי",         name_en: 'Chery',        country: 'סין',          logo_url: '',                   is_popular: false },
+  { slug: 'geely',       name_he: "ג'ילי",        name_en: 'Geely',        country: 'סין',          logo_url: '',                   is_popular: false },
+];
+
+const models: Array<{ make_slug: string; slug: string; name_he: string; name_en: string; years: number[]; category: string; sort_order: number }> = [
+  // Toyota
+  { make_slug: 'toyota', slug: 'corolla',       name_he: 'קורולה',       name_en: 'Corolla',       years: ryr(2014),       category: 'sedan',     sort_order: 0 },
+  { make_slug: 'toyota', slug: 'corolla-cross', name_he: 'קורולה קרוס',  name_en: 'Corolla Cross', years: ryr(2021),       category: 'suv',       sort_order: 1 },
+  { make_slug: 'toyota', slug: 'camry',         name_he: 'קאמרי',        name_en: 'Camry',         years: ryr(2015),       category: 'sedan',     sort_order: 2 },
+  { make_slug: 'toyota', slug: 'yaris',         name_he: 'יאריס',        name_en: 'Yaris',         years: ryr(2014),       category: 'hatchback', sort_order: 3 },
+  { make_slug: 'toyota', slug: 'yaris-cross',   name_he: 'יאריס קרוס',   name_en: 'Yaris Cross',   years: ryr(2021),       category: 'suv',       sort_order: 4 },
+  { make_slug: 'toyota', slug: 'rav4',          name_he: 'RAV4',         name_en: 'RAV4',          years: ryr(2013),       category: 'suv',       sort_order: 5 },
+  { make_slug: 'toyota', slug: 'hilux',         name_he: 'הילוקס',       name_en: 'Hilux',         years: ryr(2015),       category: 'pickup',    sort_order: 6 },
+  { make_slug: 'toyota', slug: 'chr',           name_he: 'C-HR',         name_en: 'C-HR',          years: ryr(2017),       category: 'suv',       sort_order: 7 },
+  { make_slug: 'toyota', slug: 'prius',         name_he: 'פריוס',        name_en: 'Prius',         years: ryr(2016),       category: 'sedan',     sort_order: 8 },
+  { make_slug: 'toyota', slug: 'bz4x',          name_he: 'bZ4X',         name_en: 'bZ4X',          years: ryr(2022),       category: 'electric',  sort_order: 9 },
+  { make_slug: 'toyota', slug: 'land-cruiser',  name_he: 'לנד קרוזר',   name_en: 'Land Cruiser',  years: ryr(2016),       category: 'suv',       sort_order: 10 },
+  // Honda
+  { make_slug: 'honda', slug: 'civic', name_he: 'סיוויק',  name_en: 'Civic', years: ryr(2014), category: 'sedan',     sort_order: 0 },
+  { make_slug: 'honda', slug: 'hrv',   name_he: 'HR-V',    name_en: 'HR-V',  years: ryr(2016), category: 'suv',       sort_order: 1 },
+  { make_slug: 'honda', slug: 'crv',   name_he: 'CR-V',    name_en: 'CR-V',  years: ryr(2014), category: 'suv',       sort_order: 2 },
+  { make_slug: 'honda', slug: 'jazz',  name_he: "ג'אז",    name_en: 'Jazz',  years: ryr(2014), category: 'hatchback', sort_order: 3 },
+  // Nissan
+  { make_slug: 'nissan', slug: 'qashqai', name_he: 'קשקאי',   name_en: 'Qashqai', years: ryr(2014), category: 'suv',       sort_order: 0 },
+  { make_slug: 'nissan', slug: 'x-trail', name_he: 'X-Trail', name_en: 'X-Trail', years: ryr(2014), category: 'suv',       sort_order: 1 },
+  { make_slug: 'nissan', slug: 'juke',    name_he: "ג'וק",    name_en: 'Juke',    years: ryr(2014), category: 'suv',       sort_order: 2 },
+  { make_slug: 'nissan', slug: 'kicks',   name_he: 'קיקס',    name_en: 'Kicks',   years: ryr(2018), category: 'suv',       sort_order: 3 },
+  { make_slug: 'nissan', slug: 'note',    name_he: 'נוט',     name_en: 'Note',    years: ryr(2014), category: 'hatchback', sort_order: 4 },
+  { make_slug: 'nissan', slug: 'leaf',    name_he: 'ליף',     name_en: 'Leaf',    years: ryr(2014), category: 'electric',  sort_order: 5 },
+  { make_slug: 'nissan', slug: 'navara',  name_he: 'נאוורה',  name_en: 'Navara',  years: ryr(2015), category: 'pickup',    sort_order: 6 },
+  // Mazda
+  { make_slug: 'mazda', slug: 'mazda3', name_he: 'מאזדה 3', name_en: 'Mazda3', years: ryr(2014),       category: 'sedan', sort_order: 0 },
+  { make_slug: 'mazda', slug: 'mazda6', name_he: 'מאזדה 6', name_en: 'Mazda6', years: ryr(2014),       category: 'sedan', sort_order: 1 },
+  { make_slug: 'mazda', slug: 'cx3',    name_he: 'CX-3',    name_en: 'CX-3',   years: ryr(2015, 2023), category: 'suv',   sort_order: 2 },
+  { make_slug: 'mazda', slug: 'cx5',    name_he: 'CX-5',    name_en: 'CX-5',   years: ryr(2013),       category: 'suv',   sort_order: 3 },
+  { make_slug: 'mazda', slug: 'cx30',   name_he: 'CX-30',   name_en: 'CX-30',  years: ryr(2019),       category: 'suv',   sort_order: 4 },
+  { make_slug: 'mazda', slug: 'mx5',    name_he: 'MX-5',    name_en: 'MX-5',   years: ryr(2015),       category: 'coupe', sort_order: 5 },
+  // Suzuki
+  { make_slug: 'suzuki', slug: 'swift',  name_he: 'סוויפט',  name_en: 'Swift',   years: ryr(2014), category: 'hatchback', sort_order: 0 },
+  { make_slug: 'suzuki', slug: 'vitara', name_he: 'ויטארה',  name_en: 'Vitara',  years: ryr(2015), category: 'suv',       sort_order: 1 },
+  { make_slug: 'suzuki', slug: 'scross', name_he: 'S-Cross', name_en: 'S-Cross', years: ryr(2014), category: 'suv',       sort_order: 2 },
+  { make_slug: 'suzuki', slug: 'jimny',  name_he: "ג'ימני",  name_en: 'Jimny',   years: ryr(2018), category: 'suv',       sort_order: 3 },
+  // Mitsubishi
+  { make_slug: 'mitsubishi', slug: 'outlander',     name_he: 'אאוטלנדר',    name_en: 'Outlander',     years: ryr(2013),       category: 'suv',       sort_order: 0 },
+  { make_slug: 'mitsubishi', slug: 'eclipse-cross', name_he: 'אקליפס קרוס', name_en: 'Eclipse Cross', years: ryr(2018),       category: 'suv',       sort_order: 1 },
+  { make_slug: 'mitsubishi', slug: 'asx',           name_he: 'ASX',          name_en: 'ASX',           years: ryr(2014),       category: 'suv',       sort_order: 2 },
+  { make_slug: 'mitsubishi', slug: 'colt',          name_he: 'קולט',         name_en: 'Colt',          years: ryr(2023),       category: 'hatchback', sort_order: 3 },
+  { make_slug: 'mitsubishi', slug: 'space-star',    name_he: 'ספייס סטאר',  name_en: 'Space Star',    years: ryr(2014, 2023), category: 'hatchback', sort_order: 4 },
+  { make_slug: 'mitsubishi', slug: 'l200',          name_he: 'L200',         name_en: 'L200',          years: ryr(2014),       category: 'pickup',    sort_order: 5 },
+  { make_slug: 'mitsubishi', slug: 'pajero-sport',  name_he: 'פג׳רו ספורט', name_en: 'Pajero Sport',  years: ryr(2016),       category: 'suv',       sort_order: 6 },
+  // Subaru
+  { make_slug: 'subaru', slug: 'forester', name_he: 'פורסטר',  name_en: 'Forester', years: ryr(2013), category: 'suv',       sort_order: 0 },
+  { make_slug: 'subaru', slug: 'outback',  name_he: 'אאוטבק',  name_en: 'Outback',  years: ryr(2013), category: 'suv',       sort_order: 1 },
+  { make_slug: 'subaru', slug: 'xv',       name_he: 'XV',       name_en: 'XV',       years: ryr(2013), category: 'suv',       sort_order: 2 },
+  { make_slug: 'subaru', slug: 'impreza',  name_he: 'אימפרזה',  name_en: 'Impreza',  years: ryr(2013), category: 'hatchback', sort_order: 3 },
+  // Hyundai
+  { make_slug: 'hyundai', slug: 'tucson',   name_he: 'טוסון',    name_en: 'Tucson',   years: ryr(2014), category: 'suv',       sort_order: 0 },
+  { make_slug: 'hyundai', slug: 'i20',      name_he: 'i20',      name_en: 'i20',      years: ryr(2014), category: 'hatchback', sort_order: 1 },
+  { make_slug: 'hyundai', slug: 'i30',      name_he: 'i30',      name_en: 'i30',      years: ryr(2014), category: 'hatchback', sort_order: 2 },
+  { make_slug: 'hyundai', slug: 'sonata',   name_he: 'סונטה',    name_en: 'Sonata',   years: ryr(2015), category: 'sedan',     sort_order: 3 },
+  { make_slug: 'hyundai', slug: 'santa-fe', name_he: 'סנטה פה',  name_en: 'Santa Fe', years: ryr(2013), category: 'suv',       sort_order: 4 },
+  { make_slug: 'hyundai', slug: 'ioniq-5',  name_he: 'איוניק 5', name_en: 'Ioniq 5',  years: ryr(2021), category: 'electric',  sort_order: 5 },
+  { make_slug: 'hyundai', slug: 'ioniq-6',  name_he: 'איוניק 6', name_en: 'Ioniq 6',  years: ryr(2023), category: 'electric',  sort_order: 6 },
+  { make_slug: 'hyundai', slug: 'kona',     name_he: 'קונה',     name_en: 'Kona',     years: ryr(2017), category: 'suv',       sort_order: 7 },
+  { make_slug: 'hyundai', slug: 'bayon',    name_he: 'ביון',     name_en: 'Bayon',    years: ryr(2021), category: 'suv',       sort_order: 8 },
+  { make_slug: 'hyundai', slug: 'venue',    name_he: 'וונו',     name_en: 'Venue',    years: ryr(2020), category: 'suv',       sort_order: 9 },
+  { make_slug: 'hyundai', slug: 'elantra',  name_he: 'אלנטרה',   name_en: 'Elantra',  years: ryr(2014), category: 'sedan',     sort_order: 10 },
+  { make_slug: 'hyundai', slug: 'staria',   name_he: 'סטריה',    name_en: 'Staria',   years: ryr(2022), category: 'van',       sort_order: 11 },
+  // Kia
+  { make_slug: 'kia', slug: 'sportage', name_he: "ספורטז'", name_en: 'Sportage', years: ryr(2014), category: 'suv',       sort_order: 0 },
+  { make_slug: 'kia', slug: 'seltos',   name_he: 'סלטוס',   name_en: 'Seltos',   years: ryr(2020), category: 'suv',       sort_order: 1 },
+  { make_slug: 'kia', slug: 'stonic',   name_he: 'סטוניק',  name_en: 'Stonic',   years: ryr(2018), category: 'suv',       sort_order: 2 },
+  { make_slug: 'kia', slug: 'ceed',     name_he: 'סיד',     name_en: "Cee'd",    years: ryr(2014), category: 'hatchback', sort_order: 3 },
+  { make_slug: 'kia', slug: 'cerato',   name_he: 'סראטו',   name_en: 'Cerato',   years: ryr(2014), category: 'sedan',     sort_order: 4 },
+  { make_slug: 'kia', slug: 'sorento',  name_he: 'סורנטו',  name_en: 'Sorento',  years: ryr(2014), category: 'suv',       sort_order: 5 },
+  { make_slug: 'kia', slug: 'carnival', name_he: 'קרנבל',   name_en: 'Carnival', years: ryr(2021), category: 'van',       sort_order: 6 },
+  { make_slug: 'kia', slug: 'picanto',  name_he: 'פיקנטו',  name_en: 'Picanto',  years: ryr(2014), category: 'hatchback', sort_order: 7 },
+  { make_slug: 'kia', slug: 'ev6',      name_he: 'EV6',     name_en: 'EV6',      years: ryr(2021), category: 'electric',  sort_order: 8 },
+  { make_slug: 'kia', slug: 'ev9',      name_he: 'EV9',     name_en: 'EV9',      years: ryr(2024), category: 'electric',  sort_order: 9 },
+  { make_slug: 'kia', slug: 'niro',     name_he: 'נירו',    name_en: 'Niro',     years: ryr(2017), category: 'suv',       sort_order: 10 },
+  // Volkswagen
+  { make_slug: 'volkswagen', slug: 'golf',   name_he: 'גולף',   name_en: 'Golf',   years: ryr(2014), category: 'hatchback', sort_order: 0 },
+  { make_slug: 'volkswagen', slug: 'polo',   name_he: 'פולו',   name_en: 'Polo',   years: ryr(2014), category: 'hatchback', sort_order: 1 },
+  { make_slug: 'volkswagen', slug: 'passat', name_he: 'פאסאט',  name_en: 'Passat', years: ryr(2014), category: 'sedan',     sort_order: 2 },
+  { make_slug: 'volkswagen', slug: 'tiguan', name_he: 'טיגואן', name_en: 'Tiguan', years: ryr(2014), category: 'suv',       sort_order: 3 },
+  { make_slug: 'volkswagen', slug: 'taigo',  name_he: 'טייגו',  name_en: 'Taigo',  years: ryr(2022), category: 'suv',       sort_order: 4 },
+  { make_slug: 'volkswagen', slug: 'troc',   name_he: 'T-Roc',  name_en: 'T-Roc',  years: ryr(2018), category: 'suv',       sort_order: 5 },
+  { make_slug: 'volkswagen', slug: 'id3',    name_he: 'ID.3',   name_en: 'ID.3',   years: ryr(2021), category: 'electric',  sort_order: 6 },
+  { make_slug: 'volkswagen', slug: 'id4',    name_he: 'ID.4',   name_en: 'ID.4',   years: ryr(2021), category: 'electric',  sort_order: 7 },
+  // BMW
+  { make_slug: 'bmw', slug: 'series1', name_he: 'סדרה 1', name_en: 'Series 1', years: ryr(2014), category: 'hatchback', sort_order: 0 },
+  { make_slug: 'bmw', slug: 'series3', name_he: 'סדרה 3', name_en: 'Series 3', years: ryr(2013), category: 'sedan',     sort_order: 1 },
+  { make_slug: 'bmw', slug: 'series5', name_he: 'סדרה 5', name_en: 'Series 5', years: ryr(2013), category: 'sedan',     sort_order: 2 },
+  { make_slug: 'bmw', slug: 'x1',      name_he: 'X1',     name_en: 'X1',       years: ryr(2014), category: 'suv',       sort_order: 3 },
+  { make_slug: 'bmw', slug: 'x3',      name_he: 'X3',     name_en: 'X3',       years: ryr(2014), category: 'suv',       sort_order: 4 },
+  { make_slug: 'bmw', slug: 'x5',      name_he: 'X5',     name_en: 'X5',       years: ryr(2014), category: 'suv',       sort_order: 5 },
+  { make_slug: 'bmw', slug: 'ix3',     name_he: 'iX3',    name_en: 'iX3',      years: ryr(2021), category: 'electric',  sort_order: 6 },
+  // Mercedes
+  { make_slug: 'mercedes', slug: 'a-class', name_he: 'A-Class', name_en: 'A-Class', years: ryr(2013), category: 'hatchback', sort_order: 0 },
+  { make_slug: 'mercedes', slug: 'b-class', name_he: 'B-Class', name_en: 'B-Class', years: ryr(2013), category: 'hatchback', sort_order: 1 },
+  { make_slug: 'mercedes', slug: 'cla',     name_he: 'CLA',     name_en: 'CLA',     years: ryr(2014), category: 'sedan',     sort_order: 2 },
+  { make_slug: 'mercedes', slug: 'c-class', name_he: 'C-Class', name_en: 'C-Class', years: ryr(2014), category: 'sedan',     sort_order: 3 },
+  { make_slug: 'mercedes', slug: 'e-class', name_he: 'E-Class', name_en: 'E-Class', years: ryr(2013), category: 'sedan',     sort_order: 4 },
+  { make_slug: 'mercedes', slug: 'gla',     name_he: 'GLA',     name_en: 'GLA',     years: ryr(2014), category: 'suv',       sort_order: 5 },
+  { make_slug: 'mercedes', slug: 'glb',     name_he: 'GLB',     name_en: 'GLB',     years: ryr(2019), category: 'suv',       sort_order: 6 },
+  { make_slug: 'mercedes', slug: 'glc',     name_he: 'GLC',     name_en: 'GLC',     years: ryr(2015), category: 'suv',       sort_order: 7 },
+  { make_slug: 'mercedes', slug: 'eqb',     name_he: 'EQB',     name_en: 'EQB',     years: ryr(2022), category: 'electric',  sort_order: 8 },
+  { make_slug: 'mercedes', slug: 'eqc',     name_he: 'EQC',     name_en: 'EQC',     years: ryr(2020), category: 'electric',  sort_order: 9 },
+  // Audi
+  { make_slug: 'audi', slug: 'a3',    name_he: 'A3',     name_en: 'A3',    years: ryr(2013), category: 'hatchback', sort_order: 0 },
+  { make_slug: 'audi', slug: 'a4',    name_he: 'A4',     name_en: 'A4',    years: ryr(2013), category: 'sedan',     sort_order: 1 },
+  { make_slug: 'audi', slug: 'a6',    name_he: 'A6',     name_en: 'A6',    years: ryr(2013), category: 'sedan',     sort_order: 2 },
+  { make_slug: 'audi', slug: 'q3',    name_he: 'Q3',     name_en: 'Q3',    years: ryr(2013), category: 'suv',       sort_order: 3 },
+  { make_slug: 'audi', slug: 'q5',    name_he: 'Q5',     name_en: 'Q5',    years: ryr(2013), category: 'suv',       sort_order: 4 },
+  { make_slug: 'audi', slug: 'etron', name_he: 'e-tron', name_en: 'e-tron',years: ryr(2020), category: 'electric',  sort_order: 5 },
+  // Skoda
+  { make_slug: 'skoda', slug: 'octavia', name_he: 'אוקטביה', name_en: 'Octavia', years: ryr(2013), category: 'sedan',     sort_order: 0 },
+  { make_slug: 'skoda', slug: 'kodiaq',  name_he: 'קודיאק',  name_en: 'Kodiaq',  years: ryr(2016), category: 'suv',       sort_order: 1 },
+  { make_slug: 'skoda', slug: 'kamiq',   name_he: 'קאמיק',   name_en: 'Kamiq',   years: ryr(2019), category: 'suv',       sort_order: 2 },
+  { make_slug: 'skoda', slug: 'superb',  name_he: 'סופרב',   name_en: 'Superb',  years: ryr(2015), category: 'sedan',     sort_order: 3 },
+  { make_slug: 'skoda', slug: 'karoq',   name_he: 'קארוק',   name_en: 'Karoq',   years: ryr(2018), category: 'suv',       sort_order: 4 },
+  { make_slug: 'skoda', slug: 'scala',   name_he: 'סקאלה',   name_en: 'Scala',   years: ryr(2019), category: 'hatchback', sort_order: 5 },
+  { make_slug: 'skoda', slug: 'enyaq',   name_he: 'אניאק',   name_en: 'Enyaq',   years: ryr(2021), category: 'electric',  sort_order: 6 },
+  { make_slug: 'skoda', slug: 'fabia',   name_he: 'פביה',    name_en: 'Fabia',   years: ryr(2014), category: 'hatchback', sort_order: 7 },
+  // Peugeot
+  { make_slug: 'peugeot', slug: '208',  name_he: '208',   name_en: '208',   years: ryr(2013), category: 'hatchback', sort_order: 0 },
+  { make_slug: 'peugeot', slug: '2008', name_he: '2008',  name_en: '2008',  years: ryr(2013), category: 'suv',       sort_order: 1 },
+  { make_slug: 'peugeot', slug: '308',  name_he: '308',   name_en: '308',   years: ryr(2013), category: 'hatchback', sort_order: 2 },
+  { make_slug: 'peugeot', slug: '3008', name_he: '3008',  name_en: '3008',  years: ryr(2016), category: 'suv',       sort_order: 3 },
+  { make_slug: 'peugeot', slug: '5008', name_he: '5008',  name_en: '5008',  years: ryr(2017), category: 'suv',       sort_order: 4 },
+  { make_slug: 'peugeot', slug: 'e208', name_he: 'e-208', name_en: 'e-208', years: ryr(2020), category: 'electric',  sort_order: 5 },
+  // Renault
+  { make_slug: 'renault', slug: 'clio',   name_he: 'קליאו',  name_en: 'Clio',   years: ryr(2014), category: 'hatchback', sort_order: 0 },
+  { make_slug: 'renault', slug: 'megane', name_he: 'מגאן',   name_en: 'Megane', years: ryr(2014), category: 'hatchback', sort_order: 1 },
+  { make_slug: 'renault', slug: 'kadjar', name_he: "קדג'ר",  name_en: 'Kadjar', years: ryr(2015), category: 'suv',       sort_order: 2 },
+  { make_slug: 'renault', slug: 'arkana', name_he: 'ארקנה',  name_en: 'Arkana', years: ryr(2020), category: 'suv',       sort_order: 3 },
+  { make_slug: 'renault', slug: 'zoe',    name_he: 'זואי',   name_en: 'Zoe',    years: ryr(2015), category: 'electric',  sort_order: 4 },
+  // Volvo
+  { make_slug: 'volvo', slug: 'xc40', name_he: 'XC40', name_en: 'XC40', years: ryr(2018), category: 'suv',      sort_order: 0 },
+  { make_slug: 'volvo', slug: 'xc60', name_he: 'XC60', name_en: 'XC60', years: ryr(2013), category: 'suv',      sort_order: 1 },
+  { make_slug: 'volvo', slug: 'xc90', name_he: 'XC90', name_en: 'XC90', years: ryr(2015), category: 'suv',      sort_order: 2 },
+  { make_slug: 'volvo', slug: 's60',  name_he: 'S60',  name_en: 'S60',  years: ryr(2013), category: 'sedan',    sort_order: 3 },
+  { make_slug: 'volvo', slug: 'ex30', name_he: 'EX30', name_en: 'EX30', years: ryr(2023), category: 'electric', sort_order: 4 },
+  // Ford
+  { make_slug: 'ford', slug: 'fiesta', name_he: 'פיאסטה',  name_en: 'Fiesta', years: ryr(2013, 2023), category: 'hatchback', sort_order: 0 },
+  { make_slug: 'ford', slug: 'focus',  name_he: 'פוקוס',   name_en: 'Focus',  years: ryr(2013, 2022), category: 'hatchback', sort_order: 1 },
+  { make_slug: 'ford', slug: 'kuga',   name_he: 'קוגה',    name_en: 'Kuga',   years: ryr(2013),       category: 'suv',       sort_order: 2 },
+  { make_slug: 'ford', slug: 'puma',   name_he: 'פומה',    name_en: 'Puma',   years: ryr(2020),       category: 'suv',       sort_order: 3 },
+  { make_slug: 'ford', slug: 'ranger', name_he: "ריינג'ר", name_en: 'Ranger', years: ryr(2013),       category: 'pickup',    sort_order: 4 },
+  // Jeep
+  { make_slug: 'jeep', slug: 'renegade',       name_he: 'רנגייד',       name_en: 'Renegade',       years: ryr(2015),       category: 'suv',      sort_order: 0 },
+  { make_slug: 'jeep', slug: 'compass',        name_he: 'קומפס',        name_en: 'Compass',        years: ryr(2017),       category: 'suv',      sort_order: 1 },
+  { make_slug: 'jeep', slug: 'grand-cherokee', name_he: 'גרנד צ׳רוקי', name_en: 'Grand Cherokee', years: ryr(2014),       category: 'suv',      sort_order: 2 },
+  { make_slug: 'jeep', slug: 'wrangler',       name_he: 'רנגלר',        name_en: 'Wrangler',       years: ryr(2013),       category: 'suv',      sort_order: 3 },
+  { make_slug: 'jeep', slug: 'cherokee',       name_he: "צ'רוקי",       name_en: 'Cherokee',       years: ryr(2014, 2023), category: 'suv',      sort_order: 4 },
+  { make_slug: 'jeep', slug: 'avenger',        name_he: 'אוונג׳ר',      name_en: 'Avenger',        years: ryr(2023),       category: 'electric', sort_order: 5 },
+  // Cupra
+  { make_slug: 'cupra', slug: 'formentor', name_he: 'פורמנטור', name_en: 'Formentor', years: ryr(2020), category: 'suv',      sort_order: 0 },
+  { make_slug: 'cupra', slug: 'born',      name_he: 'בורן',      name_en: 'Born',      years: ryr(2022), category: 'electric', sort_order: 1 },
+  { make_slug: 'cupra', slug: 'ateca',     name_he: 'אטקה',      name_en: 'Ateca',     years: ryr(2019), category: 'suv',      sort_order: 2 },
+  // Seat
+  { make_slug: 'seat', slug: 'ibiza', name_he: 'איביזה', name_en: 'Ibiza', years: ryr(2014), category: 'hatchback', sort_order: 0 },
+  { make_slug: 'seat', slug: 'leon',  name_he: 'ליאון',  name_en: 'Leon',  years: ryr(2014), category: 'hatchback', sort_order: 1 },
+  { make_slug: 'seat', slug: 'arona', name_he: 'ארונה',  name_en: 'Arona', years: ryr(2018), category: 'suv',       sort_order: 2 },
+  { make_slug: 'seat', slug: 'ateca', name_he: 'אטקה',   name_en: 'Ateca', years: ryr(2016), category: 'suv',       sort_order: 3 },
+  // Opel
+  { make_slug: 'opel', slug: 'corsa',     name_he: 'קורסה',    name_en: 'Corsa',     years: ryr(2014), category: 'hatchback', sort_order: 0 },
+  { make_slug: 'opel', slug: 'astra',     name_he: 'אסטרה',    name_en: 'Astra',     years: ryr(2014), category: 'hatchback', sort_order: 1 },
+  { make_slug: 'opel', slug: 'mokka',     name_he: 'מוקה',     name_en: 'Mokka',     years: ryr(2014), category: 'suv',       sort_order: 2 },
+  { make_slug: 'opel', slug: 'grandland', name_he: 'גרנדלנד',  name_en: 'Grandland', years: ryr(2018), category: 'suv',       sort_order: 3 },
+  { make_slug: 'opel', slug: 'crossland', name_he: 'קרוסלנד',  name_en: 'Crossland', years: ryr(2017), category: 'suv',       sort_order: 4 },
+  // Lexus
+  { make_slug: 'lexus', slug: 'ux', name_he: 'UX', name_en: 'UX', years: ryr(2019), category: 'suv',      sort_order: 0 },
+  { make_slug: 'lexus', slug: 'nx', name_he: 'NX', name_en: 'NX', years: ryr(2015), category: 'suv',      sort_order: 1 },
+  { make_slug: 'lexus', slug: 'rx', name_he: 'RX', name_en: 'RX', years: ryr(2015), category: 'suv',      sort_order: 2 },
+  { make_slug: 'lexus', slug: 'is', name_he: 'IS', name_en: 'IS', years: ryr(2014), category: 'sedan',    sort_order: 3 },
+  { make_slug: 'lexus', slug: 'es', name_he: 'ES', name_en: 'ES', years: ryr(2019), category: 'sedan',    sort_order: 4 },
+  { make_slug: 'lexus', slug: 'rz', name_he: 'RZ', name_en: 'RZ', years: ryr(2023), category: 'electric', sort_order: 5 },
+  // Dacia
+  { make_slug: 'dacia', slug: 'sandero', name_he: 'סנדרו',  name_en: 'Sandero', years: ryr(2014), category: 'hatchback', sort_order: 0 },
+  { make_slug: 'dacia', slug: 'duster',  name_he: 'דאסטר',  name_en: 'Duster',  years: ryr(2014), category: 'suv',       sort_order: 1 },
+  { make_slug: 'dacia', slug: 'spring',  name_he: 'ספרינג', name_en: 'Spring',  years: ryr(2022), category: 'electric',  sort_order: 2 },
+  // BYD
+  { make_slug: 'byd', slug: 'atto3',    name_he: 'Atto 3',   name_en: 'Atto 3',    years: ryr(2022), category: 'electric', sort_order: 0 },
+  { make_slug: 'byd', slug: 'seal',     name_he: 'Seal',     name_en: 'Seal',      years: ryr(2023), category: 'electric', sort_order: 1 },
+  { make_slug: 'byd', slug: 'dolphin',  name_he: 'Dolphin',  name_en: 'Dolphin',   years: ryr(2023), category: 'electric', sort_order: 2 },
+  { make_slug: 'byd', slug: 'han',      name_he: 'Han',      name_en: 'Han',       years: ryr(2023), category: 'electric', sort_order: 3 },
+  { make_slug: 'byd', slug: 'sealion6', name_he: 'Sealion 6',name_en: 'Sealion 6', years: ryr(2024), category: 'electric', sort_order: 4 },
+  { make_slug: 'byd', slug: 'sealion7', name_he: 'Sealion 7',name_en: 'Sealion 7', years: ryr(2024), category: 'electric', sort_order: 5 },
+  { make_slug: 'byd', slug: 'tang',     name_he: 'Tang',     name_en: 'Tang',      years: ryr(2023), category: 'electric', sort_order: 6 },
+  // MG
+  { make_slug: 'mg', slug: 'mg-zs', name_he: 'ZS',  name_en: 'ZS',  years: ryr(2018), category: 'suv',      sort_order: 0 },
+  { make_slug: 'mg', slug: 'mg4',   name_he: 'MG4', name_en: 'MG4', years: ryr(2023), category: 'electric', sort_order: 1 },
+  { make_slug: 'mg', slug: 'mg5',   name_he: 'MG5', name_en: 'MG5', years: ryr(2021), category: 'sedan',    sort_order: 2 },
+  { make_slug: 'mg', slug: 'hs',    name_he: 'HS',  name_en: 'HS',  years: ryr(2020), category: 'suv',      sort_order: 3 },
+  // Chery
+  { make_slug: 'chery', slug: 'omoda5',  name_he: 'Omoda 5',      name_en: 'Omoda 5',      years: ryr(2023), category: 'suv',   sort_order: 0 },
+  { make_slug: 'chery', slug: 'tiggo7',  name_he: 'Tiggo 7 Pro',  name_en: 'Tiggo 7 Pro',  years: ryr(2021), category: 'suv',   sort_order: 1 },
+  { make_slug: 'chery', slug: 'tiggo8',  name_he: 'Tiggo 8 Pro',  name_en: 'Tiggo 8 Pro',  years: ryr(2021), category: 'suv',   sort_order: 2 },
+  { make_slug: 'chery', slug: 'arrizo6', name_he: 'Arrizo 6 Pro', name_en: 'Arrizo 6 Pro', years: ryr(2020), category: 'sedan', sort_order: 3 },
+  // Geely
+  { make_slug: 'geely', slug: 'coolray', name_he: 'Coolray', name_en: 'Coolray', years: ryr(2020), category: 'suv',   sort_order: 0 },
+  { make_slug: 'geely', slug: 'emgrand', name_he: 'Emgrand', name_en: 'Emgrand', years: ryr(2019), category: 'sedan', sort_order: 1 },
+];
+
+// ── 3D Models (mirrors src/lib/sketchfab.ts) ─────────────────────────────────
+const models3d = [
+  { make_slug: 'toyota',      model_slug: 'corolla',       sketchfab_uid: '6d7d34ee42734d1ab28a6b1f1c5fc4fc', sketchfab_name: 'Toyota Corolla 2020',                    sketchfab_author: 'ItsDiyor',           license: 'CC BY 4.0' },
+  { make_slug: 'toyota',      model_slug: 'rav4',          sketchfab_uid: '18c2af638eaf4b13a3bb31f38278bdc3', sketchfab_name: 'Toyota RAV4 2022',                       sketchfab_author: 'slowpoly',           license: 'CC BY 4.0' },
+  { make_slug: 'toyota',      model_slug: 'camry',         sketchfab_uid: '147a0afe465144b5a474dc2f8c0a42cc', sketchfab_name: 'Toyota Camry Hybrid SE 2021',            sketchfab_author: 'SQUIR3D',            license: 'CC BY 4.0' },
+  { make_slug: 'toyota',      model_slug: 'yaris',         sketchfab_uid: 'b702373da1274645a8c57da1cac8bf4d', sketchfab_name: 'Toyota Yaris 2020',                      sketchfab_author: 'SQUIR3D',            license: 'CC BY 4.0' },
+  { make_slug: 'toyota',      model_slug: 'chr',           sketchfab_uid: 'f426a2f495fc41c8aaef33574d232567', sketchfab_name: 'Toyota C-HR GR Sport 2021',              sketchfab_author: 'SQUIR3D',            license: 'CC BY 4.0' },
+  { make_slug: 'toyota',      model_slug: 'hilux',         sketchfab_uid: 'cb3d6d74f597429e99d8972e58d5040f', sketchfab_name: 'Toyota Hilux Double Cab 2021',           sketchfab_author: 'SQUIR3D',            license: 'CC BY 4.0' },
+  { make_slug: 'toyota',      model_slug: 'land-cruiser',  sketchfab_uid: '1b085c709c304ace8017a9bb0c26ad48', sketchfab_name: 'Toyota Land Cruiser 300 2022',           sketchfab_author: 'Sketchfab',          license: 'NC' },
+  { make_slug: 'toyota',      model_slug: 'prius',         sketchfab_uid: 'ad0d925cb51040798d96f166db8c7f80', sketchfab_name: 'Toyota Prius 2020',                      sketchfab_author: 'ItsDiyor',           license: 'CC BY 4.0' },
+  { make_slug: 'hyundai',     model_slug: 'tucson',        sketchfab_uid: 'c564f16d7d3b4b2e8cb3b9a5624bd25e', sketchfab_name: 'Hyundai Tucson 2021',                    sketchfab_author: 'SQUIR3D',            license: 'CC BY 4.0' },
+  { make_slug: 'hyundai',     model_slug: 'elantra',       sketchfab_uid: '4c34d10b2fec4f97bac984720b2bbe23', sketchfab_name: 'Hyundai Elantra 2021',                   sketchfab_author: 'SQUIR3D',            license: 'CC BY 4.0' },
+  { make_slug: 'hyundai',     model_slug: 'ioniq-5',       sketchfab_uid: '53f1b0e8d2e4473ab543b7f0c67a258a', sketchfab_name: 'Hyundai Ioniq 5 2022',                   sketchfab_author: 'SQUIR3D',            license: 'CC BY 4.0' },
+  { make_slug: 'hyundai',     model_slug: 'kona',          sketchfab_uid: 'fb7e9f8863d641cfbf05878585bbb96c', sketchfab_name: 'Hyundai Kona Electric 2022',             sketchfab_author: 'slowpoly',           license: 'CC BY 4.0' },
+  { make_slug: 'hyundai',     model_slug: 'santa-fe',      sketchfab_uid: '88ee39c0cae946b1aa231a18d6dc0693', sketchfab_name: 'Hyundai Santa Fe 2021',                  sketchfab_author: 'SQUIR3D',            license: 'CC BY 4.0' },
+  { make_slug: 'hyundai',     model_slug: 'i30',           sketchfab_uid: 'e6099de2b6e44a5ca55352c9bb07a671', sketchfab_name: 'Hyundai i30 Hatchback 2021',             sketchfab_author: 'SQUIR3D',            license: 'CC BY 4.0' },
+  { make_slug: 'hyundai',     model_slug: 'i20',           sketchfab_uid: 'bbb0e7acef044b9996424249fb78a274', sketchfab_name: 'Hyundai i20 2021',                       sketchfab_author: 'SQUIR3D',            license: 'CC BY 4.0' },
+  { make_slug: 'hyundai',     model_slug: 'sonata',        sketchfab_uid: '3fa9a81188344d53b7e2bb893082a3d7', sketchfab_name: 'Hyundai Sonata 2024',                    sketchfab_author: 'Nieve5677',          license: 'NC' },
+  { make_slug: 'kia',         model_slug: 'sportage',      sketchfab_uid: '0c45e4e1f8a04b709128f98ee11a022a', sketchfab_name: 'Kia Sportage 2022',                      sketchfab_author: 'slowpoly',           license: 'CC BY 4.0' },
+  { make_slug: 'kia',         model_slug: 'ceed',          sketchfab_uid: '84d3ae3f2e3e4a1780d2707d777e849a', sketchfab_name: 'Kia Ceed Sportswagon 2019',              sketchfab_author: 'SQUIR3D',            license: 'CC BY 4.0' },
+  { make_slug: 'kia',         model_slug: 'ev6',           sketchfab_uid: '7fd159fe0eeb4ab58f1b1231faae8b4d', sketchfab_name: 'Kia EV6 2022',                           sketchfab_author: 'SQUIR3D',            license: 'CC BY 4.0' },
+  { make_slug: 'kia',         model_slug: 'niro',          sketchfab_uid: 'cdb4746fe49b4333ade5160051a2846d', sketchfab_name: 'Kia Niro 2023',                          sketchfab_author: 'slowpoly',           license: 'CC BY 4.0' },
+  { make_slug: 'kia',         model_slug: 'sorento',       sketchfab_uid: '3f3c0aab11124020ae0cf045361f241c', sketchfab_name: 'Kia Sorento 2021',                       sketchfab_author: 'SQUIR3D',            license: 'CC BY 4.0' },
+  { make_slug: 'kia',         model_slug: 'picanto',       sketchfab_uid: '2ee6e3d9ad1047bcb95d9c0581f7e6fa', sketchfab_name: 'Kia Picanto 2021',                       sketchfab_author: 'SQUIR3D',            license: 'CC BY 4.0' },
+  { make_slug: 'kia',         model_slug: 'cerato',        sketchfab_uid: '9edf724941444ed0af9c455973958295', sketchfab_name: 'Kia Forte (Cerato) 2019',                sketchfab_author: 'SQUIR3D',            license: 'CC BY 4.0' },
+  { make_slug: 'mazda',       model_slug: 'cx3',           sketchfab_uid: 'fed92c1e2e9d4c688ce4c42b772f44bd', sketchfab_name: 'Mazda CX-3 2019',                        sketchfab_author: 'SQUIR3D',            license: 'Editorial' },
+  { make_slug: 'mazda',       model_slug: 'cx5',           sketchfab_uid: 'ea176c6ebe814be3b06641bf038f8642', sketchfab_name: 'Mazda CX-5 2020',                        sketchfab_author: 'ItsDiyor',           license: 'CC BY 4.0' },
+  { make_slug: 'mazda',       model_slug: 'mazda3',        sketchfab_uid: 'c0040e9d66fd4eb1b6df14a69df2bc86', sketchfab_name: 'Mazda 3 Sedan 2019',                     sketchfab_author: 'SQUIR3D',            license: 'CC BY 4.0' },
+  { make_slug: 'mazda',       model_slug: 'cx30',          sketchfab_uid: '664e1e0e8c8e48a99ac4ebccbff51b4e', sketchfab_name: 'Mazda CX-30 2021',                       sketchfab_author: 'jiwaszkiewicz9',     license: 'CC BY 4.0' },
+  { make_slug: 'mazda',       model_slug: 'mx5',           sketchfab_uid: 'e074e29ccc3847dca74ed5e9cb92d3e7', sketchfab_name: 'Mazda MX-5 Miata',                       sketchfab_author: 'Black Snow',         license: 'NC' },
+  { make_slug: 'volkswagen',  model_slug: 'golf',          sketchfab_uid: 'd3bf90a94b19445cb98ef17ba3b701a9', sketchfab_name: 'Volkswagen Golf R 2022',                  sketchfab_author: 'SQUIR3D',            license: 'CC BY 4.0' },
+  { make_slug: 'volkswagen',  model_slug: 'tiguan',        sketchfab_uid: '0a26d3337427406d85d4781f8be73bc1', sketchfab_name: 'Volkswagen Tiguan 2021',                  sketchfab_author: 'SQUIR3D',            license: 'CC BY 4.0' },
+  { make_slug: 'volkswagen',  model_slug: 'polo',          sketchfab_uid: '761bc2f96a414fa0952b0bd22ae55f9e', sketchfab_name: 'Volkswagen Polo',                        sketchfab_author: 'Recon-3D',           license: 'CC BY 4.0' },
+  { make_slug: 'volkswagen',  model_slug: 'id4',           sketchfab_uid: 'c0705c87f37d4386b784ec9abd2d0eb6', sketchfab_name: 'Volkswagen ID.4',                        sketchfab_author: 'slowpoly',           license: 'CC BY 4.0' },
+  { make_slug: 'volkswagen',  model_slug: 'troc',          sketchfab_uid: 'c1af0ef4607844299a01364537b2c71a', sketchfab_name: 'Volkswagen T-Roc MK1 2017-2027',         sketchfab_author: 'Merc_TV',            license: 'CC BY 4.0' },
+  { make_slug: 'volkswagen',  model_slug: 'passat',        sketchfab_uid: 'f946c79a2e534137a5ffd30aa0173566', sketchfab_name: 'Volkswagen Passat Variant R-Line 2016',  sketchfab_author: 'ANDREO12',           license: 'NC' },
+  { make_slug: 'skoda',       model_slug: 'octavia',       sketchfab_uid: 'd46ed94b10b14e65a9a5320dc36c1ac4', sketchfab_name: 'Skoda Octavia 2021',                     sketchfab_author: 'VeesGuy',            license: 'CC BY 4.0' },
+  { make_slug: 'skoda',       model_slug: 'karoq',         sketchfab_uid: '7e359874ebe744158eddc37c9da8f487', sketchfab_name: 'Skoda Karoq 2019',                       sketchfab_author: 'BHP3D',              license: 'CC BY 4.0' },
+  { make_slug: 'skoda',       model_slug: 'kodiaq',        sketchfab_uid: '466446dbeb994382bd625b7a393b2545', sketchfab_name: 'Skoda Kodiaq 2017',                      sketchfab_author: 'Oren garage',        license: 'NC' },
+  { make_slug: 'skoda',       model_slug: 'kamiq',         sketchfab_uid: '3ed82ec208424ae1ab01b90c195e2b6c', sketchfab_name: 'Skoda Kamiq',                            sketchfab_author: 'Mona x Supercars',   license: 'CC BY 4.0' },
+  { make_slug: 'skoda',       model_slug: 'superb',        sketchfab_uid: '2da5059c3068448b9541eafb930a45a0', sketchfab_name: 'Skoda Superb 2017',                      sketchfab_author: 'BHP3D',              license: 'NC' },
+  { make_slug: 'skoda',       model_slug: 'fabia',         sketchfab_uid: '1706bfcbe59740dda0855c54a6a6f8a2', sketchfab_name: 'Skoda Fabia Scoutline 2019',             sketchfab_author: 'Sketchfab',          license: 'CC BY 4.0' },
+  { make_slug: 'honda',       model_slug: 'civic',         sketchfab_uid: 'db60ed8ca5074803b8225fd213c423ea', sketchfab_name: 'Honda Civic Sedan 2022',                 sketchfab_author: 'SQUIR3D',            license: 'CC BY 4.0' },
+  { make_slug: 'honda',       model_slug: 'hrv',           sketchfab_uid: 'd448457840894bb49b0db7cb63c703e9', sketchfab_name: 'Honda HR-V 2022',                        sketchfab_author: 'SQUIR3D',            license: 'CC BY 4.0' },
+  { make_slug: 'honda',       model_slug: 'jazz',          sketchfab_uid: '8f1d1c30fd4a4c58a9afa09c6243cfe2', sketchfab_name: 'Honda Jazz 2020',                        sketchfab_author: 'SQUIR3D',            license: 'CC BY 4.0' },
+  { make_slug: 'honda',       model_slug: 'crv',           sketchfab_uid: '58185c81be4f44d8a9263729ffe13c6a', sketchfab_name: 'Honda CR-V 2021',                        sketchfab_author: 'tonielpro520',       license: 'CC BY 4.0' },
+  { make_slug: 'bmw',         model_slug: 'series1',       sketchfab_uid: 'ec91e167beb347b7a962fed023c2fd2d', sketchfab_name: 'BMW 1 Series F20 2019',                  sketchfab_author: 'Merc_TV',            license: 'CC BY 4.0' },
+  { make_slug: 'bmw',         model_slug: 'series3',       sketchfab_uid: '82534fdddd7e46e4bdb202d6c1d3c0e7', sketchfab_name: 'BMW 3 Series 2023',                      sketchfab_author: 'solid3DDD',          license: 'CC BY 4.0' },
+  { make_slug: 'bmw',         model_slug: 'series5',       sketchfab_uid: 'c2910a4e0d154f2ebdc41e6265eaaac3', sketchfab_name: 'BMW 5 Series G30 LCI 2020',              sketchfab_author: 'Mona x Supercars',   license: 'CC BY 4.0' },
+  { make_slug: 'bmw',         model_slug: 'x1',            sketchfab_uid: '4ca3a2247af44e51919074565ed93486', sketchfab_name: 'BMW X1 xDrive 2020',                     sketchfab_author: 'Ddiaz Design',       license: 'CC BY 4.0' },
+  { make_slug: 'bmw',         model_slug: 'x3',            sketchfab_uid: '5142078aebec406688e19401985050ec', sketchfab_name: 'BMW X3 2020',                            sketchfab_author: 'tonielpro520',       license: 'NC' },
+  { make_slug: 'bmw',         model_slug: 'x5',            sketchfab_uid: 'df829b3deb5a4be392746504120058a4', sketchfab_name: 'BMW X5 xDrive30d 2019',                  sketchfab_author: 'Maroi Mister Let Me Think Official 3D Studio', license: 'NC' },
+  { make_slug: 'bmw',         model_slug: 'ix3',           sketchfab_uid: '18a952b3599f4f81ade570eb0ceccdf4', sketchfab_name: 'BMW iX3 2021',                           sketchfab_author: 'tonielpro520',       license: 'NC' },
+  { make_slug: 'mercedes',    model_slug: 'a-class',       sketchfab_uid: '1d9002fa93fa445bafba7775b6828348', sketchfab_name: 'Mercedes-Benz A-Class 2021',             sketchfab_author: 'VeesGuy',            license: 'CC BY 4.0' },
+  { make_slug: 'mercedes',    model_slug: 'c-class',       sketchfab_uid: '27d0ec784ceb4c80a03cc17ebea8acb4', sketchfab_name: 'Mercedes-Benz C-Class 2022',             sketchfab_author: 'SQUIR3D',            license: 'CC BY 4.0' },
+  { make_slug: 'mercedes',    model_slug: 'e-class',       sketchfab_uid: '136ecd58732b4f88b0bcd3cb74a71e54', sketchfab_name: 'Mercedes-Benz E-Class 2022',             sketchfab_author: 'tonielpro520',       license: 'CC BY 4.0' },
+  { make_slug: 'mercedes',    model_slug: 'gla',           sketchfab_uid: 'ab7b5df3ba634f38a14effde3d542466', sketchfab_name: 'Mercedes-Benz GLA-Class 2020',           sketchfab_author: 'ItsDiyor',           license: 'CC BY 4.0' },
+  { make_slug: 'mercedes',    model_slug: 'glb',           sketchfab_uid: '898264565b824b008bcea3f59c0817e3', sketchfab_name: 'Mercedes-Benz GLB 2020',                 sketchfab_author: 'Sketchfab',          license: 'CC BY 4.0' },
+  { make_slug: 'mercedes',    model_slug: 'glc',           sketchfab_uid: '8f74d836e6c74d9883aadf9001bed546', sketchfab_name: 'Mercedes-Benz GLC 2023',                 sketchfab_author: 'Nazh Design',        license: 'CC BY 4.0' },
+  { make_slug: 'mercedes',    model_slug: 'eqc',           sketchfab_uid: '8db43b629ca9466599fe388ed755a1fd', sketchfab_name: 'Mercedes-Benz EQC 2020',                 sketchfab_author: 'Sketchfab',          license: 'CC BY 4.0' },
+  { make_slug: 'ford',        model_slug: 'fiesta',        sketchfab_uid: '890f9f3c4e2444f58658d3e3e58ed556', sketchfab_name: 'Ford Fiesta ST 2019',                    sketchfab_author: 'Ddiaz Design',       license: 'CC BY 4.0' },
+  { make_slug: 'ford',        model_slug: 'focus',         sketchfab_uid: 'ef1dd0c316ec4151853cd2f8ee8411b4', sketchfab_name: 'Ford Focus MK3 Hatchback',               sketchfab_author: 'Merc_TV',            license: 'NC' },
+  { make_slug: 'ford',        model_slug: 'kuga',          sketchfab_uid: 'c20c731dd32f4b3fb18011ead3ee06f6', sketchfab_name: 'Ford Kuga / Escape 2020',                sketchfab_author: 'Davidson',           license: 'CC BY 4.0' },
+  { make_slug: 'ford',        model_slug: 'ranger',        sketchfab_uid: '7dcc4fb472ab4e7eb8ae19ad036e2bf9', sketchfab_name: 'Ford Ranger Raptor 2019',                sketchfab_author: 'David_Holiday',      license: 'CC BY 4.0' },
+  { make_slug: 'nissan',      model_slug: 'qashqai',       sketchfab_uid: '2d00c5a73d5b4ab3a95db1fcb3fa4243', sketchfab_name: 'Nissan Qashqai 2022',                    sketchfab_author: 'SQUIR3D',            license: 'CC BY 4.0' },
+  { make_slug: 'nissan',      model_slug: 'leaf',          sketchfab_uid: '780a52f031944609b80c1a00e990c0c5', sketchfab_name: 'Nissan Leaf',                            sketchfab_author: 'maregajavier',       license: 'CC BY 4.0' },
+  { make_slug: 'nissan',      model_slug: 'juke',          sketchfab_uid: 'be7be035cfcf4e78a0e246bc0b5607d3', sketchfab_name: 'Nissan Juke 2020',                       sketchfab_author: 'SQUIR3D',            license: 'CC BY 4.0' },
+  { make_slug: 'peugeot',     model_slug: '208',           sketchfab_uid: 'c3a458884cf7434fa99b2172c96061a4', sketchfab_name: 'Peugeot 208 2021',                       sketchfab_author: 'tonielpro520',       license: 'CC BY 4.0' },
+  { make_slug: 'peugeot',     model_slug: '2008',          sketchfab_uid: '586191a2cc3c4b858d91f965ca431d8f', sketchfab_name: 'Peugeot 2008 2020',                      sketchfab_author: 'SQUIR3D',            license: 'CC BY 4.0' },
+  { make_slug: 'peugeot',     model_slug: '308',           sketchfab_uid: '0d9c9c265bec42678bfc269c1a8cebc3', sketchfab_name: 'Peugeot 308 2022',                       sketchfab_author: 'kevin (ケビン)',      license: 'CC BY 4.0' },
+  { make_slug: 'peugeot',     model_slug: '3008',          sketchfab_uid: '933d6034e0204610a23b61aac2491b98', sketchfab_name: 'Peugeot 3008 2021',                      sketchfab_author: 'SQUIR3D',            license: 'CC BY 4.0' },
+  { make_slug: 'peugeot',     model_slug: '5008',          sketchfab_uid: '7224a5836c874e609936977f7ff54f82', sketchfab_name: 'Peugeot 5008',                           sketchfab_author: 'Nieve5677',          license: 'CC BY 4.0' },
+  { make_slug: 'peugeot',     model_slug: 'e208',          sketchfab_uid: 'a4f8becd0740468ca0c12cf403e4a42e', sketchfab_name: 'Peugeot e-208 2020',                     sketchfab_author: 'Nieve5677',          license: 'CC BY 4.0' },
+  { make_slug: 'renault',     model_slug: 'clio',          sketchfab_uid: 'a5fe97bea44040dfa25a7082a54073b0', sketchfab_name: 'Renault Clio 2023',                      sketchfab_author: 'tonielpro520',       license: 'CC BY 4.0' },
+  { make_slug: 'renault',     model_slug: 'megane',        sketchfab_uid: '7811a173dd394d5eb05bce05a6b60b44', sketchfab_name: 'Renault Megane E-Tech',                  sketchfab_author: 'slowpoly',           license: 'CC BY 4.0' },
+  { make_slug: 'renault',     model_slug: 'arkana',        sketchfab_uid: '15593fcc375a424aa1c41d4e54a2666c', sketchfab_name: 'Renault Arkana 2020',                    sketchfab_author: 'Nieve5677',          license: 'CC BY 4.0' },
+  { make_slug: 'renault',     model_slug: 'zoe',           sketchfab_uid: 'ffa8a5d60a7e4713855bacdea8bb3565', sketchfab_name: 'Renault Zoe',                            sketchfab_author: 'tonielpro520',       license: 'CC BY 4.0' },
+  { make_slug: 'subaru',      model_slug: 'forester',      sketchfab_uid: '847134597cf7475da0cf4f38598804ed', sketchfab_name: 'Subaru Forester 2019',                   sketchfab_author: 'SQUIR3D',            license: 'CC BY 4.0' },
+  { make_slug: 'subaru',      model_slug: 'impreza',       sketchfab_uid: '065804733fa245c6b1b10ca2de44099d', sketchfab_name: 'Subaru Impreza WRX 2022',                sketchfab_author: 'tonielpro520',       license: 'CC BY 4.0' },
+  { make_slug: 'subaru',      model_slug: 'outback',       sketchfab_uid: '6d1badf2a3124ebabcfe08077474739e', sketchfab_name: 'Subaru Outback 2014-2019',               sketchfab_author: 'Merc_TV',            license: 'CC BY 4.0' },
+  { make_slug: 'subaru',      model_slug: 'xv',            sketchfab_uid: '6d5fdd1c63914345ad5b9737e7345800', sketchfab_name: 'Subaru XV 2018',                         sketchfab_author: 'KwanLE',             license: 'CC BY 4.0' },
+  { make_slug: 'mitsubishi',  model_slug: 'asx',           sketchfab_uid: 'ea53d188017741bf88cd9f10296ae95b', sketchfab_name: 'Mitsubishi ASX 2020',                    sketchfab_author: 'Sketchfab',          license: 'CC BY 4.0' },
+  { make_slug: 'mitsubishi',  model_slug: 'eclipse-cross', sketchfab_uid: 'dc9a010d743140e6857897441b665a9d', sketchfab_name: 'Mitsubishi Eclipse Cross 2022',          sketchfab_author: 'SQUIR3D',            license: 'CC BY 4.0' },
+  { make_slug: 'mitsubishi',  model_slug: 'outlander',     sketchfab_uid: '45be773263054877bf128e86c06e9af7', sketchfab_name: 'Mitsubishi Outlander 2022',              sketchfab_author: 'SQUIR3D',            license: 'CC BY 4.0' },
+  { make_slug: 'audi',        model_slug: 'a3',            sketchfab_uid: 'abdbd52f4ea249508fbc167db4b93941', sketchfab_name: 'Audi A3 S-Line 2021',                    sketchfab_author: 'SQUIR3D',            license: 'CC BY 4.0' },
+  { make_slug: 'audi',        model_slug: 'a4',            sketchfab_uid: '7ba4f7fa8f32436a9685a8abaa5da302', sketchfab_name: 'Audi A4 B9',                             sketchfab_author: 'Nieve5677',          license: 'CC BY 4.0' },
+  { make_slug: 'audi',        model_slug: 'a6',            sketchfab_uid: 'c9b7cf9c176b458785edd0b12e235364', sketchfab_name: 'Audi A6 C8',                             sketchfab_author: 'KOElkast1007',       license: 'CC BY 4.0' },
+  { make_slug: 'audi',        model_slug: 'q3',            sketchfab_uid: 'a0159b9bee094c2d8f9b9d5694c94f45', sketchfab_name: 'Audi Q3 Sportback',                      sketchfab_author: '3DCars4U',           license: 'NC' },
+  { make_slug: 'audi',        model_slug: 'q5',            sketchfab_uid: 'e89edf4f02ea4a0bbfb4fff7e9f1d7a4', sketchfab_name: 'Audi Q5 2021',                           sketchfab_author: 'SQUIR3D',            license: 'CC BY 4.0' },
+  { make_slug: 'audi',        model_slug: 'etron',         sketchfab_uid: '4602d4d118b24577881e21c63eaa5340', sketchfab_name: 'Audi e-tron 2020',                       sketchfab_author: 'lplp32',             license: 'CC BY 4.0' },
+  { make_slug: 'suzuki',      model_slug: 'jimny',         sketchfab_uid: '2c95627ba090412b88883733bcaee568', sketchfab_name: 'Suzuki Jimny 2019',                      sketchfab_author: 'paige.visuals',      license: 'CC BY 4.0' },
+  { make_slug: 'suzuki',      model_slug: 'scross',        sketchfab_uid: 'fdfbcea62a7a490db85becfc0983604d', sketchfab_name: 'Suzuki S-Cross 2022',                    sketchfab_author: 'leandrobello04',     license: 'CC BY 4.0' },
+  { make_slug: 'suzuki',      model_slug: 'swift',         sketchfab_uid: 'beb15f9a28174dd79d0cab0c87fd0488', sketchfab_name: 'Suzuki Swift 2021',                      sketchfab_author: 'SQUIR3D',            license: 'CC BY 4.0' },
+  { make_slug: 'suzuki',      model_slug: 'vitara',        sketchfab_uid: 'ee5013f39f06491c952a31576b28440e', sketchfab_name: 'Suzuki Vitara',                          sketchfab_author: 'Nieve5677',          license: 'NC' },
+  { make_slug: 'volvo',       model_slug: 'ex30',          sketchfab_uid: 'c5be588ea33d44cc8d2690ffdba389a4', sketchfab_name: 'Volvo EX30',                             sketchfab_author: 'LagzDesign',         license: 'CC BY 4.0' },
+  { make_slug: 'volvo',       model_slug: 's60',           sketchfab_uid: '345df71c1d584992b809c15d64e1a790', sketchfab_name: 'Volvo S60',                              sketchfab_author: 'Merc_TV',            license: 'CC BY 4.0' },
+  { make_slug: 'volvo',       model_slug: 'xc40',          sketchfab_uid: 'c6c616c37d024d7b8f35720b179e58ef', sketchfab_name: 'Volvo XC40 Recharge 2020',               sketchfab_author: 'Sketchfab',          license: 'CC BY 4.0' },
+  { make_slug: 'volvo',       model_slug: 'xc60',          sketchfab_uid: 'eb8ce77c64c04339983cdf30593abca3', sketchfab_name: 'Volvo XC60',                             sketchfab_author: 'Nieve5677',          license: 'CC BY 4.0' },
+  { make_slug: 'volvo',       model_slug: 'xc90',          sketchfab_uid: 'e91e35e356ea456ca2c682efe36360b2', sketchfab_name: 'Volvo XC90 Inscription',                 sketchfab_author: 'KOElkast1007',       license: 'CC BY 4.0' },
+  { make_slug: 'jeep',        model_slug: 'cherokee',      sketchfab_uid: '8011de1b2845470287981aa914a3f1e7', sketchfab_name: 'Jeep Cherokee 2019',                     sketchfab_author: 'Sketchfab',          license: 'CC BY 4.0' },
+  { make_slug: 'jeep',        model_slug: 'compass',       sketchfab_uid: '7181289a07794a6ead28ffd56bfbbc1d', sketchfab_name: 'Jeep Compass 2021',                      sketchfab_author: 'fazt.3ds',           license: 'CC BY 4.0' },
+  { make_slug: 'jeep',        model_slug: 'renegade',      sketchfab_uid: '9cc773cb7f6e4f10893ea460aa11654b', sketchfab_name: 'Jeep Renegade 2021',                     sketchfab_author: 'tonielpro520',       license: 'CC BY 4.0' },
+  { make_slug: 'jeep',        model_slug: 'wrangler',      sketchfab_uid: '7247a74596224c3dadc219836430279c', sketchfab_name: 'Jeep Wrangler Rubicon 2023',             sketchfab_author: 'Ddiaz Design',       license: 'CC BY 4.0' },
+];
+
+// ── Insert ────────────────────────────────────────────────────────────────────
+console.log('Seeding car_makes...');
+const { error: makesErr } = await supabase
+  .from('car_makes')
+  .upsert(makes.map((m, i) => ({ ...m, sort_order: i })), { onConflict: 'slug' });
+if (makesErr) { console.error(makesErr); process.exit(1); }
+console.log(`✓ ${makes.length} makes`);
+
+console.log('Seeding car_models...');
+const { error: modelsErr } = await supabase
+  .from('car_models')
+  .upsert(models, { onConflict: 'make_slug,slug' });
+if (modelsErr) { console.error(modelsErr); process.exit(1); }
+console.log(`✓ ${models.length} models`);
+
+console.log('Seeding car_3d_models...');
+const { error: models3dErr } = await supabase
+  .from('car_3d_models')
+  .upsert(models3d, { onConflict: 'make_slug,model_slug' });
+if (models3dErr) { console.error(models3dErr); process.exit(1); }
+console.log(`✓ ${models3d.length} 3D models`);
+
+console.log('Done!');

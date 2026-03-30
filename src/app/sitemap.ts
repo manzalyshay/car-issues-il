@@ -1,10 +1,11 @@
 import type { MetadataRoute } from 'next';
-import { carDatabase } from '@/data/cars';
+import { getAllMakes } from '@/lib/carsDb';
 
 const BASE_URL = 'https://carissues.co.il';
 
-export default function sitemap(): MetadataRoute.Sitemap {
+export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const now = new Date();
+  const carDatabase = await getAllMakes();
 
   const staticRoutes: MetadataRoute.Sitemap = [
     { url: BASE_URL, lastModified: now, changeFrequency: 'daily', priority: 1 },

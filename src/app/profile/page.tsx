@@ -6,7 +6,7 @@ import { useAuth, displayName } from '@/lib/authContext';
 import { supabase } from '@/lib/supabase';
 import { CATEGORY_LABELS } from '@/data/reviews';
 import type { Review } from '@/data/reviews';
-import { getMakeBySlug, getModelBySlug } from '@/data/cars';
+import type { CarMake } from '@/lib/carsDb';
 
 function dbToReview(row: Record<string, unknown>): Review {
   return {
@@ -39,9 +39,16 @@ export default function ProfilePage() {
   const { user, loading } = useAuth();
   const [reviews, setReviews] = useState<Review[]>([]);
   const [fetching, setFetching] = useState(false);
+  const [carsMap, setCarsMap] = useState<Map<string, CarMake>>(new Map());
   const [editingName, setEditingName] = useState(false);
   const [nameInput, setNameInput] = useState('');
   const [nameSaving, setNameSaving] = useState(false);
+
+  useEffect(() => {
+    fetch('/api/cars').then(r => r.json()).then((makes: CarMake[]) => {
+      setCarsMap(new Map(makes.map(m => [m.slug, m])));
+    });
+  }, []);
 
   useEffect(() => {
     if (!user) return;
@@ -178,8 +185,8 @@ export default function ProfilePage() {
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
             {reviews.map((review) => {
-              const make = getMakeBySlug(review.makeSlug);
-              const model = make ? getModelBySlug(make, review.modelSlug) : null;
+              const make = carsMap.get(review.makeSlug);
+              const model = make?.models.find(m => m.slug === review.modelSlug);
               const carLabel = make && model
                 ? `${make.nameHe} ${model.nameHe} ${review.year}`
                 : `${review.makeSlug} ${review.modelSlug} ${review.year}`;

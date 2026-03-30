@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
-import { carDatabase } from '@/data/cars';
+import { getAllMakes } from '@/lib/carsDb';
 import MakeLogo from '@/components/MakeLogo';
 
 export const metadata: Metadata = {
@@ -11,7 +11,9 @@ export const metadata: Metadata = {
 
 const COUNTRY_GROUPS = ['יפן', "קוריאה", 'גרמניה', "צרפת", 'שוודיה', 'ארה"ב', "צ'כיה", 'איטליה'];
 
-export default function CarsPage() {
+export default async function CarsPage() {
+  const carDatabase = await getAllMakes();
+
   const byCountry = COUNTRY_GROUPS.map((country) => ({
     country,
     makes: carDatabase.filter((m) => m.country === country),

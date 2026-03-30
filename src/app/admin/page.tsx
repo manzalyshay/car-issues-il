@@ -4,7 +4,7 @@ import { useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/lib/authContext';
-import { getMakeBySlug, getModelBySlug } from '@/data/cars';
+import type { CarMake } from '@/lib/carsDb';
 import { CATEGORY_LABELS } from '@/data/reviews';
 import type { Review } from '@/data/reviews';
 import AdminNav from '@/components/AdminNav';
@@ -86,6 +86,7 @@ export default function AdminPage() {
   const [bulkRunning, setBulkRunning] = useState(false);
   const [bulkProgress, setBulkProgress] = useState({ done: 0, total: 0 });
   const [filter, setFilter] = useState<'all' | 'scraped' | 'missing' | 'no_global' | 'no_local'>('all');
+  const [carsMap, setCarsMap] = useState<Map<string, CarMake>>(new Map());
 
   // ── User Reviews tab state ───────────────────────────────────────────────────
   const [userReviews, setUserReviews] = useState<Review[]>([]);
@@ -131,6 +132,11 @@ export default function AdminPage() {
     } catch { /* ignore */ } finally {
       setReviewsFetching(false);
     }
+  }, []);
+
+  useEffect(() => {
+    fetch('/api/cars').then(r => r.json()).then((makes: CarMake[]) =>
+      setCarsMap(new Map(makes.map(m => [m.slug, m]))));
   }, []);
 
   useEffect(() => {
@@ -479,8 +485,8 @@ export default function AdminPage() {
             ) : (
               <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
                 {userReviews.map((review) => {
-                  const make = getMakeBySlug(review.makeSlug);
-                  const model = make ? getModelBySlug(make, review.modelSlug) : null;
+                  const make = carsMap.get(review.makeSlug);
+                  const model = make?.models.find(m => m.slug === review.modelSlug);
                   const carLabel = make && model
                     ? `${make.nameHe} ${model.nameHe} ${review.year}`
                     : `${review.makeSlug} ${review.modelSlug} ${review.year}`;
@@ -588,8 +594,8 @@ export default function AdminPage() {
             ) : (
               <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
                 {reports.map((report) => {
-                  const make = report.reviews ? getMakeBySlug(report.reviews.make_slug) : null;
-                  const model = make ? getModelBySlug(make, report.reviews?.model_slug ?? '') : null;
+                  const make = report.reviews ? carsMap.get(report.reviews.make_slug) : null;
+                  const model = make?.models.find(m => m.slug === (report.reviews?.model_slug ?? ''));
                   const carLabel = make && model
                     ? `${make.nameHe} ${model.nameHe} ${report.reviews?.year}`
                     : `${report.reviews?.make_slug ?? '?'} ${report.reviews?.model_slug ?? '?'}`;

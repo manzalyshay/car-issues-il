@@ -1,5 +1,5 @@
 import { ImageResponse } from 'next/og';
-import { getMakeBySlug, getModelBySlug } from '@/data/cars';
+import { getMakeBySlug, getModelBySlug } from '@/lib/carsDb';
 import { getExpertReviews } from '@/lib/expertReviews';
 import { getReviewsForModel } from '@/lib/reviewsDb';
 
@@ -11,8 +11,8 @@ interface Props { params: Promise<{ make: string; model: string }> }
 
 export default async function OGImage({ params }: Props) {
   const { make: makeSlug, model: modelSlug } = await params;
-  const make = getMakeBySlug(makeSlug);
-  const model = make ? getModelBySlug(make, modelSlug) : null;
+  const make = await getMakeBySlug(makeSlug);
+  const model = make ? await getModelBySlug(makeSlug, modelSlug) : null;
   if (!make || !model) return new Response('Not found', { status: 404 });
 
   const [reviews, expertReviews] = await Promise.all([

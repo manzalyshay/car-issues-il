@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
-import { carDatabase, getMakeBySlug, getModelBySlug, getCategoryLabel } from '@/data/cars';
+import { getAllMakes, getMakeBySlug, getModelBySlug, getCategoryLabel } from '@/lib/carsDb';
 import { getReviewsForCar, getAverageRating } from '@/lib/reviewsDb';
 import { getExpertReviewsForYear } from '@/lib/expertReviews';
 import StarRating from '@/components/StarRating';
@@ -13,7 +13,8 @@ import ShareButtons from '@/components/ShareButtons';
 interface Props { params: Promise<{ make: string; model: string; year: string }> }
 
 export async function generateStaticParams() {
-  return carDatabase.flatMap((make) =>
+  const makes = await getAllMakes();
+  return makes.flatMap((make) =>
     make.models.flatMap((model) =>
       model.years.map((year) => ({ make: make.slug, model: model.slug, year: String(year) })),
     ),
@@ -22,9 +23,9 @@ export async function generateStaticParams() {
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { make: makeSlug, model: modelSlug, year } = await params;
-  const make = getMakeBySlug(makeSlug);
+  const make = await getMakeBySlug(makeSlug);
   if (!make) return {};
-  const model = getModelBySlug(make, modelSlug);
+  const model = await getModelBySlug(makeSlug, modelSlug);
   if (!model) return {};
   const yearNum = parseInt(year);
   const [avgRating, reviews] = await Promise.all([
@@ -47,9 +48,9 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
 export default async function CarYearPage({ params }: Props) {
   const { make: makeSlug, model: modelSlug, year } = await params;
-  const make = getMakeBySlug(makeSlug);
+  const make = await getMakeBySlug(makeSlug);
   if (!make) notFound();
-  const model = getModelBySlug(make, modelSlug);
+  const model = await getModelBySlug(makeSlug, modelSlug);
   if (!model) notFound();
   const yearNum = parseInt(year);
   if (!model.years.includes(yearNum)) notFound();

@@ -4,7 +4,7 @@ import { useEffect, useState, useCallback } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/lib/authContext';
-import { getMakeBySlug, getModelBySlug } from '@/data/cars';
+import type { CarMake, CarModel } from '@/lib/carsDb';
 import type { RawPost } from '@/lib/expertReviews';
 
 type Post = RawPost & { cloned: boolean };
@@ -35,8 +35,8 @@ export default function PreviewPage() {
   const makeSlug  = params.makeSlug  as string;
   const modelSlug = params.modelSlug as string;
 
-  const make  = getMakeBySlug(makeSlug);
-  const model = make ? getModelBySlug(make, modelSlug) : null;
+  const [make, setMake]   = useState<CarMake | null>(null);
+  const [model, setModel] = useState<CarModel | null>(null);
 
   const [posts, setPosts]             = useState<Post[]>([]);
   const [newIds, setNewIds]           = useState<Set<string>>(new Set());
@@ -55,6 +55,15 @@ export default function PreviewPage() {
   useEffect(() => {
     if (!loading && (!user || !isAdmin)) router.replace('/');
   }, [loading, user, isAdmin, router]);
+
+  useEffect(() => {
+    if (!makeSlug || !modelSlug) return;
+    fetch('/api/cars').then(r => r.json()).then((makes: CarMake[]) => {
+      const m = makes.find(x => x.slug === makeSlug) ?? null;
+      setMake(m);
+      setModel(m?.models.find(x => x.slug === modelSlug) ?? null);
+    });
+  }, [makeSlug, modelSlug]);
 
   const getToken = useCallback(async () => {
     const { data } = await supabase.auth.getSession();
@@ -341,6 +350,7 @@ export default function PreviewPage() {
                                 post={post}
                                 makeSlug={makeSlug}
                                 modelSlug={modelSlug}
+                                years={model?.years ?? []}
                                 onDone={() => { setClonePost(null); markCloned(post.id); }}
                               />
                             )}
@@ -367,15 +377,13 @@ export default function PreviewPage() {
   );
 }
 
-function CloneFromPostForm({ post, makeSlug, modelSlug, onDone }: {
+function CloneFromPostForm({ post, makeSlug, modelSlug, onDone, years }: {
   post: { title: string; snippet: string; sourceName: string; url: string };
   makeSlug: string;
   modelSlug: string;
   onDone: () => void;
+  years: number[];
 }) {
-  const make  = getMakeBySlug(makeSlug);
-  const model = make ? getModelBySlug(make, modelSlug) : null;
-  const years = model?.years ?? [];
 
   const [author,     setAuthor]     = useState('');
   const [title,      setTitle]      = useState(post.title.slice(0, 120));

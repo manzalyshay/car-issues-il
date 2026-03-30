@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getExpertReviews, scrapeExpertReviews } from '@/lib/expertReviews';
-import { getMakeBySlug, getModelBySlug } from '@/data/cars';
+import { getMakeBySlug, getModelBySlug } from '@/lib/carsDb';
 
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
@@ -21,8 +21,8 @@ export async function POST(req: NextRequest) {
   const { makeSlug, modelSlug, year } = await req.json();
   if (!makeSlug || !modelSlug) return NextResponse.json({ error: 'Missing params' }, { status: 400 });
 
-  const makeObj = getMakeBySlug(makeSlug);
-  const modelObj = makeObj ? getModelBySlug(makeObj, modelSlug) : null;
+  const makeObj = await getMakeBySlug(makeSlug);
+  const modelObj = makeObj ? await getModelBySlug(makeSlug, modelSlug) : null;
   if (!makeObj || !modelObj) return NextResponse.json({ error: 'Unknown car' }, { status: 404 });
 
   const saved = await scrapeExpertReviews(

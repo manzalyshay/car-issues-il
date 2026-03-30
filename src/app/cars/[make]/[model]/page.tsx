@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
-import { carDatabase, getMakeBySlug, getModelBySlug, getCategoryLabel } from '@/data/cars';
+import { getAllMakes, getMakeBySlug, getModelBySlug, getCategoryLabel } from '@/lib/carsDb';
 import { getReviewsForModel } from '@/lib/reviewsDb';
 import { findCarModel } from '@/lib/sketchfab';
 import { getExpertReviews } from '@/lib/expertReviews';
@@ -15,16 +15,17 @@ import ShareButtons from '@/components/ShareButtons';
 interface Props { params: Promise<{ make: string; model: string }> }
 
 export async function generateStaticParams() {
-  return carDatabase.flatMap((make) =>
+  const makes = await getAllMakes();
+  return makes.flatMap((make) =>
     make.models.map((model) => ({ make: make.slug, model: model.slug })),
   );
 }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { make: makeSlug, model: modelSlug } = await params;
-  const make = getMakeBySlug(makeSlug);
+  const make = await getMakeBySlug(makeSlug);
   if (!make) return {};
-  const model = getModelBySlug(make, modelSlug);
+  const model = await getModelBySlug(makeSlug, modelSlug);
   if (!model) return {};
   const url = `https://carissues.co.il/cars/${make.slug}/${model.slug}`;
   return {
@@ -37,16 +38,16 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
 export default async function ModelPage({ params }: Props) {
   const { make: makeSlug, model: modelSlug } = await params;
-  const make = getMakeBySlug(makeSlug);
+  const make = await getMakeBySlug(makeSlug);
   if (!make) notFound();
-  const model = getModelBySlug(make, modelSlug);
+  const model = await getModelBySlug(makeSlug, modelSlug);
   if (!model) notFound();
 
-  const [allReviews, expertReviewsList] = await Promise.all([
+  const [allReviews, expertReviewsList, sketchfabModel] = await Promise.all([
     getReviewsForModel(makeSlug, modelSlug),
     getExpertReviews(makeSlug, modelSlug),
+    findCarModel(makeSlug, modelSlug),
   ]);
-  const sketchfabModel = findCarModel(makeSlug, modelSlug);
   const expertReview = expertReviewsList[0] ?? null;
   const avgRating = allReviews.length
     ? allReviews.reduce((s, r) => s + r.rating, 0) / allReviews.length

@@ -1,11 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { carDatabase, getMakeBySlug, getModelBySlug } from '@/data/cars';
+import { getAllMakes, getMakeBySlug, getModelBySlug } from '@/lib/carsDb';
 import { scrapeExpertReviews } from '@/lib/expertReviews';
 import { isAdmin, getServiceClient } from '@/lib/adminAuth';
 
-function validateCar(makeSlug: string, modelSlug: string) {
-  const make  = getMakeBySlug(makeSlug);
-  const model = make ? getModelBySlug(make, modelSlug) : null;
+async function validateCar(makeSlug: string, modelSlug: string) {
+  const make  = await getMakeBySlug(makeSlug);
+  const model = make ? await getModelBySlug(makeSlug, modelSlug) : null;
   return make && model ? { make, model } : null;
 }
 
@@ -21,6 +21,7 @@ export async function GET(req: NextRequest) {
 
   const scraped = new Map((rows ?? []).map((r: any) => [`${r.make_slug}/${r.model_slug}`, r]));
 
+  const carDatabase = await getAllMakes();
   const allModels = carDatabase.flatMap((make) =>
     make.models.map((model) => {
       const key = `${make.slug}/${model.slug}`;
@@ -69,7 +70,7 @@ export async function POST(req: NextRequest) {
   }
 
   if (action === 'scrape') {
-    const car = validateCar(makeSlug, modelSlug);
+    const car = await validateCar(makeSlug, modelSlug);
     if (!car) return NextResponse.json({ error: 'Unknown car' }, { status: 404 });
     const saved = await scrapeExpertReviews(
       makeSlug, modelSlug,
@@ -102,7 +103,7 @@ export async function POST(req: NextRequest) {
   }
 
   if (action === 'summarize_from_posts') {
-    const car = validateCar(makeSlug, modelSlug);
+    const car = await validateCar(makeSlug, modelSlug);
     if (!car) return NextResponse.json({ error: 'Unknown car' }, { status: 404 });
     const { summarizeFromPosts } = await import('@/lib/expertReviews');
     const saved = await summarizeFromPosts(
