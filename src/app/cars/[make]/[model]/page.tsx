@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
-import { getAllMakes, getMakeBySlug, getModelBySlug, getCategoryLabel } from '@/lib/carsDb';
+import { getMakeBySlug, getModelBySlug, getCategoryLabel } from '@/lib/carsDb';
 import { getReviewsForModel } from '@/lib/reviewsDb';
 import { findCarModel } from '@/lib/sketchfab';
 import { getExpertReviews } from '@/lib/expertReviews';
@@ -12,14 +12,9 @@ import ExpertReviewsSection from '@/components/ExpertReviewsSection';
 import ModelReviewsSection from './ModelReviewsSection';
 import ShareButtons from '@/components/ShareButtons';
 
-interface Props { params: Promise<{ make: string; model: string }> }
+export const dynamic = 'force-dynamic';
 
-export async function generateStaticParams() {
-  const makes = await getAllMakes();
-  return makes.flatMap((make) =>
-    make.models.map((model) => ({ make: make.slug, model: model.slug })),
-  );
-}
+interface Props { params: Promise<{ make: string; model: string }> }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { make: makeSlug, model: modelSlug } = await params;

@@ -24,8 +24,14 @@ export default function Footer() {
           {/* Brand */}
           <div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12 }}>
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src="/favicon.svg" alt="CarIssues IL" width={34} height={34} style={{ borderRadius: 8 }} />
+              <div style={{
+                width: 38, height: 38, borderRadius: 10,
+                background: 'linear-gradient(135deg, var(--brand-red), var(--brand-gold-dark))',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                fontSize: 20, boxShadow: 'var(--shadow-red)', flexShrink: 0,
+              }}>
+                🚗
+              </div>
               <span style={{ fontWeight: 800, fontSize: '1.15rem' }}>
                 CarIssues<span style={{ color: 'var(--brand-red)' }}>IL</span>
               </span>

@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
-import { getAllMakes, getMakeBySlug, getModelBySlug, getCategoryLabel } from '@/lib/carsDb';
+import { getMakeBySlug, getModelBySlug, getCategoryLabel } from '@/lib/carsDb';
 import { getReviewsForCar, getAverageRating } from '@/lib/reviewsDb';
 import { getExpertReviewsForYear } from '@/lib/expertReviews';
 import StarRating from '@/components/StarRating';
@@ -10,16 +10,9 @@ import CarYearClient from './CarYearClient';
 import MakeLogo from '@/components/MakeLogo';
 import ShareButtons from '@/components/ShareButtons';
 
-interface Props { params: Promise<{ make: string; model: string; year: string }> }
+export const dynamic = 'force-dynamic';
 
-export async function generateStaticParams() {
-  const makes = await getAllMakes();
-  return makes.flatMap((make) =>
-    make.models.flatMap((model) =>
-      model.years.map((year) => ({ make: make.slug, model: model.slug, year: String(year) })),
-    ),
-  );
-}
+interface Props { params: Promise<{ make: string; model: string; year: string }> }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { make: makeSlug, model: modelSlug, year } = await params;
