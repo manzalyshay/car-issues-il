@@ -6,14 +6,16 @@ interface Props {
   makeEn: string;
   modelEn: string;
   year?: number;
+  years?: number[];
 }
 
-export default function RecallsBadge({ makeEn, modelEn, year }: Props) {
+export default function RecallsBadge({ makeEn, modelEn, year, years }: Props) {
   const [count, setCount] = useState<number | null>(null);
 
   useEffect(() => {
     const params = new URLSearchParams({ make: makeEn, model: modelEn });
     if (year) params.set('year', String(year));
+    else if (years?.length) params.set('years', years.join(','));
     fetch(`/api/recalls?${params}`)
       .then(r => r.json())
       .then(d => setCount((d.recalls ?? []).length))

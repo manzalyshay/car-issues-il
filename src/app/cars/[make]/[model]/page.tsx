@@ -78,7 +78,7 @@ export default async function ModelPage({ params }: Props) {
             <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'center' }}>
               <span className="badge badge-gray">{getCategoryLabel(model.category)}</span>
               <span className="badge badge-blue">{model.years[model.years.length - 1]}–{model.years[0]}</span>
-              <RecallsBadge makeEn={make.nameEn} modelEn={model.nameEn} />
+              <RecallsBadge makeEn={make.nameEn} modelEn={model.nameEn} years={model.years} />
               {avgRating !== null && (
                 <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                   <StarRating rating={avgRating} size={16} />
@@ -134,7 +134,7 @@ export default async function ModelPage({ params }: Props) {
         </div>
 
         {/* Recalls */}
-        <RecallsSection makeEn={make.nameEn} modelEn={model.nameEn} />
+        <RecallsSection makeEn={make.nameEn} modelEn={model.nameEn} years={model.years} />
 
         {/* JSON-LD */}
         <script

@@ -7,9 +7,10 @@ interface Props {
   makeEn: string;
   modelEn: string;
   year?: number;
+  years?: number[]; // all model years to query
 }
 
-export default function RecallsSection({ makeEn, modelEn, year }: Props) {
+export default function RecallsSection({ makeEn, modelEn, year, years }: Props) {
   const [recalls, setRecalls]     = useState<Recall[]>([]);
   const [loading, setLoading]     = useState(true);
   const [expanded, setExpanded]   = useState<string | null>(null);
@@ -19,6 +20,7 @@ export default function RecallsSection({ makeEn, modelEn, year }: Props) {
     setLoading(true);
     const params = new URLSearchParams({ make: makeEn, model: modelEn });
     if (year) params.set('year', String(year));
+    else if (years?.length) params.set('years', years.join(','));
     fetch(`/api/recalls?${params}`)
       .then(r => r.json())
       .then(d => setRecalls(d.recalls ?? []))

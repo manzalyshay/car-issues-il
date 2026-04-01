@@ -91,9 +91,10 @@ function extractYear(raw: string): number | null {
 
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
-  const make  = searchParams.get('make');
-  const model = searchParams.get('model');
-  const yearParam = searchParams.get('year');
+  const make       = searchParams.get('make');
+  const model      = searchParams.get('model');
+  const yearParam  = searchParams.get('year');
+  const yearsParam = searchParams.get('years'); // comma-separated list
 
   if (!make || !model) {
     return NextResponse.json({ error: 'Missing make/model' }, { status: 400 });
@@ -113,8 +114,10 @@ export async function GET(req: NextRequest) {
         rawRecalls = data.results ?? [];
       }
     } else {
-      // Fetch all years from 1995 to current — NHTSA requires modelYear param
-      const years = Array.from({ length: currentYear - 1994 }, (_, i) => String(1995 + i));
+      // Use provided years list, or fall back to last 10 years
+      const years = yearsParam
+        ? yearsParam.split(',').map(y => y.trim()).filter(Boolean)
+        : Array.from({ length: 10 }, (_, i) => String(currentYear - i));
       const batches = await Promise.all(
         years.map(async (y) => {
           try {
