@@ -10,6 +10,7 @@ import CarYearClient from './CarYearClient';
 import MakeLogo from '@/components/MakeLogo';
 import ShareButtons from '@/components/ShareButtons';
 import RecallsSection from '@/components/RecallsSection';
+import RecallsBadge from '@/components/RecallsBadge';
 
 export const dynamic = 'force-dynamic';
 
@@ -155,7 +156,10 @@ export default async function CarYearPage({ params }: Props) {
               </p>
             </div>
           </div>
-          <ShareButtons title={`${make.nameHe} ${model.nameHe} ${year} — ביקורות ובעיות נפוצות | CarIssues IL`} url={`https://carissues.co.il/cars/${make.slug}/${model.slug}/${year}`} />
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 12, flexWrap: 'wrap' }}>
+            <ShareButtons title={`${make.nameHe} ${model.nameHe} ${year} — ביקורות ובעיות נפוצות | CarIssues IL`} url={`https://carissues.co.il/cars/${make.slug}/${model.slug}/${year}`} />
+            <RecallsBadge makeEn={make.nameEn} modelEn={model.nameEn} year={yearNum} />
+          </div>
         </div>
 
         {/* Rating overview + reviews client component */}
@@ -214,9 +218,6 @@ export default async function CarYearPage({ params }: Props) {
           />
         )}
 
-        {/* Recalls for this year */}
-        <RecallsSection makeEn={make.nameEn} modelEn={model.nameEn} year={yearNum} />
-
         {/* Client component handles reviews list + review form */}
         <CarYearClient
           makeSlug={makeSlug}
@@ -224,6 +225,9 @@ export default async function CarYearPage({ params }: Props) {
           year={yearNum}
           initialReviews={reviews}
         />
+
+        {/* Recalls for this year */}
+        <RecallsSection makeEn={make.nameEn} modelEn={model.nameEn} year={yearNum} />
 
         {/* JSON-LD */}
         <script

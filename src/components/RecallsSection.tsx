@@ -25,7 +25,7 @@ export default function RecallsSection({ makeEn, modelEn, year }: Props) {
   }, [makeEn, modelEn, year]);
 
   return (
-    <div style={{ marginBottom: 48 }}>
+    <div id="recalls" style={{ marginBottom: 48 }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 20 }}>
         <div style={{ width: 4, height: 24, borderRadius: 2, background: 'var(--brand-red)', flexShrink: 0 }} />
         <h2 style={{ fontSize: '1.25rem', fontWeight: 800, margin: 0 }}>ריקולים וקריאות חזרה</h2>

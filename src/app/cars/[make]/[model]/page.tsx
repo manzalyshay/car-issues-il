@@ -12,6 +12,7 @@ import ExpertReviewsSection from '@/components/ExpertReviewsSection';
 import ModelReviewsSection from './ModelReviewsSection';
 import ShareButtons from '@/components/ShareButtons';
 import RecallsSection from '@/components/RecallsSection';
+import RecallsBadge from '@/components/RecallsBadge';
 
 export const dynamic = 'force-dynamic';
 
@@ -77,6 +78,7 @@ export default async function ModelPage({ params }: Props) {
             <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'center' }}>
               <span className="badge badge-gray">{getCategoryLabel(model.category)}</span>
               <span className="badge badge-blue">{model.years[model.years.length - 1]}–{model.years[0]}</span>
+              <RecallsBadge makeEn={make.nameEn} modelEn={model.nameEn} />
               {avgRating !== null && (
                 <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                   <StarRating rating={avgRating} size={16} />
@@ -121,9 +123,6 @@ export default async function ModelPage({ params }: Props) {
           userReviewCount={allReviews.length}
         />
 
-        {/* Recalls */}
-        <RecallsSection makeEn={make.nameEn} modelEn={model.nameEn} />
-
         {/* Inline reviews with year filter */}
         <div style={{ marginBottom: 48 }}>
           <ModelReviewsSection
@@ -133,6 +132,9 @@ export default async function ModelPage({ params }: Props) {
             initialReviews={allReviews}
           />
         </div>
+
+        {/* Recalls */}
+        <RecallsSection makeEn={make.nameEn} modelEn={model.nameEn} />
 
         {/* JSON-LD */}
         <script
