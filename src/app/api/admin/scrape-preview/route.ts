@@ -4,6 +4,9 @@ import { scrapeRawPosts, type RawPost } from '@/lib/expertReviews';
 import { isAdmin, getServiceClient } from '@/lib/adminAuth';
 
 function dbToPost(r: any): RawPost & { cloned: boolean } {
+  const reviewYear = r.review_year
+    ? Number(r.review_year)
+    : extractYearFromUrl(r.url) ?? undefined;
   return {
     id:         r.post_id,
     title:      r.title,
@@ -12,6 +15,7 @@ function dbToPost(r: any): RawPost & { cloned: boolean } {
     snippet:    r.snippet ?? '',
     scope:      r.scope as 'local' | 'global',
     score:      r.score ?? undefined,
+    reviewYear,
     cloned:     r.cloned ?? false,
   };
 }
@@ -35,7 +39,7 @@ export async function GET(req: NextRequest) {
   const sb = getServiceClient();
   const { data } = await sb
     .from('scraped_posts')
-    .select('post_id,title,url,source_name,snippet,scope,score,scraped_at,cloned')
+    .select('post_id,title,url,source_name,snippet,scope,score,scraped_at,cloned,review_year')
     .eq('make_slug', makeSlug)
     .eq('model_slug', modelSlug)
     .order('scraped_at', { ascending: false });
@@ -114,9 +118,10 @@ export async function POST(req: NextRequest) {
       url:         p.url,
       source_name: p.sourceName,
       snippet:     p.snippet,
-      scope:       p.scope,
-      score:       p.score ?? null,
-      scraped_at:  now,
+      scope:        p.scope,
+      score:        p.score ?? null,
+      review_year:  p.reviewYear ?? null,
+      scraped_at:   now,
       // cloned not set here — upsert preserves existing value
     };
   });
@@ -132,7 +137,7 @@ export async function POST(req: NextRequest) {
   // Load full updated list from DB (includes cloned flags)
   const { data: updated } = await sb
     .from('scraped_posts')
-    .select('post_id,title,url,source_name,snippet,scope,score,scraped_at,cloned')
+    .select('post_id,title,url,source_name,snippet,scope,score,scraped_at,cloned,review_year')
     .eq('make_slug', makeSlug)
     .eq('model_slug', modelSlug)
     .order('scraped_at', { ascending: false });

@@ -320,7 +320,7 @@ export default function PreviewPage() {
                                   <div style={{ fontWeight: 700, fontSize: '0.9375rem', lineHeight: 1.4 }}>{post.title}</div>
                                 </div>
                                 <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
-                                  {post.sourceName}{post.score != null && post.score > 0 && ` · ${post.score} pts`}
+                                  {post.sourceName}{post.reviewYear && ` · ${post.reviewYear}`}{post.score != null && post.score > 0 && ` · ${post.score} pts`}
                                 </div>
                               </div>
                               <div style={{ display: 'flex', gap: 6, flexShrink: 0 }}>

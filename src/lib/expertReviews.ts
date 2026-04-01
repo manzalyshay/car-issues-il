@@ -1207,6 +1207,7 @@ export interface RawPost {
   snippet: string;
   scope: 'local' | 'global';
   score?: number;
+  reviewYear?: number; // Year the review was written (from datePublished or source metadata)
 }
 
 async function gatherUserPosts(
@@ -1263,7 +1264,7 @@ export async function scrapeRawPosts(
     return posts
       .filter((p) => { if (seen.has(p.url)) return false; seen.add(p.url); return true; })
       .filter((p) => blockedSources.length === 0 || !blockedSources.includes(p.sourceName))
-      .map((p) => ({ id: p.url, title: p.title, url: p.url, sourceName: p.sourceName, snippet: p.snippet, scope, score: p.score }));
+      .map((p) => ({ id: p.url, title: p.title, url: p.url, sourceName: p.sourceName, snippet: p.snippet, scope, score: p.score, reviewYear: p.reviewYear }));
   };
   return { local: toRaw(local, 'local'), global: toRaw(globalPosts, 'global') };
 }
