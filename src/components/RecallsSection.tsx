@@ -12,11 +12,13 @@ interface Props {
 
 export default function RecallsSection({ makeEn, modelEn, year, years }: Props) {
   const [recalls, setRecalls]     = useState<Recall[]>([]);
-  const [loading, setLoading]     = useState(true);
+  const [loading, setLoading]     = useState(false);
   const [expanded, setExpanded]   = useState<string | null>(null);
   const [filterYear, setFilterYear] = useState<number | 'all'>('all');
+  const [isOpen, setIsOpen]       = useState(false);
 
   useEffect(() => {
+    if (!isOpen) return;
     setLoading(true);
     const params = new URLSearchParams({ make: makeEn, model: modelEn });
     if (year) params.set('year', String(year));
@@ -26,7 +28,7 @@ export default function RecallsSection({ makeEn, modelEn, year, years }: Props) 
       .then(d => setRecalls(d.recalls ?? []))
       .catch(() => setRecalls([]))
       .finally(() => setLoading(false));
-  }, [makeEn, modelEn, year]);
+  }, [makeEn, modelEn, year, isOpen]);
 
   // Collect unique years for the filter
   const availableYears = useMemo(() => {
@@ -41,8 +43,11 @@ export default function RecallsSection({ makeEn, modelEn, year, years }: Props) 
 
   return (
     <div id="recalls" style={{ marginBottom: 48 }}>
-      {/* Section header */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16, flexWrap: 'wrap' }}>
+      {/* Section header — clickable toggle */}
+      <div
+        onClick={() => setIsOpen(o => !o)}
+        style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: isOpen ? 16 : 0, flexWrap: 'wrap', cursor: 'pointer', userSelect: 'none' }}
+      >
         <div style={{ width: 4, height: 24, borderRadius: 2, background: 'var(--brand-red)', flexShrink: 0 }} />
         <h2 style={{ fontSize: '1.25rem', fontWeight: 800, margin: 0 }}>ריקולים וקריאות חזרה</h2>
         {!loading && recalls.length > 0 && (
@@ -54,14 +59,17 @@ export default function RecallsSection({ makeEn, modelEn, year, years }: Props) 
           </span>
         )}
         {!loading && recalls.length > 0 && (
-          <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginRight: 'auto' }}>
+          <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
             מקור: NHTSA
           </span>
         )}
+        <span style={{ marginRight: 'auto', fontSize: '0.875rem', color: 'var(--text-muted)' }}>
+          {isOpen ? '▲' : '▼'}
+        </span>
       </div>
 
       {/* Year filter tabs — only when we have multiple years */}
-      {!loading && !year && availableYears.length > 1 && (
+      {isOpen && !loading && !year && availableYears.length > 1 && (
         <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 16 }}>
           <button
             onClick={() => setFilterYear('all')}
@@ -92,19 +100,19 @@ export default function RecallsSection({ makeEn, modelEn, year, years }: Props) 
       )}
 
       {/* Content */}
-      {loading ? (
+      {isOpen && loading ? (
         <div className="card" style={{ padding: 32, textAlign: 'center', color: 'var(--text-muted)' }}>
           <div style={{ fontSize: '1.5rem', marginBottom: 8 }}>🔍</div>
           טוען ריקולים...
         </div>
-      ) : filtered.length === 0 ? (
+      ) : isOpen && filtered.length === 0 ? (
         <div className="card" style={{ padding: 32, textAlign: 'center', color: 'var(--text-muted)' }}>
           <div style={{ fontSize: 36, marginBottom: 12 }}>✅</div>
           <p style={{ margin: 0 }}>
             לא נמצאו ריקולים{year ? ` לשנת ${year}` : filterYear !== 'all' ? ` לשנת ${filterYear}` : ''}
           </p>
         </div>
-      ) : (
+      ) : isOpen ? (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
           {filtered.map(r => (
             <div key={r.id} className="card" style={{ padding: '16px 20px' }}>
@@ -196,7 +204,7 @@ export default function RecallsSection({ makeEn, modelEn, year, years }: Props) 
             </div>
           ))}
         </div>
-      )}
+      ) : null}
     </div>
   );
 }

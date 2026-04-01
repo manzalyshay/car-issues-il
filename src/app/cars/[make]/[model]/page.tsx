@@ -134,7 +134,9 @@ export default async function ModelPage({ params }: Props) {
         </div>
 
         {/* Recalls */}
-        <RecallsSection makeEn={make.nameEn} modelEn={model.nameEn} years={model.years} />
+        <div style={{ marginTop: 48 }}>
+          <RecallsSection makeEn={make.nameEn} modelEn={model.nameEn} years={model.years} />
+        </div>
 
         {/* JSON-LD */}
         <script
