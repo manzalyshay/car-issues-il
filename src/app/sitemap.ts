@@ -1,44 +1,30 @@
 import type { MetadataRoute } from 'next';
 import { getAllMakes } from '@/lib/carsDb';
 
-const BASE_URL = 'https://carissues.co.il';
+const BASE = 'https://carissues.co.il';
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const now = new Date();
-  const carDatabase = await getAllMakes();
+  const makes = await getAllMakes();
 
-  const staticRoutes: MetadataRoute.Sitemap = [
-    { url: BASE_URL, lastModified: now, changeFrequency: 'daily', priority: 1 },
-    { url: `${BASE_URL}/cars`, lastModified: now, changeFrequency: 'weekly', priority: 0.9 },
-    { url: `${BASE_URL}/news`, lastModified: now, changeFrequency: 'hourly', priority: 0.8 },
-  ];
-
-  const makeRoutes: MetadataRoute.Sitemap = carDatabase.map((make) => ({
-    url: `${BASE_URL}/cars/${make.slug}`,
-    lastModified: now,
+  const makeUrls = makes.map((make) => ({
+    url: `${BASE}/cars/${make.slug}`,
     changeFrequency: 'weekly' as const,
     priority: 0.8,
   }));
 
-  const modelRoutes: MetadataRoute.Sitemap = carDatabase.flatMap((make) =>
+  const modelUrls = makes.flatMap((make) =>
     make.models.map((model) => ({
-      url: `${BASE_URL}/cars/${make.slug}/${model.slug}`,
-      lastModified: now,
-      changeFrequency: 'weekly' as const,
-      priority: 0.7,
-    })),
+      url: `${BASE}/cars/${make.slug}/${model.slug}`,
+      changeFrequency: 'daily' as const,
+      priority: 0.9,
+    }))
   );
 
-  const yearRoutes: MetadataRoute.Sitemap = carDatabase.flatMap((make) =>
-    make.models.flatMap((model) =>
-      model.years.map((year) => ({
-        url: `${BASE_URL}/cars/${make.slug}/${model.slug}/${year}`,
-        lastModified: now,
-        changeFrequency: 'daily' as const,
-        priority: 0.6,
-      })),
-    ),
-  );
-
-  return [...staticRoutes, ...makeRoutes, ...modelRoutes, ...yearRoutes];
+  return [
+    { url: BASE, changeFrequency: 'daily', priority: 1.0 },
+    { url: `${BASE}/cars`, changeFrequency: 'weekly', priority: 0.8 },
+    { url: `${BASE}/rankings`, changeFrequency: 'daily', priority: 0.7 },
+    ...makeUrls,
+    ...modelUrls,
+  ];
 }

@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html>
+<head><meta charset="utf-8"><title>Logo Preview</title>
+<style>
+  body { background: #111; display: flex; gap: 40px; align-items: center; padding: 40px; font-family: sans-serif; flex-wrap: wrap; }
+  .box { display: flex; flex-direction: column; align-items: center; gap: 12px; color: #999; font-size: 12px; }
+  .light { background: #fff; padding: 20px; border-radius: 8px; display: flex; align-items: center; justify-content: center; }
+</style>
+</head>
+<body>
+  <div class="box">
+    <img src="/favicon.svg" width="16" height="16">
+    <span>16px (tab)</span>
+  </div>
+  <div class="box">
+    <img src="/favicon.svg" width="32" height="32">
+    <span>32px (favicon)</span>
+  </div>
+  <div class="box">
+    <img src="/favicon.svg" width="48" height="48">
+    <span>48px (navbar)</span>
+  </div>
+  <div class="box">
+    <img src="/favicon.svg" width="96" height="96">
+    <span>96px</span>
+  </div>
+  <div class="box">
+    <div class="light"><img src="/favicon.svg" width="48" height="48"></div>
+    <span>on light bg</span>
+  </div>
+</body>
+</html>
