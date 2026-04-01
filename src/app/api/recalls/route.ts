@@ -102,6 +102,8 @@ export async function GET(req: NextRequest) {
   try {
     let rawRecalls: any[] = [];
 
+    const currentYear = new Date().getFullYear();
+
     if (yearParam) {
       // Single year
       const url = `https://api.nhtsa.gov/recalls/recallsByVehicle?make=${encodeURIComponent(make)}&model=${encodeURIComponent(model)}&modelYear=${yearParam}`;
@@ -111,13 +113,20 @@ export async function GET(req: NextRequest) {
         rawRecalls = data.results ?? [];
       }
     } else {
-      // All years — NHTSA returns all recalls when modelYear is omitted
-      const url = `https://api.nhtsa.gov/recalls/recallsByVehicle?make=${encodeURIComponent(make)}&model=${encodeURIComponent(model)}`;
-      const res = await fetch(url, { signal: AbortSignal.timeout(12000) });
-      if (res.ok) {
-        const data = await res.json();
-        rawRecalls = data.results ?? [];
-      }
+      // Fetch all years from 1995 to current — NHTSA requires modelYear param
+      const years = Array.from({ length: currentYear - 1994 }, (_, i) => String(1995 + i));
+      const batches = await Promise.all(
+        years.map(async (y) => {
+          try {
+            const url = `https://api.nhtsa.gov/recalls/recallsByVehicle?make=${encodeURIComponent(make)}&model=${encodeURIComponent(model)}&modelYear=${y}`;
+            const res = await fetch(url, { signal: AbortSignal.timeout(10000) });
+            if (!res.ok) return [];
+            const data = await res.json();
+            return (data.results ?? []) as any[];
+          } catch { return []; }
+        })
+      );
+      rawRecalls = batches.flat();
     }
 
     // Deduplicate by campaign number
