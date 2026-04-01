@@ -46,8 +46,9 @@ export interface UserPost {
   title: string;
   url: string;
   sourceName: string;
-  snippet: string;   // First ~300 chars only — never full post
-  score?: number;    // Upvotes / relevance
+  snippet: string;     // First ~300 chars only — never full post
+  score?: number;      // Upvotes / relevance
+  reviewYear?: number; // Year the review/complaint was written
 }
 
 // ── Supabase ──────────────────────────────────────────────────────────────────
@@ -424,6 +425,7 @@ async function searchCarzone(makeHe: string, modelHe: string, makeEn: string, mo
     ? [`https://www.carzone.co.il/${makeSlug}/${modelSlug}/${year}/`, `https://www.carzone.co.il/${makeSlug}/${modelSlug}/`]
     : [`https://www.carzone.co.il/${makeSlug}/${modelSlug}/`];
 
+  const seen = new Set<string>();
   for (const slugUrl of urls) {
     try {
       const res = await fetch(slugUrl, {
@@ -433,20 +435,32 @@ async function searchCarzone(makeHe: string, modelHe: string, makeEn: string, mo
       if (!res.ok) continue;
       const html = await res.text();
 
-      // Extract reviewBody fields directly (more reliable than JSON-LD parsing)
-      const reviewRe = /"reviewBody":"((?:[^"\\]|\\.)*)"/g;
+      // Extract all reviewBody + datePublished pairs from JSON-LD
+      const bodyRe = /"reviewBody":"((?:[^"\\]|\\.)*)"/g;
+      const dateRe = /"datePublished":"([^"]+)"/g;
+      const bodies: string[] = [];
+      const dates: string[] = [];
       let rm;
-      while ((rm = reviewRe.exec(html)) !== null && posts.length < 6) {
-        const body = rm[1].replace(/\\n/g, ' ').replace(/\\"/g, '"').replace(/\\u[\da-f]{4}/gi, '').trim();
+      while ((rm = bodyRe.exec(html)) !== null) bodies.push(rm[1].replace(/\\n/g, ' ').replace(/\\"/g, '"').replace(/\\u[\da-f]{4}/gi, '').trim());
+      while ((rm = dateRe.exec(html)) !== null) dates.push(rm[1]);
+
+      for (let i = 0; i < bodies.length; i++) {
+        const body = bodies[i];
         if (!body || body.length < 20) continue;
+        const key = body.slice(0, 60);
+        if (seen.has(key)) continue;
+        seen.add(key);
+        const dateStr = dates[i] ?? '';
+        const yearMatch = dateStr.match(/\b(20\d{2})\b/);
+        const reviewYear = yearMatch ? parseInt(yearMatch[1]) : undefined;
         posts.push({
           title: 'ביקורת גולש ישראלי',
           url: slugUrl,
           sourceName: 'CarZone ביקורות גולשים',
           snippet: body.slice(0, 350),
+          reviewYear,
         });
       }
-      if (posts.length > 0) break; // Found reviews, no need to try more URLs
     } catch { /* ignore */ }
   }
   return posts;
@@ -495,7 +509,9 @@ async function searchCarComplaints(makeEn: string, modelEn: string): Promise<Use
       const snippet = paras.slice(0, 3).join(' ').slice(0, 500);
       const titleMatch = page.href.match(/\/([^/]+)\.shtml$/);
       const title = titleMatch ? titleMatch[1].replace(/_/g, ' ') : `${makeEn} ${modelEn} complaint`;
-      posts.push({ title: `${makeEn} ${modelEn}: ${title}`, url: `${baseUrl}${page.href}`, sourceName: 'CarComplaints.com', snippet });
+      const yearMatch = page.href.match(/\/(20\d{2})\//);
+      const reviewYear = yearMatch ? parseInt(yearMatch[1]) : undefined;
+      posts.push({ title: `${makeEn} ${modelEn}: ${title}`, url: `${baseUrl}${page.href}`, sourceName: 'CarComplaints.com', snippet, reviewYear });
     }
   } catch { /* ignore */ }
   return posts;
@@ -523,21 +539,26 @@ async function fetchEdmundsPage(url: string, makeEn: string, modelEn: string, po
     const reviewBodyRe = /"reviewBody"\s*:\s*"((?:[^"\\]|\\.)*)"/g;
     const authorRe     = /"author"\s*:\s*\{[^}]*"name"\s*:\s*"([^"]+)"/g;
     const titleRe      = /"name"\s*:\s*"([^"]{10,120})"/g;
+    const dateRe       = /"datePublished"\s*:\s*"([^"]+)"/g;
 
     const bodies: string[]  = [];
     const authors: string[] = [];
     const titles: string[]  = [];
+    const dates: string[]   = [];
     let m;
     while ((m = reviewBodyRe.exec(html)) !== null) bodies.push(m[1].replace(/\\n/g, ' ').replace(/\\"/g, '"').replace(/\\u[\dA-Fa-f]{4}/g, '').trim());
     while ((m = authorRe.exec(html))     !== null) authors.push(m[1]);
     while ((m = titleRe.exec(html))      !== null && titles.length < bodies.length) titles.push(m[1]);
+    while ((m = dateRe.exec(html))       !== null) dates.push(m[1]);
 
     for (let i = 0; i < Math.min(bodies.length, 10); i++) {
       const body = bodies[i];
       if (body.length < 40) continue;
       const author = authors[i] ?? `Reviewer ${i + 1}`;
       const title  = titles[i]  ?? `${makeEn} ${modelEn} — ${author}`;
-      posts.push({ title, url, sourceName: 'Edmunds Consumer Reviews', snippet: body.slice(0, 500) });
+      const yearMatch = (dates[i] ?? '').match(/\b(20\d{2})\b/);
+      const reviewYear = yearMatch ? parseInt(yearMatch[1]) : undefined;
+      posts.push({ title, url, sourceName: 'Edmunds Consumer Reviews', snippet: body.slice(0, 500), reviewYear });
     }
   } catch { /* ignore */ }
 }
@@ -606,6 +627,7 @@ async function searchNHTSA(makeEn: string, modelEn: string, year?: number): Prom
         url:   `https://www.nhtsa.gov/vehicle/${encodeURIComponent(makeEn)}/${encodeURIComponent(c.model ?? modelEn)}/${c.modelYear ?? year}/NG`,
         sourceName: 'NHTSA Complaints',
         snippet: text.slice(0, 500),
+        reviewYear: c.modelYear ? Number(c.modelYear) : undefined,
       });
       if (posts.length >= 10) break;
     }
@@ -629,14 +651,20 @@ async function searchCarsCom(makeEn: string, modelEn: string, year?: number): Pr
     if (!res.ok) return posts;
     const html = await res.text();
 
-    // JSON-LD reviewBody
+    // JSON-LD reviewBody + datePublished
     const reviewRe = /"reviewBody"\s*:\s*"([^"]{40,600})"/g;
+    const dateRe   = /"datePublished"\s*:\s*"([^"]+)"/g;
+    const bodies: string[] = [];
+    const dates: string[]  = [];
     let m;
-    while ((m = reviewRe.exec(html)) !== null && posts.length < 4) {
-      const body = m[1].replace(/\\n/g, ' ').replace(/\\"/g, '"').trim();
-      if (body.length > 40) {
-        posts.push({ title: `Consumer review: ${makeEn} ${modelEn}`, url, sourceName: 'Cars.com Reviews', snippet: body.slice(0, 300) });
-      }
+    while ((m = reviewRe.exec(html)) !== null) bodies.push(m[1].replace(/\\n/g, ' ').replace(/\\"/g, '"').trim());
+    while ((m = dateRe.exec(html))   !== null) dates.push(m[1]);
+    for (let i = 0; i < bodies.length; i++) {
+      const body = bodies[i];
+      if (body.length < 40) continue;
+      const yearMatch = (dates[i] ?? '').match(/\b(20\d{2})\b/);
+      const reviewYear = yearMatch ? parseInt(yearMatch[1]) : undefined;
+      posts.push({ title: `Consumer review: ${makeEn} ${modelEn}`, url, sourceName: 'Cars.com Reviews', snippet: body.slice(0, 300), reviewYear });
     }
 
     // Fallback: inline review text blocks
@@ -918,10 +946,11 @@ async function summarizeGroup(
   if (posts.length === 0) return null;
 
   const postList = posts
-    .slice(0, 6)
-    .map((p, i) =>
-      `[${i + 1}] "${p.title}" (${p.sourceName})${p.snippet ? `\nפרט: ${p.snippet}` : ''}`
-    )
+    .slice(0, 20)
+    .map((p, i) => {
+      const yearNote = p.reviewYear ? `, ${p.reviewYear}` : '';
+      return `[${i + 1}] "${p.title}" (${p.sourceName}${yearNote})${p.snippet ? `\nפרט: ${p.snippet}` : ''}`;
+    })
     .join('\n\n');
 
   const scopeNote = scope === 'local'
@@ -932,7 +961,7 @@ async function summarizeGroup(
 
 ${scopeNote}
 
-הנה ${posts.length} פוסטים מפורומי משתמשים על ${makeNameHe} ${modelNameHe}:
+הנה ${Math.min(posts.length, 20)} פוסטים מפורומי משתמשים על ${makeNameHe} ${modelNameHe} (כולל שנת הביקורת כשידוע):
 
 ${postList}
 
