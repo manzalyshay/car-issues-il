@@ -135,6 +135,17 @@ export default async function HomePage() {
       </section>
 
       {/* ── Popular Makes + Widgets ── */}
+      <style>{`
+        .popular-grid { display: flex; gap: 32px; align-items: flex-start; }
+        .popular-makes { flex: 0 0 75%; min-width: 0; }
+        .popular-widgets { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 16px; }
+        @media (max-width: 700px) {
+          .popular-grid { flex-direction: column; }
+          .popular-makes { flex: none; width: 100%; }
+          .popular-widgets { flex-direction: row; flex-wrap: wrap; }
+          .popular-widgets > div { flex: 1 1 260px; }
+        }
+      `}</style>
       <section id="popular" style={{ padding: '64px 0' }}>
         <div className="container">
           {/* Header — full width above the split */}
@@ -143,10 +154,10 @@ export default async function HomePage() {
             <p style={{ color: 'var(--text-muted)', marginTop: 4 }}>הדגמים הנפוצים ביותר בישראל</p>
           </div>
 
-          <div style={{ display: 'flex', gap: 32, alignItems: 'flex-start' }}>
+          <div className="popular-grid">
 
             {/* 75% — Popular Makes */}
-            <div style={{ flex: '0 0 75%', minWidth: 0 }}>
+            <div className="popular-makes">
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))', gap: 16 }}>
                 {popularMakes.map((make) => (
                   <Link key={make.slug} href={`/cars/${make.slug}`} className="card" style={{ padding: '24px 16px', textAlign: 'center', textDecoration: 'none', display: 'block' }}>
@@ -169,7 +180,7 @@ export default async function HomePage() {
             </div>
 
             {/* 25% — Widgets */}
-            <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: 16 }}>
+            <div className="popular-widgets">
 
               {/* Top ranked */}
               {topRanked.length > 0 && (
