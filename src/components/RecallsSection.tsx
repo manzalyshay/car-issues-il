@@ -18,7 +18,6 @@ export default function RecallsSection({ makeEn, modelEn, year, years }: Props) 
   const [isOpen, setIsOpen]       = useState(false);
 
   useEffect(() => {
-    if (!isOpen) return;
     setLoading(true);
     const params = new URLSearchParams({ make: makeEn, model: modelEn });
     if (year) params.set('year', String(year));
@@ -28,7 +27,7 @@ export default function RecallsSection({ makeEn, modelEn, year, years }: Props) 
       .then(d => setRecalls(d.recalls ?? []))
       .catch(() => setRecalls([]))
       .finally(() => setLoading(false));
-  }, [makeEn, modelEn, year, isOpen]);
+  }, [makeEn, modelEn, year]);
 
   // Collect unique years for the filter
   const availableYears = useMemo(() => {
