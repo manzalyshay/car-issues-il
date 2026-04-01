@@ -1,75 +1,24 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { getServiceClient } from '@/lib/adminAuth';
 
 export interface Recall {
   id: string;
   year: number | null;
-  date: string;        // formatted as DD/MM/YYYY
-  component: string;   // translated to Hebrew
-  summary: string;     // translated to Hebrew
-  consequence: string; // translated to Hebrew
-  remedy: string;      // translated to Hebrew
+  date: string;
+  component: string;
+  summary: string;
+  consequence: string;
+  remedy: string;
   manufacturer: string;
-}
-
-// ── Groq translation ──────────────────────────────────────────────────────────
-
-async function translateBatch(texts: string[]): Promise<string[]> {
-  const apiKey = process.env.GROQ_API_KEY;
-  if (!apiKey || texts.length === 0) return texts;
-
-  // Build a numbered list so we can parse back
-  const numbered = texts.map((t, i) => `[${i + 1}] ${t}`).join('\n\n');
-
-  try {
-    const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${apiKey}` },
-      body: JSON.stringify({
-        model: 'llama-3.1-8b-instant',
-        temperature: 0,
-        max_tokens: 4096,
-        messages: [
-          {
-            role: 'system',
-            content:
-              'You are a translator. Translate each numbered text from English to Hebrew. ' +
-              'Keep technical automotive terms accurate. ' +
-              'Reply ONLY with the same numbered format, e.g.:\n[1] תרגום\n[2] תרגום\n...',
-          },
-          { role: 'user', content: numbered },
-        ],
-      }),
-      signal: AbortSignal.timeout(20000),
-    });
-
-    if (!res.ok) return texts;
-    const data = await res.json();
-    const content: string = data.choices?.[0]?.message?.content ?? '';
-
-    // Parse [N] answer pairs
-    const out = [...texts]; // fallback = original
-    for (const match of content.matchAll(/\[(\d+)\]\s*([\s\S]*?)(?=\n\[\d+\]|$)/g)) {
-      const idx = parseInt(match[1]) - 1;
-      const translated = match[2].trim();
-      if (idx >= 0 && idx < out.length && translated) out[idx] = translated;
-    }
-    return out;
-  } catch {
-    return texts;
-  }
 }
 
 // ── Date formatting ───────────────────────────────────────────────────────────
 
 function formatDate(raw: string): string {
   if (!raw) return '';
-  // NHTSA format: "20231015" (YYYYMMDD) or ISO strings
   const digits = raw.replace(/\D/g, '');
   if (digits.length === 8) {
-    const yyyy = digits.slice(0, 4);
-    const mm   = digits.slice(4, 6);
-    const dd   = digits.slice(6, 8);
-    return `${dd}/${mm}/${yyyy}`;
+    return `${digits.slice(6, 8)}/${digits.slice(4, 6)}/${digits.slice(0, 4)}`;
   }
   const d = new Date(raw);
   if (!isNaN(d.getTime())) {
@@ -87,6 +36,71 @@ function extractYear(raw: string): number | null {
   return null;
 }
 
+// ── Groq translation (one call per chunk of 6 recalls) ───────────────────────
+
+interface RecallFields { component: string; summary: string; consequence: string; remedy: string; }
+
+async function translateRecalls(recalls: RecallFields[], apiKey: string): Promise<RecallFields[]> {
+  if (recalls.length === 0) return recalls;
+
+  const input = recalls.map((r, i) =>
+    `[${i + 1}]\ncomponent: ${r.component}\nsummary: ${r.summary}\nconsequence: ${r.consequence}\nremedy: ${r.remedy}`
+  ).join('\n\n');
+
+  try {
+    const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${apiKey}` },
+      body: JSON.stringify({
+        model: 'llama-3.3-70b-versatile',
+        temperature: 0,
+        max_tokens: 8000,
+        messages: [
+          {
+            role: 'system',
+            content:
+              'Translate each numbered recall from English to Hebrew. Keep technical automotive terms accurate. ' +
+              'Reply ONLY in this exact format:\n[N]\ncomponent: ...\nsummary: ...\nconsequence: ...\nremedy: ...',
+          },
+          { role: 'user', content: input },
+        ],
+      }),
+      signal: AbortSignal.timeout(30000),
+    });
+
+    if (!res.ok) return recalls;
+    const data = await res.json();
+    const content: string = data.choices?.[0]?.message?.content ?? '';
+
+    const out = recalls.map(r => ({ ...r }));
+    const blocks = content.split(/\n(?=\[\d+\])/);
+    for (const block of blocks) {
+      const idxMatch = block.match(/^\[(\d+)\]/);
+      if (!idxMatch) continue;
+      const idx = parseInt(idxMatch[1]) - 1;
+      if (idx < 0 || idx >= out.length) continue;
+
+      const get = (field: string) => {
+        const m = block.match(new RegExp(`${field}:\\s*([\\s\\S]*?)(?=\\n(?:component|summary|consequence|remedy):|$)`));
+        return m?.[1]?.trim() || '';
+      };
+
+      const component   = get('component');
+      const summary     = get('summary');
+      const consequence = get('consequence');
+      const remedy      = get('remedy');
+
+      if (component)   out[idx].component   = component;
+      if (summary)     out[idx].summary     = summary;
+      if (consequence) out[idx].consequence = consequence;
+      if (remedy)      out[idx].remedy      = remedy;
+    }
+    return out;
+  } catch {
+    return recalls;
+  }
+}
+
 // ── Main handler ──────────────────────────────────────────────────────────────
 
 export async function GET(req: NextRequest) {
@@ -94,27 +108,23 @@ export async function GET(req: NextRequest) {
   const make       = searchParams.get('make');
   const model      = searchParams.get('model');
   const yearParam  = searchParams.get('year');
-  const yearsParam = searchParams.get('years'); // comma-separated list
+  const yearsParam = searchParams.get('years');
 
   if (!make || !model) {
     return NextResponse.json({ error: 'Missing make/model' }, { status: 400 });
   }
 
   try {
-    let rawRecalls: any[] = [];
-
     const currentYear = new Date().getFullYear();
+    const sb = getServiceClient();
 
+    // 1. Fetch raw recalls from NHTSA
+    let rawRecalls: any[] = [];
     if (yearParam) {
-      // Single year
       const url = `https://api.nhtsa.gov/recalls/recallsByVehicle?make=${encodeURIComponent(make)}&model=${encodeURIComponent(model)}&modelYear=${yearParam}`;
       const res = await fetch(url, { signal: AbortSignal.timeout(10000) });
-      if (res.ok) {
-        const data = await res.json();
-        rawRecalls = data.results ?? [];
-      }
+      if (res.ok) rawRecalls = (await res.json()).results ?? [];
     } else {
-      // Use provided years list, or fall back to last 10 years
       const years = yearsParam
         ? yearsParam.split(',').map(y => y.trim()).filter(Boolean)
         : Array.from({ length: 10 }, (_, i) => String(currentYear - i));
@@ -124,53 +134,100 @@ export async function GET(req: NextRequest) {
             const url = `https://api.nhtsa.gov/recalls/recallsByVehicle?make=${encodeURIComponent(make)}&model=${encodeURIComponent(model)}&modelYear=${y}`;
             const res = await fetch(url, { signal: AbortSignal.timeout(10000) });
             if (!res.ok) return [];
-            const data = await res.json();
-            return (data.results ?? []) as any[];
+            return (await res.json()).results ?? [];
           } catch { return []; }
         })
       );
       rawRecalls = batches.flat();
     }
 
-    // Deduplicate by campaign number
+    // Deduplicate + sort newest first
     const seen = new Set<string>();
     const unique: any[] = [];
     for (const r of rawRecalls) {
       const id = r.NHTSACampaignNumber ?? `${r.ReportReceivedDate}-${r.Component}`;
       if (!seen.has(id)) { seen.add(id); unique.push(r); }
     }
+    unique.sort((a, b) =>
+      new Date(b.ReportReceivedDate ?? '').getTime() - new Date(a.ReportReceivedDate ?? '').getTime()
+    );
 
-    // Sort newest first
-    unique.sort((a, b) => {
-      const da = new Date(a.ReportReceivedDate ?? '').getTime();
-      const db = new Date(b.ReportReceivedDate ?? '').getTime();
-      return db - da;
+    if (unique.length === 0) return NextResponse.json({ recalls: [] });
+
+    // 2. Load already-translated records from DB
+    const ids = unique.map(r => r.NHTSACampaignNumber ?? '').filter(Boolean);
+    const { data: cached } = await sb
+      .from('recalls_cache')
+      .select('*')
+      .in('id', ids);
+
+    const cacheMap = new Map<string, any>();
+    for (const row of cached ?? []) cacheMap.set(row.id, row);
+
+    // 3. Identify which recalls need translation
+    const toTranslate = unique.filter(r => {
+      const id = r.NHTSACampaignNumber ?? '';
+      return id && !cacheMap.has(id);
     });
 
-    // Build field arrays for batch translation
-    const components   = unique.map(r => r.Component   ?? '');
-    const summaries    = unique.map(r => r.Summary      ?? '');
-    const consequences = unique.map(r => r.Consequence  ?? '');
-    const remedies     = unique.map(r => r.Remedy       ?? '');
+    // 4. Translate new ones in chunks of 6 and save to DB
+    if (toTranslate.length > 0) {
+      const apiKey = process.env.GROQ_API_KEY ?? '';
+      const CHUNK = 6;
+      const rows: any[] = [];
 
-    // Translate all fields in 4 parallel batch calls
-    const [tComponents, tSummaries, tConsequences, tRemedies] = await Promise.all([
-      translateBatch(components),
-      translateBatch(summaries),
-      translateBatch(consequences),
-      translateBatch(remedies),
-    ]);
+      for (let i = 0; i < toTranslate.length; i += CHUNK) {
+        const chunk = toTranslate.slice(i, i + CHUNK);
+        const fields: RecallFields[] = chunk.map(r => ({
+          component:   r.Component   ?? '',
+          summary:     r.Summary     ?? '',
+          consequence: r.Consequence ?? '',
+          remedy:      r.Remedy      ?? '',
+        }));
+        const translated = apiKey ? await translateRecalls(fields, apiKey) : fields;
 
-    const recalls: Recall[] = unique.map((r, i) => ({
-      id:           r.NHTSACampaignNumber ?? `${i}`,
-      year:         r.ModelYear ? parseInt(r.ModelYear) : extractYear(r.ReportReceivedDate ?? ''),
-      date:         formatDate(r.ReportReceivedDate ?? ''),
-      component:    tComponents[i]   || components[i],
-      summary:      tSummaries[i]    || summaries[i],
-      consequence:  tConsequences[i] || consequences[i],
-      remedy:       tRemedies[i]     || remedies[i],
-      manufacturer: r.Manufacturer   ?? '',
-    }));
+        for (let j = 0; j < chunk.length; j++) {
+          const r = chunk[j];
+          const t = translated[j];
+          const row = {
+            id:            r.NHTSACampaignNumber,
+            make:          make.toLowerCase(),
+            model:         model.toLowerCase(),
+            date:          formatDate(r.ReportReceivedDate ?? ''),
+            component_he:  t.component   || fields[j].component,
+            summary_he:    t.summary     || fields[j].summary,
+            consequence_he:t.consequence || fields[j].consequence,
+            remedy_he:     t.remedy      || fields[j].remedy,
+            manufacturer:  r.Manufacturer ?? '',
+            recall_year:   r.ModelYear ? parseInt(r.ModelYear) : extractYear(r.ReportReceivedDate ?? ''),
+          };
+          rows.push(row);
+          cacheMap.set(row.id, row);
+        }
+      }
+
+      // Upsert new rows (fire-and-forget errors)
+      await sb.from('recalls_cache').upsert(rows, { onConflict: 'id' }).then(
+        () => {}, err => console.error('[Recalls cache upsert]', err)
+      );
+    }
+
+    // 5. Build final response from cache
+    const recalls: Recall[] = unique
+      .filter(r => r.NHTSACampaignNumber)
+      .map(r => {
+        const cached = cacheMap.get(r.NHTSACampaignNumber);
+        return {
+          id:          r.NHTSACampaignNumber,
+          year:        r.ModelYear ? parseInt(r.ModelYear) : extractYear(r.ReportReceivedDate ?? ''),
+          date:        cached?.date || formatDate(r.ReportReceivedDate ?? ''),
+          component:   cached?.component_he  || r.Component   || '',
+          summary:     cached?.summary_he    || r.Summary     || '',
+          consequence: cached?.consequence_he || r.Consequence || '',
+          remedy:      cached?.remedy_he     || r.Remedy      || '',
+          manufacturer:r.Manufacturer ?? '',
+        };
+      });
 
     return NextResponse.json({ recalls });
   } catch (err) {
