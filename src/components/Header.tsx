@@ -183,4 +183,6 @@ export default function Header() {
 const NAV_LINKS = [
   { href: '/cars', label: 'כל היצרנים' },
   { href: '/cars#popular', label: 'דגמים פופולריים' },
+  { href: '/cars/compare', label: 'השוואה' },
+  { href: '/rankings', label: 'דירוגים' },
 ];

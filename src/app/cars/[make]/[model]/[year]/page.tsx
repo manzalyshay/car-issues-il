@@ -9,6 +9,7 @@ import ExpertReviewsSection from '@/components/ExpertReviewsSection';
 import CarYearClient from './CarYearClient';
 import MakeLogo from '@/components/MakeLogo';
 import ShareButtons from '@/components/ShareButtons';
+import RecallsSection from '@/components/RecallsSection';
 
 export const dynamic = 'force-dynamic';
 
@@ -212,6 +213,9 @@ export default async function CarYearPage({ params }: Props) {
             userReviewCount={reviews.length}
           />
         )}
+
+        {/* Recalls for this year */}
+        <RecallsSection makeEn={make.nameEn} modelEn={model.nameEn} year={yearNum} />
 
         {/* Client component handles reviews list + review form */}
         <CarYearClient

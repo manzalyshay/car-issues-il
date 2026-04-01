@@ -1,6 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { addReview } from '@/lib/reviewsDb';
+import { addReview, getReviewsForModel } from '@/lib/reviewsDb';
 import type { Review } from '@/data/reviews';
+
+export async function GET(req: NextRequest) {
+  const { searchParams } = new URL(req.url);
+  const makeSlug  = searchParams.get('makeSlug');
+  const modelSlug = searchParams.get('modelSlug');
+  if (!makeSlug || !modelSlug) return NextResponse.json({ error: 'Missing params' }, { status: 400 });
+  const reviews = await getReviewsForModel(makeSlug, modelSlug);
+  return NextResponse.json({ reviews });
+}
 
 const TURNSTILE_SECRET = process.env.TURNSTILE_SECRET_KEY ?? '';
 

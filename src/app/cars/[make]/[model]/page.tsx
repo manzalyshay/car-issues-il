@@ -11,6 +11,7 @@ import Car3DViewer from '@/components/Car3DViewer';
 import ExpertReviewsSection from '@/components/ExpertReviewsSection';
 import ModelReviewsSection from './ModelReviewsSection';
 import ShareButtons from '@/components/ShareButtons';
+import RecallsSection from '@/components/RecallsSection';
 
 export const dynamic = 'force-dynamic';
 
@@ -103,9 +104,12 @@ export default async function ModelPage({ params }: Props) {
           )}
         </div>
 
-        {/* Share */}
-        <div style={{ marginBottom: 32 }}>
+        {/* Share + Compare */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap', marginBottom: 32 }}>
           <ShareButtons title={`${make.nameHe} ${model.nameHe} — ביקורות ובעיות נפוצות | CarIssues IL`} url={`https://carissues.co.il/cars/${make.slug}/${model.slug}`} />
+          <Link href={`/cars/compare?car1=${make.slug}/${model.slug}`} className="btn btn-outline" style={{ height: 36, padding: '0 16px', fontSize: '0.875rem', textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+            ⚖️ השווה לרכב אחר
+          </Link>
         </div>
 
         {/* General AI summary — combined score includes user reviews */}
@@ -116,6 +120,9 @@ export default async function ModelPage({ params }: Props) {
           userAvgRating={avgRating}
           userReviewCount={allReviews.length}
         />
+
+        {/* Recalls */}
+        <RecallsSection makeEn={make.nameEn} modelEn={model.nameEn} />
 
         {/* Inline reviews with year filter */}
         <div style={{ marginBottom: 48 }}>
