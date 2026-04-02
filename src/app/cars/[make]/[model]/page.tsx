@@ -137,6 +137,11 @@ export default async function ModelPage({ params }: Props) {
             </div>
             <a
               href="#write-review"
+              onClick={(e) => {
+                e.preventDefault();
+                document.getElementById('open-review-form')?.click();
+                document.getElementById('write-review')?.scrollIntoView({ behavior: 'smooth' });
+              }}
               className="btn btn-primary"
               style={{ height: 42, padding: '0 24px', fontSize: '0.9rem', textDecoration: 'none', display: 'inline-flex', alignItems: 'center', flexShrink: 0 }}
             >

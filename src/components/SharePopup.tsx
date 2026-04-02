@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 
 interface Props {
   title: string;
@@ -59,16 +59,37 @@ const PLATFORMS = [
 export default function SharePopup({ title, url, label = 'שתף', compact = false }: Props) {
   const [open, setOpen] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [popupStyle, setPopupStyle] = useState<React.CSSProperties>({});
+  const btnRef = useRef<HTMLButtonElement>(null);
   const ref = useRef<HTMLDivElement>(null);
+
+  const updatePosition = useCallback(() => {
+    if (!btnRef.current) return;
+    const r = btnRef.current.getBoundingClientRect();
+    const spaceBelow = window.innerHeight - r.bottom;
+    const above = spaceBelow < 260;
+    setPopupStyle({
+      position: 'fixed',
+      zIndex: 9999,
+      right: window.innerWidth - r.right,
+      ...(above ? { bottom: window.innerHeight - r.top + 8 } : { top: r.bottom + 8 }),
+    });
+  }, []);
 
   useEffect(() => {
     if (!open) return;
+    updatePosition();
     const handler = (e: MouseEvent) => {
-      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+      if (ref.current && !ref.current.contains(e.target as Node) &&
+          btnRef.current && !btnRef.current.contains(e.target as Node)) setOpen(false);
     };
     document.addEventListener('mousedown', handler);
-    return () => document.removeEventListener('mousedown', handler);
-  }, [open]);
+    window.addEventListener('scroll', updatePosition, true);
+    return () => {
+      document.removeEventListener('mousedown', handler);
+      window.removeEventListener('scroll', updatePosition, true);
+    };
+  }, [open, updatePosition]);
 
   const copyLink = async () => {
     await navigator.clipboard.writeText(url);
@@ -77,8 +98,9 @@ export default function SharePopup({ title, url, label = 'שתף', compact = fal
   };
 
   return (
-    <div ref={ref} style={{ position: 'relative', display: 'inline-block' }}>
+    <div style={{ position: 'relative', display: 'inline-block' }}>
       <button
+        ref={btnRef}
         onClick={() => setOpen((v) => !v)}
         style={{
           display: 'flex', alignItems: 'center', gap: 5,
@@ -97,16 +119,14 @@ export default function SharePopup({ title, url, label = 'שתף', compact = fal
       </button>
 
       {open && (
-        <div style={{
-          position: 'absolute',
-          bottom: 'calc(100% + 8px)',
-          right: 0,
-          zIndex: 500,
+        <div ref={ref} style={{
+          ...popupStyle,
+          zIndex: 9999,
+          minWidth: 200,
           background: 'var(--bg-card)',
           border: '1px solid var(--border)',
           borderRadius: 12,
           padding: 8,
-          minWidth: 200,
           boxShadow: '0 8px 32px rgba(0,0,0,0.3)',
           display: 'flex', flexDirection: 'column', gap: 2,
         }}>

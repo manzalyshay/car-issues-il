@@ -61,6 +61,7 @@ export default function ModelReviewsSection({ makeSlug, modelSlug, years, initia
           )}
         </div>
         <button
+          id="open-review-form"
           className="btn btn-primary"
           onClick={() => setShowForm((v) => !v)}
           style={{ height: 38, padding: '0 20px', fontSize: '0.875rem' }}
