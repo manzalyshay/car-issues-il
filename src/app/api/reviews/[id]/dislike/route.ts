@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { supabase } from '@/lib/supabase';
+import { getServiceClient } from '@/lib/adminAuth';
 
 export async function POST(
   req: NextRequest,
@@ -9,14 +9,14 @@ export async function POST(
   const body = await req.json().catch(() => ({}));
   const delta: number = body.delta === -1 ? -1 : 1;
 
-  const { data } = await supabase
+  const { data } = await getServiceClient()
     .from('reviews')
     .select('dislikes')
     .eq('id', id)
     .single();
 
   const current = data?.dislikes ?? 0;
-  await supabase
+  await getServiceClient()
     .from('reviews')
     .update({ dislikes: Math.max(0, current + delta) })
     .eq('id', id);
