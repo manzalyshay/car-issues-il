@@ -26,7 +26,7 @@ interface ModelRow {
 }
 
 type ScrapeState = 'idle' | 'loading' | 'ok' | 'error';
-type Tab = 'reviews_ai' | 'user_reviews' | 'reports' | 'metrics';
+type Tab = 'reviews_ai' | 'user_reviews' | 'reports' | 'metrics' | 'users';
 
 interface MetricsData {
   totals: {
@@ -102,6 +102,10 @@ export default function AdminPage() {
   // ── Metrics tab state ─────────────────────────────────────────────────────────
   const [metrics, setMetrics] = useState<MetricsData | null>(null);
   const [metricsFetching, setMetricsFetching] = useState(false);
+
+  // ── Users tab state ────────────────────────────────────────────────────────────
+  const [users, setUsers] = useState<{ id: string; email: string; display_name: string | null; is_admin: boolean; created_at: string; last_sign_in: string | null; provider: string }[]>([]);
+  const [usersFetching, setUsersFetching] = useState(false);
 
 
   const getToken = useCallback(async () => {
@@ -184,6 +188,36 @@ export default function AdminPage() {
   useEffect(() => {
     if (isAdmin && tab === 'metrics') fetchMetrics();
   }, [isAdmin, tab, fetchMetrics]);
+
+  const fetchUsers = useCallback(async () => {
+    setUsersFetching(true);
+    try {
+      const token = await getToken();
+      const res = await fetch('/api/admin/users', { headers: { Authorization: `Bearer ${token}` } });
+      if (res.ok) {
+        const data = await res.json();
+        setUsers(data.users ?? []);
+      }
+    } catch { /* ignore */ } finally {
+      setUsersFetching(false);
+    }
+  }, [getToken]);
+
+  useEffect(() => {
+    if (isAdmin && tab === 'users') fetchUsers();
+  }, [isAdmin, tab, fetchUsers]);
+
+  const toggleAdmin = async (userId: string, currentIsAdmin: boolean) => {
+    const token = await getToken();
+    const res = await fetch('/api/admin/users', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+      body: JSON.stringify({ userId, is_admin: !currentIsAdmin }),
+    });
+    if (res.ok) {
+      setUsers((prev) => prev.map((u) => u.id === userId ? { ...u, is_admin: !currentIsAdmin } : u));
+    }
+  };
 
 
   const scrapeOne = async (makeSlug: string, modelSlug: string) => {
@@ -305,7 +339,7 @@ export default function AdminPage() {
 
         {/* Tabs */}
         <div style={{ display: 'flex', gap: 2, marginBottom: 32, borderBottom: '2px solid var(--border)', overflowX: 'auto', flexShrink: 0 }}>
-          {([['reviews_ai', 'סיכומי AI'], ['user_reviews', 'ביקורות'], ['reports', `דיווחים${reports.length ? ` (${reports.length})` : ''}`], ['metrics', 'מדדים']] as [Tab, string][]).map(([t, label]) => (
+          {([['reviews_ai', 'סיכומי AI'], ['user_reviews', 'ביקורות'], ['reports', `דיווחים${reports.length ? ` (${reports.length})` : ''}`], ['metrics', 'מדדים'], ['users', 'משתמשים']] as [Tab, string][]).map(([t, label]) => (
             <button
               key={t}
               onClick={() => setTab(t)}
@@ -571,6 +605,60 @@ export default function AdminPage() {
         {/* ── Metrics Tab ─────────────────────────────────────────────────────── */}
         {tab === 'metrics' && (
           <MetricsTab metrics={metrics} fetching={metricsFetching} onRefresh={fetchMetrics} />
+        )}
+
+        {/* ── Users Tab ───────────────────────────────────────────────────────── */}
+        {tab === 'users' && (
+          <>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24, flexWrap: 'wrap', gap: 12 }}>
+              <p style={{ color: 'var(--text-muted)', margin: 0 }}>
+                {users.length} משתמשים רשומים
+              </p>
+              <button onClick={fetchUsers} disabled={usersFetching} style={{ padding: '8px 16px', borderRadius: 8, border: '1px solid var(--border)', background: 'transparent', cursor: 'pointer', fontWeight: 600, fontSize: '0.875rem', color: 'var(--text-secondary)' }}>
+                {usersFetching ? 'טוען...' : 'רענן'}
+              </button>
+            </div>
+            {usersFetching ? (
+              <div style={{ textAlign: 'center', padding: 64, color: 'var(--text-muted)' }}>טוען...</div>
+            ) : users.length === 0 ? (
+              <div className="card" style={{ padding: 48, textAlign: 'center', color: 'var(--text-muted)' }}>אין משתמשים</div>
+            ) : (
+              <div style={{ overflowX: 'auto' }}>
+                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.875rem' }}>
+                  <thead>
+                    <tr style={{ borderBottom: '2px solid var(--border)' }}>
+                      {['אימייל', 'שם תצוגה', 'ספק', 'הצטרף', 'כניסה אחרונה', 'אדמין'].map((h) => (
+                        <th key={h} style={{ padding: '8px 12px', textAlign: 'right', fontWeight: 700, color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>{h}</th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {users.map((u) => (
+                      <tr key={u.id} style={{ borderBottom: '1px solid var(--border)' }}>
+                        <td style={{ padding: '10px 12px', color: 'var(--text-primary)', maxWidth: 220, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{u.email}</td>
+                        <td style={{ padding: '10px 12px', color: 'var(--text-secondary)' }}>{u.display_name ?? '—'}</td>
+                        <td style={{ padding: '10px 12px', color: 'var(--text-muted)' }}>{u.provider}</td>
+                        <td style={{ padding: '10px 12px', color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>{u.created_at ? new Date(u.created_at).toLocaleDateString('he-IL') : '—'}</td>
+                        <td style={{ padding: '10px 12px', color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>{u.last_sign_in ? new Date(u.last_sign_in).toLocaleDateString('he-IL') : '—'}</td>
+                        <td style={{ padding: '10px 12px' }}>
+                          <button
+                            onClick={() => toggleAdmin(u.id, u.is_admin)}
+                            style={{
+                              padding: '4px 12px', borderRadius: 6, border: 'none', cursor: 'pointer', fontSize: '0.8rem', fontWeight: 700,
+                              background: u.is_admin ? 'var(--brand-red)' : 'var(--bg-muted)',
+                              color: u.is_admin ? '#fff' : 'var(--text-secondary)',
+                            }}
+                          >
+                            {u.is_admin ? 'אדמין ✓' : 'הגדר אדמין'}
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </>
         )}
 
         {/* ── Reports Tab ─────────────────────────────────────────────────────── */}
