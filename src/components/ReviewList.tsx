@@ -353,7 +353,7 @@ export default function ReviewList({ reviews, onHelpful, onDislike }: Props) {
             {sorted.map((review) => {
               const isLiked = liked.has(review.id);
               return (
-                <article key={review.id} className="card" style={{ padding: 24 }}>
+                <article key={review.id} id={`review-${review.id}`} className="card" style={{ padding: 24 }}>
                   {/* Header */}
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12, flexWrap: 'wrap', gap: 8 }}>
                     <div>
@@ -434,7 +434,7 @@ export default function ReviewList({ reviews, onHelpful, onDislike }: Props) {
                       compact
                       label="שתף"
                       title={`${review.title || `ביקורת על ${review.makeSlug} ${review.modelSlug}`} — CarIssues IL`}
-                      url={`https://carissues.co.il/cars/${review.makeSlug}/${review.modelSlug}`}
+                      url={`https://carissues.co.il/cars/${review.makeSlug}/${review.modelSlug}#review-${review.id}`}
                     />
                   </div>
                 </article>
