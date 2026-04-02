@@ -23,10 +23,17 @@ function CarSelector({ value, onChange, options, label }: {
   options: CarOption[];
   label: string;
 }) {
-  const [make, setMake] = useState('');
-  const [model, setModel] = useState('');
+  const [make, setMake] = useState(value?.makeSlug ?? '');
+  const [model, setModel] = useState(value?.modelSlug ?? '');
   const makes = [...new Set(options.map(o => o.makeSlug))];
   const models = options.filter(o => o.makeSlug === make);
+
+  useEffect(() => {
+    if (value && (value.makeSlug !== make || value.modelSlug !== model)) {
+      setMake(value.makeSlug);
+      setModel(value.modelSlug);
+    }
+  }, [value]);
 
   useEffect(() => {
     if (make && model) {
