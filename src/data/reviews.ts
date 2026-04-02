@@ -11,6 +11,7 @@ export interface Review {
   title: string;
   body: string;
   category: 'mechanical' | 'electrical' | 'comfort' | 'safety' | 'general';
+  subModel?: string;
   mileage?: number;
   createdAt: string; // ISO date string
   helpful: number;

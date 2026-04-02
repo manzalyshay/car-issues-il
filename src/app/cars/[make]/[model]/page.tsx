@@ -135,6 +135,7 @@ export default async function ModelPage({ params }: Props) {
             makeSlug={makeSlug}
             modelSlug={modelSlug}
             years={model.years}
+            trims={model.trims}
             initialReviews={allReviews}
           />
         </div>

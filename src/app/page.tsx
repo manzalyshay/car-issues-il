@@ -55,7 +55,7 @@ async function getRecentReviews(limit = 3) {
 
   const { data } = await sb
     .from('reviews')
-    .select('make_slug,model_slug,year,rating,title,body,author,created_at')
+    .select('id,make_slug,model_slug,year,rating,title,body,author,created_at')
     .order('created_at', { ascending: false })
     .limit(limit);
 
@@ -215,7 +215,7 @@ export default async function HomePage() {
                     💬 ביקורות אחרונות
                   </div>
                   {recentReviews.map((r: any, i: number) => (
-                    <Link key={r.make_slug + r.model_slug + r.created_at} href={`/cars/${r.make_slug}/${r.model_slug}${r.year ? `/${r.year}` : ''}`} style={{ textDecoration: 'none', color: 'inherit', display: 'block' }}>
+                    <Link key={r.make_slug + r.model_slug + r.created_at} href={`/cars/${r.make_slug}/${r.model_slug}${r.id ? `#review-${r.id}` : ''}`} style={{ textDecoration: 'none', color: 'inherit', display: 'block' }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '7px 0', borderTop: i === 0 ? 'none' : '1px solid var(--border)' }}>
                         <MakeLogo logoUrl={r.logoUrl} nameEn={r.makeHe} size={20} />
                         <div style={{ flex: 1, minWidth: 0 }}>

@@ -22,6 +22,7 @@ interface Props {
   modelSlug: string;
   year?: number;           // if omitted, a year selector is shown
   years?: number[];        // available years for selector
+  trims?: string[];        // sub-model options from DB
   onSuccess: (review: Review) => void;
 }
 
@@ -47,7 +48,7 @@ async function uploadToCloudinary(file: File): Promise<string> {
   return data.secure_url as string;
 }
 
-export default function ReviewForm({ makeSlug, modelSlug, year: yearProp, years, onSuccess }: Props) {
+export default function ReviewForm({ makeSlug, modelSlug, year: yearProp, years, trims, onSuccess }: Props) {
   const { user } = useAuth();
 
   const [authorName, setAuthorName] = useState('');
@@ -56,6 +57,7 @@ export default function ReviewForm({ makeSlug, modelSlug, year: yearProp, years,
   const [title, setTitle]           = useState('');
   const [body, setBody]             = useState('');
   const [category, setCategory]     = useState<Review['category']>('general');
+  const [subModel, setSubModel]     = useState('');
   const [mileage, setMileage]       = useState('');
   const [images, setImages]         = useState<string[]>([]);
   const [uploading, setUploading]   = useState(false);
@@ -152,6 +154,7 @@ export default function ReviewForm({ makeSlug, modelSlug, year: yearProp, years,
           title: title.trim(),
           body: body.trim(),
           category,
+          subModel: subModel.trim() || undefined,
           mileage: mileage ? parseInt(mileage) : undefined,
           images,
           captchaToken: captchaToken.current || undefined,
@@ -162,7 +165,7 @@ export default function ReviewForm({ makeSlug, modelSlug, year: yearProp, years,
       const data = await resp.json();
       setSuccess(true);
       onSuccess(data.review);
-      setAuthorName(''); setTitle(''); setBody(''); setMileage('');
+      setAuthorName(''); setTitle(''); setBody(''); setMileage(''); setSubModel('');
       setRating(5); setCategory('general'); setImages([]);
       if (!yearProp) setSelectedYear('');
     } catch (err: unknown) {
@@ -199,6 +202,21 @@ export default function ReviewForm({ makeSlug, modelSlug, year: yearProp, years,
           >
             <option value="">— בחר שנה —</option>
             {years.map((y) => <option key={y} value={y}>{y}</option>)}
+          </select>
+        </div>
+      )}
+
+      {/* Sub-model / trim */}
+      {trims && trims.length > 0 && (
+        <div style={{ marginBottom: 16 }}>
+          <label style={labelStyle}>גרסה / טרים <span style={{ color: 'var(--text-muted)', fontWeight: 400 }}>(אופציונלי)</span></label>
+          <select
+            value={subModel}
+            onChange={(e) => setSubModel(e.target.value)}
+            style={{ ...inputStyle, cursor: 'pointer' }}
+          >
+            <option value="">— בחר גרסה —</option>
+            {trims.map((t) => <option key={t} value={t}>{t}</option>)}
           </select>
         </div>
       )}

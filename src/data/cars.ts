@@ -10,6 +10,7 @@ export interface CarModel {
   nameEn: string;
   years: number[];
   category: 'sedan' | 'suv' | 'hatchback' | 'pickup' | 'van' | 'coupe' | 'electric';
+  trims?: string[];
 }
 
 export interface CarMake {

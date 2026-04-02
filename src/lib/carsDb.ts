@@ -39,6 +39,7 @@ const fetchAllMakes = unstable_cache(
           nameEn: mo.name_en as string,
           years: (mo.years ?? []) as number[],
           category: mo.category as CarModel['category'],
+          trims: Array.isArray(mo.trims) && mo.trims.length > 0 ? (mo.trims as string[]) : undefined,
         })),
     }));
   },

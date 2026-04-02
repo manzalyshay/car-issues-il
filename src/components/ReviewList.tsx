@@ -144,9 +144,11 @@ export default function ReviewList({ reviews, onHelpful, onDislike }: Props) {
   const { user } = useAuth();
   const [filter, setFilter]     = useState<string>('all');
   const [yearFilter, setYearFilter] = useState<number | 'all'>('all');
+  const [subModelFilter, setSubModelFilter] = useState<string | 'all'>('all');
   const [sort, setSort]         = useState<'newest' | 'helpful' | 'rating'>('newest');
 
   const availableYears = Array.from(new Set(reviews.map((r) => r.year))).sort((a, b) => b - a);
+  const availableSubModels = Array.from(new Set(reviews.map((r) => r.subModel).filter(Boolean) as string[])).sort();
   const [liked, setLiked]       = useState<Set<string>>(new Set());
   const [disliked, setDisliked] = useState<Set<string>>(new Set());
   const [lightbox, setLightbox] = useState<string | null>(null);
@@ -276,7 +278,8 @@ export default function ReviewList({ reviews, onHelpful, onDislike }: Props) {
 
   const filtered = reviews.filter((r) =>
     (filter === 'all' || r.category === filter) &&
-    (yearFilter === 'all' || r.year === yearFilter)
+    (yearFilter === 'all' || r.year === yearFilter) &&
+    (subModelFilter === 'all' || r.subModel === subModelFilter)
   );
   const sorted = [...filtered].sort((a, b) => {
     if (sort === 'newest')  return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
@@ -325,6 +328,26 @@ export default function ReviewList({ reviews, onHelpful, onDislike }: Props) {
                 ))}
               </>
             )}
+            {availableSubModels.length > 0 && (
+              <>
+                <span style={{ width: 1, background: 'var(--border)', alignSelf: 'stretch', margin: '4px 2px' }} />
+                {availableSubModels.map((sm) => (
+                  <button
+                    key={sm}
+                    onClick={() => setSubModelFilter(subModelFilter === sm ? 'all' : sm)}
+                    style={{
+                      height: 32, padding: '0 14px', borderRadius: 9999, border: '1.5px solid',
+                      borderColor: subModelFilter === sm ? '#7c3aed' : 'var(--border)',
+                      background: subModelFilter === sm ? 'rgba(124,58,237,.08)' : 'transparent',
+                      color: subModelFilter === sm ? '#7c3aed' : 'var(--text-secondary)',
+                      fontSize: '0.8125rem', fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit', transition: 'all 0.15s',
+                    }}
+                  >
+                    {sm}
+                  </button>
+                ))}
+              </>
+            )}
           </div>
           <select
             value={sort}
@@ -361,6 +384,7 @@ export default function ReviewList({ reviews, onHelpful, onDislike }: Props) {
                       <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
                         <StarRating rating={review.rating} size={15} />
                         <span className="badge badge-blue">{review.year}</span>
+                        {review.subModel && <span className="badge badge-gray" style={{ background: 'rgba(37,99,235,.08)', color: '#2563eb', border: '1px solid rgba(37,99,235,.2)' }}>{review.subModel}</span>}
                         <span className="badge badge-gray">{CATEGORY_LABELS[review.category]}</span>
                         {review.mileage && (
                           <span style={{ color: 'var(--text-muted)', fontSize: '0.8125rem' }}>

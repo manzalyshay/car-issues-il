@@ -27,7 +27,7 @@ async function verifyTurnstile(token: string, ip: string): Promise<boolean> {
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { makeSlug, modelSlug, year, authorName, userId, rating, title, body: reviewBody, category, mileage, images, captchaToken } = body;
+    const { makeSlug, modelSlug, year, authorName, userId, rating, title, body: reviewBody, category, subModel, mileage, images, captchaToken } = body;
 
     if (!makeSlug || !modelSlug || !year || !authorName || !reviewBody || !rating) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
@@ -53,6 +53,7 @@ export async function POST(req: NextRequest) {
       title: (title ?? '').trim().slice(0, 100),
       body: reviewBody.trim().slice(0, 2000),
       category: category ?? 'general',
+      subModel: subModel ? String(subModel).trim().slice(0, 60) : undefined,
       mileage: mileage ? parseInt(mileage) : undefined,
       images: Array.isArray(images) ? images.slice(0, 4) : [],
     } as Omit<Review, 'id' | 'createdAt' | 'helpful'>);

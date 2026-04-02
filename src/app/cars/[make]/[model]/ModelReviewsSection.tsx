@@ -11,10 +11,11 @@ interface Props {
   makeSlug: string;
   modelSlug: string;
   years: number[];
+  trims?: string[];
   initialReviews: Review[];
 }
 
-export default function ModelReviewsSection({ makeSlug, modelSlug, years, initialReviews }: Props) {
+export default function ModelReviewsSection({ makeSlug, modelSlug, years, trims, initialReviews }: Props) {
   const [reviews, setReviews] = useState<Review[]>(initialReviews);
   const [selectedYear, setSelectedYear] = useState<number | null>(null);
   const [showForm, setShowForm] = useState(false);
@@ -77,6 +78,7 @@ export default function ModelReviewsSection({ makeSlug, modelSlug, years, initia
             makeSlug={makeSlug}
             modelSlug={modelSlug}
             years={years}
+            trims={trims}
             onSuccess={handleNewReview}
           />
         </div>
