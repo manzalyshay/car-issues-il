@@ -4,7 +4,6 @@ import { useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/lib/authContext';
-import AdminNav from '@/components/AdminNav';
 
 interface ModelRow {
   makeSlug:    string;
@@ -74,7 +73,9 @@ export default function ScrapePage() {
   return (
     <div style={{ padding: '40px 0 80px' }}>
       <div className="container">
-        <AdminNav active="scrape" />
+        <button onClick={() => router.push('/admin')} style={{ marginBottom: 24, padding: '6px 14px', borderRadius: 8, border: '1px solid var(--border)', background: 'transparent', cursor: 'pointer', fontWeight: 600, fontSize: '0.875rem', color: 'var(--text-secondary)' }}>
+          ← חזרה לפאנל
+        </button>
 
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24, flexWrap: 'wrap', gap: 12 }}>
           <h1 style={{ fontSize: '1.75rem', fontWeight: 900, margin: 0 }}>פוסטים שנסרקו</h1>

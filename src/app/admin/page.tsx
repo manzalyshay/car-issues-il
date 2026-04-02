@@ -7,7 +7,6 @@ import { useAuth } from '@/lib/authContext';
 import type { CarMake } from '@/lib/carsDb';
 import { CATEGORY_LABELS } from '@/data/reviews';
 import type { Review } from '@/data/reviews';
-import AdminNav from '@/components/AdminNav';
 
 interface ModelRow {
   makeSlug: string;
@@ -348,7 +347,6 @@ export default function AdminPage() {
     <div style={{ padding: '40px 0 80px' }}>
       <div className="container">
         <h1 style={{ fontSize: '1.75rem', fontWeight: 900, marginBottom: 24 }}>פאנל ניהול</h1>
-        <AdminNav active="summaries" />
 
         {/* Deployment status bar */}
         {deployment && (() => {
@@ -379,7 +377,13 @@ export default function AdminPage() {
 
         {/* Tabs */}
         <div style={{ display: 'flex', gap: 2, marginBottom: 32, borderBottom: '2px solid var(--border)', overflowX: 'auto', flexShrink: 0 }}>
-          {([['reviews_ai', 'סיכומי AI'], ['user_reviews', 'ביקורות'], ['reports', `דיווחים${reports.length ? ` (${reports.length})` : ''}`], ['metrics', 'מדדים'], ['users', 'משתמשים']] as [Tab, string][]).map(([t, label]) => (
+          {([
+            ['user_reviews', 'ביקורות'],
+            ['reports', `דיווחים${reports.length ? ` (${reports.length})` : ''}`],
+            ['metrics', 'מדדים'],
+            ['users', 'משתמשים'],
+            ['reviews_ai', 'סיכומי AI'],
+          ] as [Tab, string][]).map(([t, label]) => (
             <button
               key={t}
               onClick={() => setTab(t)}
@@ -394,6 +398,18 @@ export default function AdminPage() {
               {label}
             </button>
           ))}
+          <button
+            onClick={() => router.push('/admin/scrape')}
+            style={{
+              padding: '10px 14px', border: 'none', cursor: 'pointer', fontWeight: 700,
+              fontSize: '0.875rem', background: 'none', whiteSpace: 'nowrap', flexShrink: 0,
+              color: 'var(--text-muted)',
+              borderBottom: '2px solid transparent',
+              marginBottom: -2,
+            }}
+          >
+            פוסטים שנסרקו ↗
+          </button>
         </div>
 
         {/* ── AI Reviews Tab ──────────────────────────────────────────────────── */}
