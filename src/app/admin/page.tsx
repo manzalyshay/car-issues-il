@@ -103,6 +103,9 @@ export default function AdminPage() {
   const [metrics, setMetrics] = useState<MetricsData | null>(null);
   const [metricsFetching, setMetricsFetching] = useState(false);
 
+  // ── Deployment status ─────────────────────────────────────────────────────────
+  const [deployment, setDeployment] = useState<{ state: string; readyState: string; createdAt: number; meta: { commitMessage: string }; url: string } | null>(null);
+
   // ── Users tab state ────────────────────────────────────────────────────────────
   const [users, setUsers] = useState<{ id: string; email: string; display_name: string | null; is_admin: boolean; created_at: string; last_sign_in: string | null; provider: string }[]>([]);
   const [usersFetching, setUsersFetching] = useState(false);
@@ -151,6 +154,16 @@ export default function AdminPage() {
     if (!isAdmin) return;
     fetchStatus();
   }, [isAdmin, fetchStatus]);
+
+  useEffect(() => {
+    if (!isAdmin) return;
+    getToken().then((token) => {
+      fetch('/api/admin/deployment', { headers: { Authorization: `Bearer ${token}` } })
+        .then(r => r.ok ? r.json() : null)
+        .then(data => { if (data?.deployments?.[0]) setDeployment(data.deployments[0]); })
+        .catch(() => {});
+    });
+  }, [isAdmin, getToken]);
 
   useEffect(() => {
     if (isAdmin && tab === 'user_reviews') fetchUserReviews();
@@ -336,6 +349,33 @@ export default function AdminPage() {
       <div className="container">
         <h1 style={{ fontSize: '1.75rem', fontWeight: 900, marginBottom: 24 }}>פאנל ניהול</h1>
         <AdminNav active="summaries" />
+
+        {/* Deployment status bar */}
+        {deployment && (() => {
+          const state = deployment.readyState || deployment.state;
+          const isBuilding = state === 'BUILDING' || state === 'INITIALIZING' || state === 'QUEUED';
+          const isReady = state === 'READY';
+          const isError = state === 'ERROR' || state === 'CANCELED';
+          const color = isBuilding ? '#f59e0b' : isError ? 'var(--brand-red)' : '#16a34a';
+          const dot = isBuilding ? '🟡' : isError ? '🔴' : '🟢';
+          const label = isBuilding ? 'בפריסה...' : isError ? 'פריסה נכשלה' : 'פרוס';
+          const ago = deployment.createdAt ? Math.round((Date.now() - deployment.createdAt) / 60000) : null;
+          return (
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 14px', borderRadius: 8, background: isBuilding ? 'rgba(245,158,11,0.08)' : isError ? 'rgba(230,57,70,0.08)' : 'rgba(22,163,74,0.08)', border: `1px solid ${color}40`, marginBottom: 20, flexWrap: 'wrap' }}>
+              <span style={{ fontSize: '0.85rem' }}>{dot}</span>
+              <span style={{ fontWeight: 700, fontSize: '0.8rem', color }}>{label}</span>
+              {deployment.meta?.commitMessage && (
+                <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)', flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{deployment.meta.commitMessage}</span>
+              )}
+              {ago !== null && (
+                <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>לפני {ago < 1 ? 'פחות מדקה' : `${ago} דק׳`}</span>
+              )}
+              {isReady && (
+                <a href={`https://${deployment.url}`} target="_blank" rel="noopener noreferrer" style={{ fontSize: '0.75rem', color, textDecoration: 'none', whiteSpace: 'nowrap' }}>↗ פתח</a>
+              )}
+            </div>
+          );
+        })()}
 
         {/* Tabs */}
         <div style={{ display: 'flex', gap: 2, marginBottom: 32, borderBottom: '2px solid var(--border)', overflowX: 'auto', flexShrink: 0 }}>
