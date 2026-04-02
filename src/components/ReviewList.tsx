@@ -175,88 +175,103 @@ export default function ReviewList({ reviews, onHelpful, onDislike }: Props) {
       });
   }, [user]);
 
-  const handleLike = async (review: Review) => {
+  const handleLike = (review: Review) => {
     const alreadyLiked = liked.has(review.id);
-    // Remove dislike if exists
-    if (disliked.has(review.id)) {
-      if (user) {
-        await supabase.from('review_dislikes').delete().eq('review_id', review.id).eq('user_id', user.id);
-      } else {
-        removeLocalDislike(review.id);
-      }
-      await fetch(`/api/reviews/${review.id}/dislike`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ delta: -1 }) });
+    const hadDislike = disliked.has(review.id);
+
+    // Optimistic update — apply immediately
+    if (hadDislike) {
       setDisliked((prev) => { const s = new Set(prev); s.delete(review.id); return s; });
       onDislike?.(review.id, -1);
+      if (!user) removeLocalDislike(review.id);
     }
-
-    if (user) {
-      // Logged-in: toggle in DB
-      if (alreadyLiked) {
-        await supabase.from('review_likes').delete().eq('review_id', review.id).eq('user_id', user.id);
-        await fetch(`/api/reviews/${review.id}/helpful`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ delta: -1 }) });
-        setLiked((prev) => { const s = new Set(prev); s.delete(review.id); return s; });
-        onHelpful?.(review.id, -1);
-      } else {
-        await supabase.from('review_likes').insert({ review_id: review.id, user_id: user.id });
-        await fetch(`/api/reviews/${review.id}/helpful`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ delta: 1 }) });
-        setLiked((prev) => new Set([...prev, review.id]));
-        onHelpful?.(review.id, 1);
-      }
-    } else {
-      // Guest: localStorage-based, toggleable
-      if (alreadyLiked) {
-        removeLocalLike(review.id);
-        setLiked((prev) => { const s = new Set(prev); s.delete(review.id); return s; });
-        await fetch(`/api/reviews/${review.id}/helpful`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ delta: -1 }) });
-        onHelpful?.(review.id, -1);
-      } else {
-        saveLocalLike(review.id);
-        setLiked((prev) => new Set([...prev, review.id]));
-        await fetch(`/api/reviews/${review.id}/helpful`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ delta: 1 }) });
-        onHelpful?.(review.id, 1);
-      }
-    }
-  };
-
-  const handleDislike = async (review: Review) => {
-    const alreadyDisliked = disliked.has(review.id);
-    // Remove like if exists
-    if (liked.has(review.id)) {
-      if (user) {
-        await supabase.from('review_likes').delete().eq('review_id', review.id).eq('user_id', user.id);
-      } else {
-        removeLocalLike(review.id);
-      }
-      await fetch(`/api/reviews/${review.id}/helpful`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ delta: -1 }) });
+    if (alreadyLiked) {
       setLiked((prev) => { const s = new Set(prev); s.delete(review.id); return s; });
       onHelpful?.(review.id, -1);
+      if (!user) removeLocalLike(review.id);
+    } else {
+      setLiked((prev) => new Set([...prev, review.id]));
+      onHelpful?.(review.id, 1);
+      if (!user) saveLocalLike(review.id);
     }
 
-    if (user) {
-      if (alreadyDisliked) {
-        await supabase.from('review_dislikes').delete().eq('review_id', review.id).eq('user_id', user.id);
-        await fetch(`/api/reviews/${review.id}/dislike`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ delta: -1 }) });
-        setDisliked((prev) => { const s = new Set(prev); s.delete(review.id); return s; });
-        onDislike?.(review.id, -1);
-      } else {
-        await supabase.from('review_dislikes').insert({ review_id: review.id, user_id: user.id });
-        await fetch(`/api/reviews/${review.id}/dislike`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ delta: 1 }) });
-        setDisliked((prev) => new Set([...prev, review.id]));
-        onDislike?.(review.id, 1);
-      }
-    } else {
-      if (alreadyDisliked) {
-        removeLocalDislike(review.id);
-        setDisliked((prev) => { const s = new Set(prev); s.delete(review.id); return s; });
-        await fetch(`/api/reviews/${review.id}/dislike`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ delta: -1 }) });
-        onDislike?.(review.id, -1);
-      } else {
-        saveLocalDislike(review.id);
-        setDisliked((prev) => new Set([...prev, review.id]));
-        await fetch(`/api/reviews/${review.id}/dislike`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ delta: 1 }) });
-        onDislike?.(review.id, 1);
-      }
+    // Fire API calls in background; revert on failure
+    const revert = () => {
+      if (hadDislike) { setDisliked((prev) => new Set([...prev, review.id])); onDislike?.(review.id, 1); }
+      if (alreadyLiked) { setLiked((prev) => new Set([...prev, review.id])); onHelpful?.(review.id, 1); }
+      else { setLiked((prev) => { const s = new Set(prev); s.delete(review.id); return s; }); onHelpful?.(review.id, -1); }
+    };
+
+    const run = async () => {
+      try {
+        if (hadDislike) {
+          const [r1] = await Promise.all([
+            fetch(`/api/reviews/${review.id}/dislike`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ delta: -1 }) }),
+            user ? supabase.from('review_dislikes').delete().eq('review_id', review.id).eq('user_id', user.id) : Promise.resolve(),
+          ]);
+          if (!r1.ok) { revert(); return; }
+        }
+        const delta = alreadyLiked ? -1 : 1;
+        const [r2] = await Promise.all([
+          fetch(`/api/reviews/${review.id}/helpful`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ delta }) }),
+          user ? (alreadyLiked
+            ? supabase.from('review_likes').delete().eq('review_id', review.id).eq('user_id', user.id)
+            : supabase.from('review_likes').insert({ review_id: review.id, user_id: user.id })
+          ) : Promise.resolve(),
+        ]);
+        if (!r2.ok) revert();
+      } catch { revert(); }
+    };
+    run();
+  };
+
+  const handleDislike = (review: Review) => {
+    const alreadyDisliked = disliked.has(review.id);
+    const hadLike = liked.has(review.id);
+
+    // Optimistic update — apply immediately
+    if (hadLike) {
+      setLiked((prev) => { const s = new Set(prev); s.delete(review.id); return s; });
+      onHelpful?.(review.id, -1);
+      if (!user) removeLocalLike(review.id);
     }
+    if (alreadyDisliked) {
+      setDisliked((prev) => { const s = new Set(prev); s.delete(review.id); return s; });
+      onDislike?.(review.id, -1);
+      if (!user) removeLocalDislike(review.id);
+    } else {
+      setDisliked((prev) => new Set([...prev, review.id]));
+      onDislike?.(review.id, 1);
+      if (!user) saveLocalDislike(review.id);
+    }
+
+    const revert = () => {
+      if (hadLike) { setLiked((prev) => new Set([...prev, review.id])); onHelpful?.(review.id, 1); }
+      if (alreadyDisliked) { setDisliked((prev) => new Set([...prev, review.id])); onDislike?.(review.id, 1); }
+      else { setDisliked((prev) => { const s = new Set(prev); s.delete(review.id); return s; }); onDislike?.(review.id, -1); }
+    };
+
+    const run = async () => {
+      try {
+        if (hadLike) {
+          const [r1] = await Promise.all([
+            fetch(`/api/reviews/${review.id}/helpful`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ delta: -1 }) }),
+            user ? supabase.from('review_likes').delete().eq('review_id', review.id).eq('user_id', user.id) : Promise.resolve(),
+          ]);
+          if (!r1.ok) { revert(); return; }
+        }
+        const delta = alreadyDisliked ? -1 : 1;
+        const [r2] = await Promise.all([
+          fetch(`/api/reviews/${review.id}/dislike`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ delta }) }),
+          user ? (alreadyDisliked
+            ? supabase.from('review_dislikes').delete().eq('review_id', review.id).eq('user_id', user.id)
+            : supabase.from('review_dislikes').insert({ review_id: review.id, user_id: user.id })
+          ) : Promise.resolve(),
+        ]);
+        if (!r2.ok) revert();
+      } catch { revert(); }
+    };
+    run();
   };
 
   const filtered = reviews.filter((r) =>
