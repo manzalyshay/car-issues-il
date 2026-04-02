@@ -697,16 +697,24 @@ export default function AdminPage() {
                         <td style={{ padding: '10px 12px', color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>{u.created_at ? new Date(u.created_at).toLocaleDateString('he-IL') : '—'}</td>
                         <td style={{ padding: '10px 12px', color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>{u.last_sign_in ? new Date(u.last_sign_in).toLocaleDateString('he-IL') : '—'}</td>
                         <td style={{ padding: '10px 12px' }}>
-                          <button
-                            onClick={() => toggleAdmin(u.id, u.is_admin)}
-                            style={{
-                              padding: '4px 12px', borderRadius: 6, border: 'none', cursor: 'pointer', fontSize: '0.8rem', fontWeight: 700,
-                              background: u.is_admin ? 'var(--brand-red)' : 'var(--bg-muted)',
-                              color: u.is_admin ? '#fff' : 'var(--text-secondary)',
-                            }}
-                          >
-                            {u.is_admin ? 'אדמין ✓' : 'הגדר אדמין'}
-                          </button>
+                          {u.is_admin ? (
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                              <span style={{ fontSize: '0.8rem', fontWeight: 700, color: 'var(--brand-red)' }}>אדמין ✓</span>
+                              <button
+                                onClick={() => toggleAdmin(u.id, true)}
+                                style={{ padding: '2px 8px', borderRadius: 6, border: '1px solid var(--border)', background: 'transparent', cursor: 'pointer', fontSize: '0.75rem', color: 'var(--text-muted)' }}
+                              >
+                                הסר
+                              </button>
+                            </div>
+                          ) : (
+                            <button
+                              onClick={() => toggleAdmin(u.id, false)}
+                              style={{ padding: '4px 12px', borderRadius: 6, border: 'none', cursor: 'pointer', fontSize: '0.8rem', fontWeight: 700, background: 'var(--bg-muted)', color: 'var(--text-secondary)' }}
+                            >
+                              הגדר אדמין
+                            </button>
+                          )}
                         </td>
                       </tr>
                     ))}
