@@ -413,6 +413,21 @@ export default function ReviewList({ reviews, onHelpful, onDislike }: Props) {
                       👎 <span style={{ fontWeight: 600 }}>{review.dislikes ?? 0}</span>
                     </button>
                     <ReportButton reviewId={review.id} />
+                    <a
+                      href={`https://api.whatsapp.com/send?text=${encodeURIComponent(`קראתי ביקורת על ${review.makeSlug} ${review.modelSlug} ${review.year ?? ''} — "${review.title || review.body?.slice(0, 80)}" · carissues.co.il/cars/${review.makeSlug}/${review.modelSlug}`)}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      style={{
+                        display: 'flex', alignItems: 'center', gap: 5,
+                        height: 30, padding: '0 12px', borderRadius: 9999,
+                        border: '1.5px solid var(--border)',
+                        color: 'var(--text-muted)', fontSize: '0.8125rem',
+                        textDecoration: 'none', transition: 'all 0.15s',
+                        marginRight: 'auto',
+                      }}
+                    >
+                      📤 שתף
+                    </a>
                   </div>
                 </article>
               );

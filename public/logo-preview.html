@@ -2,31 +2,64 @@
 <html>
 <head><meta charset="utf-8"><title>Logo Preview</title>
 <style>
-  body { background: #111; display: flex; gap: 40px; align-items: center; padding: 40px; font-family: sans-serif; flex-wrap: wrap; }
-  .box { display: flex; flex-direction: column; align-items: center; gap: 12px; color: #999; font-size: 12px; }
-  .light { background: #fff; padding: 20px; border-radius: 8px; display: flex; align-items: center; justify-content: center; }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: #111; font-family: -apple-system, sans-serif; padding: 40px; }
+  h2 { color: #999; font-size: 11px; text-transform: uppercase; letter-spacing: .1em; margin-bottom: 20px; }
+  .row { display: flex; gap: 32px; align-items: center; flex-wrap: wrap; margin-bottom: 48px; }
+  .box { display: flex; flex-direction: column; align-items: center; gap: 8px; color: #555; font-size: 11px; }
+  .on-light { background: #fff; padding: 16px; border-radius: 8px; }
+
+  /* With-text logo mockup */
+  .logo-text { display: flex; align-items: center; gap: 10px; }
+  .logo-wordmark { font-weight: 800; font-size: 1.1rem; color: #fff; line-height: 1.1; }
+  .logo-wordmark span { color: #e63946; }
+  .logo-sub { font-size: 0.65rem; color: #666; font-weight: 500; margin-top: 1px; }
+  .logo-text-light .logo-wordmark { color: #111; }
 </style>
 </head>
 <body>
-  <div class="box">
-    <img src="/favicon.svg" width="16" height="16">
-    <span>16px (tab)</span>
+
+  <h2>Icon only — dark bg</h2>
+  <div class="row">
+    <div class="box"><img src="/favicon.svg" width="16" height="16"><span>16px tab</span></div>
+    <div class="box"><img src="/favicon.svg" width="32" height="32"><span>32px favicon</span></div>
+    <div class="box"><img src="/favicon.svg" width="48" height="48"><span>48px</span></div>
+    <div class="box"><img src="/favicon.svg" width="80" height="80"><span>80px</span></div>
+    <div class="box"><img src="/favicon.svg" width="120" height="120"><span>120px</span></div>
   </div>
-  <div class="box">
-    <img src="/favicon.svg" width="32" height="32">
-    <span>32px (favicon)</span>
+
+  <h2>Icon only — light bg</h2>
+  <div class="row">
+    <div class="box on-light"><img src="/favicon.svg" width="32" height="32"></div>
+    <div class="box on-light"><img src="/favicon.svg" width="48" height="48"></div>
+    <div class="box on-light"><img src="/favicon.svg" width="80" height="80"></div>
   </div>
-  <div class="box">
-    <img src="/favicon.svg" width="48" height="48">
-    <span>48px (navbar)</span>
+
+  <h2>With text — dark bg (as it appears in navbar)</h2>
+  <div class="row">
+    <div class="box" style="align-items:flex-start;">
+      <div class="logo-text">
+        <img src="/favicon.svg" width="38" height="38">
+        <div>
+          <div class="logo-wordmark">CarIssues<span>IL</span></div>
+          <div class="logo-sub">בעיות רכב בישראל</div>
+        </div>
+      </div>
+    </div>
   </div>
-  <div class="box">
-    <img src="/favicon.svg" width="96" height="96">
-    <span>96px</span>
+
+  <h2>With text — light bg</h2>
+  <div class="row">
+    <div class="box on-light logo-text-light" style="align-items:flex-start; padding: 20px 24px;">
+      <div class="logo-text">
+        <img src="/favicon.svg" width="38" height="38">
+        <div>
+          <div class="logo-wordmark" style="color:#111;">CarIssues<span>IL</span></div>
+          <div class="logo-sub">בעיות רכב בישראל</div>
+        </div>
+      </div>
+    </div>
   </div>
-  <div class="box">
-    <div class="light"><img src="/favicon.svg" width="48" height="48"></div>
-    <span>on light bg</span>
-  </div>
+
 </body>
 </html>
