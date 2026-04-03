@@ -1,32 +1,60 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 
-/**
- * OAuth callback page — handles PKCE code exchange after Google sign-in.
- * Supabase redirects here after OAuth with ?code=xxx, we exchange it for
- * a session and redirect the user back to the home page (or wherever they came from).
- */
 export default function AuthCallbackPage() {
   const router = useRouter();
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const code = params.get('code');
     const next = params.get('next') ?? '/';
 
+    // Google/Supabase can return an error param (e.g. access_denied)
+    const oauthError = params.get('error');
+    const oauthErrorDesc = params.get('error_description');
+    if (oauthError) {
+      setError(`${oauthError}${oauthErrorDesc ? ': ' + oauthErrorDesc : ''}`);
+      return;
+    }
+
     if (code) {
       supabase.auth.exchangeCodeForSession(code)
-        .catch(() => {/* verifier mismatch — session may still be set via cookie */})
-        .finally(() => router.replace(next));
+        .then(({ error: exchangeError }) => {
+          if (exchangeError) {
+            setError(exchangeError.message);
+          } else {
+            router.replace(next);
+          }
+        })
+        .catch((e) => setError(String(e)));
     } else {
-      // Hash-based implicit flow — Supabase detects it automatically via detectSessionInUrl
-      router.replace(next);
+      // No code — check if session already exists (implicit flow / second load)
+      supabase.auth.getSession().then(({ data }) => {
+        if (data.session) router.replace(next);
+        else setError('לא נמצא קוד אימות. נסה להתחבר שוב.');
+      });
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  if (error) {
+    return (
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '60vh', flexDirection: 'column', gap: 16, padding: '0 24px', textAlign: 'center' }}>
+        <div style={{ fontSize: 40 }}>⚠️</div>
+        <p style={{ fontWeight: 700, fontSize: '1.1rem' }}>שגיאה בהתחברות</p>
+        <p style={{ color: 'var(--text-muted)', fontSize: '0.875rem', maxWidth: 400 }}>
+          {error}
+        </p>
+        <a href="/" style={{ marginTop: 8, color: 'var(--brand-red)', fontWeight: 600, fontSize: '0.9375rem' }}>
+          חזרה לדף הבית
+        </a>
+      </div>
+    );
+  }
 
   return (
     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '60vh', flexDirection: 'column', gap: 16 }}>
