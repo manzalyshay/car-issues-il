@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { useState } from 'react';
+import { usePathname } from 'next/navigation';
 import SearchBox from './SearchBox';
 import AuthModal from './AuthModal';
 import { useAuth, displayName } from '@/lib/authContext';
@@ -10,6 +11,8 @@ export default function Header() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [authOpen, setAuthOpen] = useState(false);
   const { user, isAdmin, signOut, loading } = useAuth();
+  const pathname = usePathname();
+  const isHome = pathname === '/';
 
   return (
     <>
@@ -65,12 +68,12 @@ export default function Header() {
             ))}
           </nav>
 
-          {/* Search — visible on mobile as compact icon */}
-          <div className="mobile-search" style={{ display: 'none', position: 'relative', flex: 1, maxWidth: 200 }}><SearchBox compact /></div>
+          {/* Search — visible on mobile as compact icon (hidden on home page) */}
+          {!isHome && <div className="mobile-search" style={{ display: 'none', position: 'relative', flex: 1, maxWidth: 200 }}><SearchBox compact /></div>}
 
           {/* Search + Auth (desktop only) */}
           <div className="desktop-auth" style={{ display: 'flex', alignItems: 'center', gap: 10, flexShrink: 0 }}>
-            <SearchBox />
+            {!isHome && <SearchBox />
             {!loading && (
               user ? (
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
@@ -159,9 +162,11 @@ export default function Header() {
                 </button>
               )}
             </div>
-            <div style={{ marginTop: 16 }}>
-              <SearchBox fullWidth />
-            </div>
+            {!isHome && (
+              <div style={{ marginTop: 16 }}>
+                <SearchBox fullWidth />
+              </div>
+            )}
           </div>
         )}
 
