@@ -87,6 +87,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         redirectTo: typeof window !== 'undefined'
           ? `${window.location.origin}/auth/callback`
           : undefined,
+        queryParams: { prompt: 'select_account' },
       },
     });
   };

@@ -23,9 +23,11 @@ export default function AuthCallbackPage() {
 
     if (code) {
       supabase.auth.exchangeCodeForSession(code)
-        .then(({ error: exchangeError }) => {
+        .then(({ data, error: exchangeError }) => {
           if (exchangeError) {
             setError(exchangeError.message);
+          } else if (!data.session) {
+            setError('ההחלפה הצליחה אך לא נוצרה סשן — ייתכן שה-cookie נחסם. נסה לאפשר cookies עבור האתר.');
           } else {
             router.replace(next);
           }
