@@ -3,11 +3,40 @@ import { createClient } from '@supabase/supabase-js';
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
 
+/**
+ * Cookie-based storage adapter for Supabase auth.
+ * Safari's ITP (Intelligent Tracking Prevention) wipes localStorage when
+ * navigating to a third-party domain (like Google OAuth) and back, destroying
+ * the PKCE code verifier. Cookies are first-party and survive these navigations.
+ */
+const cookieStorage = {
+  getItem(key: string): string | null {
+    if (typeof document === 'undefined') return null;
+    const enc = encodeURIComponent(key);
+    const match = document.cookie.match(
+      new RegExp('(?:^|;)\\s*' + enc + '=([^;]*)')
+    );
+    return match ? decodeURIComponent(match[1]) : null;
+  },
+  setItem(key: string, value: string): void {
+    if (typeof document === 'undefined') return;
+    const enc = encodeURIComponent(key);
+    const maxAge = 60 * 60 * 24 * 365; // 1 year
+    const secure = typeof location !== 'undefined' && location.protocol === 'https:' ? ';Secure' : '';
+    document.cookie = `${enc}=${encodeURIComponent(value)};path=/;max-age=${maxAge};SameSite=Lax${secure}`;
+  },
+  removeItem(key: string): void {
+    if (typeof document === 'undefined') return;
+    document.cookie = `${encodeURIComponent(key)}=;path=/;max-age=0`;
+  },
+};
+
 export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
   auth: {
     detectSessionInUrl: true,
     persistSession: true,
     autoRefreshToken: true,
+    storage: cookieStorage,
   },
 });
 

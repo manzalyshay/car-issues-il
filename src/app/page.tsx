@@ -3,6 +3,7 @@ import { getAllMakes, getPopularMakes } from '@/lib/carsDb';
 import { getServiceClient } from '@/lib/adminAuth';
 import MakeLogo from '@/components/MakeLogo';
 import StarRating from '@/components/StarRating';
+import HeroSearch from '@/components/HeroSearch';
 
 export const dynamic = 'force-dynamic';
 
@@ -113,10 +114,8 @@ export default async function HomePage() {
               <p style={{ fontSize: 'clamp(1rem, 2vw, 1.2rem)', color: 'rgba(255,255,255,0.7)', maxWidth: 520, margin: '0 auto 40px', lineHeight: 1.7 }}>
                 ביקורות אמיתיות של בעלי רכב בישראל. מצא בעיות נפוצות לפי יצרן, דגם ושנה.
               </p>
-              <div style={{ display: 'flex', gap: 16, justifyContent: 'center', flexWrap: 'wrap' }}>
-                <Link href="/cars" className="btn btn-primary" style={{ fontSize: '1rem', height: 52, padding: '0 32px' }}>
-                  🔍 חפש לפי יצרן
-                </Link>
+              <div style={{ padding: '0 16px' }}>
+                <HeroSearch />
               </div>
               <div style={{ display: 'flex', justifyContent: 'center', gap: 48, marginTop: 56, flexWrap: 'wrap' }}>
                 {[

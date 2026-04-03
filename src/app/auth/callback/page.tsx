@@ -13,18 +13,20 @@ export default function AuthCallbackPage() {
   const router = useRouter();
 
   useEffect(() => {
-    const code = new URLSearchParams(window.location.search).get('code');
-    const next = new URLSearchParams(window.location.search).get('next') ?? '/';
+    const params = new URLSearchParams(window.location.search);
+    const code = params.get('code');
+    const next = params.get('next') ?? '/';
 
     if (code) {
-      supabase.auth.exchangeCodeForSession(code).then(() => {
-        router.replace(next);
-      });
+      supabase.auth.exchangeCodeForSession(code)
+        .catch(() => {/* verifier mismatch — session may still be set via cookie */})
+        .finally(() => router.replace(next));
     } else {
-      // No code — might be hash-based implicit flow; Supabase JS handles it automatically
+      // Hash-based implicit flow — Supabase detects it automatically via detectSessionInUrl
       router.replace(next);
     }
-  }, [router]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   return (
     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '60vh', flexDirection: 'column', gap: 16 }}>

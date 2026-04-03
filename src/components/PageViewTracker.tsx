@@ -4,13 +4,13 @@ import { useEffect, useRef } from 'react';
 import { usePathname } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 
-// Generate or retrieve a session ID (persists for the browser session)
+// Generate or retrieve a persistent visitor ID (localStorage persists across tabs/sessions)
 function getSessionId(): string {
   try {
-    let id = sessionStorage.getItem('_sid');
+    let id = localStorage.getItem('_sid');
     if (!id) {
       id = Math.random().toString(36).slice(2) + Date.now().toString(36);
-      sessionStorage.setItem('_sid', id);
+      localStorage.setItem('_sid', id);
     }
     return id;
   } catch {
