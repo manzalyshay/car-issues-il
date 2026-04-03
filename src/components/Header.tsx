@@ -73,7 +73,7 @@ export default function Header() {
 
           {/* Search + Auth (desktop only) */}
           <div className="desktop-auth" style={{ display: 'flex', alignItems: 'center', gap: 10, flexShrink: 0 }}>
-            {!isHome && <SearchBox />
+            {!isHome && <SearchBox />}
             {!loading && (
               user ? (
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
