@@ -10,10 +10,9 @@ export default function AuthCallbackPage() {
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
-    const code = params.get('code');
     const next = params.get('next') ?? '/';
 
-    // Google/Supabase can return an error param (e.g. access_denied)
+    // Check for OAuth error params (e.g. access_denied)
     const oauthError = params.get('error');
     const oauthErrorDesc = params.get('error_description');
     if (oauthError) {
@@ -21,25 +20,21 @@ export default function AuthCallbackPage() {
       return;
     }
 
-    if (code) {
-      supabase.auth.exchangeCodeForSession(code)
-        .then(({ data, error: exchangeError }) => {
-          if (exchangeError) {
-            setError(exchangeError.message);
-          } else if (!data.session) {
-            setError('ההחלפה הצליחה אך לא נוצרה סשן — ייתכן שה-cookie נחסם. נסה לאפשר cookies עבור האתר.');
-          } else {
-            router.replace(next);
-          }
-        })
-        .catch((e) => setError(String(e)));
-    } else {
-      // No code — check if session already exists (implicit flow / second load)
-      supabase.auth.getSession().then(({ data }) => {
-        if (data.session) router.replace(next);
-        else setError('לא נמצא קוד אימות. נסה להתחבר שוב.');
-      });
-    }
+    // createBrowserClient (@supabase/ssr) automatically exchanges the code
+    // from the URL and sets the session. Just wait for it then redirect.
+    supabase.auth.getSession().then(({ data }) => {
+      if (data.session) {
+        router.replace(next);
+      } else {
+        // Give it a moment in case the exchange is still in flight
+        setTimeout(() => {
+          supabase.auth.getSession().then(({ data: d2 }) => {
+            if (d2.session) router.replace(next);
+            else setError('לא הצלחנו להתחבר. נסה שוב.');
+          });
+        }, 1500);
+      }
+    });
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
