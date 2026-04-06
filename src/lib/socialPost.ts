@@ -119,7 +119,7 @@ export async function generateDailyPost(): Promise<SocialPost | null> {
     hashtags,
     scheduled_for: new Date().toISOString(),
     status: 'pending',
-    metadata,
+    metadata: { ...metadata, postType },
   };
 
   // Save to DB

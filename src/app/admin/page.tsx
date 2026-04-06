@@ -25,7 +25,18 @@ interface ModelRow {
 }
 
 type ScrapeState = 'idle' | 'loading' | 'ok' | 'error';
-type Tab = 'reviews_ai' | 'user_reviews' | 'reports' | 'metrics' | 'users';
+type Tab = 'reviews_ai' | 'user_reviews' | 'reports' | 'metrics' | 'users' | 'social_posts';
+
+interface SocialPostRow {
+  id: string;
+  platform: 'all' | 'facebook' | 'twitter' | 'telegram' | 'instagram';
+  content_he: string;
+  content_en: string;
+  hashtags: string;
+  scheduled_for: string;
+  status: 'pending' | 'posted' | 'failed';
+  metadata: Record<string, unknown>;
+}
 
 interface MetricsData {
   totals: {
@@ -108,6 +119,28 @@ export default function AdminPage() {
   // ── Users tab state ────────────────────────────────────────────────────────────
   const [users, setUsers] = useState<{ id: string; email: string; display_name: string | null; is_admin: boolean; created_at: string; last_sign_in: string | null; provider: string }[]>([]);
   const [usersFetching, setUsersFetching] = useState(false);
+
+  // ── Social Posts tab state ─────────────────────────────────────────────────────
+  const [socialPosts, setSocialPosts] = useState<SocialPostRow[]>([]);
+  const [socialFetching, setSocialFetching] = useState(false);
+  const [socialGenerating, setSocialGenerating] = useState(false);
+  const [socialStatusFilter, setSocialStatusFilter] = useState<'all' | 'pending' | 'posted' | 'failed'>('all');
+  const [editSocialPost, setEditSocialPost] = useState<SocialPostRow | null>(null);
+  const [socialSaving, setSocialSaving] = useState(false);
+  const [showNewPostForm, setShowNewPostForm] = useState(false);
+  const [newPost, setNewPost] = useState({ platform: 'all' as SocialPostRow['platform'], content_he: '', content_en: '', hashtags: '#רכב #ישראל #CarIssuesIL', scheduled_for: new Date().toISOString().slice(0, 16) });
+  const [screenshotting, setScreenshotting] = useState<Record<string, boolean>>({});
+  const [screenshotPath, setScreenshotPath] = useState<Record<string, string>>({});
+  const [publishingPost, setPublishingPost] = useState<Record<string, boolean>>({});
+  const [previewPost, setPreviewPost] = useState<SocialPostRow | null>(null);
+  const [igPosts, setIgPosts] = useState<{ id: string; media_url: string; caption?: string; timestamp: string; permalink: string }[]>([]);
+  const [fbPosts, setFbPosts] = useState<{ id: string; message?: string; full_picture?: string; created_time: string }[]>([]);
+  const [pageManagementOpen, setPageManagementOpen] = useState(false);
+  const [pageInfo, setPageInfo] = useState<{ name?: string; about?: string; description?: string; website?: string; picture?: { data: { url: string } }; fan_count?: number } | null>(null);
+  const [pageInfoSaving, setPageInfoSaving] = useState(false);
+  const [pageInfoForm, setPageInfoForm] = useState({ about: '', description: '', website: '' });
+  const [existingPostsTab, setExistingPostsTab] = useState<'instagram' | 'facebook'>('instagram');
+  const [loadingExisting, setLoadingExisting] = useState(false);
 
 
   const getToken = useCallback(async () => {
@@ -218,6 +251,180 @@ export default function AdminPage() {
   useEffect(() => {
     if (isAdmin && tab === 'users') fetchUsers();
   }, [isAdmin, tab, fetchUsers]);
+
+  const fetchSocialPosts = useCallback(async () => {
+    setSocialFetching(true);
+    try {
+      const token = await getToken();
+      const res = await fetch('/api/admin/social-posts', { headers: { Authorization: `Bearer ${token}` } });
+      if (res.ok) setSocialPosts(await res.json());
+    } catch { /* ignore */ } finally {
+      setSocialFetching(false);
+    }
+  }, [getToken]);
+
+  useEffect(() => {
+    if (isAdmin && tab === 'social_posts') fetchSocialPosts();
+  }, [isAdmin, tab, fetchSocialPosts]);
+
+  const generateSocialPost = async () => {
+    setSocialGenerating(true);
+    try {
+      const token = await getToken();
+      const res = await fetch('/api/admin/social-posts', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ action: 'generate' }),
+      });
+      if (res.ok) await fetchSocialPosts();
+    } catch { /* ignore */ } finally {
+      setSocialGenerating(false);
+    }
+  };
+
+  const saveSocialPost = async () => {
+    if (!editSocialPost) return;
+    setSocialSaving(true);
+    try {
+      const token = await getToken();
+      await fetch('/api/admin/social-posts', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ action: 'update', ...editSocialPost }),
+      });
+      setEditSocialPost(null);
+      await fetchSocialPosts();
+    } catch { /* ignore */ } finally {
+      setSocialSaving(false);
+    }
+  };
+
+  const deleteSocialPost = async (id: string) => {
+    const token = await getToken();
+    await fetch('/api/admin/social-posts', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+      body: JSON.stringify({ action: 'delete', id }),
+    });
+    await fetchSocialPosts();
+  };
+
+  const createSocialPost = async () => {
+    setSocialSaving(true);
+    try {
+      const token = await getToken();
+      await fetch('/api/admin/social-posts', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ action: 'create', ...newPost, scheduled_for: new Date(newPost.scheduled_for).toISOString() }),
+      });
+      setShowNewPostForm(false);
+      setNewPost({ platform: 'all', content_he: '', content_en: '', hashtags: '#רכב #ישראל #CarIssuesIL', scheduled_for: new Date().toISOString().slice(0, 16) });
+      await fetchSocialPosts();
+    } catch { /* ignore */ } finally {
+      setSocialSaving(false);
+    }
+  };
+
+  const toggleSocialStatus = async (id: string, currentStatus: string) => {
+    const next = currentStatus === 'pending' ? 'posted' : 'pending';
+    const token = await getToken();
+    await fetch('/api/admin/social-posts', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+      body: JSON.stringify({ action: 'update', id, status: next }),
+    });
+    await fetchSocialPosts();
+  };
+
+  const captureScreenshot = async (postId: string) => {
+    // Only send path if user explicitly typed one; otherwise let the API infer it
+    const path = screenshotPath[postId];
+    setScreenshotting(s => ({ ...s, [postId]: true }));
+    try {
+      const token = await getToken();
+      const res = await fetch('/api/admin/social-posts/screenshot', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ postId, ...(path !== undefined && { path }) }),
+      });
+      if (res.ok) await fetchSocialPosts();
+    } catch { /* ignore */ } finally {
+      setScreenshotting(s => ({ ...s, [postId]: false }));
+    }
+  };
+
+  const publishPost = async (post: SocialPostRow) => {
+    const meta = post.metadata as Record<string, unknown> | null;
+    const imageUrl = meta?.image_url as string | undefined;
+    if (!imageUrl) return;
+    setPublishingPost(s => ({ ...s, [post.id]: true }));
+    try {
+      const token = await getToken();
+      await fetch('/api/admin/instagram', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ action: 'publish', imageUrl, caption: post.content_he, hashtags: post.hashtags, postId: post.id }),
+      });
+      await fetchSocialPosts();
+    } catch { /* ignore */ } finally {
+      setPublishingPost(s => ({ ...s, [post.id]: false }));
+    }
+  };
+
+  const loadExistingPosts = async () => {
+    setLoadingExisting(true);
+    try {
+      const token = await getToken();
+      const [igRes, fbRes] = await Promise.all([
+        fetch('/api/admin/instagram', { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` }, body: JSON.stringify({ action: 'get_ig_posts' }) }),
+        fetch('/api/admin/instagram', { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` }, body: JSON.stringify({ action: 'get_fb_posts' }) }),
+      ]);
+      const igData = await igRes.json();
+      const fbData = await fbRes.json();
+      setIgPosts(igData.data ?? []);
+      setFbPosts(fbData.data ?? []);
+    } catch { /* ignore */ } finally {
+      setLoadingExisting(false);
+    }
+  };
+
+  const deleteIgPost = async (mediaId: string) => {
+    const token = await getToken();
+    await fetch('/api/admin/instagram', { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` }, body: JSON.stringify({ action: 'delete_ig_post', mediaId }) });
+    setIgPosts(p => p.filter(x => x.id !== mediaId));
+  };
+
+  const deleteFbPost = async (fbPostId: string) => {
+    const token = await getToken();
+    await fetch('/api/admin/instagram', { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` }, body: JSON.stringify({ action: 'delete_fb_post', fbPostId }) });
+    setFbPosts(p => p.filter(x => x.id !== fbPostId));
+  };
+
+  const loadPageInfo = async () => {
+    const token = await getToken();
+    const res = await fetch('/api/admin/instagram', { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` }, body: JSON.stringify({ action: 'get_page_info' }) });
+    const data = await res.json();
+    setPageInfo(data);
+    setPageInfoForm({ about: data.about ?? '', description: data.description ?? '', website: data.website ?? '' });
+  };
+
+  const savePageInfo = async () => {
+    setPageInfoSaving(true);
+    try {
+      const token = await getToken();
+      await fetch('/api/admin/instagram', { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` }, body: JSON.stringify({ action: 'update_page_info', ...pageInfoForm }) });
+      await loadPageInfo();
+    } catch { /* ignore */ } finally {
+      setPageInfoSaving(false);
+    }
+  };
+
+  const updateProfilePicture = async (imageUrl: string) => {
+    const token = await getToken();
+    await fetch('/api/admin/instagram', { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` }, body: JSON.stringify({ action: 'update_profile_picture', imageUrl }) });
+    await loadPageInfo();
+  };
 
   const toggleAdmin = async (userId: string, currentIsAdmin: boolean) => {
     const token = await getToken();
@@ -382,6 +589,7 @@ export default function AdminPage() {
             ['reports', `דיווחים${reports.length ? ` (${reports.length})` : ''}`],
             ['metrics', 'מדדים'],
             ['users', 'משתמשים'],
+            ['social_posts', 'רשתות חברתיות'],
             ['reviews_ai', 'סיכומי AI'],
           ] as [Tab, string][]).map(([t, label]) => (
             <button
@@ -724,6 +932,438 @@ export default function AdminPage() {
             )}
           </>
         )}
+
+        {/* ── Social Posts Tab ────────────────────────────────────────────────── */}
+        {tab === 'social_posts' && (() => {
+          const filtered = socialStatusFilter === 'all' ? socialPosts : socialPosts.filter(p => p.status === socialStatusFilter);
+          const platformLabel: Record<string, string> = { all: 'כל הפלטפורמות', facebook: 'פייסבוק', twitter: 'טוויטר/X', telegram: 'טלגרם', instagram: 'אינסטגרם' };
+          const statusColor: Record<string, string> = { pending: '#f59e0b', posted: '#22c55e', failed: '#ef4444' };
+          const statusLabel: Record<string, string> = { pending: 'ממתין', posted: 'פורסם', failed: 'נכשל' };
+          return (
+            <>
+              {/* Stats row */}
+              <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap', marginBottom: 24 }}>
+                {([
+                  [socialPosts.filter(p => p.status === 'pending').length, 'ממתינים', '#f59e0b'],
+                  [socialPosts.filter(p => p.status === 'posted').length, 'פורסמו', '#22c55e'],
+                  [socialPosts.filter(p => p.status === 'failed').length, 'נכשלו', '#ef4444'],
+                  [socialPosts.length, 'סה"כ', 'var(--text-primary)'],
+                ] as [number, string, string][]).map(([val, label, color]) => (
+                  <div key={label} className="card" style={{ padding: '16px 24px', flex: '1 1 120px', textAlign: 'center' }}>
+                    <div style={{ fontSize: '2rem', fontWeight: 900, color }}>{val}</div>
+                    <div style={{ fontSize: '0.8125rem', color: 'var(--text-muted)' }}>{label}</div>
+                  </div>
+                ))}
+              </div>
+
+              {/* Actions */}
+              <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', alignItems: 'center', marginBottom: 20 }}>
+                <button className="btn btn-primary" onClick={generateSocialPost} disabled={socialGenerating}>
+                  {socialGenerating ? 'מייצר...' : '✨ צור פוסט אוטומטי'}
+                </button>
+                <button onClick={() => setShowNewPostForm(v => !v)} style={{ padding: '10px 20px', borderRadius: 8, border: '1px solid var(--border)', background: 'transparent', cursor: 'pointer', fontWeight: 600, color: 'var(--text-secondary)' }}>
+                  {showNewPostForm ? 'ביטול' : '+ פוסט ידני'}
+                </button>
+                <button onClick={fetchSocialPosts} disabled={socialFetching} style={{ padding: '10px 20px', borderRadius: 8, border: '1px solid var(--border)', background: 'transparent', cursor: 'pointer', fontWeight: 600, color: 'var(--text-muted)' }}>
+                  {socialFetching ? 'טוען...' : 'רענן'}
+                </button>
+              </div>
+
+              {/* New post form */}
+              {showNewPostForm && (
+                <div className="card" style={{ padding: 24, marginBottom: 24 }}>
+                  <h3 style={{ fontWeight: 800, marginBottom: 16 }}>פוסט חדש</h3>
+                  <div style={{ display: 'grid', gap: 12 }}>
+                    <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
+                      <div style={{ flex: 1, minWidth: 160 }}>
+                        <label style={{ fontSize: '0.8125rem', color: 'var(--text-muted)', display: 'block', marginBottom: 4 }}>פלטפורמה</label>
+                        <select value={newPost.platform} onChange={e => setNewPost(p => ({ ...p, platform: e.target.value as SocialPostRow['platform'] }))} style={{ width: '100%', padding: '8px 12px', borderRadius: 8, border: '1px solid var(--border)', background: 'var(--bg-card)', color: 'var(--text-primary)', fontSize: '0.875rem' }}>
+                          {Object.entries(platformLabel).map(([v, l]) => <option key={v} value={v}>{l}</option>)}
+                        </select>
+                      </div>
+                      <div style={{ flex: 1, minWidth: 200 }}>
+                        <label style={{ fontSize: '0.8125rem', color: 'var(--text-muted)', display: 'block', marginBottom: 4 }}>תזמון</label>
+                        <input type="datetime-local" value={newPost.scheduled_for} onChange={e => setNewPost(p => ({ ...p, scheduled_for: e.target.value }))} style={{ width: '100%', padding: '8px 12px', borderRadius: 8, border: '1px solid var(--border)', background: 'var(--bg-card)', color: 'var(--text-primary)', fontSize: '0.875rem' }} />
+                      </div>
+                    </div>
+                    <div>
+                      <label style={{ fontSize: '0.8125rem', color: 'var(--text-muted)', display: 'block', marginBottom: 4 }}>תוכן בעברית</label>
+                      <textarea value={newPost.content_he} onChange={e => setNewPost(p => ({ ...p, content_he: e.target.value }))} rows={4} style={{ width: '100%', padding: '8px 12px', borderRadius: 8, border: '1px solid var(--border)', background: 'var(--bg-card)', color: 'var(--text-primary)', fontSize: '0.875rem', resize: 'vertical', direction: 'rtl' }} />
+                    </div>
+                    <div>
+                      <label style={{ fontSize: '0.8125rem', color: 'var(--text-muted)', display: 'block', marginBottom: 4 }}>תוכן באנגלית</label>
+                      <textarea value={newPost.content_en} onChange={e => setNewPost(p => ({ ...p, content_en: e.target.value }))} rows={3} style={{ width: '100%', padding: '8px 12px', borderRadius: 8, border: '1px solid var(--border)', background: 'var(--bg-card)', color: 'var(--text-primary)', fontSize: '0.875rem', resize: 'vertical', direction: 'ltr', textAlign: 'left' }} />
+                    </div>
+                    <div>
+                      <label style={{ fontSize: '0.8125rem', color: 'var(--text-muted)', display: 'block', marginBottom: 4 }}>האשטגים</label>
+                      <input value={newPost.hashtags} onChange={e => setNewPost(p => ({ ...p, hashtags: e.target.value }))} style={{ width: '100%', padding: '8px 12px', borderRadius: 8, border: '1px solid var(--border)', background: 'var(--bg-card)', color: 'var(--text-primary)', fontSize: '0.875rem', direction: 'ltr', textAlign: 'left' }} />
+                    </div>
+                    <div style={{ display: 'flex', gap: 8 }}>
+                      <button className="btn btn-primary" onClick={createSocialPost} disabled={socialSaving || !newPost.content_he}>
+                        {socialSaving ? 'שומר...' : 'שמור פוסט'}
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Status filter */}
+              <div style={{ display: 'flex', gap: 8, marginBottom: 20, flexWrap: 'wrap' }}>
+                {(['all', 'pending', 'posted', 'failed'] as const).map(f => (
+                  <button key={f} onClick={() => setSocialStatusFilter(f)} style={{ padding: '6px 16px', borderRadius: 9999, border: 'none', cursor: 'pointer', background: socialStatusFilter === f ? 'var(--brand-red)' : 'var(--bg-muted)', color: socialStatusFilter === f ? '#fff' : 'var(--text-secondary)', fontWeight: 600, fontSize: '0.875rem' }}>
+                    {f === 'all' ? 'הכל' : statusLabel[f]}
+                  </button>
+                ))}
+              </div>
+
+              {/* Edit modal */}
+              {editSocialPost && (
+                <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24 }}>
+                  <div className="card" style={{ padding: 28, width: '100%', maxWidth: 640, maxHeight: '90vh', overflowY: 'auto' }}>
+                    <h3 style={{ fontWeight: 800, marginBottom: 16 }}>עריכת פוסט</h3>
+                    <div style={{ display: 'grid', gap: 12 }}>
+                      <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
+                        <div style={{ flex: 1, minWidth: 160 }}>
+                          <label style={{ fontSize: '0.8125rem', color: 'var(--text-muted)', display: 'block', marginBottom: 4 }}>פלטפורמה</label>
+                          <select value={editSocialPost.platform} onChange={e => setEditSocialPost(p => p && ({ ...p, platform: e.target.value as SocialPostRow['platform'] }))} style={{ width: '100%', padding: '8px 12px', borderRadius: 8, border: '1px solid var(--border)', background: 'var(--bg-card)', color: 'var(--text-primary)', fontSize: '0.875rem' }}>
+                            {Object.entries(platformLabel).map(([v, l]) => <option key={v} value={v}>{l}</option>)}
+                          </select>
+                        </div>
+                        <div style={{ flex: 1, minWidth: 160 }}>
+                          <label style={{ fontSize: '0.8125rem', color: 'var(--text-muted)', display: 'block', marginBottom: 4 }}>סטטוס</label>
+                          <select value={editSocialPost.status} onChange={e => setEditSocialPost(p => p && ({ ...p, status: e.target.value as SocialPostRow['status'] }))} style={{ width: '100%', padding: '8px 12px', borderRadius: 8, border: '1px solid var(--border)', background: 'var(--bg-card)', color: 'var(--text-primary)', fontSize: '0.875rem' }}>
+                            <option value="pending">ממתין</option>
+                            <option value="posted">פורסם</option>
+                            <option value="failed">נכשל</option>
+                          </select>
+                        </div>
+                        <div style={{ flex: 1, minWidth: 200 }}>
+                          <label style={{ fontSize: '0.8125rem', color: 'var(--text-muted)', display: 'block', marginBottom: 4 }}>תזמון</label>
+                          <input type="datetime-local" value={editSocialPost.scheduled_for?.slice(0, 16) ?? ''} onChange={e => setEditSocialPost(p => p && ({ ...p, scheduled_for: new Date(e.target.value).toISOString() }))} style={{ width: '100%', padding: '8px 12px', borderRadius: 8, border: '1px solid var(--border)', background: 'var(--bg-card)', color: 'var(--text-primary)', fontSize: '0.875rem' }} />
+                        </div>
+                      </div>
+                      <div>
+                        <label style={{ fontSize: '0.8125rem', color: 'var(--text-muted)', display: 'block', marginBottom: 4 }}>תוכן בעברית</label>
+                        <textarea value={editSocialPost.content_he} onChange={e => setEditSocialPost(p => p && ({ ...p, content_he: e.target.value }))} rows={5} style={{ width: '100%', padding: '8px 12px', borderRadius: 8, border: '1px solid var(--border)', background: 'var(--bg-card)', color: 'var(--text-primary)', fontSize: '0.875rem', resize: 'vertical', direction: 'rtl' }} />
+                      </div>
+                      <div>
+                        <label style={{ fontSize: '0.8125rem', color: 'var(--text-muted)', display: 'block', marginBottom: 4 }}>תוכן באנגלית</label>
+                        <textarea value={editSocialPost.content_en} onChange={e => setEditSocialPost(p => p && ({ ...p, content_en: e.target.value }))} rows={4} style={{ width: '100%', padding: '8px 12px', borderRadius: 8, border: '1px solid var(--border)', background: 'var(--bg-card)', color: 'var(--text-primary)', fontSize: '0.875rem', resize: 'vertical', direction: 'ltr', textAlign: 'left' }} />
+                      </div>
+                      <div>
+                        <label style={{ fontSize: '0.8125rem', color: 'var(--text-muted)', display: 'block', marginBottom: 4 }}>האשטגים</label>
+                        <input value={editSocialPost.hashtags} onChange={e => setEditSocialPost(p => p && ({ ...p, hashtags: e.target.value }))} style={{ width: '100%', padding: '8px 12px', borderRadius: 8, border: '1px solid var(--border)', background: 'var(--bg-card)', color: 'var(--text-primary)', fontSize: '0.875rem', direction: 'ltr', textAlign: 'left' }} />
+                      </div>
+                      <div style={{ display: 'flex', gap: 8 }}>
+                        <button className="btn btn-primary" onClick={saveSocialPost} disabled={socialSaving}>{socialSaving ? 'שומר...' : 'שמור'}</button>
+                        <button onClick={() => setEditSocialPost(null)} style={{ padding: '10px 20px', borderRadius: 8, border: '1px solid var(--border)', background: 'transparent', cursor: 'pointer', fontWeight: 600, color: 'var(--text-secondary)' }}>ביטול</button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Posts list */}
+              {socialFetching ? (
+                <div style={{ textAlign: 'center', padding: 64, color: 'var(--text-muted)' }}>טוען...</div>
+              ) : filtered.length === 0 ? (
+                <div className="card" style={{ padding: 48, textAlign: 'center', color: 'var(--text-muted)' }}>אין פוסטים עדיין</div>
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                  {filtered.map(post => (
+                    <div key={post.id} className="card" style={{ padding: 20 }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 12, flexWrap: 'wrap', marginBottom: 10 }}>
+                        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
+                          <span style={{ fontSize: '0.75rem', fontWeight: 700, padding: '3px 10px', borderRadius: 9999, background: 'var(--bg-muted)', color: 'var(--text-secondary)' }}>
+                            {platformLabel[post.platform] ?? post.platform}
+                          </span>
+                          <button
+                            onClick={() => toggleSocialStatus(post.id, post.status)}
+                            style={{ fontSize: '0.75rem', fontWeight: 700, padding: '3px 10px', borderRadius: 9999, border: 'none', cursor: 'pointer', background: `${statusColor[post.status]}22`, color: statusColor[post.status] }}
+                          >
+                            {statusLabel[post.status] ?? post.status}
+                          </button>
+                          <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+                            {new Date(post.scheduled_for).toLocaleString('he-IL', { dateStyle: 'short', timeStyle: 'short' })}
+                          </span>
+                        </div>
+                        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                          {!!(post.metadata as Record<string,unknown>)?.image_url && (
+                            <button onClick={() => setPreviewPost(post)} style={{ padding: '6px 14px', borderRadius: 7, border: 'none', background: 'linear-gradient(135deg,#f09433,#e6683c,#dc2743,#cc2366,#bc1888)', cursor: 'pointer', fontSize: '0.8125rem', fontWeight: 700, color: '#fff' }}>👁 תצוגה מקדימה</button>
+                          )}
+                          {!!(post.metadata as Record<string,unknown>)?.image_url && post.status !== 'posted' && (
+                            <button onClick={() => publishPost(post)} disabled={publishingPost[post.id]} style={{ padding: '6px 14px', borderRadius: 7, border: 'none', background: '#1877f2', cursor: 'pointer', fontSize: '0.8125rem', fontWeight: 700, color: '#fff', whiteSpace: 'nowrap' }}>
+                              {publishingPost[post.id] ? 'מפרסם...' : '🚀 פרסם'}
+                            </button>
+                          )}
+                          <button onClick={() => setEditSocialPost(post)} style={{ padding: '6px 14px', borderRadius: 7, border: '1px solid var(--border)', background: 'transparent', cursor: 'pointer', fontSize: '0.8125rem', fontWeight: 600, color: 'var(--text-secondary)' }}>ערוך</button>
+                          <button onClick={() => deleteSocialPost(post.id)} style={{ padding: '6px 14px', borderRadius: 7, border: '1px solid var(--brand-red)', background: 'transparent', cursor: 'pointer', fontSize: '0.8125rem', fontWeight: 600, color: 'var(--brand-red)' }}>מחק</button>
+                        </div>
+                      </div>
+                      {/* Screenshot preview */}
+                      {(() => {
+                        const meta = post.metadata as Record<string, unknown> | null;
+                        const postType = meta?.postType as string | undefined;
+                        const inferredPath =
+                          postType === 'top_rated' || postType === 'most_reviewed' ? '/'
+                          : postType === 'comparison' && typeof meta?.compareUrl === 'string' ? meta.compareUrl
+                          : meta?.carSlug ? `/cars/${meta.carSlug}`
+                          : '/rankings';
+                        const activePath = screenshotPath[post.id] !== undefined ? screenshotPath[post.id] : inferredPath;
+                        const presets: [string, string][] = [
+                          ['🏠', '/'],
+                          ['🏆', '/rankings'],
+                          ...(meta?.carSlug ? [['🚗', `/cars/${meta.carSlug}`] as [string, string]] : []),
+                        ];
+                        return (
+                          <div style={{ marginBottom: 12 }}>
+                            {!!meta?.image_url && (
+                              // eslint-disable-next-line @next/next/no-img-element
+                              <img
+                                src={meta.image_url as string}
+                                alt="screenshot"
+                                style={{ width: '100%', borderRadius: 10, display: 'block', border: '1px solid var(--border)', maxHeight: 340, objectFit: 'cover', objectPosition: 'top', marginBottom: 8 }}
+                              />
+                            )}
+                            <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', alignItems: 'center' }}>
+                              {presets.map(([icon, p]) => (
+                                <button
+                                  key={p}
+                                  onClick={() => setScreenshotPath(s => ({ ...s, [post.id]: p }))}
+                                  title={p}
+                                  style={{ padding: '5px 10px', borderRadius: 7, border: `1px solid ${activePath === p ? 'var(--brand-red)' : 'var(--border)'}`, background: activePath === p ? 'rgba(230,57,70,0.1)' : 'var(--bg-muted)', cursor: 'pointer', fontSize: '0.8125rem', color: activePath === p ? 'var(--brand-red)' : 'var(--text-muted)', fontWeight: 600 }}
+                                >
+                                  {icon}
+                                </button>
+                              ))}
+                              <input
+                                value={activePath}
+                                onChange={e => setScreenshotPath(s => ({ ...s, [post.id]: e.target.value }))}
+                                style={{ flex: 1, minWidth: 160, padding: '5px 10px', borderRadius: 7, border: '1px solid var(--border)', background: 'var(--bg-muted)', color: 'var(--text-secondary)', fontSize: '0.8125rem', direction: 'ltr' }}
+                              />
+                              <button
+                                onClick={() => captureScreenshot(post.id)}
+                                disabled={screenshotting[post.id]}
+                                style={{ padding: '6px 14px', borderRadius: 7, border: 'none', background: meta?.image_url ? 'var(--bg-muted)' : 'var(--brand-red)', cursor: 'pointer', fontSize: '0.8125rem', fontWeight: 600, color: meta?.image_url ? 'var(--text-secondary)' : '#fff', whiteSpace: 'nowrap' }}
+                              >
+                                {screenshotting[post.id] ? '📸 מצלם...' : meta?.image_url ? '🔄 עדכן' : '📸 צלם'}
+                              </button>
+                            </div>
+                          </div>
+                        );
+                      })()}
+                      <div style={{ fontSize: '0.9rem', color: 'var(--text-primary)', whiteSpace: 'pre-wrap', direction: 'rtl', marginBottom: 6, lineHeight: 1.6 }}>{post.content_he}</div>
+                      {post.content_en && (
+                        <div style={{ fontSize: '0.8125rem', color: 'var(--text-muted)', whiteSpace: 'pre-wrap', direction: 'ltr', textAlign: 'left', marginBottom: 6 }}>{post.content_en}</div>
+                      )}
+                      {post.hashtags && (
+                        <div style={{ fontSize: '0.8rem', color: '#3b82f6', direction: 'ltr', textAlign: 'left' }}>{post.hashtags}</div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {/* ── Page Management ─────────────────────────────────────────── */}
+              <div className="card" style={{ marginTop: 32, padding: 24 }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: pageManagementOpen ? 20 : 0 }}>
+                  <h3 style={{ fontWeight: 800, fontSize: '1rem', margin: 0 }}>⚙️ ניהול דף — Instagram & Facebook</h3>
+                  <button
+                    onClick={() => { setPageManagementOpen(v => !v); if (!pageInfo) loadPageInfo(); }}
+                    style={{ padding: '6px 14px', borderRadius: 7, border: '1px solid var(--border)', background: 'transparent', cursor: 'pointer', fontSize: '0.8125rem', fontWeight: 600, color: 'var(--text-secondary)' }}
+                  >
+                    {pageManagementOpen ? 'סגור' : 'פתח'}
+                  </button>
+                </div>
+                {pageManagementOpen && (
+                  <>
+                    {pageInfo && (
+                      <div style={{ display: 'flex', gap: 16, alignItems: 'center', marginBottom: 20, padding: '12px 16px', borderRadius: 10, background: 'var(--bg-muted)' }}>
+                        {pageInfo.picture?.data?.url && (
+                          // eslint-disable-next-line @next/next/no-img-element
+                          <img src={pageInfo.picture.data.url} alt="profile" style={{ width: 56, height: 56, borderRadius: '50%', border: '2px solid var(--border)' }} />
+                        )}
+                        <div>
+                          <div style={{ fontWeight: 800, fontSize: '1rem' }}>{pageInfo.name}</div>
+                          <div style={{ fontSize: '0.8125rem', color: 'var(--text-muted)' }}>{pageInfo.fan_count?.toLocaleString()} עוקבים</div>
+                        </div>
+                      </div>
+                    )}
+                    <div style={{ display: 'grid', gap: 12 }}>
+                      <div>
+                        <label style={{ fontSize: '0.8125rem', color: 'var(--text-muted)', display: 'block', marginBottom: 4 }}>עדכן תמונת פרופיל (הדבק URL של תמונה)</label>
+                        <div style={{ display: 'flex', gap: 8 }}>
+                          <input
+                            placeholder="https://..."
+                            id="profile-pic-url"
+                            style={{ flex: 1, padding: '8px 12px', borderRadius: 8, border: '1px solid var(--border)', background: 'var(--bg-muted)', color: 'var(--text-primary)', fontSize: '0.875rem', direction: 'ltr' }}
+                          />
+                          <button
+                            onClick={() => { const el = document.getElementById('profile-pic-url') as HTMLInputElement; if (el?.value) updateProfilePicture(el.value); }}
+                            style={{ padding: '8px 16px', borderRadius: 8, border: 'none', background: 'var(--brand-red)', cursor: 'pointer', fontWeight: 700, color: '#fff', fontSize: '0.875rem', whiteSpace: 'nowrap' }}
+                          >
+                            עדכן תמונה
+                          </button>
+                        </div>
+                        <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: 4 }}>* Facebook בלבד — Instagram לא תומך בעדכון תמונת פרופיל דרך API</div>
+                      </div>
+                      <div>
+                        <label style={{ fontSize: '0.8125rem', color: 'var(--text-muted)', display: 'block', marginBottom: 4 }}>תיאור קצר (About)</label>
+                        <input value={pageInfoForm.about} onChange={e => setPageInfoForm(f => ({ ...f, about: e.target.value }))} style={{ width: '100%', padding: '8px 12px', borderRadius: 8, border: '1px solid var(--border)', background: 'var(--bg-muted)', color: 'var(--text-primary)', fontSize: '0.875rem', direction: 'rtl' }} />
+                      </div>
+                      <div>
+                        <label style={{ fontSize: '0.8125rem', color: 'var(--text-muted)', display: 'block', marginBottom: 4 }}>תיאור מלא</label>
+                        <textarea value={pageInfoForm.description} onChange={e => setPageInfoForm(f => ({ ...f, description: e.target.value }))} rows={3} style={{ width: '100%', padding: '8px 12px', borderRadius: 8, border: '1px solid var(--border)', background: 'var(--bg-muted)', color: 'var(--text-primary)', fontSize: '0.875rem', resize: 'vertical', direction: 'rtl' }} />
+                      </div>
+                      <div>
+                        <label style={{ fontSize: '0.8125rem', color: 'var(--text-muted)', display: 'block', marginBottom: 4 }}>אתר</label>
+                        <input value={pageInfoForm.website} onChange={e => setPageInfoForm(f => ({ ...f, website: e.target.value }))} style={{ width: '100%', padding: '8px 12px', borderRadius: 8, border: '1px solid var(--border)', background: 'var(--bg-muted)', color: 'var(--text-primary)', fontSize: '0.875rem', direction: 'ltr' }} />
+                      </div>
+                      <button onClick={savePageInfo} disabled={pageInfoSaving} className="btn btn-primary" style={{ width: 'fit-content' }}>
+                        {pageInfoSaving ? 'שומר...' : 'שמור פרטי דף'}
+                      </button>
+                    </div>
+
+                    {/* Existing posts */}
+                    <div style={{ marginTop: 28 }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16, flexWrap: 'wrap', gap: 8 }}>
+                        <h4 style={{ fontWeight: 800, fontSize: '0.9375rem', margin: 0 }}>פוסטים קיימים</h4>
+                        <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                          {(['instagram', 'facebook'] as const).map(pl => (
+                            <button key={pl} onClick={() => setExistingPostsTab(pl)} style={{ padding: '5px 14px', borderRadius: 9999, border: 'none', cursor: 'pointer', background: existingPostsTab === pl ? 'var(--brand-red)' : 'var(--bg-muted)', color: existingPostsTab === pl ? '#fff' : 'var(--text-secondary)', fontWeight: 600, fontSize: '0.8125rem' }}>
+                              {pl === 'instagram' ? 'Instagram' : 'Facebook'}
+                            </button>
+                          ))}
+                          <button onClick={loadExistingPosts} disabled={loadingExisting} style={{ padding: '5px 14px', borderRadius: 8, border: '1px solid var(--border)', background: 'transparent', cursor: 'pointer', fontSize: '0.8125rem', color: 'var(--text-muted)', fontWeight: 600 }}>
+                            {loadingExisting ? 'טוען...' : 'טען'}
+                          </button>
+                        </div>
+                      </div>
+                      {existingPostsTab === 'instagram' && igPosts.length > 0 && (
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))', gap: 8 }}>
+                          {igPosts.map(p => (
+                            <div key={p.id} style={{ position: 'relative', borderRadius: 8, overflow: 'hidden', border: '1px solid var(--border)' }}>
+                              {/* eslint-disable-next-line @next/next/no-img-element */}
+                              <img src={p.media_url} alt="" style={{ width: '100%', aspectRatio: '1', objectFit: 'cover', display: 'block' }} />
+                              <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0)', transition: 'background 0.2s' }} />
+                              <button
+                                onClick={() => deleteIgPost(p.id)}
+                                style={{ position: 'absolute', top: 4, right: 4, width: 24, height: 24, borderRadius: '50%', border: 'none', background: 'rgba(230,57,70,0.9)', color: '#fff', cursor: 'pointer', fontSize: '0.75rem', fontWeight: 900, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                              >×</button>
+                              <a href={p.permalink} target="_blank" rel="noopener noreferrer" style={{ position: 'absolute', bottom: 4, left: 4, fontSize: '0.65rem', background: 'rgba(0,0,0,0.6)', color: '#fff', padding: '2px 6px', borderRadius: 4, textDecoration: 'none' }}>↗</a>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                      {existingPostsTab === 'facebook' && fbPosts.length > 0 && (
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                          {fbPosts.map(p => (
+                            <div key={p.id} style={{ display: 'flex', gap: 12, alignItems: 'flex-start', padding: '10px 14px', borderRadius: 8, border: '1px solid var(--border)', background: 'var(--bg-muted)' }}>
+                              {p.full_picture && (
+                                // eslint-disable-next-line @next/next/no-img-element
+                                <img src={p.full_picture} alt="" style={{ width: 64, height: 64, borderRadius: 6, objectFit: 'cover', flexShrink: 0 }} />
+                              )}
+                              <div style={{ flex: 1, minWidth: 0 }}>
+                                <div style={{ fontSize: '0.8125rem', color: 'var(--text-primary)', direction: 'rtl', overflow: 'hidden', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' }}>{p.message ?? '—'}</div>
+                                <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: 4 }}>{new Date(p.created_time).toLocaleDateString('he-IL')}</div>
+                              </div>
+                              <button onClick={() => deleteFbPost(p.id)} style={{ padding: '4px 10px', borderRadius: 6, border: '1px solid var(--brand-red)', background: 'transparent', cursor: 'pointer', fontSize: '0.75rem', color: 'var(--brand-red)', fontWeight: 600, flexShrink: 0 }}>מחק</button>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                      {((existingPostsTab === 'instagram' && igPosts.length === 0) || (existingPostsTab === 'facebook' && fbPosts.length === 0)) && !loadingExisting && (
+                        <div style={{ textAlign: 'center', padding: 24, color: 'var(--text-muted)', fontSize: '0.875rem' }}>לחץ "טען" כדי לראות פוסטים קיימים</div>
+                      )}
+                    </div>
+                  </>
+                )}
+              </div>
+            </>
+          );
+        })()}
+
+        {/* ── Post Preview Modal ───────────────────────────────────────────────── */}
+        {previewPost && (() => {
+          const meta = previewPost.metadata as Record<string, unknown> | null;
+          const imageUrl = meta?.image_url as string | undefined;
+          return (
+            <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)', zIndex: 2000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24 }} onClick={() => setPreviewPost(null)}>
+              <div onClick={e => e.stopPropagation()} style={{ width: '100%', maxWidth: 420, maxHeight: '90vh', overflowY: 'auto' }}>
+                {/* Instagram preview */}
+                <div style={{ background: '#000', borderRadius: 14, overflow: 'hidden', border: '1px solid #262626', marginBottom: 16 }}>
+                  {/* Header */}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 14px' }}>
+                    <div style={{ width: 32, height: 32, borderRadius: '50%', background: 'linear-gradient(135deg,#f09433,#dc2743,#bc1888)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontWeight: 900, fontSize: '0.75rem', flexShrink: 0 }}>CI</div>
+                    <div>
+                      <div style={{ color: '#fff', fontWeight: 700, fontSize: '0.8125rem' }}>carissuesil</div>
+                      <div style={{ color: '#a8a8a8', fontSize: '0.7rem' }}>ממומן</div>
+                    </div>
+                    <div style={{ marginRight: 'auto', color: '#a8a8a8', fontSize: '1.2rem' }}>···</div>
+                  </div>
+                  {/* Image */}
+                  {imageUrl && (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={imageUrl} alt="post" style={{ width: '100%', display: 'block', aspectRatio: '1.91', objectFit: 'cover' }} />
+                  )}
+                  {/* Actions */}
+                  <div style={{ padding: '10px 14px 4px' }}>
+                    <div style={{ display: 'flex', gap: 14, marginBottom: 8 }}>
+                      <span style={{ fontSize: '1.4rem' }}>🤍</span>
+                      <span style={{ fontSize: '1.4rem' }}>💬</span>
+                      <span style={{ fontSize: '1.4rem' }}>📤</span>
+                      <span style={{ marginRight: 'auto', fontSize: '1.4rem' }}>🔖</span>
+                    </div>
+                    <div style={{ color: '#fff', fontSize: '0.8125rem', fontWeight: 700, marginBottom: 4 }}>0 לייקים</div>
+                    <div style={{ color: '#fff', fontSize: '0.8125rem', direction: 'rtl', lineHeight: 1.5 }}>
+                      <span style={{ fontWeight: 700 }}>carissuesil </span>
+                      {previewPost.content_he.slice(0, 120)}{previewPost.content_he.length > 120 ? '... ' : ' '}
+                      {previewPost.content_he.length > 120 && <span style={{ color: '#a8a8a8' }}>עוד</span>}
+                    </div>
+                    <div style={{ color: '#3897f0', fontSize: '0.8125rem', marginTop: 4, direction: 'ltr', textAlign: 'left' }}>{previewPost.hashtags}</div>
+                    <div style={{ color: '#a8a8a8', fontSize: '0.7rem', marginTop: 6 }}>עכשיו</div>
+                  </div>
+                </div>
+
+                {/* Facebook preview */}
+                <div style={{ background: '#fff', borderRadius: 14, overflow: 'hidden', border: '1px solid #ddd' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '12px 16px' }}>
+                    <div style={{ width: 40, height: 40, borderRadius: '50%', background: '#1877f2', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontWeight: 900, fontSize: '0.875rem', flexShrink: 0 }}>CI</div>
+                    <div>
+                      <div style={{ color: '#050505', fontWeight: 700, fontSize: '0.875rem' }}>CarIssues IL</div>
+                      <div style={{ color: '#65676b', fontSize: '0.75rem' }}>עכשיו · 🌐</div>
+                    </div>
+                    <div style={{ marginRight: 'auto', color: '#65676b', fontSize: '1.2rem' }}>···</div>
+                  </div>
+                  <div style={{ padding: '0 16px 10px', color: '#050505', fontSize: '0.9375rem', direction: 'rtl', lineHeight: 1.6 }}>
+                    {previewPost.content_he}
+                    <div style={{ color: '#1877f2', marginTop: 4, fontSize: '0.875rem' }}>{previewPost.hashtags}</div>
+                  </div>
+                  {imageUrl && (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={imageUrl} alt="post" style={{ width: '100%', display: 'block' }} />
+                  )}
+                  <div style={{ padding: '8px 16px', borderTop: '1px solid #e4e6eb', display: 'flex', gap: 4 }}>
+                    {['👍 לייק', '💬 תגובה', '↗ שיתוף'].map(a => (
+                      <div key={a} style={{ flex: 1, textAlign: 'center', padding: '6px', borderRadius: 6, color: '#65676b', fontSize: '0.8125rem', fontWeight: 600 }}>{a}</div>
+                    ))}
+                  </div>
+                </div>
+
+                <div style={{ display: 'flex', gap: 10, marginTop: 16 }}>
+                  <button
+                    onClick={() => { publishPost(previewPost); setPreviewPost(null); }}
+                    disabled={publishingPost[previewPost.id]}
+                    style={{ flex: 1, padding: '12px', borderRadius: 10, border: 'none', background: 'linear-gradient(135deg,#f09433,#dc2743,#bc1888)', cursor: 'pointer', fontWeight: 800, color: '#fff', fontSize: '0.9375rem' }}
+                  >
+                    {publishingPost[previewPost.id] ? 'מפרסם...' : '🚀 פרסם עכשיו'}
+                  </button>
+                  <button onClick={() => setPreviewPost(null)} style={{ padding: '12px 20px', borderRadius: 10, border: '1px solid rgba(255,255,255,0.2)', background: 'transparent', cursor: 'pointer', color: '#fff', fontWeight: 600 }}>סגור</button>
+                </div>
+              </div>
+            </div>
+          );
+        })()}
 
         {/* ── Reports Tab ─────────────────────────────────────────────────────── */}
         {tab === 'reports' && (
