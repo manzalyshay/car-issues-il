@@ -975,20 +975,29 @@ export default function AdminPage() {
                 ))}
               </div>
 
-              {/* Actions */}
+              {/* Post type selector + generate */}
+              <div style={{ marginBottom: 16 }}>
+                <div style={{ fontSize: '0.8125rem', color: 'var(--text-muted)', marginBottom: 8, fontWeight: 600 }}>סוג פוסט:</div>
+                <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                  {([
+                    ['auto',          '🔀 אוטומטי'],
+                    ['top_rated',     '🏆 הכי מדורגים'],
+                    ['worst_rated',   '⚠️ הכי גרועים'],
+                    ['most_reviewed', '📊 הכי מדוברים'],
+                    ['new_review',    '⭐ ביקורת'],
+                    ['comparison',    '⚖️ השוואה'],
+                  ] as const).map(([val, label]) => (
+                    <button
+                      key={val}
+                      onClick={() => setGeneratePostType(val)}
+                      style={{ padding: '7px 14px', borderRadius: 9999, border: `1.5px solid ${generatePostType === val ? 'var(--brand-red)' : 'var(--border)'}`, background: generatePostType === val ? 'var(--brand-red)' : 'transparent', color: generatePostType === val ? '#fff' : 'var(--text-secondary)', fontWeight: 600, fontSize: '0.8125rem', cursor: 'pointer', whiteSpace: 'nowrap' }}
+                    >
+                      {label}
+                    </button>
+                  ))}
+                </div>
+              </div>
               <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', alignItems: 'center', marginBottom: 20 }}>
-                <select
-                  value={generatePostType}
-                  onChange={e => setGeneratePostType(e.target.value as typeof generatePostType)}
-                  style={{ padding: '10px 14px', borderRadius: 8, border: '1px solid var(--border)', background: 'var(--bg-card)', color: 'var(--text-primary)', fontSize: '0.875rem', cursor: 'pointer' }}
-                >
-                  <option value="auto">אוטומטי (לפי יום)</option>
-                  <option value="top_rated">🏆 הכי מדורגים</option>
-                  <option value="worst_rated">⚠️ הכי פחות מדורגים</option>
-                  <option value="most_reviewed">📊 הכי מרובי ביקורות</option>
-                  <option value="new_review">⭐ ביקורת חדשה</option>
-                  <option value="comparison">⚖️ השוואה</option>
-                </select>
                 <button className="btn btn-primary" onClick={generateSocialPost} disabled={socialGenerating}>
                   {socialGenerating ? 'מייצר...' : '✨ צור פוסט'}
                 </button>

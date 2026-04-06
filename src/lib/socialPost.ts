@@ -59,9 +59,9 @@ export async function generateDailyPost(forceType?: PostType): Promise<SocialPos
       ranked.push({ key, combined: scores.reduce((a, b) => a + b) / scores.length });
     }
     ranked.sort((a, b) => postType === 'top_rated' ? b.combined - a.combined : a.combined - b.combined);
-    const top = ranked.slice(0, 3);
 
     if (postType === 'top_rated') {
+      const top = ranked.slice(0, 3);
       const cars = top.map((r, i) => {
         const info = lookup.get(r.key)!;
         return `${i + 1}. ${info.makeHe} ${info.modelHe} — ${r.combined.toFixed(1)}/10`;
@@ -70,24 +70,28 @@ export async function generateDailyPost(forceType?: PostType): Promise<SocialPos
       content_en = `Top rated cars in Israel this week:\n${top.map((r, i) => { const info = lookup.get(r.key)!; return `${i + 1}. ${info.makeEn} ${info.modelEn} — ${r.combined.toFixed(1)}/10`; }).join('\n')}\ncarissues.co.il/rankings`;
       hashtags += ' #TopRated #BestCars';
     } else {
-      const car = lookup.get(top[0].key)!;
-      const ratingCount = (reviewMap.get(top[0].key) ?? []).length;
-      content_he = `⚠️ ${car.makeHe} ${car.modelHe} — הרכב עם הדירוג הנמוך ביותר החודש\n\nציון משולב: ${top[0].combined.toFixed(1)}/10\nמבוסס על ${ratingCount} ביקורות של בעלים בישראל.\n\nקרא את הביקורות: carissues.co.il/cars/${car.makeSlug}/${car.modelSlug}`;
-      content_en = `${car.makeEn} ${car.modelEn} — lowest rated car this month (${top[0].combined.toFixed(1)}/10)\ncarissues.co.il/cars/${car.makeSlug}/${car.modelSlug}`;
+      // Pick randomly from bottom 5 for variety
+      const pool = ranked.slice(0, 5);
+      const pick = pool[Math.floor(Math.random() * pool.length)];
+      const car = lookup.get(pick.key)!;
+      const ratingCount = (reviewMap.get(pick.key) ?? []).length;
+      content_he = `⚠️ ${car.makeHe} ${car.modelHe} — הרכב עם הדירוג הנמוך ביותר החודש\n\nציון משולב: ${pick.combined.toFixed(1)}/10\nמבוסס על ${ratingCount} ביקורות של בעלים בישראל.\n\nקרא את הביקורות: carissues.co.il/cars/${car.makeSlug}/${car.modelSlug}`;
+      content_en = `${car.makeEn} ${car.modelEn} — lowest rated car this month (${pick.combined.toFixed(1)}/10)\ncarissues.co.il/cars/${car.makeSlug}/${car.modelSlug}`;
       hashtags += ` #${car.makeEn.replace(/\s/g, '')}`;
       metadata = { carSlug: `${car.makeSlug}/${car.modelSlug}` };
     }
   } else if (postType === 'new_review') {
-    const latest = reviewData?.[0];
-    if (!latest) return null;
-    const info = lookup.get(`${latest.make_slug}/${latest.model_slug}`);
-    if (!info) return null;
+    // Pick randomly from the 20 most recent reviews for variety
+    const pool = (reviewData ?? []).slice(0, 20).filter(r => lookup.has(`${r.make_slug}/${r.model_slug}`));
+    if (!pool.length) return null;
+    const latest = pool[Math.floor(Math.random() * pool.length)];
+    const info = lookup.get(`${latest.make_slug}/${latest.model_slug}`)!;
     const stars = '⭐'.repeat(Math.round(latest.rating));
     const excerpt = (latest.title || latest.body || '').slice(0, 100);
-    content_he = `${stars} ביקורת חדשה: ${info.makeHe} ${info.modelHe}\n\n"${excerpt}..."\n\n— ${latest.author || 'בעל רכב'}\n\nקרא עוד: carissues.co.il/cars/${info.makeSlug}/${info.modelSlug}`;
-    content_en = `New review: ${info.makeEn} ${info.modelEn} — ${latest.rating}/5 stars\ncarissues.co.il/cars/${info.makeSlug}/${info.modelSlug}`;
+    content_he = `${stars} ביקורת: ${info.makeHe} ${info.modelHe}\n\n"${excerpt}..."\n\n— ${latest.author || 'בעל רכב'}\n\nקרא עוד: carissues.co.il/cars/${info.makeSlug}/${info.modelSlug}`;
+    content_en = `Review: ${info.makeEn} ${info.modelEn} — ${latest.rating}/5 stars\ncarissues.co.il/cars/${info.makeSlug}/${info.modelSlug}`;
     hashtags += ` #${info.makeEn.replace(/\s/g, '')} #${info.modelEn.replace(/\s/g, '')}`;
-    metadata = { carSlug: `${info.makeSlug}/${info.modelSlug}` };
+    metadata = { carSlug: `${info.makeSlug}/${info.modelSlug}`, postType: 'new_review' };
   } else if (postType === 'most_reviewed') {
     const sorted = [...reviewMap.entries()].sort((a, b) => b[1].length - a[1].length).slice(0, 3);
     const cars = sorted.map((r, i) => {
@@ -98,13 +102,17 @@ export async function generateDailyPost(forceType?: PostType): Promise<SocialPos
     content_en = `Most reviewed cars in Israel:\n${sorted.map((r, i) => { const info = lookup.get(r[0])!; return `${i + 1}. ${info.makeEn} ${info.modelEn} — ${r[1].length} reviews`; }).join('\n')}\ncarissues.co.il`;
     hashtags += ' #CarReviews';
   } else if (postType === 'comparison') {
-    const ranked = [...reviewMap.entries()].filter(([k]) => lookup.has(k)).sort((a, b) => b[1].length - a[1].length);
-    if (ranked.length < 2) return null;
-    const [k1, k2] = [ranked[0][0], ranked[1][0]];
+    // Pick two random cars from top 10 most reviewed for variety
+    const pool = [...reviewMap.entries()].filter(([k]) => lookup.has(k)).sort((a, b) => b[1].length - a[1].length).slice(0, 10);
+    if (pool.length < 2) return null;
+    const i1 = Math.floor(Math.random() * (pool.length - 1));
+    const i2 = i1 + 1 + Math.floor(Math.random() * (pool.length - i1 - 1));
+    const [k1, ratings1] = pool[i1];
+    const [k2, ratings2] = pool[i2];
     const [c1, c2] = [lookup.get(k1)!, lookup.get(k2)!];
-    const avg1 = ranked[0][1].reduce((a, b) => a + b, 0) / ranked[0][1].length;
-    const avg2 = ranked[1][1].reduce((a, b) => a + b, 0) / ranked[1][1].length;
-    content_he = `⚖️ ${c1.makeHe} ${c1.modelHe} מול ${c2.makeHe} ${c2.modelHe}\n\n${c1.makeHe} ${c1.modelHe}: ${avg1.toFixed(1)}/5 ⭐ (${ranked[0][1].length} ביקורות)\n${c2.makeHe} ${c2.modelHe}: ${avg2.toFixed(1)}/5 ⭐ (${ranked[1][1].length} ביקורות)\n\nהשוואה מלאה: carissues.co.il/cars/compare/${c1.makeSlug}/${c1.modelSlug}/${c2.makeSlug}/${c2.modelSlug}`;
+    const avg1 = ratings1.reduce((a, b) => a + b, 0) / ratings1.length;
+    const avg2 = ratings2.reduce((a, b) => a + b, 0) / ratings2.length;
+    content_he = `⚖️ ${c1.makeHe} ${c1.modelHe} מול ${c2.makeHe} ${c2.modelHe}\n\n${c1.makeHe} ${c1.modelHe}: ${avg1.toFixed(1)}/5 ⭐ (${ratings1.length} ביקורות)\n${c2.makeHe} ${c2.modelHe}: ${avg2.toFixed(1)}/5 ⭐ (${ratings2.length} ביקורות)\n\nהשוואה מלאה: carissues.co.il/cars/compare/${c1.makeSlug}/${c1.modelSlug}/${c2.makeSlug}/${c2.modelSlug}`;
     content_en = `${c1.makeEn} ${c1.modelEn} vs ${c2.makeEn} ${c2.modelEn}\ncarissues.co.il/cars/compare/${c1.makeSlug}/${c1.modelSlug}/${c2.makeSlug}/${c2.modelSlug}`;
     hashtags += ` #${c1.makeEn.replace(/\s/g, '')} #${c2.makeEn.replace(/\s/g, '')} #CarComparison`;
     metadata = { compareUrl: `/cars/compare/${c1.makeSlug}/${c1.modelSlug}/${c2.makeSlug}/${c2.modelSlug}` };
