@@ -1148,14 +1148,16 @@ export default function AdminPage() {
                         const meta = post.metadata as Record<string, unknown> | null;
                         const postType = meta?.postType as string | undefined;
                         const inferredPath =
-                          postType === 'top_rated' || postType === 'most_reviewed' ? '/'
+                          postType === 'top_rated' || postType === 'most_reviewed' ? '/api/og/top-ranked'
+                          : postType === 'worst_rated' && meta?.carSlug ? `/api/og/ai-review/${meta.carSlug}`
+                          : postType === 'new_review' && meta?.carSlug ? `/api/og/ai-review/${meta.carSlug}`
                           : postType === 'comparison' && typeof meta?.compareUrl === 'string' ? meta.compareUrl
-                          : meta?.carSlug ? `/cars/${meta.carSlug}`
-                          : '/rankings';
+                          : meta?.carSlug ? `/api/og/ai-review/${meta.carSlug}`
+                          : '/api/og/top-ranked';
                         const activePath = screenshotPath[post.id] !== undefined ? screenshotPath[post.id] : inferredPath;
                         const presets: [string, string][] = [
-                          ['🏆', '/og/top-ranked'],
-                          ...(meta?.carSlug ? [['🤖', `/og/ai-review/${meta.carSlug}`] as [string, string]] : []),
+                          ['🏆', '/api/og/top-ranked'],
+                          ...(meta?.carSlug ? [['🤖', `/api/og/ai-review/${meta.carSlug}`] as [string, string]] : []),
                           ['🏠', '/'],
                           ['📊', '/rankings'],
                         ];
