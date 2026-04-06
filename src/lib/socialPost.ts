@@ -1,5 +1,6 @@
 import { getServiceClient } from './adminAuth';
 import { getAllMakes } from './carsDb';
+import { findCarModel } from './sketchfab';
 
 export interface SocialPost {
   id?: string;
@@ -12,7 +13,7 @@ export interface SocialPost {
   metadata: Record<string, unknown>;
 }
 
-type PostType = 'top_rated' | 'worst_rated' | 'most_reviewed' | 'new_review' | 'comparison';
+type PostType = 'top_rated' | 'worst_rated' | 'most_reviewed' | 'new_review' | 'comparison' | 'car_3d_summary';
 
 export async function generateDailyPost(forceType?: PostType): Promise<SocialPost | null> {
   const sb = getServiceClient();
@@ -116,6 +117,26 @@ export async function generateDailyPost(forceType?: PostType): Promise<SocialPos
     content_en = `${c1.makeEn} ${c1.modelEn} vs ${c2.makeEn} ${c2.modelEn}\ncarissues.co.il/cars/compare/${c1.makeSlug}/${c1.modelSlug}/${c2.makeSlug}/${c2.modelSlug}`;
     hashtags += ` #${c1.makeEn.replace(/\s/g, '')} #${c2.makeEn.replace(/\s/g, '')} #CarComparison`;
     metadata = { compareUrl: `/cars/compare/${c1.makeSlug}/${c1.modelSlug}/${c2.makeSlug}/${c2.modelSlug}` };
+  }
+
+  if (postType === 'car_3d_summary') {
+    // Pick a car that has both an expert review score and a 3D model
+    const candidates: { key: string; score: number }[] = [];
+    for (const [key, score] of scoreMap) {
+      if (lookup.has(key)) candidates.push({ key, score });
+    }
+    if (!candidates.length) return null;
+    const pick = candidates[Math.floor(Math.random() * candidates.length)];
+    const car = lookup.get(pick.key)!;
+
+    // Check if 3D model exists
+    const model3d = await findCarModel(car.makeSlug, car.modelSlug);
+    const has3d = !!model3d;
+
+    content_he = `🚗 ${car.makeHe} ${car.modelHe} — סיכום AI מלא${has3d ? ' + תלת מימד' : ''}\n\nציון: ${pick.score.toFixed(1)}/10\n\nקרא את כל הביקורות וראה ניתוח מלא: carissues.co.il/cars/${car.makeSlug}/${car.modelSlug}`;
+    content_en = `${car.makeEn} ${car.modelEn} — Full AI Summary${has3d ? ' + 3D Model' : ''} (${pick.score.toFixed(1)}/10)\ncarissues.co.il/cars/${car.makeSlug}/${car.modelSlug}`;
+    hashtags += ` #${car.makeEn.replace(/\s/g, '')} #${car.modelEn.replace(/\s/g, '')} #AIReview`;
+    metadata = { carSlug: `${car.makeSlug}/${car.modelSlug}` };
   }
 
   if (!content_he) return null;

@@ -99,7 +99,7 @@ export default async function HomePage() {
   return (
     <>
       {/* ── Hero ── */}
-      <section style={{ background: 'linear-gradient(135deg, #1a1a2e 0%, #2d1b2e 50%, #1a1d3b 100%)', padding: '80px 0 90px', position: 'relative', overflow: 'hidden' }}>
+      <section style={{ background: 'linear-gradient(135deg, #1a1a2e 0%, #2d1b2e 50%, #1a1d3b 100%)', padding: '50px 0 60px', position: 'relative', overflow: 'hidden' }}>
         <div aria-hidden style={{ position: 'absolute', inset: 0, backgroundImage: 'radial-gradient(ellipse 60% 50% at 50% -20%, rgba(230,57,70,.3) 0%, transparent 70%)', pointerEvents: 'none' }} />
 
         <div className="container" style={{ position: 'relative' }}>

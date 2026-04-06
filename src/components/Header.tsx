@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import Image from 'next/image';
 import { useState } from 'react';
 import { usePathname } from 'next/navigation';
 import SearchBox from './SearchBox';
@@ -18,33 +19,25 @@ export default function Header() {
     <>
       <header
         style={{
-          background: 'var(--bg-card)',
-          borderBottom: '1px solid var(--border)',
+          background: '#fff',
+          borderBottom: '2.5px solid var(--brand-red)',
           position: 'sticky',
           top: 0,
           zIndex: 100,
-          boxShadow: 'var(--shadow-sm)',
+          boxShadow: '0 2px 16px rgba(0,0,0,0.07)',
         }}
       >
-        <div className="container" style={{ height: 68, display: 'flex', alignItems: 'center', gap: 16, justifyContent: 'space-between' }}>
+        <div className="container" style={{ height: 82, display: 'flex', alignItems: 'center', gap: 16, justifyContent: 'space-between' }}>
           {/* Logo */}
-          <Link href="/" style={{ display: 'flex', alignItems: 'center', gap: 10, textDecoration: 'none', flexShrink: 0 }}>
-            <div style={{
-              width: 38, height: 38, borderRadius: 10,
-              background: 'linear-gradient(135deg, var(--brand-red), var(--brand-gold-dark))',
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              fontSize: 20, boxShadow: 'var(--shadow-red)', flexShrink: 0,
-            }}>
-              🚗
-            </div>
-            <div>
-              <div style={{ fontWeight: 800, fontSize: '1.1rem', color: 'var(--text-primary)', lineHeight: 1.1 }}>
-                CarIssues<span style={{ color: 'var(--brand-red)' }}>IL</span>
-              </div>
-              <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)', fontWeight: 500 }}>
-                בעיות רכב בישראל
-              </div>
-            </div>
+          <Link href="/" style={{ textDecoration: 'none', flexShrink: 0, display: 'flex', alignItems: 'center' }}>
+            <Image
+              src="/logo-car.png"
+              alt="CarIssues IL"
+              width={180}
+              height={90}
+              style={{ objectFit: 'contain', display: 'block', maxHeight: 72 }}
+              priority
+            />
           </Link>
 
           {/* Desktop nav */}

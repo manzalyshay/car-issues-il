@@ -129,7 +129,7 @@ export default function AdminPage() {
   const [socialSaving, setSocialSaving] = useState(false);
   const [showNewPostForm, setShowNewPostForm] = useState(false);
   const [newPost, setNewPost] = useState({ platform: 'all' as SocialPostRow['platform'], content_he: '', content_en: '', hashtags: '#רכב #ישראל #CarIssuesIL', scheduled_for: new Date().toISOString().slice(0, 16) });
-  const [generatePostType, setGeneratePostType] = useState<'auto' | 'top_rated' | 'worst_rated' | 'most_reviewed' | 'new_review' | 'comparison'>('auto');
+  const [generatePostType, setGeneratePostType] = useState<'auto' | 'top_rated' | 'worst_rated' | 'most_reviewed' | 'new_review' | 'comparison' | 'car_3d_summary'>('auto');
   const [screenshotting, setScreenshotting] = useState<Record<string, boolean>>({});
   const [screenshotPath, setScreenshotPath] = useState<Record<string, string>>({});
   const [publishingPost, setPublishingPost] = useState<Record<string, boolean>>({});
@@ -980,12 +980,13 @@ export default function AdminPage() {
                 <div style={{ fontSize: '0.8125rem', color: 'var(--text-muted)', marginBottom: 8, fontWeight: 600 }}>סוג פוסט:</div>
                 <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
                   {([
-                    ['auto',          '🔀 אוטומטי'],
-                    ['top_rated',     '🏆 הכי מדורגים'],
-                    ['worst_rated',   '⚠️ הכי גרועים'],
-                    ['most_reviewed', '📊 הכי מדוברים'],
-                    ['new_review',    '⭐ ביקורת'],
-                    ['comparison',    '⚖️ השוואה'],
+                    ['auto',            '🔀 אוטומטי'],
+                    ['top_rated',       '🏆 הכי מדורגים'],
+                    ['worst_rated',     '⚠️ הכי גרועים'],
+                    ['most_reviewed',   '📊 הכי מדוברים'],
+                    ['new_review',      '⭐ ביקורת'],
+                    ['comparison',      '⚖️ השוואה'],
+                    ['car_3d_summary',  '🚗 AI + תלת מימד'],
                   ] as const).map(([val, label]) => (
                     <button
                       key={val}
@@ -1151,6 +1152,7 @@ export default function AdminPage() {
                           postType === 'top_rated' || postType === 'most_reviewed' ? '/api/og/top-ranked'
                           : postType === 'worst_rated' && meta?.carSlug ? `/api/og/ai-review/${meta.carSlug}`
                           : postType === 'new_review' && meta?.carSlug ? `/api/og/ai-review/${meta.carSlug}`
+                          : postType === 'car_3d_summary' && meta?.carSlug ? `/api/og/car-3d/${meta.carSlug}`
                           : postType === 'comparison' && typeof meta?.compareUrl === 'string' ? meta.compareUrl
                           : meta?.carSlug ? `/api/og/ai-review/${meta.carSlug}`
                           : '/api/og/top-ranked';

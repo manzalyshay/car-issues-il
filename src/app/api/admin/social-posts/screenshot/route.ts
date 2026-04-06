@@ -40,6 +40,7 @@ export async function POST(req: NextRequest) {
     else if (postType === 'most_reviewed') path = '/api/og/top-ranked';
     else if (postType === 'worst_rated' && meta?.carSlug) path = `/api/og/ai-review/${meta.carSlug}`;
     else if (postType === 'new_review' && meta?.carSlug) path = `/api/og/ai-review/${meta.carSlug}`;
+    else if (postType === 'car_3d_summary' && meta?.carSlug) path = `/api/og/car-3d/${meta.carSlug}`;
     else if (postType === 'comparison' && typeof meta?.compareUrl === 'string') path = meta.compareUrl;
     else if (meta?.carSlug) path = `/api/og/ai-review/${meta.carSlug}`;
     else path = '/api/og/top-ranked';
