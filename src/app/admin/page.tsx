@@ -1111,9 +1111,10 @@ export default function AdminPage() {
                           : '/rankings';
                         const activePath = screenshotPath[post.id] !== undefined ? screenshotPath[post.id] : inferredPath;
                         const presets: [string, string][] = [
+                          ['🏆', '/og/top-ranked'],
+                          ...(meta?.carSlug ? [['🤖', `/og/ai-review/${meta.carSlug}`] as [string, string]] : []),
                           ['🏠', '/'],
-                          ['🏆', '/rankings'],
-                          ...(meta?.carSlug ? [['🚗', `/cars/${meta.carSlug}`] as [string, string]] : []),
+                          ['📊', '/rankings'],
                         ];
                         return (
                           <div style={{ marginBottom: 12 }}>
