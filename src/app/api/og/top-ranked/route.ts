@@ -85,7 +85,7 @@ export async function GET() {
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:28px;">
       <div>
         <div style="font-size:13px;font-weight:600;color:${R};letter-spacing:2px;text-transform:uppercase;margin-bottom:4px;">carissues.co.il</div>
-        <h1 style="font-size:32px;font-weight:900;color:${TEXT};line-height:1.2;">🏆 הרכבים הכי מדורגים בישראל</h1>
+        <h1 style="font-size:27px;font-weight:900;color:${TEXT};line-height:1.3;">🚗 הרכבים שמובילים את הטבלה השבוע – הכי אמינים, הכי בטוחים, הכי מומלצים!</h1>
       </div>
       <div style="background:${CARD};border:1px solid ${BORDER};border-radius:12px;padding:10px 18px;text-align:left;">
         <div style="font-size:11px;color:${MUTED};margin-bottom:2px;">מבוסס על</div>
