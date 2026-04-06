@@ -129,6 +129,7 @@ export default function AdminPage() {
   const [socialSaving, setSocialSaving] = useState(false);
   const [showNewPostForm, setShowNewPostForm] = useState(false);
   const [newPost, setNewPost] = useState({ platform: 'all' as SocialPostRow['platform'], content_he: '', content_en: '', hashtags: '#רכב #ישראל #CarIssuesIL', scheduled_for: new Date().toISOString().slice(0, 16) });
+  const [generatePostType, setGeneratePostType] = useState<'auto' | 'top_rated' | 'worst_rated' | 'most_reviewed' | 'new_review' | 'comparison'>('auto');
   const [screenshotting, setScreenshotting] = useState<Record<string, boolean>>({});
   const [screenshotPath, setScreenshotPath] = useState<Record<string, string>>({});
   const [publishingPost, setPublishingPost] = useState<Record<string, boolean>>({});
@@ -274,7 +275,7 @@ export default function AdminPage() {
       const res = await fetch('/api/admin/social-posts', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ action: 'generate' }),
+        body: JSON.stringify({ action: 'generate', postType: generatePostType === 'auto' ? undefined : generatePostType }),
       });
       if (res.ok) await fetchSocialPosts();
     } catch { /* ignore */ } finally {
@@ -326,6 +327,16 @@ export default function AdminPage() {
     }
   };
 
+  const deletePostScreenshot = async (id: string) => {
+    const token = await getToken();
+    await fetch('/api/admin/social-posts', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+      body: JSON.stringify({ action: 'delete_screenshot', id }),
+    });
+    await fetchSocialPosts();
+  };
+
   const toggleSocialStatus = async (id: string, currentStatus: string) => {
     const next = currentStatus === 'pending' ? 'posted' : 'pending';
     const token = await getToken();
@@ -361,11 +372,19 @@ export default function AdminPage() {
     setPublishingPost(s => ({ ...s, [post.id]: true }));
     try {
       const token = await getToken();
-      await fetch('/api/admin/instagram', {
+      const res = await fetch('/api/admin/instagram', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
         body: JSON.stringify({ action: 'publish', imageUrl, caption: post.content_he, hashtags: post.hashtags, postId: post.id }),
       });
+      if (res.ok) {
+        // Delete screenshot from storage after successful publish
+        await fetch('/api/admin/social-posts', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+          body: JSON.stringify({ action: 'delete_screenshot', id: post.id }),
+        });
+      }
       await fetchSocialPosts();
     } catch { /* ignore */ } finally {
       setPublishingPost(s => ({ ...s, [post.id]: false }));
@@ -958,8 +977,20 @@ export default function AdminPage() {
 
               {/* Actions */}
               <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', alignItems: 'center', marginBottom: 20 }}>
+                <select
+                  value={generatePostType}
+                  onChange={e => setGeneratePostType(e.target.value as typeof generatePostType)}
+                  style={{ padding: '10px 14px', borderRadius: 8, border: '1px solid var(--border)', background: 'var(--bg-card)', color: 'var(--text-primary)', fontSize: '0.875rem', cursor: 'pointer' }}
+                >
+                  <option value="auto">אוטומטי (לפי יום)</option>
+                  <option value="top_rated">🏆 הכי מדורגים</option>
+                  <option value="worst_rated">⚠️ הכי פחות מדורגים</option>
+                  <option value="most_reviewed">📊 הכי מרובי ביקורות</option>
+                  <option value="new_review">⭐ ביקורת חדשה</option>
+                  <option value="comparison">⚖️ השוואה</option>
+                </select>
                 <button className="btn btn-primary" onClick={generateSocialPost} disabled={socialGenerating}>
-                  {socialGenerating ? 'מייצר...' : '✨ צור פוסט אוטומטי'}
+                  {socialGenerating ? 'מייצר...' : '✨ צור פוסט'}
                 </button>
                 <button onClick={() => setShowNewPostForm(v => !v)} style={{ padding: '10px 20px', borderRadius: 8, border: '1px solid var(--border)', background: 'transparent', cursor: 'pointer', fontWeight: 600, color: 'var(--text-secondary)' }}>
                   {showNewPostForm ? 'ביטול' : '+ פוסט ידני'}
@@ -1095,6 +1126,9 @@ export default function AdminPage() {
                             <button onClick={() => publishPost(post)} disabled={publishingPost[post.id]} style={{ padding: '6px 14px', borderRadius: 7, border: 'none', background: '#1877f2', cursor: 'pointer', fontSize: '0.8125rem', fontWeight: 700, color: '#fff', whiteSpace: 'nowrap' }}>
                               {publishingPost[post.id] ? 'מפרסם...' : '🚀 פרסם'}
                             </button>
+                          )}
+                          {!!(post.metadata as Record<string,unknown>)?.image_url && (
+                            <button onClick={() => deletePostScreenshot(post.id)} title="מחק צילום מסך" style={{ padding: '6px 10px', borderRadius: 7, border: '1px solid var(--border)', background: 'transparent', cursor: 'pointer', fontSize: '0.8125rem', color: 'var(--text-muted)' }}>🗑</button>
                           )}
                           <button onClick={() => setEditSocialPost(post)} style={{ padding: '6px 14px', borderRadius: 7, border: '1px solid var(--border)', background: 'transparent', cursor: 'pointer', fontSize: '0.8125rem', fontWeight: 600, color: 'var(--text-secondary)' }}>ערוך</button>
                           <button onClick={() => deleteSocialPost(post.id)} style={{ padding: '6px 14px', borderRadius: 7, border: '1px solid var(--brand-red)', background: 'transparent', cursor: 'pointer', fontSize: '0.8125rem', fontWeight: 600, color: 'var(--brand-red)' }}>מחק</button>

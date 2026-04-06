@@ -2,6 +2,20 @@ import { NextRequest, NextResponse } from 'next/server';
 import { isAdmin, getServiceClient } from '@/lib/adminAuth';
 import { generateDailyPost } from '@/lib/socialPost';
 
+function screenshotFilename(imageUrl: string): string | null {
+  // URL format: .../storage/v1/object/public/social-screenshots/FILENAME.jpg
+  try {
+    const parts = new URL(imageUrl).pathname.split('/');
+    const idx = parts.indexOf('social-screenshots');
+    return idx !== -1 ? parts.slice(idx + 1).join('/') : null;
+  } catch { return null; }
+}
+
+async function deleteScreenshot(sb: ReturnType<typeof getServiceClient>, imageUrl: string) {
+  const filename = screenshotFilename(imageUrl);
+  if (filename) await sb.storage.from('social-screenshots').remove([filename]);
+}
+
 export async function GET(req: NextRequest) {
   if (!await isAdmin(req)) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
@@ -24,7 +38,7 @@ export async function POST(req: NextRequest) {
   const sb = getServiceClient();
 
   if (action === 'generate') {
-    const post = await generateDailyPost();
+    const post = await generateDailyPost(body.postType);
     if (!post) return NextResponse.json({ error: 'no post generated' }, { status: 400 });
     return NextResponse.json({ ok: true, post });
   }
@@ -57,7 +71,24 @@ export async function POST(req: NextRequest) {
 
   if (action === 'delete') {
     const { id } = body;
+    // Fetch post first to get screenshot URL, then delete both
+    const { data: post } = await sb.from('social_posts').select('metadata').eq('id', id).single();
+    const imageUrl = (post?.metadata as Record<string, unknown> | null)?.image_url as string | undefined;
+    if (imageUrl) await deleteScreenshot(sb, imageUrl);
     const { error } = await sb.from('social_posts').delete().eq('id', id);
+    if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+    return NextResponse.json({ ok: true });
+  }
+
+  if (action === 'delete_screenshot') {
+    const { id } = body;
+    const { data: post } = await sb.from('social_posts').select('metadata').eq('id', id).single();
+    const meta = post?.metadata as Record<string, unknown> | null;
+    const imageUrl = meta?.image_url as string | undefined;
+    if (imageUrl) await deleteScreenshot(sb, imageUrl);
+    const { error } = await sb.from('social_posts').update({
+      metadata: { ...meta, image_url: null },
+    }).eq('id', id);
     if (error) return NextResponse.json({ error: error.message }, { status: 500 });
     return NextResponse.json({ ok: true });
   }

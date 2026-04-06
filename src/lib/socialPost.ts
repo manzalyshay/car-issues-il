@@ -14,7 +14,7 @@ export interface SocialPost {
 
 type PostType = 'top_rated' | 'worst_rated' | 'most_reviewed' | 'new_review' | 'comparison';
 
-export async function generateDailyPost(): Promise<SocialPost | null> {
+export async function generateDailyPost(forceType?: PostType): Promise<SocialPost | null> {
   const sb = getServiceClient();
   const makes = await getAllMakes();
   const lookup = new Map<string, { makeHe: string; modelHe: string; makeEn: string; modelEn: string; makeSlug: string; modelSlug: string }>();
@@ -29,7 +29,7 @@ export async function generateDailyPost(): Promise<SocialPost | null> {
 
   // Pick post type based on day of week
   const dayTypes: PostType[] = ['top_rated', 'new_review', 'worst_rated', 'most_reviewed', 'comparison', 'top_rated', 'new_review'];
-  const postType = dayTypes[new Date().getDay()];
+  const postType = forceType ?? dayTypes[new Date().getDay()];
 
   // Build score map
   const scoreMap = new Map<string, number>();
