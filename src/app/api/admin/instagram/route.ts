@@ -102,15 +102,27 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    // Mark post as published
+    // Only mark as posted if at least one platform succeeded
+    const igOk = !results.instagram_error && !!results.instagram;
+    const fbOk = !results.facebook_error && !!results.facebook;
+    const anySuccess = igOk || fbOk;
+
     if (postId) {
       const { getServiceClient } = await import('@/lib/adminAuth');
       const sb = getServiceClient();
       const { data: existing } = await sb.from('social_posts').select('metadata').eq('id', postId).single();
       await sb.from('social_posts').update({
-        status: 'posted',
-        metadata: { ...(existing?.metadata ?? {}), published_at: new Date().toISOString(), ...results },
+        status: anySuccess ? 'posted' : 'failed',
+        metadata: { ...(existing?.metadata ?? {}), ...(anySuccess ? { published_at: new Date().toISOString() } : {}), ...results },
       }).eq('id', postId);
+    }
+
+    if (!anySuccess) {
+      return NextResponse.json({
+        ok: false,
+        error: [results.instagram_error, results.facebook_error].filter(Boolean).join(' | '),
+        ...results,
+      }, { status: 400 });
     }
 
     return NextResponse.json({ ok: true, ...results });
@@ -127,17 +139,17 @@ export async function POST(req: NextRequest) {
 
   // ── Refresh token (exchange short-lived for 60-day) ──────────────────────────
   if (action === 'refresh_token') {
-    const { newToken } = body; // user pastes their current token
+    const { newToken } = body;
     const appId = process.env.FB_APP_ID;
     const appSecret = process.env.FB_APP_SECRET;
-    if (!appId || !appSecret) return NextResponse.json({ error: 'FB_APP_ID / FB_APP_SECRET not set in env' }, { status: 500 });
+    if (!appId || !appSecret) return NextResponse.json({ error: 'FB_APP_ID / FB_APP_SECRET חסרים ב-Vercel env vars' }, { status: 500 });
+    if (!newToken) return NextResponse.json({ error: 'יש להדביק טוקן חדש מ-Graph API Explorer' }, { status: 400 });
 
-    const currentToken = newToken || (await getToken());
     const res = await fetch(
-      `https://graph.facebook.com/oauth/access_token?grant_type=fb_exchange_token&client_id=${appId}&client_secret=${appSecret}&fb_exchange_token=${currentToken}`
+      `https://graph.facebook.com/oauth/access_token?grant_type=fb_exchange_token&client_id=${appId}&client_secret=${appSecret}&fb_exchange_token=${newToken}`
     );
     const data = await res.json();
-    if (data.error) return NextResponse.json({ error: data.error.message }, { status: 400 });
+    if (data.error) return NextResponse.json({ error: `Facebook: ${data.error.message}` }, { status: 400 });
 
     const expiresAt = new Date(Date.now() + (data.expires_in ?? 5184000) * 1000).toISOString();
     await saveToken(data.access_token, expiresAt);

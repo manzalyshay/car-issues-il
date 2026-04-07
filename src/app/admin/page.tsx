@@ -437,13 +437,15 @@ export default function AdminPage() {
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
         body: JSON.stringify({ action: 'publish', imageUrl, caption: post.content_he, hashtags: post.hashtags, postId: post.id, includeStory }),
       });
-      if (res.ok) {
-        // Delete screenshot from storage after successful publish
+      const data = await res.json();
+      if (res.ok && data.ok) {
         await fetch('/api/admin/social-posts', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
           body: JSON.stringify({ action: 'delete_screenshot', id: post.id }),
         });
+      } else {
+        alert(`שגיאה בפרסום:\n${data.error || JSON.stringify(data)}`);
       }
       await fetchSocialPosts();
     } catch { /* ignore */ } finally {
