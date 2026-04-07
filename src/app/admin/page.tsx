@@ -448,7 +448,26 @@ export default function AdminPage() {
         body: JSON.stringify({ action: 'publish', imageUrl, caption: post.content_he, hashtags: post.hashtags, postId: post.id, includeStory }),
       });
       const data = await res.json();
-      alert(`תגובת API (status ${res.status}):\n${JSON.stringify(data, null, 2)}`);
+      // Build a human-readable per-platform result
+      const lines: string[] = [`סטטוס HTTP: ${res.status}`, ''];
+      if (data.ig_post_id) {
+        lines.push(`📸 Instagram: ✅ פורסם`);
+        if (data.ig_permalink) lines.push(`   קישור: ${data.ig_permalink}`);
+      } else {
+        lines.push(`📸 Instagram: ❌ נכשל`);
+        if (data.instagram_error) lines.push(`   שגיאה: ${data.instagram_error}`);
+      }
+      if (data.fb_post_id) {
+        lines.push(`👍 Facebook: ✅ פורסם`);
+        if (data.fb_post_url) lines.push(`   קישור: ${data.fb_post_url}`);
+      } else {
+        lines.push(`👍 Facebook: ❌ נכשל`);
+        if (data.facebook_error) lines.push(`   שגיאה: ${data.facebook_error}`);
+      }
+      if (!data.ig_post_id && !data.fb_post_id) {
+        lines.push('', '⚠️ שום דבר לא פורסם בפועל');
+      }
+      alert(lines.join('\n'));
       await fetchSocialPosts();
     } catch (err) {
       alert(`שגיאת רשת: ${String(err)}`);
