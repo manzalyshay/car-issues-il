@@ -170,11 +170,23 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ ok: true, ...results });
   }
 
+  // ── Clear stored token ───────────────────────────────────────────────────────
+  if (action === 'clear_token') {
+    const sb = getServiceClient();
+    await sb.storage.from('social-screenshots').remove([SETTINGS_FILE]);
+    return NextResponse.json({ ok: true });
+  }
+
   // ── Debug: test token + raw API responses ────────────────────────────────────
   if (action === 'debug_publish') {
     const { imageUrl } = body;
     const t = await getToken();
     const debug: Record<string, unknown> = { tokenFirst20: t ? t.slice(0, 20) + '...' : 'MISSING' };
+    // Check token permissions
+    try {
+      const permsRes = await fetch(`${API}/me/permissions?access_token=${t}`).then(r => r.json());
+      debug.permissions = (permsRes.data ?? []).filter((p: Record<string, string>) => p.status === 'granted').map((p: Record<string, string>) => p.permission);
+    } catch (e) { debug.permissions_error = String(e); }
     // Test token validity
     try {
       const meRes = await fetch(`${API}/me?fields=id,name&access_token=${t}`).then(r => r.json());

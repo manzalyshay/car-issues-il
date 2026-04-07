@@ -281,6 +281,17 @@ export default function AdminPage() {
     }
   }, [isAdmin, tab, fetchSocialPosts, getToken]);
 
+  const clearFbToken = async () => {
+    if (!confirm('למחוק את הטוקן השמור? תצטרך להדביק טוקן חדש כדי לפרסם.')) return;
+    const t = await getToken();
+    await fetch('/api/admin/instagram', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${t}` },
+      body: JSON.stringify({ action: 'clear_token' }),
+    });
+    setTokenStatus(null);
+  };
+
   const refreshFbToken = async () => {
     setTokenRefreshing(true);
     try {
@@ -1093,6 +1104,10 @@ export default function AdminPage() {
                         style={{ padding: '6px 10px', borderRadius: 7, border: '1px solid var(--border)', background: 'transparent', cursor: 'pointer', fontSize: '0.8rem', color: 'var(--text-muted)', whiteSpace: 'nowrap', flexShrink: 0 }}>
                         🔍 בדוק
                       </button>
+                      <button onClick={clearFbToken}
+                        style={{ padding: '6px 10px', borderRadius: 7, border: '1px solid #f43f5e60', background: 'transparent', cursor: 'pointer', fontSize: '0.8rem', color: '#f43f5e', whiteSpace: 'nowrap', flexShrink: 0 }}>
+                        🗑️ נקה טוקן
+                      </button>
                     </div>
                     <details style={{ borderTop: `1px solid ${col}20` }}>
                       <summary style={{ padding: '7px 14px', cursor: 'pointer', fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-muted)', listStyle: 'none' }}>▸ איך מקבלים טוקן חדש?</summary>
@@ -1333,8 +1348,9 @@ export default function AdminPage() {
                                 <>
                                   <span style={{ fontSize: '0.78rem', fontWeight: 800, color: '#f43f5e' }}>✗ נכשל</span>
                                   {!!meta?.instagram_error && (
-                                    <span style={{ fontSize: '0.68rem', color: '#f43f5e', flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', direction: 'ltr', textAlign: 'left' }} title={String(meta.instagram_error)}>
-                                      {String(meta.instagram_error).slice(0, 80)}
+                                    <span style={{ fontSize: '0.68rem', color: '#f43f5e', flex: 1, direction: 'ltr', textAlign: 'left', userSelect: 'text', cursor: 'text', wordBreak: 'break-all' }}>
+                                      {String(meta.instagram_error)}
+                                      <button onClick={() => navigator.clipboard.writeText(String(meta.instagram_error))} title="העתק שגיאה" style={{ marginRight: 6, padding: '1px 6px', fontSize: '0.65rem', cursor: 'pointer', borderRadius: 4, border: '1px solid #f43f5e80', background: 'transparent', color: '#f43f5e' }}>העתק</button>
                                     </span>
                                   )}
                                 </>
@@ -1353,8 +1369,9 @@ export default function AdminPage() {
                                 <>
                                   <span style={{ fontSize: '0.78rem', fontWeight: 800, color: '#f43f5e' }}>✗ נכשל</span>
                                   {!!meta?.facebook_error && (
-                                    <span style={{ fontSize: '0.68rem', color: '#f43f5e', flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', direction: 'ltr', textAlign: 'left' }} title={String(meta.facebook_error)}>
-                                      {String(meta.facebook_error).slice(0, 80)}
+                                    <span style={{ fontSize: '0.68rem', color: '#f43f5e', flex: 1, direction: 'ltr', textAlign: 'left', userSelect: 'text', cursor: 'text', wordBreak: 'break-all' }}>
+                                      {String(meta.facebook_error)}
+                                      <button onClick={() => navigator.clipboard.writeText(String(meta.facebook_error))} title="העתק שגיאה" style={{ marginRight: 6, padding: '1px 6px', fontSize: '0.65rem', cursor: 'pointer', borderRadius: 4, border: '1px solid #f43f5e80', background: 'transparent', color: '#f43f5e' }}>העתק</button>
                                     </span>
                                   )}
                                 </>
