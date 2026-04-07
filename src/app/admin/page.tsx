@@ -1061,6 +1061,17 @@ export default function AdminPage() {
                     <button onClick={refreshFbToken} disabled={tokenRefreshing} className="btn btn-primary" style={{ whiteSpace: 'nowrap', fontSize: '0.8125rem' }}>
                       {tokenRefreshing ? '⏳...' : '🔄 חדש טוקן'}
                     </button>
+                    <button
+                      onClick={async () => {
+                        const t = await getToken();
+                        const res = await fetch('/api/admin/instagram', { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${t}` }, body: JSON.stringify({ action: 'debug_publish' }) });
+                        const d = await res.json();
+                        alert(JSON.stringify(d, null, 2));
+                      }}
+                      style={{ padding: '6px 12px', borderRadius: 7, border: '1px solid var(--border)', background: 'transparent', cursor: 'pointer', fontSize: '0.8125rem', color: 'var(--text-muted)', whiteSpace: 'nowrap' }}
+                    >
+                      🔍 בדוק
+                    </button>
                   </div>
                   {/* Instructions */}
                   <details style={{ fontSize: '0.8125rem', color: 'var(--text-muted)' }}>
@@ -1256,10 +1267,10 @@ export default function AdminPage() {
                           {(() => {
                             const meta = post.metadata as Record<string, unknown> | null;
                             if (!meta?.published_at) return null;
-                            const igOk = !meta.instagram_error;
-                            const fbOk = !meta.facebook_error;
-                            const igStoryOk = !!meta.instagram_story;
-                            const fbStoryOk = !!meta.facebook_story;
+                            const igOk = !!meta.ig_post_id;
+                            const fbOk = !!meta.fb_post_id;
+                            const igStoryOk = !!(meta.instagram_story as Record<string,unknown>)?.id;
+                            const fbStoryOk = !!(meta.facebook_story as Record<string,unknown>)?.id;
                             const badgeStyle = (ok: boolean) => ({ fontSize: '0.7rem', padding: '2px 7px', borderRadius: 9999 as number, background: ok ? '#e8f5e9' : '#fdecea', color: ok ? '#2e7d32' : '#c62828', fontWeight: 700, textDecoration: 'none' });
                             const IgBadge = meta.ig_permalink
                               ? <a href={meta.ig_permalink as string} target="_blank" rel="noreferrer" title="פתח בInstagram" style={badgeStyle(igOk)}>📸 IG {igOk ? '✓' : '✗'}</a>

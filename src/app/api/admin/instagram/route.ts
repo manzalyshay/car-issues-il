@@ -117,9 +117,9 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    // Only mark as posted if at least one platform succeeded (no error key = success)
-    const igOk = !results.instagram_error;
-    const fbOk = !results.facebook_error;
+    // Only mark as posted if we actually got a post ID back (not just absence of errors)
+    const igOk = !!results.ig_post_id;
+    const fbOk = !!results.fb_post_id;
     const anySuccess = igOk || fbOk;
 
     if (postId) {
@@ -138,11 +138,18 @@ export async function POST(req: NextRequest) {
         } catch { /* non-fatal */ }
       }
 
+      // Strip all previous publish result fields so old errors/successes don't bleed through
+      const { instagram: _ig, facebook: _fb, instagram_story: _igs, facebook_story: _fbs,
+              instagram_error: _ige, facebook_error: _fbe, instagram_story_error: _igse, facebook_story_error: _fbse,
+              ig_post_id: _igid, ig_permalink: _igpl, ig_media_url: _igmu,
+              fb_post_id: _fbid, fb_post_url: _fburl, published_at: _pa,
+              ...coreMeta } = existingMeta;
+
       await sb.from('social_posts').update({
         status: anySuccess ? 'posted' : 'failed',
         metadata: {
-          ...existingMeta,
-          ...(anySuccess ? { published_at: new Date().toISOString(), image_url: null } : {}),
+          ...coreMeta,
+          ...(anySuccess ? { published_at: new Date().toISOString(), image_url: null } : { image_url: existingMeta.image_url }),
           ...results,
         },
       }).eq('id', postId);
@@ -157,6 +164,44 @@ export async function POST(req: NextRequest) {
     }
 
     return NextResponse.json({ ok: true, ...results });
+  }
+
+  // ── Debug: test token + raw API responses ────────────────────────────────────
+  if (action === 'debug_publish') {
+    const { imageUrl } = body;
+    const t = await getToken();
+    const debug: Record<string, unknown> = { tokenFirst20: t ? t.slice(0, 20) + '...' : 'MISSING' };
+    // Test token validity
+    try {
+      const meRes = await fetch(`${API}/me?fields=id,name&access_token=${t}`).then(r => r.json());
+      debug.me = meRes;
+    } catch (e) { debug.me_error = String(e); }
+    // Test IG account
+    try {
+      const igRes = await fetch(`${API}/${IG_ID()}?fields=id,username&access_token=${t}`).then(r => r.json());
+      debug.ig_account = igRes;
+    } catch (e) { debug.ig_account_error = String(e); }
+    // Test FB page
+    try {
+      const fbRes = await fetch(`${API}/${PAGE_ID()}?fields=id,name&access_token=${t}`).then(r => r.json());
+      debug.fb_page = fbRes;
+    } catch (e) { debug.fb_page_error = String(e); }
+    // Test IG container creation (if imageUrl provided)
+    if (imageUrl) {
+      try {
+        const url = `${API}/${IG_ID()}/media`;
+        const rawRes = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ image_url: imageUrl, caption: 'test', access_token: t }) });
+        debug.ig_container_status = rawRes.status;
+        debug.ig_container = await rawRes.json();
+      } catch (e) { debug.ig_container_error = String(e); }
+      try {
+        const url = `${API}/${PAGE_ID()}/photos`;
+        const rawRes = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ url: imageUrl, message: 'test', published: false, access_token: t }) });
+        debug.fb_photo_status = rawRes.status;
+        debug.fb_photo = await rawRes.json();
+      } catch (e) { debug.fb_photo_error = String(e); }
+    }
+    return NextResponse.json(debug);
   }
 
   // ── Token status ─────────────────────────────────────────────────────────────
