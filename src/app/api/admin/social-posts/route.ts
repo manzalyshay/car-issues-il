@@ -144,6 +144,20 @@ Return ONLY a raw JSON object (no markdown, no code blocks) with these fields:
     return NextResponse.json({ ok: true });
   }
 
+  if (action === 'reset_post') {
+    const { id } = body;
+    const { data: post } = await sb.from('social_posts').select('metadata').eq('id', id).single();
+    const meta = (post?.metadata ?? {}) as Record<string, unknown>;
+    // Strip all publish-related fields, keep postType / carSlug / screenshot_path
+    const { published_at: _pa, instagram: _ig, facebook: _fb, instagram_story: _igs, facebook_story: _fbs,
+            instagram_error: _ige, facebook_error: _fbe, instagram_story_error: _igse, facebook_story_error: _fbse,
+            ig_post_id: _igid, ig_permalink: _igpl, ig_media_url: _igmu, fb_post_id: _fbid, fb_post_url: _fburl,
+            ...cleanMeta } = meta;
+    const { error } = await sb.from('social_posts').update({ status: 'pending', metadata: cleanMeta }).eq('id', id);
+    if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+    return NextResponse.json({ ok: true });
+  }
+
   if (action === 'delete_screenshot') {
     const { id } = body;
     const { data: post } = await sb.from('social_posts').select('metadata').eq('id', id).single();

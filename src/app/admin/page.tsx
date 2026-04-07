@@ -397,6 +397,16 @@ export default function AdminPage() {
     await fetchSocialPosts();
   };
 
+  const resetPost = async (id: string) => {
+    const token = await getToken();
+    await fetch('/api/admin/social-posts', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+      body: JSON.stringify({ action: 'reset_post', id }),
+    });
+    await fetchSocialPosts();
+  };
+
   const toggleSocialStatus = async (id: string, currentStatus: string) => {
     const next = currentStatus === 'pending' ? 'posted' : 'pending';
     const token = await getToken();
@@ -438,13 +448,7 @@ export default function AdminPage() {
         body: JSON.stringify({ action: 'publish', imageUrl, caption: post.content_he, hashtags: post.hashtags, postId: post.id, includeStory }),
       });
       const data = await res.json();
-      if (res.ok && data.ok) {
-        await fetch('/api/admin/social-posts', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-          body: JSON.stringify({ action: 'delete_screenshot', id: post.id }),
-        });
-      } else {
+      if (!res.ok || !data.ok) {
         alert(`שגיאה בפרסום:\n${data.error || JSON.stringify(data)}`);
       }
       await fetchSocialPosts();
@@ -1256,16 +1260,19 @@ export default function AdminPage() {
                             const fbOk = !meta.facebook_error;
                             const igStoryOk = !!meta.instagram_story;
                             const fbStoryOk = !!meta.facebook_story;
+                            const badgeStyle = (ok: boolean) => ({ fontSize: '0.7rem', padding: '2px 7px', borderRadius: 9999 as number, background: ok ? '#e8f5e9' : '#fdecea', color: ok ? '#2e7d32' : '#c62828', fontWeight: 700, textDecoration: 'none' });
+                            const IgBadge = meta.ig_permalink
+                              ? <a href={meta.ig_permalink as string} target="_blank" rel="noreferrer" title="פתח בInstagram" style={badgeStyle(igOk)}>📸 IG {igOk ? '✓' : '✗'}</a>
+                              : <span title={meta.instagram_error as string || 'Instagram'} style={badgeStyle(igOk)}>📸 IG {igOk ? '✓' : '✗'}</span>;
+                            const FbBadge = meta.fb_post_url
+                              ? <a href={meta.fb_post_url as string} target="_blank" rel="noreferrer" title="פתח בFacebook" style={badgeStyle(fbOk)}>👍 FB {fbOk ? '✓' : '✗'}</a>
+                              : <span title={meta.facebook_error as string || 'Facebook'} style={badgeStyle(fbOk)}>👍 FB {fbOk ? '✓' : '✗'}</span>;
                             return (
                               <span style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
-                                <span title={meta.instagram_error as string || 'Instagram'} style={{ fontSize: '0.7rem', padding: '2px 7px', borderRadius: 9999, background: igOk ? '#e8f5e9' : '#fdecea', color: igOk ? '#2e7d32' : '#c62828', fontWeight: 700 }}>
-                                  📸 IG {igOk ? '✓' : '✗'}
-                                </span>
-                                <span title={meta.facebook_error as string || 'Facebook'} style={{ fontSize: '0.7rem', padding: '2px 7px', borderRadius: 9999, background: fbOk ? '#e8f5e9' : '#fdecea', color: fbOk ? '#2e7d32' : '#c62828', fontWeight: 700 }}>
-                                  👍 FB {fbOk ? '✓' : '✗'}
-                                </span>
+                                {IgBadge}
+                                {FbBadge}
                                 {(igStoryOk || fbStoryOk || !!meta.instagram_story_error || !!meta.facebook_story_error) && (
-                                  <span style={{ fontSize: '0.7rem', padding: '2px 7px', borderRadius: 9999, background: (igStoryOk || fbStoryOk) ? '#e8f5e9' : '#fdecea', color: (igStoryOk || fbStoryOk) ? '#2e7d32' : '#c62828', fontWeight: 700 }}>
+                                  <span style={badgeStyle(igStoryOk || fbStoryOk)}>
                                     🎬 סטורי {(igStoryOk || fbStoryOk) ? '✓' : '✗'}
                                   </span>
                                 )}
@@ -1294,6 +1301,9 @@ export default function AdminPage() {
                           {!!(post.metadata as Record<string,unknown>)?.image_url && (
                             <button onClick={() => deletePostScreenshot(post.id)} title="מחק צילום מסך" style={{ padding: '6px 10px', borderRadius: 7, border: '1px solid var(--border)', background: 'transparent', cursor: 'pointer', fontSize: '0.8125rem', color: 'var(--text-muted)' }}>🗑</button>
                           )}
+                          {(post.status === 'posted' || post.status === 'failed') && (
+                            <button onClick={() => resetPost(post.id)} title="אפס לממתין" style={{ padding: '6px 14px', borderRadius: 7, border: '1px solid var(--border)', background: 'transparent', cursor: 'pointer', fontSize: '0.8125rem', fontWeight: 600, color: 'var(--text-muted)' }}>🔄 אפס</button>
+                          )}
                           <button onClick={() => setEditSocialPost(post)} style={{ padding: '6px 14px', borderRadius: 7, border: '1px solid var(--border)', background: 'transparent', cursor: 'pointer', fontSize: '0.8125rem', fontWeight: 600, color: 'var(--text-secondary)' }}>ערוך</button>
                           <button onClick={() => deleteSocialPost(post.id)} style={{ padding: '6px 14px', borderRadius: 7, border: '1px solid var(--brand-red)', background: 'transparent', cursor: 'pointer', fontSize: '0.8125rem', fontWeight: 600, color: 'var(--brand-red)' }}>מחק</button>
                         </div>
@@ -1317,12 +1327,13 @@ export default function AdminPage() {
                           ['🏠', '/'],
                           ['📊', '/rankings'],
                         ];
+                        const thumbUrl = (meta?.image_url || meta?.ig_media_url) as string | undefined;
                         return (
                           <div style={{ marginBottom: 12 }}>
-                            {!!meta?.image_url && (
+                            {!!thumbUrl && (
                               // eslint-disable-next-line @next/next/no-img-element
                               <img
-                                src={meta.image_url as string}
+                                src={thumbUrl}
                                 alt="screenshot"
                                 style={{ width: '100%', borderRadius: 10, display: 'block', border: '1px solid var(--border)', maxHeight: 340, objectFit: 'cover', objectPosition: 'top', marginBottom: 8 }}
                               />

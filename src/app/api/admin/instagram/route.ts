@@ -62,12 +62,20 @@ export async function POST(req: NextRequest) {
     const fullCaption = ensureSiteLink(`${caption}\n\n${hashtags}`);
     const results: Record<string, unknown> = {};
 
-    // Instagram post: create container → publish
+    // Instagram post: create container → publish → fetch media details
     try {
       const container = await gql(`${IG_ID()}/media`, 'POST', { image_url: imageUrl, caption: fullCaption });
       if (container.error) throw new Error(container.error.message);
       const published = await gql(`${IG_ID()}/media_publish`, 'POST', { creation_id: container.id });
       results.instagram = published;
+      results.ig_post_id = published.id;
+      // Fetch permalink and media_url for the published post
+      try {
+        const t = await getToken();
+        const details = await fetch(`${API}/${published.id}?fields=permalink,media_url&access_token=${t}`).then(r => r.json());
+        if (details.permalink) results.ig_permalink = details.permalink;
+        if (details.media_url) results.ig_media_url = details.media_url;
+      } catch { /* non-fatal */ }
     } catch (e) {
       results.instagram_error = String(e);
     }
@@ -76,6 +84,11 @@ export async function POST(req: NextRequest) {
     try {
       const fb = await gql(`${PAGE_ID()}/photos`, 'POST', { url: imageUrl, message: fullCaption });
       results.facebook = fb;
+      const fbId = (fb as Record<string, string>).post_id ?? (fb as Record<string, string>).id;
+      if (fbId) {
+        results.fb_post_id = fbId;
+        results.fb_post_url = `https://www.facebook.com/${fbId}`;
+      }
     } catch (e) {
       results.facebook_error = String(e);
     }
@@ -113,9 +126,25 @@ export async function POST(req: NextRequest) {
       const { getServiceClient } = await import('@/lib/adminAuth');
       const sb = getServiceClient();
       const { data: existing } = await sb.from('social_posts').select('metadata').eq('id', postId).single();
+      const existingMeta = (existing?.metadata ?? {}) as Record<string, unknown>;
+
+      // Delete screenshot from storage after successful publish to save space
+      if (anySuccess && existingMeta.image_url) {
+        try {
+          const parts = new URL(existingMeta.image_url as string).pathname.split('/');
+          const idx = parts.indexOf('social-screenshots');
+          const filename = idx !== -1 ? parts.slice(idx + 1).join('/') : null;
+          if (filename) await sb.storage.from('social-screenshots').remove([filename]);
+        } catch { /* non-fatal */ }
+      }
+
       await sb.from('social_posts').update({
         status: anySuccess ? 'posted' : 'failed',
-        metadata: { ...(existing?.metadata ?? {}), ...(anySuccess ? { published_at: new Date().toISOString() } : {}), ...results },
+        metadata: {
+          ...existingMeta,
+          ...(anySuccess ? { published_at: new Date().toISOString(), image_url: null } : {}),
+          ...results,
+        },
       }).eq('id', postId);
     }
 
