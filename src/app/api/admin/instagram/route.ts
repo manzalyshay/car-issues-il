@@ -117,10 +117,14 @@ export async function POST(req: NextRequest) {
       }
     }
 
+    // Log everything for debugging
+    console.error('[publish] results:', JSON.stringify(results));
+
     // Only mark as posted if we actually got a post ID back (not just absence of errors)
     const igOk = !!results.ig_post_id;
     const fbOk = !!results.fb_post_id;
     const anySuccess = igOk || fbOk;
+    console.error('[publish] igOk:', igOk, 'fbOk:', fbOk, 'anySuccess:', anySuccess);
 
     if (postId) {
       const { getServiceClient } = await import('@/lib/adminAuth');

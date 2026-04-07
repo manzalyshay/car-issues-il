@@ -448,11 +448,11 @@ export default function AdminPage() {
         body: JSON.stringify({ action: 'publish', imageUrl, caption: post.content_he, hashtags: post.hashtags, postId: post.id, includeStory }),
       });
       const data = await res.json();
-      if (!res.ok || !data.ok) {
-        alert(`שגיאה בפרסום:\n${data.error || JSON.stringify(data)}`);
-      }
+      alert(`תגובת API (status ${res.status}):\n${JSON.stringify(data, null, 2)}`);
       await fetchSocialPosts();
-    } catch { /* ignore */ } finally {
+    } catch (err) {
+      alert(`שגיאת רשת: ${String(err)}`);
+    } finally {
       setPublishingPost(s => ({ ...s, [post.id]: false }));
     }
   };
