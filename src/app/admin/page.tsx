@@ -145,6 +145,9 @@ export default function AdminPage() {
   const [pageInfoForm, setPageInfoForm] = useState({ about: '', description: '', website: '' });
   const [existingPostsTab, setExistingPostsTab] = useState<'instagram' | 'facebook'>('instagram');
   const [loadingExisting, setLoadingExisting] = useState(false);
+  const [tokenStatus, setTokenStatus] = useState<{ daysLeft: number | null; expiresAt: string | null } | null>(null);
+  const [tokenRefreshing, setTokenRefreshing] = useState(false);
+  const [pasteToken, setPasteToken] = useState('');
 
 
   const getToken = useCallback(async () => {
@@ -268,8 +271,32 @@ export default function AdminPage() {
   }, [getToken]);
 
   useEffect(() => {
-    if (isAdmin && tab === 'social_posts') fetchSocialPosts();
-  }, [isAdmin, tab, fetchSocialPosts]);
+    if (isAdmin && tab === 'social_posts') {
+      fetchSocialPosts();
+      getToken().then(t => fetch('/api/admin/instagram', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${t}` },
+        body: JSON.stringify({ action: 'get_token_status' }),
+      }).then(r => r.json()).then(d => setTokenStatus(d)).catch(() => {}));
+    }
+  }, [isAdmin, tab, fetchSocialPosts, getToken]);
+
+  const refreshFbToken = async () => {
+    setTokenRefreshing(true);
+    try {
+      const t = await getToken();
+      const res = await fetch('/api/admin/instagram', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${t}` },
+        body: JSON.stringify({ action: 'refresh_token', newToken: pasteToken || undefined }),
+      });
+      const data = await res.json();
+      if (data.ok) { setTokenStatus({ daysLeft: data.daysLeft, expiresAt: data.expiresAt }); setPasteToken(''); }
+      else alert(data.error);
+    } catch { /* ignore */ } finally {
+      setTokenRefreshing(false);
+    }
+  };
 
   const generateSocialPost = async () => {
     setSocialGenerating(true);
@@ -1007,6 +1034,33 @@ export default function AdminPage() {
                   </div>
                 ))}
               </div>
+
+              {/* FB Token status */}
+              {tokenStatus && (
+                <div className="card" style={{ padding: '14px 20px', marginBottom: 16, display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap', borderRight: `4px solid ${tokenStatus.daysLeft !== null && tokenStatus.daysLeft <= 7 ? '#e63946' : tokenStatus.daysLeft !== null && tokenStatus.daysLeft <= 20 ? '#f4a261' : '#2a9d8f'}` }}>
+                  <div style={{ flex: 1 }}>
+                    <span style={{ fontWeight: 700, fontSize: '0.875rem' }}>🔑 טוקן Facebook: </span>
+                    <span style={{ fontSize: '0.875rem', color: tokenStatus.daysLeft !== null && tokenStatus.daysLeft <= 7 ? '#e63946' : 'var(--text-secondary)' }}>
+                      {tokenStatus.daysLeft !== null ? `${tokenStatus.daysLeft} ימים נותרו` : 'מ-env vars'}
+                      {tokenStatus.expiresAt ? ` (עד ${new Date(tokenStatus.expiresAt).toLocaleDateString('he-IL')})` : ''}
+                    </span>
+                  </div>
+                  <input
+                    value={pasteToken}
+                    onChange={e => setPasteToken(e.target.value)}
+                    placeholder="הדבק טוקן חדש (אופציונלי)"
+                    style={{ flex: 2, minWidth: 180, padding: '6px 12px', borderRadius: 7, border: '1px solid var(--border)', background: 'var(--bg-card)', color: 'var(--text-primary)', fontSize: '0.8125rem', direction: 'ltr' }}
+                  />
+                  <button
+                    onClick={refreshFbToken}
+                    disabled={tokenRefreshing}
+                    className="btn btn-primary"
+                    style={{ whiteSpace: 'nowrap', fontSize: '0.8125rem' }}
+                  >
+                    {tokenRefreshing ? '⏳...' : '🔄 חדש טוקן'}
+                  </button>
+                </div>
+              )}
 
               {/* AI Prompt generator */}
               <div className="card" style={{ padding: 20, marginBottom: 20, border: '1.5px solid var(--brand-red)', background: 'rgba(230,57,70,0.03)' }}>
