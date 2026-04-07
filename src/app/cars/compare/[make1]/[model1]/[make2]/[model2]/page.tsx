@@ -16,12 +16,14 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const [modA, modB] = await Promise.all([getModelBySlug(make1, model1), getModelBySlug(make2, model2)]);
   if (!modA || !modB) return {};
   const title = `${mA.nameHe} ${modA.nameHe} מול ${mB.nameHe} ${modB.nameHe} — השוואה מלאה`;
-  const url = `https://carissues.co.il/cars/compare/${make1}/${model1}/${make2}/${model2}`;
+  // Canonical always uses alphabetical slug order to avoid A/B vs B/A duplicates
+  const [c1, c2] = [`${make1}/${model1}`, `${make2}/${model2}`].sort();
+  const canonical = `https://carissues.co.il/cars/compare/${c1}/${c2}`;
   return {
     title,
     description: `השוואה בין ${mA.nameHe} ${modA.nameHe} ל${mB.nameHe} ${modB.nameHe}: ציונים, ביקורות בעלי רכב, יתרונות וחסרונות — CarIssues IL`,
-    alternates: { canonical: url },
-    openGraph: { title, url },
+    alternates: { canonical },
+    openGraph: { title, url: canonical },
   };
 }
 

@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import Image from 'next/image';
 
 export default function Footer() {
   return (
@@ -23,18 +24,14 @@ export default function Footer() {
         >
           {/* Brand */}
           <div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12 }}>
-              <div style={{
-                width: 38, height: 38, borderRadius: 10,
-                background: 'linear-gradient(135deg, var(--brand-red), var(--brand-gold-dark))',
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                fontSize: 20, boxShadow: 'var(--shadow-red)', flexShrink: 0,
-              }}>
-                🚗
-              </div>
-              <span style={{ fontWeight: 800, fontSize: '1.15rem' }}>
-                CarIssues<span style={{ color: 'var(--brand-red)' }}>IL</span>
-              </span>
+            <div style={{ marginBottom: 12 }}>
+              <Image
+                src="/logo-transparent.png"
+                alt="CarIssues IL"
+                width={160}
+                height={80}
+                style={{ objectFit: 'contain' }}
+              />
             </div>
             <p style={{ color: 'var(--text-muted)', fontSize: '0.875rem', lineHeight: 1.7 }}>
               המאגר הגדול ביותר בישראל לבעיות רכב, ביקורות בעברית וחוות דעת של בעלי רכב.

@@ -20,7 +20,7 @@ export default function Header() {
       <header
         style={{
           background: '#fff',
-          borderBottom: '2.5px solid var(--brand-red)',
+          borderBottom: 'none',
           position: 'sticky',
           top: 0,
           zIndex: 100,
@@ -31,7 +31,7 @@ export default function Header() {
           {/* Logo */}
           <Link href="/" style={{ textDecoration: 'none', flexShrink: 0, display: 'flex', alignItems: 'center' }}>
             <Image
-              src="/logo-car.png"
+              src="/logo-transparent.png"
               alt="CarIssues IL"
               width={180}
               height={90}
