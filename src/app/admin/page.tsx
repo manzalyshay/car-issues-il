@@ -1252,8 +1252,8 @@ export default function AdminPage() {
                           {(() => {
                             const meta = post.metadata as Record<string, unknown> | null;
                             if (!meta?.published_at) return null;
-                            const igOk = !!meta.instagram && !(meta.instagram_error);
-                            const fbOk = !!meta.facebook && !(meta.facebook_error);
+                            const igOk = !meta.instagram_error;
+                            const fbOk = !meta.facebook_error;
                             const igStoryOk = !!meta.instagram_story;
                             const fbStoryOk = !!meta.facebook_story;
                             return (

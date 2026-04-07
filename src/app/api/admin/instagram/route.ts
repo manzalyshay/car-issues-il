@@ -39,7 +39,9 @@ async function gql(path: string, method = 'GET', body?: Record<string, unknown>)
     headers: { 'Content-Type': 'application/json' },
     ...(body ? { body: JSON.stringify({ ...body, access_token: t }) } : undefined),
   });
-  return res.json();
+  const json = await res.json();
+  if (json?.error) throw new Error(json.error.message ?? JSON.stringify(json.error));
+  return json;
 }
 
 export async function POST(req: NextRequest) {
@@ -102,9 +104,9 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    // Only mark as posted if at least one platform succeeded
-    const igOk = !results.instagram_error && !!results.instagram;
-    const fbOk = !results.facebook_error && !!results.facebook;
+    // Only mark as posted if at least one platform succeeded (no error key = success)
+    const igOk = !results.instagram_error;
+    const fbOk = !results.facebook_error;
     const anySuccess = igOk || fbOk;
 
     if (postId) {
