@@ -1248,6 +1248,30 @@ export default function AdminPage() {
                           >
                             {statusLabel[post.status] ?? post.status}
                           </button>
+                          {/* Per-platform status badges */}
+                          {(() => {
+                            const meta = post.metadata as Record<string, unknown> | null;
+                            if (!meta?.published_at) return null;
+                            const igOk = !!meta.instagram && !(meta.instagram_error);
+                            const fbOk = !!meta.facebook && !(meta.facebook_error);
+                            const igStoryOk = !!meta.instagram_story;
+                            const fbStoryOk = !!meta.facebook_story;
+                            return (
+                              <span style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
+                                <span title={meta.instagram_error as string || 'Instagram'} style={{ fontSize: '0.7rem', padding: '2px 7px', borderRadius: 9999, background: igOk ? '#e8f5e9' : '#fdecea', color: igOk ? '#2e7d32' : '#c62828', fontWeight: 700 }}>
+                                  📸 IG {igOk ? '✓' : '✗'}
+                                </span>
+                                <span title={meta.facebook_error as string || 'Facebook'} style={{ fontSize: '0.7rem', padding: '2px 7px', borderRadius: 9999, background: fbOk ? '#e8f5e9' : '#fdecea', color: fbOk ? '#2e7d32' : '#c62828', fontWeight: 700 }}>
+                                  👍 FB {fbOk ? '✓' : '✗'}
+                                </span>
+                                {(igStoryOk || fbStoryOk || !!meta.instagram_story_error || !!meta.facebook_story_error) && (
+                                  <span style={{ fontSize: '0.7rem', padding: '2px 7px', borderRadius: 9999, background: (igStoryOk || fbStoryOk) ? '#e8f5e9' : '#fdecea', color: (igStoryOk || fbStoryOk) ? '#2e7d32' : '#c62828', fontWeight: 700 }}>
+                                    🎬 סטורי {(igStoryOk || fbStoryOk) ? '✓' : '✗'}
+                                  </span>
+                                )}
+                              </span>
+                            );
+                          })()}
                           <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
                             {new Date(post.scheduled_for).toLocaleString('he-IL', { dateStyle: 'short', timeStyle: 'short' })}
                           </span>
