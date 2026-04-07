@@ -130,6 +130,9 @@ export default function AdminPage() {
   const [showNewPostForm, setShowNewPostForm] = useState(false);
   const [newPost, setNewPost] = useState({ platform: 'all' as SocialPostRow['platform'], content_he: '', content_en: '', hashtags: '#רכב #ישראל #CarIssuesIL', scheduled_for: new Date().toISOString().slice(0, 16) });
   const [generatePostType, setGeneratePostType] = useState<'auto' | 'top_rated' | 'worst_rated' | 'most_reviewed' | 'new_review' | 'comparison' | 'car_3d_summary'>('auto');
+  const [promptText, setPromptText] = useState('');
+  const [promptGenerating, setPromptGenerating] = useState(false);
+  const [includeStory, setIncludeStory] = useState(true);
   const [screenshotting, setScreenshotting] = useState<Record<string, boolean>>({});
   const [screenshotPath, setScreenshotPath] = useState<Record<string, string>>({});
   const [publishingPost, setPublishingPost] = useState<Record<string, boolean>>({});
@@ -283,6 +286,36 @@ export default function AdminPage() {
     }
   };
 
+  const generateFromPrompt = async () => {
+    if (!promptText.trim()) return;
+    setPromptGenerating(true);
+    try {
+      const token = await getToken();
+      const res = await fetch('/api/admin/social-posts', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ action: 'generate_from_prompt', prompt: promptText }),
+      });
+      if (!res.ok) return;
+      const { post, screenshot_path } = await res.json();
+      await fetchSocialPosts();
+      setPromptText('');
+      // Auto-capture screenshot
+      if (post?.id && screenshot_path) {
+        setScreenshotting(s => ({ ...s, [post.id]: true }));
+        await fetch('/api/admin/social-posts/screenshot', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+          body: JSON.stringify({ postId: post.id, path: screenshot_path }),
+        });
+        await fetchSocialPosts();
+        setScreenshotting(s => ({ ...s, [post.id]: false }));
+      }
+    } catch { /* ignore */ } finally {
+      setPromptGenerating(false);
+    }
+  };
+
   const saveSocialPost = async () => {
     if (!editSocialPost) return;
     setSocialSaving(true);
@@ -375,7 +408,7 @@ export default function AdminPage() {
       const res = await fetch('/api/admin/instagram', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ action: 'publish', imageUrl, caption: post.content_he, hashtags: post.hashtags, postId: post.id }),
+        body: JSON.stringify({ action: 'publish', imageUrl, caption: post.content_he, hashtags: post.hashtags, postId: post.id, includeStory }),
       });
       if (res.ok) {
         // Delete screenshot from storage after successful publish
@@ -975,6 +1008,32 @@ export default function AdminPage() {
                 ))}
               </div>
 
+              {/* AI Prompt generator */}
+              <div className="card" style={{ padding: 20, marginBottom: 20, border: '1.5px solid var(--brand-red)', background: 'rgba(230,57,70,0.03)' }}>
+                <div style={{ fontWeight: 700, fontSize: '0.95rem', marginBottom: 10 }}>✨ צור פוסט מפרומפט</div>
+                <div style={{ display: 'flex', gap: 10, alignItems: 'flex-start' }}>
+                  <textarea
+                    value={promptText}
+                    onChange={e => setPromptText(e.target.value)}
+                    placeholder='לדוגמה: "קדם את הכתיבת ביקורת על הרכב שלך" או "הצג את 3 הרכבים המדורגים הגבוה ביותר"'
+                    rows={2}
+                    style={{ flex: 1, padding: '10px 14px', borderRadius: 8, border: '1px solid var(--border)', background: 'var(--bg-card)', color: 'var(--text-primary)', fontSize: '0.875rem', resize: 'vertical', direction: 'rtl' }}
+                    onKeyDown={e => { if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) generateFromPrompt(); }}
+                  />
+                  <button
+                    className="btn btn-primary"
+                    onClick={generateFromPrompt}
+                    disabled={promptGenerating || !promptText.trim()}
+                    style={{ whiteSpace: 'nowrap', minWidth: 130 }}
+                  >
+                    {promptGenerating ? '⏳ מייצר + מצלם...' : '✨ צור וצלם'}
+                  </button>
+                </div>
+                <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: 6 }}>
+                  AI יכתוב כיתוב, האשטגים ויצלם את הדף המתאים אוטומטית
+                </div>
+              </div>
+
               {/* Post type selector + generate */}
               <div style={{ marginBottom: 16 }}>
                 <div style={{ fontSize: '0.8125rem', color: 'var(--text-muted)', marginBottom: 8, fontWeight: 600 }}>סוג פוסט:</div>
@@ -1133,9 +1192,15 @@ export default function AdminPage() {
                             <button onClick={() => setPreviewPost(post)} style={{ padding: '6px 14px', borderRadius: 7, border: 'none', background: 'linear-gradient(135deg,#f09433,#e6683c,#dc2743,#cc2366,#bc1888)', cursor: 'pointer', fontSize: '0.8125rem', fontWeight: 700, color: '#fff' }}>👁 תצוגה מקדימה</button>
                           )}
                           {!!(post.metadata as Record<string,unknown>)?.image_url && post.status !== 'posted' && (
-                            <button onClick={() => publishPost(post)} disabled={publishingPost[post.id]} style={{ padding: '6px 14px', borderRadius: 7, border: 'none', background: '#1877f2', cursor: 'pointer', fontSize: '0.8125rem', fontWeight: 700, color: '#fff', whiteSpace: 'nowrap' }}>
-                              {publishingPost[post.id] ? 'מפרסם...' : '🚀 פרסם'}
-                            </button>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                              <label style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: '0.8125rem', color: 'var(--text-secondary)', cursor: 'pointer', userSelect: 'none' }}>
+                                <input type="checkbox" checked={includeStory} onChange={e => setIncludeStory(e.target.checked)} style={{ accentColor: 'var(--brand-red)' }} />
+                                סטורי
+                              </label>
+                              <button onClick={() => publishPost(post)} disabled={publishingPost[post.id]} style={{ padding: '6px 14px', borderRadius: 7, border: 'none', background: '#1877f2', cursor: 'pointer', fontSize: '0.8125rem', fontWeight: 700, color: '#fff', whiteSpace: 'nowrap' }}>
+                                {publishingPost[post.id] ? 'מפרסם...' : '🚀 פרסם'}
+                              </button>
+                            </div>
                           )}
                           {!!(post.metadata as Record<string,unknown>)?.image_url && (
                             <button onClick={() => deletePostScreenshot(post.id)} title="מחק צילום מסך" style={{ padding: '6px 10px', borderRadius: 7, border: '1px solid var(--border)', background: 'transparent', cursor: 'pointer', fontSize: '0.8125rem', color: 'var(--text-muted)' }}>🗑</button>
@@ -1398,13 +1463,17 @@ export default function AdminPage() {
                   </div>
                 </div>
 
-                <div style={{ display: 'flex', gap: 10, marginTop: 16 }}>
+                <div style={{ display: 'flex', gap: 10, marginTop: 16, alignItems: 'center' }}>
+                  <label style={{ display: 'flex', alignItems: 'center', gap: 6, color: '#fff', fontSize: '0.875rem', cursor: 'pointer', userSelect: 'none', whiteSpace: 'nowrap' }}>
+                    <input type="checkbox" checked={includeStory} onChange={e => setIncludeStory(e.target.checked)} style={{ accentColor: '#dc2743', width: 16, height: 16 }} />
+                    + סטורי
+                  </label>
                   <button
                     onClick={() => { publishPost(previewPost); setPreviewPost(null); }}
                     disabled={publishingPost[previewPost.id]}
                     style={{ flex: 1, padding: '12px', borderRadius: 10, border: 'none', background: 'linear-gradient(135deg,#f09433,#dc2743,#bc1888)', cursor: 'pointer', fontWeight: 800, color: '#fff', fontSize: '0.9375rem' }}
                   >
-                    {publishingPost[previewPost.id] ? 'מפרסם...' : '🚀 פרסם עכשיו'}
+                    {publishingPost[previewPost.id] ? 'מפרסם...' : `🚀 פרסם${includeStory ? ' + סטורי' : ''}`}
                   </button>
                   <button onClick={() => setPreviewPost(null)} style={{ padding: '12px 20px', borderRadius: 10, border: '1px solid rgba(255,255,255,0.2)', background: 'transparent', cursor: 'pointer', color: '#fff', fontWeight: 600 }}>סגור</button>
                 </div>

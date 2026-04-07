@@ -22,13 +22,19 @@ export async function POST(req: NextRequest) {
   const body = await req.json();
   const { action } = body;
 
-  // ── Publish to Instagram + Facebook ─────────────────────────────────────────
+  const SITE_URL = 'https://carissues.co.il';
+
+  function ensureSiteLink(text: string): string {
+    return text.includes(SITE_URL) ? text : `${text}\n\n🔗 ${SITE_URL}`;
+  }
+
+  // ── Publish to Instagram + Facebook (post + optional story) ──────────────────
   if (action === 'publish') {
-    const { imageUrl, caption, hashtags, postId } = body;
-    const fullCaption = `${caption}\n\n${hashtags}`;
+    const { imageUrl, caption, hashtags, postId, includeStory = false } = body;
+    const fullCaption = ensureSiteLink(`${caption}\n\n${hashtags}`);
     const results: Record<string, unknown> = {};
 
-    // Instagram: create container → publish
+    // Instagram post: create container → publish
     try {
       const container = await gql(`${IG_ID()}/media`, 'POST', { image_url: imageUrl, caption: fullCaption });
       if (container.error) throw new Error(container.error.message);
@@ -38,12 +44,36 @@ export async function POST(req: NextRequest) {
       results.instagram_error = String(e);
     }
 
-    // Facebook: post photo
+    // Facebook post
     try {
       const fb = await gql(`${PAGE_ID()}/photos`, 'POST', { url: imageUrl, message: fullCaption });
       results.facebook = fb;
     } catch (e) {
       results.facebook_error = String(e);
+    }
+
+    // Instagram story
+    if (includeStory) {
+      try {
+        const storyContainer = await gql(`${IG_ID()}/media`, 'POST', {
+          image_url: imageUrl,
+          media_type: 'STORIES',
+          link_sticker: SITE_URL,
+        });
+        if (storyContainer.error) throw new Error(storyContainer.error.message);
+        const storyPublished = await gql(`${IG_ID()}/media_publish`, 'POST', { creation_id: storyContainer.id });
+        results.instagram_story = storyPublished;
+      } catch (e) {
+        results.instagram_story_error = String(e);
+      }
+
+      // Facebook story
+      try {
+        const fbStory = await gql(`${PAGE_ID()}/photo_stories`, 'POST', { url: imageUrl });
+        results.facebook_story = fbStory;
+      } catch (e) {
+        results.facebook_story_error = String(e);
+      }
     }
 
     // Mark post as published
