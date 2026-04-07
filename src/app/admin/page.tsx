@@ -1037,28 +1037,37 @@ export default function AdminPage() {
 
               {/* FB Token status */}
               {tokenStatus && (
-                <div className="card" style={{ padding: '14px 20px', marginBottom: 16, display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap', borderRight: `4px solid ${tokenStatus.daysLeft !== null && tokenStatus.daysLeft <= 7 ? '#e63946' : tokenStatus.daysLeft !== null && tokenStatus.daysLeft <= 20 ? '#f4a261' : '#2a9d8f'}` }}>
-                  <div style={{ flex: 1 }}>
-                    <span style={{ fontWeight: 700, fontSize: '0.875rem' }}>🔑 טוקן Facebook: </span>
-                    <span style={{ fontSize: '0.875rem', color: tokenStatus.daysLeft !== null && tokenStatus.daysLeft <= 7 ? '#e63946' : 'var(--text-secondary)' }}>
-                      {tokenStatus.daysLeft !== null ? `${tokenStatus.daysLeft} ימים נותרו` : 'מ-env vars'}
-                      {tokenStatus.expiresAt ? ` (עד ${new Date(tokenStatus.expiresAt).toLocaleDateString('he-IL')})` : ''}
-                    </span>
+                <div className="card" style={{ padding: '16px 20px', marginBottom: 16, borderRight: `4px solid ${tokenStatus.daysLeft !== null && tokenStatus.daysLeft <= 7 ? '#e63946' : tokenStatus.daysLeft !== null && tokenStatus.daysLeft <= 20 ? '#f4a261' : '#2a9d8f'}` }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap', marginBottom: 12 }}>
+                    <div style={{ flex: 1 }}>
+                      <span style={{ fontWeight: 700, fontSize: '0.875rem' }}>🔑 טוקן Facebook: </span>
+                      <span style={{ fontSize: '0.875rem', color: tokenStatus.daysLeft !== null && tokenStatus.daysLeft <= 7 ? '#e63946' : 'var(--text-secondary)' }}>
+                        {tokenStatus.daysLeft !== null ? `${tokenStatus.daysLeft} ימים נותרו` : 'מ-env vars'}
+                        {tokenStatus.expiresAt ? ` (עד ${new Date(tokenStatus.expiresAt).toLocaleDateString('he-IL')})` : ''}
+                      </span>
+                    </div>
+                    <input
+                      value={pasteToken}
+                      onChange={e => setPasteToken(e.target.value)}
+                      placeholder="הדבק טוקן חדש"
+                      style={{ flex: 2, minWidth: 160, padding: '6px 12px', borderRadius: 7, border: '1px solid var(--border)', background: 'var(--bg-card)', color: 'var(--text-primary)', fontSize: '0.8125rem', direction: 'ltr' }}
+                    />
+                    <button onClick={refreshFbToken} disabled={tokenRefreshing} className="btn btn-primary" style={{ whiteSpace: 'nowrap', fontSize: '0.8125rem' }}>
+                      {tokenRefreshing ? '⏳...' : '🔄 חדש טוקן'}
+                    </button>
                   </div>
-                  <input
-                    value={pasteToken}
-                    onChange={e => setPasteToken(e.target.value)}
-                    placeholder="הדבק טוקן חדש (אופציונלי)"
-                    style={{ flex: 2, minWidth: 180, padding: '6px 12px', borderRadius: 7, border: '1px solid var(--border)', background: 'var(--bg-card)', color: 'var(--text-primary)', fontSize: '0.8125rem', direction: 'ltr' }}
-                  />
-                  <button
-                    onClick={refreshFbToken}
-                    disabled={tokenRefreshing}
-                    className="btn btn-primary"
-                    style={{ whiteSpace: 'nowrap', fontSize: '0.8125rem' }}
-                  >
-                    {tokenRefreshing ? '⏳...' : '🔄 חדש טוקן'}
-                  </button>
+                  {/* Instructions */}
+                  <details style={{ fontSize: '0.8125rem', color: 'var(--text-muted)' }}>
+                    <summary style={{ cursor: 'pointer', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: 4 }}>איך מקבלים טוקן חדש? ⬇</summary>
+                    <ol style={{ margin: '10px 0 0 0', paddingRight: 18, lineHeight: 2, direction: 'rtl' }}>
+                      <li>פתח: <a href="https://developers.facebook.com/tools/explorer" target="_blank" rel="noreferrer" style={{ color: 'var(--brand-red)' }}>developers.facebook.com/tools/explorer</a></li>
+                      <li>בחר את האפליקציה שלך בתפריט הנפתח למעלה מימין</li>
+                      <li>לחץ <strong>Generate Access Token</strong> והתחבר אם נדרש</li>
+                      <li>הוסף הרשאות: <code style={{ background: 'var(--bg-muted)', padding: '1px 5px', borderRadius: 4 }}>pages_manage_posts, pages_read_engagement, instagram_basic, instagram_content_publish</code></li>
+                      <li>העתק את הטוקן שנוצר</li>
+                      <li>הדבק אותו בשדה למעלה ולחץ <strong>🔄 חדש טוקן</strong></li>
+                    </ol>
+                  </details>
                 </div>
               )}
 
