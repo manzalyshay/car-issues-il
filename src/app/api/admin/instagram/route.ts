@@ -109,9 +109,17 @@ export async function POST(req: NextRequest) {
         results.instagram_story_error = String(e);
       }
 
-      // Facebook story
+      // Facebook story — try photo_stories, fall back to video_stories approach
       try {
-        const fbStory = await gql(`${PAGE_ID()}/photo_stories`, 'POST', { url: storyUrl });
+        const t = await getToken();
+        // photo_stories requires multipart or file_url; try both param names
+        const rawRes = await fetch(`${API}/${PAGE_ID()}/photo_stories`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ url: storyUrl, file_url: storyUrl, access_token: t }),
+        });
+        const fbStory = await rawRes.json();
+        if (fbStory?.error) throw new Error(`(${fbStory.error.code}) ${fbStory.error.message}`);
         results.facebook_story = fbStory;
       } catch (e) {
         results.facebook_story_error = String(e);
