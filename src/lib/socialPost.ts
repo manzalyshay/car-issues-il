@@ -133,7 +133,15 @@ export async function generateDailyPost(forceType?: PostType): Promise<SocialPos
     const model3d = await findCarModel(car.makeSlug, car.modelSlug);
     const has3d = !!model3d;
 
-    content_he = `🚗 ${car.makeHe} ${car.modelHe} — סיכום AI מלא${has3d ? ' + תלת מימד' : ''}\n\nציון: ${pick.score.toFixed(1)}/10\n\nקרא את כל הביקורות וראה ניתוח מלא: carissues.co.il/cars/${car.makeSlug}/${car.modelSlug}`;
+    const scoreLabel = pick.score >= 8 ? '🔥 ציון גבוה במיוחד' : pick.score >= 6.5 ? '👍 ביקורות חיוביות' : '⚠️ שווה לדעת לפני שקונים';
+    const hooks = [
+      `בוא תראה מה נהגים חושבים על ה${car.makeHe} ${car.modelHe} — ${scoreLabel}`,
+      `כמה שווה ה${car.makeHe} ${car.modelHe} באמת? נהגים דירגו אותה ${pick.score.toFixed(1)}/10`,
+      `לפני שאתה קונה ${car.makeHe} ${car.modelHe} — קרא מה אומרים הנהגים`,
+      `ה${car.makeHe} ${car.modelHe} קיבלה ${pick.score.toFixed(1)}/10 מנהגים אמיתיים. מה דעתך?`,
+    ];
+    const hook = hooks[Math.floor(Math.random() * hooks.length)];
+    content_he = `${hook}${has3d ? '\n\n🎮 כולל מודל תלת מימד אינטראקטיבי' : ''}\n\nקרא את כל הביקורות וראה ניתוח מלא: carissues.co.il/cars/${car.makeSlug}/${car.modelSlug}`;
     content_en = `${car.makeEn} ${car.modelEn} — Full AI Summary${has3d ? ' + 3D Model' : ''} (${pick.score.toFixed(1)}/10)\ncarissues.co.il/cars/${car.makeSlug}/${car.modelSlug}`;
     hashtags += ` #${car.makeEn.replace(/\s/g, '')} #${car.modelEn.replace(/\s/g, '')} #AIReview`;
     metadata = { carSlug: `${car.makeSlug}/${car.modelSlug}` };
