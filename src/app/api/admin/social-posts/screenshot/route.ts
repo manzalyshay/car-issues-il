@@ -81,30 +81,26 @@ export async function POST(req: NextRequest) {
   `;
 
   const browser = await launchBrowser();
-  let feedBuffer: Buffer;
-  let storyBuffer: Buffer;
+  let feedBuffer: Buffer = Buffer.alloc(0);
+  let storyBuffer: Buffer = Buffer.alloc(0);
   try {
-    // ── Feed image: 1080×1080 square ───────────────────────────────────────
-    const feedPage = await browser.newPage();
-    await feedPage.setViewportSize({ width: 1080, height: 1080 });
-    await feedPage.addStyleTag({ content: `${hideCookies} html { background: #0a0b0f !important; } body { transform-origin: top left; transform: scale(0.9); }` });
-    await feedPage.goto(targetUrl, { waitUntil: 'networkidle', timeout: 30000 });
-    await feedPage.waitForTimeout(800);
-    feedBuffer = Buffer.from(await feedPage.screenshot({ type: 'jpeg', quality: 88, clip: { x: 0, y: 0, width: 1080, height: 1080 } }));
-    await feedPage.close();
+    const page = await browser.newPage();
+    await page.addStyleTag({ content: `${hideCookies} html { background: #0a0b0f !important; } body { transform-origin: top left; transform: scale(0.9); }` });
 
-    // ── Story image: 1080×1920 (9:16) ──────────────────────────────────────
-    const storyPage = await browser.newPage();
-    await storyPage.setViewportSize({ width: 1080, height: 1920 });
-    await storyPage.addStyleTag({ content: `
-      ${hideCookies}
-      html { background: #0a0b0f !important; height: 1920px; display: flex; align-items: center; justify-content: center; }
-      body { transform-origin: center center; transform: scale(0.9); margin: auto; }
+    // ── Load page once at feed size, then resize for story ─────────────────
+    await page.setViewportSize({ width: 1080, height: 1080 });
+    await page.goto(targetUrl, { waitUntil: 'networkidle', timeout: 30000 });
+    await page.waitForTimeout(800);
+    feedBuffer = Buffer.from(await page.screenshot({ type: 'jpeg', quality: 88, clip: { x: 0, y: 0, width: 1080, height: 1080 } }));
+
+    // Resize same page to story dimensions — no reload needed
+    await page.setViewportSize({ width: 1080, height: 1920 });
+    await page.addStyleTag({ content: `
+      html { height: 1920px !important; display: flex; align-items: center; justify-content: center; }
+      body { transform-origin: center center; margin: auto; }
     ` });
-    await storyPage.goto(targetUrl, { waitUntil: 'networkidle', timeout: 30000 });
-    await storyPage.waitForTimeout(800);
-    storyBuffer = Buffer.from(await storyPage.screenshot({ type: 'jpeg', quality: 88, clip: { x: 0, y: 0, width: 1080, height: 1920 } }));
-    await storyPage.close();
+    await page.waitForTimeout(300);
+    storyBuffer = Buffer.from(await page.screenshot({ type: 'jpeg', quality: 88, clip: { x: 0, y: 0, width: 1080, height: 1920 } }));
   } finally {
     await browser.close();
   }
