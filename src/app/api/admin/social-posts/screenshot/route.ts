@@ -85,22 +85,22 @@ export async function POST(req: NextRequest) {
   let storyBuffer: Buffer = Buffer.alloc(0);
   try {
     const page = await browser.newPage();
-    await page.addStyleTag({ content: `${hideCookies} html { background: #0a0b0f !important; } body { transform-origin: top left; transform: scale(0.9); }` });
+    await page.addStyleTag({ content: hideCookies });
 
-    // ── Load page once at feed size, then resize for story ─────────────────
-    await page.setViewportSize({ width: 1080, height: 1080 });
+    // ── Feed: 1200×630 — matches OG templates exactly ───────────────────────
+    await page.setViewportSize({ width: 1200, height: 630 });
     await page.goto(targetUrl, { waitUntil: 'networkidle', timeout: 30000 });
     await page.waitForTimeout(800);
-    feedBuffer = Buffer.from(await page.screenshot({ type: 'jpeg', quality: 88, clip: { x: 0, y: 0, width: 1080, height: 1080 } }));
+    feedBuffer = Buffer.from(await page.screenshot({ type: 'jpeg', quality: 92 }));
 
-    // Resize same page to story dimensions — no reload needed
+    // ── Story: 1080×1920 — center the content, dark bg fills the rest ───────
     await page.setViewportSize({ width: 1080, height: 1920 });
     await page.addStyleTag({ content: `
-      html { height: 1920px !important; display: flex; align-items: center; justify-content: center; }
-      body { transform-origin: center center; margin: auto; }
+      html { background: #0a0b0f !important; min-height: 1920px; display: flex; align-items: center; }
+      body { margin: auto; }
     ` });
-    await page.waitForTimeout(300);
-    storyBuffer = Buffer.from(await page.screenshot({ type: 'jpeg', quality: 88, clip: { x: 0, y: 0, width: 1080, height: 1920 } }));
+    await page.waitForTimeout(400);
+    storyBuffer = Buffer.from(await page.screenshot({ type: 'jpeg', quality: 92, clip: { x: 0, y: 0, width: 1080, height: 1920 } }));
   } finally {
     await browser.close();
   }

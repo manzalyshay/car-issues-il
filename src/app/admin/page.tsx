@@ -371,12 +371,21 @@ export default function AdminPage() {
     }
   };
 
-  const deleteSocialPost = async (id: string) => {
+  const deleteSocialPost = async (post: SocialPostRow) => {
+    if (!confirm('למחוק פוסט זה?')) return;
     const token = await getToken();
+    const meta = post.metadata as Record<string, unknown> | null;
+    const igId = meta?.ig_post_id as string | undefined;
+    const fbId = meta?.fb_post_id as string | undefined;
+
+    // Delete from platforms if posted
+    if (igId) await fetch('/api/admin/instagram', { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` }, body: JSON.stringify({ action: 'delete_ig_post', mediaId: igId }) });
+    if (fbId) await fetch('/api/admin/instagram', { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` }, body: JSON.stringify({ action: 'delete_fb_post', fbPostId: fbId }) });
+
     await fetch('/api/admin/social-posts', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-      body: JSON.stringify({ action: 'delete', id }),
+      body: JSON.stringify({ action: 'delete', id: post.id }),
     });
     await fetchSocialPosts();
   };
@@ -1299,7 +1308,7 @@ export default function AdminPage() {
                               <button onClick={() => resetPost(post.id)} title="אפס לממתין" style={{ padding: '4px 9px', borderRadius: 6, border: '1px solid var(--border)', background: 'transparent', cursor: 'pointer', fontSize: '0.72rem', color: 'var(--text-muted)', fontWeight: 700 }}>↺ אפס</button>
                             )}
                             <button onClick={() => setEditSocialPost(post)} title="ערוך" style={{ padding: '4px 9px', borderRadius: 6, border: '1px solid var(--border)', background: 'transparent', cursor: 'pointer', fontSize: '0.72rem', fontWeight: 700, color: 'var(--text-secondary)' }}>✏️</button>
-                            <button onClick={() => deleteSocialPost(post.id)} title="מחק" style={{ padding: '4px 9px', borderRadius: 6, border: '1px solid #f43f5e40', background: 'transparent', cursor: 'pointer', fontSize: '0.72rem', fontWeight: 700, color: '#f43f5e' }}>🗑</button>
+                            <button onClick={() => deleteSocialPost(post)} title="מחק מכל הפלטפורמות" style={{ padding: '4px 9px', borderRadius: 6, border: '1px solid #f43f5e40', background: 'transparent', cursor: 'pointer', fontSize: '0.72rem', fontWeight: 700, color: '#f43f5e' }}>🗑</button>
                           </div>
                         </div>
 

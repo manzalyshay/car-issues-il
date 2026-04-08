@@ -27,7 +27,7 @@ export default function Header() {
           boxShadow: '0 2px 16px rgba(0,0,0,0.07)',
         }}
       >
-        <div className="container" style={{ height: 82, display: 'flex', alignItems: 'center', gap: 16, justifyContent: 'space-between', direction: 'rtl' }}>
+        <div className="container header-inner" style={{ height: 82, display: 'flex', alignItems: 'center', gap: 16, justifyContent: 'space-between' }}>
           {/* Logo */}
           <Link href="/" style={{ textDecoration: 'none', flexShrink: 0, display: 'flex', alignItems: 'center' }}>
             <Image
@@ -169,6 +169,7 @@ export default function Header() {
             .desktop-auth { display: none !important; }
             .mobile-menu-btn { display: block !important; }
             .mobile-search { display: block !important; }
+            .header-inner { flex-direction: row-reverse !important; }
           }
         `}</style>
       </header>
