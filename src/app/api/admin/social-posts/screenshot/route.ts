@@ -54,47 +54,69 @@ export async function POST(req: NextRequest) {
   const targetUrl = `${origin}${path}`;
 
   const browser = await launchBrowser();
-  let screenshotBuffer: Buffer;
+  let feedBuffer: Buffer;
+  let storyBuffer: Buffer;
+
+  const hideCookies = `
+    [class*="cookie"], [class*="Cookie"], [id*="cookie"], [id*="Cookie"],
+    [class*="chat"], [class*="Chat"], [id*="chat"], [id*="Chat"],
+    [class*="gdpr"], [class*="GDPR"] { display: none !important; }
+  `;
+
   try {
-    const page = await browser.newPage();
-    // 1080×1080 square — fits Instagram feed (1:1) and avoids landscape letterboxing.
-    // The OG template renders at 1200px wide; we scale it to fit 1080px then pad
-    // the remaining height with the same dark background.
-    await page.setViewportSize({ width: 1080, height: 1080 });
-    // Hide cookie banners, chat widgets, etc.
-    await page.addStyleTag({ content: `
-      [class*="cookie"], [class*="Cookie"], [id*="cookie"], [id*="Cookie"],
-      [class*="chat"], [class*="Chat"], [id*="chat"], [id*="Chat"],
-      [class*="gdpr"], [class*="GDPR"] { display: none !important; }
-      html { background: #0a0b0f !important; }
-      body { transform-origin: top left; transform: scale(0.9); }
+    // ── Feed image: 1080×1080 square ─────────────────────────────────────────
+    const feedPage = await browser.newPage();
+    await feedPage.setViewportSize({ width: 1080, height: 1080 });
+    await feedPage.addStyleTag({ content: `${hideCookies} html { background: #0a0b0f !important; } body { transform-origin: top left; transform: scale(0.9); }` });
+    await feedPage.goto(targetUrl, { waitUntil: 'networkidle', timeout: 30000 });
+    await feedPage.waitForTimeout(800);
+    feedBuffer = Buffer.from(await feedPage.screenshot({ type: 'jpeg', quality: 88, clip: { x: 0, y: 0, width: 1080, height: 1080 } }));
+    await feedPage.close();
+
+    // ── Story image: 1080×1920 (9:16) ────────────────────────────────────────
+    // Render the OG content scaled to 1080px wide and center it vertically
+    // within the 1920px tall canvas, dark background fills the rest.
+    const storyPage = await browser.newPage();
+    await storyPage.setViewportSize({ width: 1080, height: 1920 });
+    await storyPage.addStyleTag({ content: `
+      ${hideCookies}
+      html { background: #0a0b0f !important; height: 1920px; display: flex; align-items: center; justify-content: center; }
+      body { transform-origin: center center; transform: scale(0.9); margin: auto; }
     ` });
-    await page.goto(targetUrl, { waitUntil: 'networkidle', timeout: 30000 });
-    await page.waitForTimeout(800); // let animations settle
-    screenshotBuffer = Buffer.from(await page.screenshot({ type: 'jpeg', quality: 88, clip: { x: 0, y: 0, width: 1080, height: 1080 } }));
+    await storyPage.goto(targetUrl, { waitUntil: 'networkidle', timeout: 30000 });
+    await storyPage.waitForTimeout(800);
+    storyBuffer = Buffer.from(await storyPage.screenshot({ type: 'jpeg', quality: 88, clip: { x: 0, y: 0, width: 1080, height: 1920 } }));
+    await storyPage.close();
   } finally {
     await browser.close();
   }
 
-  // Upload to Supabase Storage
+  // Upload both to Supabase Storage
   const sb = getServiceClient();
-  const filename = `${Date.now()}${path.replace(/[^a-zA-Z0-9]/g, '_')}.jpg`;
+  const ts = Date.now();
+  const slug = path.replace(/[^a-zA-Z0-9]/g, '_');
+  const feedFilename = `${ts}${slug}.jpg`;
+  const storyFilename = `${ts}${slug}_story.jpg`;
 
   const { error: uploadError } = await sb.storage
     .from('social-screenshots')
-    .upload(filename, screenshotBuffer, { contentType: 'image/jpeg', upsert: false });
-
+    .upload(feedFilename, feedBuffer, { contentType: 'image/jpeg', upsert: false });
   if (uploadError) return NextResponse.json({ error: uploadError.message }, { status: 500 });
 
-  const { data: { publicUrl } } = sb.storage.from('social-screenshots').getPublicUrl(filename);
+  const { error: storyUploadError } = await sb.storage
+    .from('social-screenshots')
+    .upload(storyFilename, storyBuffer, { contentType: 'image/jpeg', upsert: false });
 
-  // Attach image URL to the post metadata if postId was given
+  const { data: { publicUrl } } = sb.storage.from('social-screenshots').getPublicUrl(feedFilename);
+  const storyUrl = storyUploadError ? null : sb.storage.from('social-screenshots').getPublicUrl(storyFilename).data.publicUrl;
+
+  // Attach both URLs to the post metadata
   if (postId) {
     const { data: existing } = await sb.from('social_posts').select('metadata').eq('id', postId).single();
     await sb.from('social_posts').update({
-      metadata: { ...(existing?.metadata ?? {}), image_url: publicUrl },
+      metadata: { ...(existing?.metadata ?? {}), image_url: publicUrl, story_image_url: storyUrl },
     }).eq('id', postId);
   }
 
-  return NextResponse.json({ ok: true, url: publicUrl });
+  return NextResponse.json({ ok: true, url: publicUrl, storyUrl });
 }
