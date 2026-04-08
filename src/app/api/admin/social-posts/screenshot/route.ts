@@ -80,39 +80,34 @@ export async function POST(req: NextRequest) {
     [class*="gdpr"], [class*="GDPR"] { display: none !important; }
   `;
 
-  // ── Feed image: 1080×1080 square ───────────────────────────────────────────
+  const browser = await launchBrowser();
   let feedBuffer: Buffer;
-  const feedBrowser = await launchBrowser();
+  let storyBuffer: Buffer;
   try {
-    const feedPage = await feedBrowser.newPage();
+    // ── Feed image: 1080×1080 square ───────────────────────────────────────
+    const feedPage = await browser.newPage();
     await feedPage.setViewportSize({ width: 1080, height: 1080 });
     await feedPage.addStyleTag({ content: `${hideCookies} html { background: #0a0b0f !important; } body { transform-origin: top left; transform: scale(0.9); }` });
     await feedPage.goto(targetUrl, { waitUntil: 'networkidle', timeout: 30000 });
     await feedPage.waitForTimeout(800);
     feedBuffer = Buffer.from(await feedPage.screenshot({ type: 'jpeg', quality: 88, clip: { x: 0, y: 0, width: 1080, height: 1080 } }));
-  } finally {
-    await feedBrowser.close();
-  }
+    await feedPage.close();
 
-  // ── Story image: 1080×1920 (9:16) — best-effort, won't fail the whole request
-  let storyBuffer: Buffer | null = null;
-  try {
-    const storyBrowser = await launchBrowser();
-    try {
-      const storyPage = await storyBrowser.newPage();
-      await storyPage.setViewportSize({ width: 1080, height: 1920 });
-      await storyPage.addStyleTag({ content: `
-        ${hideCookies}
-        html { background: #0a0b0f !important; height: 1920px; display: flex; align-items: center; justify-content: center; }
-        body { transform-origin: center center; transform: scale(0.9); margin: auto; }
-      ` });
-      await storyPage.goto(targetUrl, { waitUntil: 'networkidle', timeout: 30000 });
-      await storyPage.waitForTimeout(800);
-      storyBuffer = Buffer.from(await storyPage.screenshot({ type: 'jpeg', quality: 88, clip: { x: 0, y: 0, width: 1080, height: 1920 } }));
-    } finally {
-      await storyBrowser.close();
-    }
-  } catch { /* story screenshot is non-fatal */ }
+    // ── Story image: 1080×1920 (9:16) ──────────────────────────────────────
+    const storyPage = await browser.newPage();
+    await storyPage.setViewportSize({ width: 1080, height: 1920 });
+    await storyPage.addStyleTag({ content: `
+      ${hideCookies}
+      html { background: #0a0b0f !important; height: 1920px; display: flex; align-items: center; justify-content: center; }
+      body { transform-origin: center center; transform: scale(0.9); margin: auto; }
+    ` });
+    await storyPage.goto(targetUrl, { waitUntil: 'networkidle', timeout: 30000 });
+    await storyPage.waitForTimeout(800);
+    storyBuffer = Buffer.from(await storyPage.screenshot({ type: 'jpeg', quality: 88, clip: { x: 0, y: 0, width: 1080, height: 1920 } }));
+    await storyPage.close();
+  } finally {
+    await browser.close();
+  }
 
   // Upload both to Supabase Storage
   const sb = getServiceClient();
@@ -126,17 +121,12 @@ export async function POST(req: NextRequest) {
     .upload(feedFilename, feedBuffer, { contentType: 'image/jpeg', upsert: false });
   if (uploadError) return NextResponse.json({ error: uploadError.message }, { status: 500 });
 
-  let storyUrl: string | null = null;
-  if (storyBuffer) {
-    const { error: storyUploadError } = await sb.storage
-      .from('social-screenshots')
-      .upload(storyFilename, storyBuffer, { contentType: 'image/jpeg', upsert: false });
-    if (!storyUploadError) {
-      storyUrl = sb.storage.from('social-screenshots').getPublicUrl(storyFilename).data.publicUrl;
-    }
-  }
+  const { error: storyUploadError } = await sb.storage
+    .from('social-screenshots')
+    .upload(storyFilename, storyBuffer, { contentType: 'image/jpeg', upsert: false });
 
   const { data: { publicUrl } } = sb.storage.from('social-screenshots').getPublicUrl(feedFilename);
+  const storyUrl = storyUploadError ? null : sb.storage.from('social-screenshots').getPublicUrl(storyFilename).data.publicUrl;
 
   // Attach both URLs to the post metadata
   if (postId) {
