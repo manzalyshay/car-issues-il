@@ -126,6 +126,7 @@ export default function AdminPage() {
   const [socialGenerating, setSocialGenerating] = useState(false);
   const [socialStatusFilter, setSocialStatusFilter] = useState<'all' | 'pending' | 'posted' | 'failed'>('all');
   const [editSocialPost, setEditSocialPost] = useState<SocialPostRow | null>(null);
+  const [deleteConfirmPost, setDeleteConfirmPost] = useState<SocialPostRow | null>(null);
   const [socialSaving, setSocialSaving] = useState(false);
   const [showNewPostForm, setShowNewPostForm] = useState(false);
   const [newPost, setNewPost] = useState({ platform: 'all' as SocialPostRow['platform'], content_he: '', content_en: '', hashtags: '#רכב #ישראל #CarIssuesIL', scheduled_for: new Date().toISOString().slice(0, 16) });
@@ -371,22 +372,21 @@ export default function AdminPage() {
     }
   };
 
-  const deleteSocialPost = async (post: SocialPostRow) => {
-    if (!confirm('למחוק פוסט זה?')) return;
+  const deleteSocialPost = async (post: SocialPostRow, fromPlatforms: boolean) => {
     const token = await getToken();
     const meta = post.metadata as Record<string, unknown> | null;
-    const igId = meta?.ig_post_id as string | undefined;
-    const fbId = meta?.fb_post_id as string | undefined;
-
-    // Delete from platforms if posted
-    if (igId) await fetch('/api/admin/instagram', { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` }, body: JSON.stringify({ action: 'delete_ig_post', mediaId: igId }) });
-    if (fbId) await fetch('/api/admin/instagram', { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` }, body: JSON.stringify({ action: 'delete_fb_post', fbPostId: fbId }) });
-
+    if (fromPlatforms) {
+      const igId = meta?.ig_post_id as string | undefined;
+      const fbId = meta?.fb_post_id as string | undefined;
+      if (igId) await fetch('/api/admin/instagram', { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` }, body: JSON.stringify({ action: 'delete_ig_post', mediaId: igId }) });
+      if (fbId) await fetch('/api/admin/instagram', { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` }, body: JSON.stringify({ action: 'delete_fb_post', fbPostId: fbId }) });
+    }
     await fetch('/api/admin/social-posts', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
       body: JSON.stringify({ action: 'delete', id: post.id }),
     });
+    setDeleteConfirmPost(null);
     await fetchSocialPosts();
   };
 
@@ -1201,6 +1201,33 @@ export default function AdminPage() {
                 </div>
               )}
 
+              {/* ═══ DELETE CONFIRM DIALOG ═══════════════════════════════════ */}
+              {deleteConfirmPost && (() => {
+                const m = deleteConfirmPost.metadata as Record<string, unknown> | null;
+                const hasIg = !!m?.ig_post_id;
+                const hasFb = !!m?.fb_post_id;
+                const isPostedAnywhere = hasIg || hasFb;
+                return (
+                  <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.75)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}>
+                    <div style={{ background: 'var(--bg-card)', borderRadius: 14, padding: 28, width: '100%', maxWidth: 400, border: '1px solid var(--border)' }}>
+                      <div style={{ fontWeight: 800, fontSize: '1rem', marginBottom: 8 }}>🗑️ מחיקת פוסט</div>
+                      <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: 20 }}>
+                        {isPostedAnywhere
+                          ? `פוסט זה פורסם ב-${[hasIg && 'Instagram', hasFb && 'Facebook'].filter(Boolean).join(' + ')}. למחוק גם משם?`
+                          : 'פוסט זה לא פורסם בפלטפורמות. למחוק מהמערכת?'}
+                      </div>
+                      <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end', flexWrap: 'wrap' }}>
+                        <button onClick={() => setDeleteConfirmPost(null)} style={{ padding: '8px 16px', borderRadius: 8, border: '1px solid var(--border)', background: 'transparent', cursor: 'pointer', fontSize: '0.85rem' }}>ביטול</button>
+                        <button onClick={() => deleteSocialPost(deleteConfirmPost, false)} style={{ padding: '8px 16px', borderRadius: 8, border: 'none', background: 'var(--bg-muted)', cursor: 'pointer', fontSize: '0.85rem', fontWeight: 700 }}>מחק מהמערכת בלבד</button>
+                        {isPostedAnywhere && (
+                          <button onClick={() => deleteSocialPost(deleteConfirmPost, true)} style={{ padding: '8px 16px', borderRadius: 8, border: 'none', background: '#f43f5e', color: '#fff', cursor: 'pointer', fontSize: '0.85rem', fontWeight: 700 }}>מחק מכל הפלטפורמות</button>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                );
+              })()}
+
               {/* ═══ EDIT MODAL ══════════════════════════════════════════════ */}
               {editSocialPost && (
                 <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.75)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}>
@@ -1308,7 +1335,7 @@ export default function AdminPage() {
                               <button onClick={() => resetPost(post.id)} title="אפס לממתין" style={{ padding: '4px 9px', borderRadius: 6, border: '1px solid var(--border)', background: 'transparent', cursor: 'pointer', fontSize: '0.72rem', color: 'var(--text-muted)', fontWeight: 700 }}>↺ אפס</button>
                             )}
                             <button onClick={() => setEditSocialPost(post)} title="ערוך" style={{ padding: '4px 9px', borderRadius: 6, border: '1px solid var(--border)', background: 'transparent', cursor: 'pointer', fontSize: '0.72rem', fontWeight: 700, color: 'var(--text-secondary)' }}>✏️</button>
-                            <button onClick={() => deleteSocialPost(post)} title="מחק מכל הפלטפורמות" style={{ padding: '4px 9px', borderRadius: 6, border: '1px solid #f43f5e40', background: 'transparent', cursor: 'pointer', fontSize: '0.72rem', fontWeight: 700, color: '#f43f5e' }}>🗑</button>
+                            <button onClick={() => setDeleteConfirmPost(post)} title="מחק" style={{ padding: '4px 9px', borderRadius: 6, border: '1px solid #f43f5e40', background: 'transparent', cursor: 'pointer', fontSize: '0.72rem', fontWeight: 700, color: '#f43f5e' }}>🗑</button>
                           </div>
                         </div>
 
@@ -1399,6 +1426,38 @@ export default function AdminPage() {
                             )}
                           </div>
                         )}
+
+                        {/* ── ROW 3C: METRICS (posted only) ───────────────── */}
+                        {isPosted && (igOk || fbOk) && (() => {
+                          const m = meta as Record<string, unknown> | null;
+                          const hasMetrics = m && Object.keys(m).some(k => k.startsWith('ig_') && !['ig_post_id','ig_permalink','ig_media_url'].includes(k));
+                          return (
+                            <div style={{ borderTop: '1px solid var(--border)', padding: '8px 14px', background: 'var(--bg-muted)', display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+                              <span style={{ fontSize: '0.72rem', fontWeight: 700, color: 'var(--text-muted)' }}>📊</span>
+                              {hasMetrics ? (
+                                <>
+                                  {m?.ig_impressions != null && <span style={{ fontSize: '0.72rem', color: 'var(--text-secondary)' }}>👁 {String(m.ig_impressions)}</span>}
+                                  {m?.ig_reach != null && <span style={{ fontSize: '0.72rem', color: 'var(--text-secondary)' }}>📡 {String(m.ig_reach)}</span>}
+                                  {m?.ig_likes != null && <span style={{ fontSize: '0.72rem', color: 'var(--text-secondary)' }}>❤️ {String(m.ig_likes)}</span>}
+                                  {m?.ig_comments != null && <span style={{ fontSize: '0.72rem', color: 'var(--text-secondary)' }}>💬 {String(m.ig_comments)}</span>}
+                                  {m?.ig_saved != null && <span style={{ fontSize: '0.72rem', color: 'var(--text-secondary)' }}>🔖 {String(m.ig_saved)}</span>}
+                                </>
+                              ) : (
+                                <button onClick={async () => {
+                                  const t = await getToken();
+                                  const r = await fetch('/api/admin/instagram', { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${t}` }, body: JSON.stringify({ action: 'get_metrics', igPostId: meta?.ig_post_id, fbPostId: meta?.fb_post_id }) });
+                                  const d = await r.json();
+                                  // Save metrics into post metadata
+                                  const tok = await getToken();
+                                  await fetch('/api/admin/social-posts', { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${tok}` }, body: JSON.stringify({ action: 'update', id: post.id, metadata: { ...meta, ...d } }) });
+                                  await fetchSocialPosts();
+                                }} style={{ fontSize: '0.72rem', fontWeight: 700, color: 'var(--text-muted)', background: 'transparent', border: '1px solid var(--border)', borderRadius: 6, padding: '3px 9px', cursor: 'pointer' }}>
+                                  טען מדדים
+                                </button>
+                              )}
+                            </div>
+                          );
+                        })()}
 
                         {/* ── ROW 3B: SCREENSHOT TOOLS (pending/failed) ────── */}
                         {(isPending || isFailed) && (

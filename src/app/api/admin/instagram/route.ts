@@ -262,6 +262,35 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ ok: true, expiresAt, daysLeft, isPageToken: !!pageTokenData.access_token });
   }
 
+  // ── Get post metrics ─────────────────────────────────────────────────────────
+  if (action === 'get_metrics') {
+    const { igPostId, fbPostId } = body;
+    const t = await getToken();
+    const metrics: Record<string, unknown> = {};
+
+    if (igPostId) {
+      try {
+        // IG media insights: impressions, reach, likes, comments, saves
+        const ins = await fetch(`${API}/${igPostId}/insights?metric=impressions,reach,likes,comments,saved&access_token=${t}`).then(r => r.json());
+        if (ins.data) {
+          for (const m of ins.data) metrics[`ig_${m.name}`] = m.values?.[0]?.value ?? m.value;
+        }
+      } catch { /* non-fatal */ }
+    }
+
+    if (fbPostId) {
+      try {
+        // FB post insights
+        const ins = await fetch(`${API}/${fbPostId}/insights?metric=post_impressions,post_reactions_by_type_total,post_clicks&access_token=${t}`).then(r => r.json());
+        if (ins.data) {
+          for (const m of ins.data) metrics[`fb_${m.name}`] = m.values?.[0]?.value ?? m.value;
+        }
+      } catch { /* non-fatal */ }
+    }
+
+    return NextResponse.json(metrics);
+  }
+
   // ── Get Instagram posts ──────────────────────────────────────────────────────
   if (action === 'get_ig_posts') {
     const t = await getToken();
