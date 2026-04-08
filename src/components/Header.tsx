@@ -169,6 +169,7 @@ export default function Header() {
             .desktop-auth { display: none !important; }
             .mobile-menu-btn { display: block !important; }
             .mobile-search { display: block !important; }
+            .header-inner { padding-right: 0 !important; }
           }
         `}</style>
       </header>
