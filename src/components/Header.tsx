@@ -27,7 +27,7 @@ export default function Header() {
           boxShadow: '0 2px 16px rgba(0,0,0,0.07)',
         }}
       >
-        <div className="container" style={{ height: 82, display: 'flex', alignItems: 'center', gap: 16, justifyContent: 'space-between' }}>
+        <div className="container" style={{ height: 82, display: 'flex', alignItems: 'center', gap: 16, justifyContent: 'space-between', direction: 'rtl' }}>
           {/* Logo */}
           <Link href="/" style={{ textDecoration: 'none', flexShrink: 0, display: 'flex', alignItems: 'center' }}>
             <Image
