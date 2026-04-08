@@ -57,16 +57,21 @@ export async function POST(req: NextRequest) {
   let screenshotBuffer: Buffer;
   try {
     const page = await browser.newPage();
-    await page.setViewportSize({ width: 1200, height: 630 });
+    // 1080×1080 square — fits Instagram feed (1:1) and avoids landscape letterboxing.
+    // The OG template renders at 1200px wide; we scale it to fit 1080px then pad
+    // the remaining height with the same dark background.
+    await page.setViewportSize({ width: 1080, height: 1080 });
     // Hide cookie banners, chat widgets, etc.
     await page.addStyleTag({ content: `
       [class*="cookie"], [class*="Cookie"], [id*="cookie"], [id*="Cookie"],
       [class*="chat"], [class*="Chat"], [id*="chat"], [id*="Chat"],
       [class*="gdpr"], [class*="GDPR"] { display: none !important; }
+      html { background: #0a0b0f !important; }
+      body { transform-origin: top left; transform: scale(0.9); }
     ` });
     await page.goto(targetUrl, { waitUntil: 'networkidle', timeout: 30000 });
     await page.waitForTimeout(800); // let animations settle
-    screenshotBuffer = Buffer.from(await page.screenshot({ type: 'jpeg', quality: 88 }));
+    screenshotBuffer = Buffer.from(await page.screenshot({ type: 'jpeg', quality: 88, clip: { x: 0, y: 0, width: 1080, height: 1080 } }));
   } finally {
     await browser.close();
   }
