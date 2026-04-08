@@ -243,10 +243,22 @@ export async function POST(req: NextRequest) {
     const data = await res.json();
     if (data.error) return NextResponse.json({ error: `Facebook: ${data.error.message}` }, { status: 400 });
 
-    const expiresAt = new Date(Date.now() + (data.expires_in ?? 5184000) * 1000).toISOString();
-    await saveToken(data.access_token, expiresAt);
+    const longLivedUserToken = data.access_token;
+
+    // Exchange long-lived user token for a permanent Page Access Token
+    const pageTokenRes = await fetch(`${API}/${PAGE_ID()}?fields=access_token&access_token=${longLivedUserToken}`);
+    const pageTokenData = await pageTokenRes.json();
+    if (pageTokenData.error) return NextResponse.json({ error: `Page token error: ${pageTokenData.error.message}` }, { status: 400 });
+
+    // Page tokens derived from long-lived user tokens never expire
+    const finalToken = pageTokenData.access_token ?? longLivedUserToken;
+    const expiresAt = pageTokenData.access_token
+      ? new Date(Date.now() + 10 * 365 * 24 * 3600 * 1000).toISOString() // effectively permanent
+      : new Date(Date.now() + (data.expires_in ?? 5184000) * 1000).toISOString();
+
+    await saveToken(finalToken, expiresAt);
     const daysLeft = Math.ceil((new Date(expiresAt).getTime() - Date.now()) / 86400000);
-    return NextResponse.json({ ok: true, expiresAt, daysLeft });
+    return NextResponse.json({ ok: true, expiresAt, daysLeft, isPageToken: !!pageTokenData.access_token });
   }
 
   // ── Get Instagram posts ──────────────────────────────────────────────────────
