@@ -490,6 +490,20 @@ export default function AdminPage() {
         lines.push(`👍 Facebook: ❌ נכשל`);
         if (data.facebook_error) lines.push(`   שגיאה: ${data.facebook_error}`);
       }
+      if (includeStory) {
+        if (data.instagram_story?.id) {
+          lines.push(`📖 Instagram סטורי: ✅ פורסם`);
+        } else {
+          lines.push(`📖 Instagram סטורי: ❌ נכשל`);
+          if (data.instagram_story_error) lines.push(`   שגיאה: ${data.instagram_story_error}`);
+        }
+        if (data.facebook_story?.id) {
+          lines.push(`📖 Facebook סטורי: ✅ פורסם`);
+        } else {
+          lines.push(`📖 Facebook סטורי: ❌ נכשל`);
+          if (data.facebook_story_error) lines.push(`   שגיאה: ${data.facebook_story_error}`);
+        }
+      }
       if (!data.ig_post_id && !data.fb_post_id) {
         lines.push('', '⚠️ שום דבר לא פורסם בפועל');
       }
