@@ -1415,12 +1415,20 @@ export default function AdminPage() {
                             </div>
                             {/* Story row (if applicable) */}
                             {hasStoryResult && (
-                              <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '9px 14px' }}>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '9px 14px', flexWrap: 'wrap' }}>
                                 <span style={{ fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-muted)', width: 28, flexShrink: 0 }}>🎬</span>
                                 <span style={{ fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-secondary)', width: 80, flexShrink: 0 }}>Story</span>
                                 {(igStoryOk || fbStoryOk)
                                   ? <span style={{ fontSize: '0.78rem', fontWeight: 800, color: '#10b981' }}>✓ פורסם</span>
-                                  : <span style={{ fontSize: '0.78rem', fontWeight: 800, color: '#f43f5e' }}>✗ נכשל</span>
+                                  : <>
+                                      <span style={{ fontSize: '0.78rem', fontWeight: 800, color: '#f43f5e' }}>✗ נכשל</span>
+                                      {!!(meta?.instagram_story_error || meta?.facebook_story_error) && (
+                                        <span style={{ fontSize: '0.68rem', color: '#f43f5e', flex: 1, direction: 'ltr', textAlign: 'left', userSelect: 'text', cursor: 'text', wordBreak: 'break-all' }}>
+                                          {String(meta?.instagram_story_error || meta?.facebook_story_error)}
+                                          <button onClick={() => navigator.clipboard.writeText(String(meta?.instagram_story_error || meta?.facebook_story_error))} style={{ marginRight: 6, padding: '1px 6px', fontSize: '0.65rem', cursor: 'pointer', borderRadius: 4, border: '1px solid #f43f5e80', background: 'transparent', color: '#f43f5e' }}>העתק</button>
+                                        </span>
+                                      )}
+                                    </>
                                 }
                               </div>
                             )}
