@@ -53,6 +53,27 @@ export async function POST(req: NextRequest) {
     (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : `${req.nextUrl.protocol}//${req.nextUrl.host}`);
   const targetUrl = `${origin}${path}`;
 
+  // Special handling for FB cover — just capture at exact dimensions, no story needed
+  if (path === '/api/og/fb-cover') {
+    const browser = await launchBrowser();
+    let coverBuffer: Buffer;
+    try {
+      const page = await browser.newPage();
+      await page.setViewportSize({ width: 1640, height: 624 });
+      await page.goto(targetUrl, { waitUntil: 'networkidle', timeout: 30000 });
+      await page.waitForTimeout(800);
+      coverBuffer = Buffer.from(await page.screenshot({ type: 'jpeg', quality: 95, clip: { x: 0, y: 0, width: 1640, height: 624 } }));
+    } finally {
+      await browser.close();
+    }
+    const sb = getServiceClient();
+    const filename = `fb-cover-${Date.now()}.jpg`;
+    const { error } = await sb.storage.from('social-screenshots').upload(filename, coverBuffer, { contentType: 'image/jpeg', upsert: true });
+    if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+    const { data: { publicUrl } } = sb.storage.from('social-screenshots').getPublicUrl(filename);
+    return NextResponse.json({ ok: true, url: publicUrl });
+  }
+
   const browser = await launchBrowser();
   let feedBuffer: Buffer;
   let storyBuffer: Buffer;

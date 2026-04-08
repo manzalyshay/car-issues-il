@@ -1501,6 +1501,24 @@ export default function AdminPage() {
                     </div>
 
                     {/* Live posts viewer */}
+                    {/* ── FB Cover Image ───────────────────────────────────── */}
+                    <div style={{ marginBottom: 16, padding: '12px 14px', background: 'var(--bg-muted)', borderRadius: 10, border: '1px solid var(--border)', display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
+                      <span style={{ fontWeight: 700, fontSize: '0.85rem', flex: 1 }}>🖼️ תמונת כותרת לפייסבוק (1640×624)</span>
+                      <a href="/api/og/fb-cover" target="_blank" rel="noreferrer" style={{ padding: '6px 12px', borderRadius: 7, border: '1px solid var(--border)', background: 'var(--bg-card)', color: 'var(--text-secondary)', fontSize: '0.78rem', fontWeight: 600, textDecoration: 'none', whiteSpace: 'nowrap' }}>👁️ תצוגה מקדימה</a>
+                      <a href="/api/og/fb-cover" download="fb-cover.html" target="_blank" rel="noreferrer"
+                        onClick={async (e) => {
+                          e.preventDefault();
+                          const t = await getToken();
+                          const r = await fetch('/api/admin/social-posts/screenshot', { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${t}` }, body: JSON.stringify({ path: '/api/og/fb-cover' }) });
+                          const d = await r.json();
+                          if (d.url) { const a = document.createElement('a'); a.href = d.url; a.target = '_blank'; a.click(); }
+                          else alert(d.error ?? 'שגיאה');
+                        }}
+                        style={{ padding: '6px 14px', borderRadius: 7, background: 'var(--brand-red)', color: '#fff', fontSize: '0.78rem', fontWeight: 700, textDecoration: 'none', whiteSpace: 'nowrap', cursor: 'pointer' }}>
+                        📸 צלם והורד
+                      </a>
+                    </div>
+
                     <div style={{ marginTop: 20, borderTop: '1px solid var(--border)', paddingTop: 16 }}>
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12, flexWrap: 'wrap', gap: 8 }}>
                         <span style={{ fontWeight: 700, fontSize: '0.875rem' }}>פוסטים קיימים בדף</span>
