@@ -80,6 +80,14 @@ export async function POST(req: NextRequest) {
     [class*="gdpr"], [class*="GDPR"] { display: none !important; }
   `;
 
+  // Build the story URL — use dedicated 9:16 story template if path is a car OG
+  // e.g. /api/og/car-3d/subaru/outback  → /api/og/story/subaru/outback
+  //      /api/og/ai-review/toyota/camry → /api/og/story/toyota/camry
+  const carSlugMatch = path.match(/\/api\/og\/(?:car-3d|ai-review)\/(.+)/);
+  const storyTargetUrl = carSlugMatch
+    ? `${origin}/api/og/story/${carSlugMatch[1]}`
+    : targetUrl;
+
   const browser = await launchBrowser();
   let feedBuffer: Buffer = Buffer.alloc(0);
   let storyBuffer: Buffer = Buffer.alloc(0);
@@ -87,19 +95,16 @@ export async function POST(req: NextRequest) {
     const page = await browser.newPage();
     await page.addStyleTag({ content: hideCookies });
 
-    // ── Feed: 1200×630 — matches OG templates exactly ───────────────────────
+    // ── Feed: 1200×630 ───────────────────────────────────────────────────────
     await page.setViewportSize({ width: 1200, height: 630 });
     await page.goto(targetUrl, { waitUntil: 'networkidle', timeout: 30000 });
     await page.waitForTimeout(800);
     feedBuffer = Buffer.from(await page.screenshot({ type: 'jpeg', quality: 92 }));
 
-    // ── Story: 1080×1920 — center the content, dark bg fills the rest ───────
+    // ── Story: dedicated 1080×1920 template ─────────────────────────────────
     await page.setViewportSize({ width: 1080, height: 1920 });
-    await page.addStyleTag({ content: `
-      html { background: #0a0b0f !important; min-height: 1920px; display: flex; align-items: center; }
-      body { margin: auto; }
-    ` });
-    await page.waitForTimeout(400);
+    await page.goto(storyTargetUrl, { waitUntil: 'networkidle', timeout: 30000 });
+    await page.waitForTimeout(800);
     storyBuffer = Buffer.from(await page.screenshot({ type: 'jpeg', quality: 92, clip: { x: 0, y: 0, width: 1080, height: 1920 } }));
   } finally {
     await browser.close();
