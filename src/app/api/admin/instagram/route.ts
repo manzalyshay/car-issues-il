@@ -58,8 +58,9 @@ export async function POST(req: NextRequest) {
 
   // ── Publish to Instagram + Facebook (post + optional story) ──────────────────
   if (action === 'publish') {
-    const { imageUrl, storyImageUrl, caption, hashtags, postId, includeStory = false } = body;
+    const { imageUrl, storyImageUrl, caption, hashtags, postId, includeStory = false, storyLink } = body;
     const storyUrl = storyImageUrl ?? imageUrl; // fall back to feed image if no story image
+    const storyLinkUrl = storyLink ?? SITE_URL;
     const fullCaption = ensureSiteLink(`${caption}\n\n${hashtags}`);
     const results: Record<string, unknown> = {};
 
@@ -100,7 +101,7 @@ export async function POST(req: NextRequest) {
         const storyContainer = await gql(`${IG_ID()}/media`, 'POST', {
           image_url: storyUrl,
           media_type: 'STORIES',
-          link_sticker: SITE_URL,
+          link_sticker: storyLinkUrl,
         });
         if (storyContainer.error) throw new Error(storyContainer.error.message);
         const storyPublished = await gql(`${IG_ID()}/media_publish`, 'POST', { creation_id: storyContainer.id });

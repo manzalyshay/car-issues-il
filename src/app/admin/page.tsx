@@ -471,7 +471,7 @@ export default function AdminPage() {
       const res = await fetch('/api/admin/instagram', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ action: 'publish', imageUrl, storyImageUrl: (meta?.story_image_url as string) ?? undefined, caption: post.content_he, hashtags: post.hashtags, postId: post.id, includeStory }),
+        body: JSON.stringify({ action: 'publish', imageUrl, storyImageUrl: (meta?.story_image_url as string) ?? undefined, caption: post.content_he, hashtags: post.hashtags, postId: post.id, includeStory, storyLink: meta?.carSlug ? `https://carissues.co.il/cars/${meta.carSlug}` : undefined }),
       });
       const data = await res.json();
       // Build a human-readable per-platform result
