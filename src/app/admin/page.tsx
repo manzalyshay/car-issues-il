@@ -127,6 +127,7 @@ export default function AdminPage() {
   const [socialStatusFilter, setSocialStatusFilter] = useState<'all' | 'pending' | 'posted' | 'failed'>('all');
   const [editSocialPost, setEditSocialPost] = useState<SocialPostRow | null>(null);
   const [deleteConfirmPost, setDeleteConfirmPost] = useState<SocialPostRow | null>(null);
+  const [deleting, setDeleting] = useState(false);
   const [socialSaving, setSocialSaving] = useState(false);
   const [showNewPostForm, setShowNewPostForm] = useState(false);
   const [newPost, setNewPost] = useState({ platform: 'all' as SocialPostRow['platform'], content_he: '', content_en: '', hashtags: '#רכב #ישראל #CarIssuesIL', scheduled_for: new Date().toISOString().slice(0, 16) });
@@ -373,21 +374,26 @@ export default function AdminPage() {
   };
 
   const deleteSocialPost = async (post: SocialPostRow, fromPlatforms: boolean) => {
-    const token = await getToken();
-    const meta = post.metadata as Record<string, unknown> | null;
-    if (fromPlatforms) {
-      const igId = meta?.ig_post_id as string | undefined;
-      const fbId = meta?.fb_post_id as string | undefined;
-      if (igId) await fetch('/api/admin/instagram', { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` }, body: JSON.stringify({ action: 'delete_ig_post', mediaId: igId }) });
-      if (fbId) await fetch('/api/admin/instagram', { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` }, body: JSON.stringify({ action: 'delete_fb_post', fbPostId: fbId }) });
+    setDeleting(true);
+    try {
+      const token = await getToken();
+      const meta = post.metadata as Record<string, unknown> | null;
+      if (fromPlatforms) {
+        const igId = meta?.ig_post_id as string | undefined;
+        const fbId = meta?.fb_post_id as string | undefined;
+        if (igId) await fetch('/api/admin/instagram', { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` }, body: JSON.stringify({ action: 'delete_ig_post', mediaId: igId }) });
+        if (fbId) await fetch('/api/admin/instagram', { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` }, body: JSON.stringify({ action: 'delete_fb_post', fbPostId: fbId }) });
+      }
+      await fetch('/api/admin/social-posts', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ action: 'delete', id: post.id }),
+      });
+      setDeleteConfirmPost(null);
+      await fetchSocialPosts();
+    } finally {
+      setDeleting(false);
     }
-    await fetch('/api/admin/social-posts', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-      body: JSON.stringify({ action: 'delete', id: post.id }),
-    });
-    setDeleteConfirmPost(null);
-    await fetchSocialPosts();
   };
 
   const createSocialPost = async () => {
@@ -1217,10 +1223,10 @@ export default function AdminPage() {
                           : 'פוסט זה לא פורסם בפלטפורמות. למחוק מהמערכת?'}
                       </div>
                       <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end', flexWrap: 'wrap' }}>
-                        <button onClick={() => setDeleteConfirmPost(null)} style={{ padding: '8px 16px', borderRadius: 8, border: '1px solid var(--border)', background: 'transparent', cursor: 'pointer', fontSize: '0.85rem' }}>ביטול</button>
-                        <button onClick={() => deleteSocialPost(deleteConfirmPost, false)} style={{ padding: '8px 16px', borderRadius: 8, border: 'none', background: 'var(--bg-muted)', cursor: 'pointer', fontSize: '0.85rem', fontWeight: 700 }}>מחק מהמערכת בלבד</button>
+                        <button onClick={() => setDeleteConfirmPost(null)} disabled={deleting} style={{ padding: '8px 16px', borderRadius: 8, border: '1px solid var(--border)', background: 'transparent', cursor: 'pointer', fontSize: '0.85rem', opacity: deleting ? 0.5 : 1 }}>ביטול</button>
+                        <button onClick={() => deleteSocialPost(deleteConfirmPost, false)} disabled={deleting} style={{ padding: '8px 16px', borderRadius: 8, border: 'none', background: 'var(--bg-muted)', cursor: deleting ? 'wait' : 'pointer', fontSize: '0.85rem', fontWeight: 700, opacity: deleting ? 0.7 : 1 }}>{deleting ? '⏳...' : 'מחק מהמערכת בלבד'}</button>
                         {isPostedAnywhere && (
-                          <button onClick={() => deleteSocialPost(deleteConfirmPost, true)} style={{ padding: '8px 16px', borderRadius: 8, border: 'none', background: '#f43f5e', color: '#fff', cursor: 'pointer', fontSize: '0.85rem', fontWeight: 700 }}>מחק מכל הפלטפורמות</button>
+                          <button onClick={() => deleteSocialPost(deleteConfirmPost, true)} disabled={deleting} style={{ padding: '8px 16px', borderRadius: 8, border: 'none', background: '#f43f5e', color: '#fff', cursor: deleting ? 'wait' : 'pointer', fontSize: '0.85rem', fontWeight: 700, opacity: deleting ? 0.7 : 1 }}>{deleting ? '⏳ מוחק...' : 'מחק מכל הפלטפורמות'}</button>
                         )}
                       </div>
                     </div>
