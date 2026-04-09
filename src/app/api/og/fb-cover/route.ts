@@ -10,6 +10,11 @@ const TEXT = '#f0f2f5';
 const MUTED = '#6b7280';
 
 export async function GET() {
+  return new NextResponse(null, { status: 404 });
+}
+
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+function _disabled_GET() {
   const html = `<!DOCTYPE html>
 <html lang="he" dir="rtl">
 <head>
@@ -50,10 +55,10 @@ export async function GET() {
   <div style="position:absolute;bottom:0;left:0;right:0;height:3px;background:linear-gradient(to left,${R},transparent 60%);"></div>
 
   <!-- Main layout -->
-  <div style="position:relative;z-index:2;display:flex;align-items:center;height:100%;padding:0 80px;gap:60px;">
+  <div style="position:relative;z-index:2;display:flex;align-items:center;justify-content:center;height:100%;padding:0 50px;gap:48px;">
 
     <!-- Left: Branding -->
-    <div style="flex:1;display:flex;flex-direction:column;justify-content:center;gap:14px;">
+    <div style="display:flex;flex-direction:column;justify-content:center;gap:14px;max-width:720px;">
 
       <!-- Badge -->
       <div style="display:inline-flex;align-items:center;gap:8px;background:${CARD};border:1px solid ${R}40;border-radius:99px;padding:6px 16px;width:fit-content;">
@@ -109,4 +114,5 @@ export async function GET() {
   return new NextResponse(html, {
     headers: { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'no-store' },
   });
+}
 }

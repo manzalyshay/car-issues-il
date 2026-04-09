@@ -1,7 +1,6 @@
 'use client';
 
 import Link from 'next/link';
-import Image from 'next/image';
 import { useState } from 'react';
 import { usePathname } from 'next/navigation';
 import SearchBox from './SearchBox';
@@ -29,15 +28,16 @@ export default function Header() {
       >
         <div className="container header-inner" style={{ height: 82, display: 'flex', alignItems: 'center', gap: 16, justifyContent: 'space-between', direction: 'rtl' }}>
           {/* Logo */}
-          <Link href="/" style={{ textDecoration: 'none', flexShrink: 0, display: 'flex', alignItems: 'center' }}>
-            <Image
-              src="/logo-transparent.png"
-              alt="CarIssues IL"
-              width={180}
-              height={90}
-              style={{ objectFit: 'contain', display: 'block', maxHeight: 72 }}
-              priority
-            />
+          <Link href="/" style={{ textDecoration: 'none', flexShrink: 0, display: 'flex', alignItems: 'center', gap: 0 }}>
+            <div style={{ width: 4, height: 44, background: 'linear-gradient(to bottom, #e63946, #7c1520)', borderRadius: 2, flexShrink: 0 }} />
+            <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', padding: '0 14px', gap: 2 }}>
+              <div style={{ fontSize: 22, fontWeight: 900, color: '#0a0b0f', lineHeight: 1, letterSpacing: '-0.5px' }}>
+                CarIssues<span style={{ color: '#e63946' }}>.</span>co.il
+              </div>
+              <div style={{ fontSize: 10.5, fontWeight: 600, color: '#6b7280', letterSpacing: '0.2px' }}>
+                ביקורות רכב אמיתיות · ניתוח AI
+              </div>
+            </div>
           </Link>
 
           {/* Desktop nav */}
