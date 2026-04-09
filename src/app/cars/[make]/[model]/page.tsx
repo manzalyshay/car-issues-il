@@ -152,12 +152,13 @@ export default async function ModelPage({ params }: Props) {
             __html: JSON.stringify({
               '@context': 'https://schema.org',
               '@graph': [
-                {
+                // Only emit Product schema when we have the required aggregateRating or review
+                ...(avgRating !== null || expertReview?.topScore != null ? [{
                   '@type': 'Product',
                   name: `${make.nameEn} ${model.nameEn}`,
                   brand: { '@type': 'Brand', name: make.nameEn },
                   url: `https://carissues.co.il/cars/${make.slug}/${model.slug}`,
-                  ...(avgRating !== null && {
+                  ...(avgRating !== null ? {
                     aggregateRating: {
                       '@type': 'AggregateRating',
                       ratingValue: avgRating.toFixed(1),
@@ -165,8 +166,20 @@ export default async function ModelPage({ params }: Props) {
                       bestRating: 5,
                       worstRating: 1,
                     },
+                  } : {
+                    // No user reviews — use expert AI score as a single Review to satisfy Google's requirement
+                    review: {
+                      '@type': 'Review',
+                      author: { '@type': 'Organization', name: 'CarIssues AI' },
+                      reviewRating: {
+                        '@type': 'Rating',
+                        ratingValue: expertReview!.topScore!.toFixed(1),
+                        bestRating: 10,
+                        worstRating: 0,
+                      },
+                    },
                   }),
-                },
+                }] : []),
                 {
                   '@type': 'BreadcrumbList',
                   itemListElement: [
