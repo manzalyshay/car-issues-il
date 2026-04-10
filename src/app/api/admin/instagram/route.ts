@@ -101,7 +101,7 @@ export async function POST(req: NextRequest) {
         const storyContainer = await gql(`${IG_ID()}/media`, 'POST', {
           image_url: storyUrl,
           media_type: 'STORIES',
-          link_sticker: storyLinkUrl,
+          link_sticker: JSON.stringify({ link_url: storyLinkUrl }),
         });
         if (storyContainer.error) throw new Error(storyContainer.error.message);
         const storyPublished = await gql(`${IG_ID()}/media_publish`, 'POST', { creation_id: storyContainer.id });
