@@ -64,9 +64,10 @@ export async function POST(req: NextRequest) {
     const fullCaption = ensureSiteLink(`${caption}\n\n${hashtags}`);
     const results: Record<string, unknown> = {};
 
-    // Instagram post: create container → publish → fetch media details
+    // Instagram post: create container → publish → fetch media details → post 1st comment with hashtags
     try {
-      const container = await gql(`${IG_ID()}/media`, 'POST', { image_url: imageUrl, caption: fullCaption });
+      const captionNoHashtags = ensureSiteLink(caption);
+      const container = await gql(`${IG_ID()}/media`, 'POST', { image_url: imageUrl, caption: captionNoHashtags });
       if (container.error) throw new Error(container.error.message);
       const published = await gql(`${IG_ID()}/media_publish`, 'POST', { creation_id: container.id });
       results.instagram = published;
@@ -78,6 +79,12 @@ export async function POST(req: NextRequest) {
         if (details.permalink) results.ig_permalink = details.permalink;
         if (details.media_url) results.ig_media_url = details.media_url;
       } catch { /* non-fatal */ }
+      // Post hashtags as first comment for cleaner caption
+      if (hashtags && published.id) {
+        try {
+          await gql(`${published.id}/comments`, 'POST', { message: hashtags });
+        } catch { /* non-fatal — post already published */ }
+      }
     } catch (e) {
       results.instagram_error = String(e);
     }
@@ -101,7 +108,7 @@ export async function POST(req: NextRequest) {
         const storyContainer = await gql(`${IG_ID()}/media`, 'POST', {
           image_url: storyUrl,
           media_type: 'STORIES',
-          link_sticker: JSON.stringify({ link_url: storyLinkUrl }),
+          link_sticker: storyLinkUrl,
         });
         if (storyContainer.error) throw new Error(storyContainer.error.message);
         const storyPublished = await gql(`${IG_ID()}/media_publish`, 'POST', { creation_id: storyContainer.id });
