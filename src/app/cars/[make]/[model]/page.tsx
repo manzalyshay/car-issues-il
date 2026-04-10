@@ -5,6 +5,7 @@ import { getMakeBySlug, getModelBySlug, getCategoryLabel } from '@/lib/carsDb';
 import { getReviewsForModel } from '@/lib/reviewsDb';
 import { findCarModel } from '@/lib/sketchfab';
 import { getExpertReviews } from '@/lib/expertReviews';
+import { getVideosForCar } from '@/lib/youtubeVideos';
 import StarRating from '@/components/StarRating';
 import MakeLogo from '@/components/MakeLogo';
 import Car3DViewer from '@/components/Car3DViewer';
@@ -14,6 +15,7 @@ import FirstReviewCta from './FirstReviewCta';
 import SharePopup from '@/components/SharePopup';
 import RecallsSection from '@/components/RecallsSection';
 import RecallsBadge from '@/components/RecallsBadge';
+import CarPageTabs from './CarPageTabs';
 
 export const dynamic = 'force-dynamic';
 
@@ -41,10 +43,11 @@ export default async function ModelPage({ params }: Props) {
   const model = await getModelBySlug(makeSlug, modelSlug);
   if (!model) notFound();
 
-  const [allReviews, expertReviewsList, sketchfabModel] = await Promise.all([
+  const [allReviews, expertReviewsList, sketchfabModel, videos] = await Promise.all([
     getReviewsForModel(makeSlug, modelSlug),
     getExpertReviews(makeSlug, modelSlug),
     findCarModel(makeSlug, modelSlug),
+    getVideosForCar(makeSlug, modelSlug),
   ]);
   const expertReview = expertReviewsList[0] ?? null;
   const avgRating = allReviews.length
@@ -124,26 +127,33 @@ export default async function ModelPage({ params }: Props) {
           userReviewCount={allReviews.length}
         />
 
-        {/* First-review CTA — only when no reviews yet */}
-        {allReviews.length === 0 && (
-          <FirstReviewCta makeNameHe={make.nameHe} modelNameHe={model.nameHe} />
-        )}
-
-        {/* Inline reviews with year filter */}
-        <div id="write-review" style={{ marginBottom: 48 }}>
-          <ModelReviewsSection
-            makeSlug={makeSlug}
-            modelSlug={modelSlug}
-            years={model.years}
-            trims={model.trims}
-            initialReviews={allReviews}
-          />
-        </div>
-
-        {/* Recalls */}
-        <div style={{ marginTop: 48 }}>
-          <RecallsSection makeEn={make.nameEn} modelEn={model.nameEn} years={model.years} />
-        </div>
+        {/* Tabbed: Reviews | Videos */}
+        <CarPageTabs
+          makeSlug={makeSlug}
+          modelSlug={modelSlug}
+          makeNameHe={make.nameHe}
+          modelNameHe={model.nameHe}
+          videos={videos}
+        >
+          {/* Reviews tab content */}
+          <div>
+            {allReviews.length === 0 && (
+              <FirstReviewCta makeNameHe={make.nameHe} modelNameHe={model.nameHe} />
+            )}
+            <div id="write-review" style={{ marginBottom: 48 }}>
+              <ModelReviewsSection
+                makeSlug={makeSlug}
+                modelSlug={modelSlug}
+                years={model.years}
+                trims={model.trims}
+                initialReviews={allReviews}
+              />
+            </div>
+            <div style={{ marginTop: 48 }}>
+              <RecallsSection makeEn={make.nameEn} modelEn={model.nameEn} years={model.years} />
+            </div>
+          </div>
+        </CarPageTabs>
 
         {/* JSON-LD */}
         <script

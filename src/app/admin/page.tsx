@@ -1186,6 +1186,15 @@ export default function AdminPage() {
                   <button onClick={() => setShowNewPostForm(v => !v)} style={{ marginRight: 'auto', padding: '4px 10px', borderRadius: 9999, border: '1px solid var(--border)', background: 'transparent', cursor: 'pointer', fontWeight: 600, fontSize: '0.72rem', color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>
                     {showNewPostForm ? '✕ ביטול' : '+ ידני'}
                   </button>
+                  <button onClick={async () => {
+                    if (!confirm('אחזור סרטוני YouTube לכל הרכבים — עשוי לקחת כמה דקות. להמשיך?')) return;
+                    const t = await getToken();
+                    const r = await fetch('/api/admin/fetch-videos', { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${t}` }, body: JSON.stringify({ all: true }) });
+                    const d = await r.json();
+                    alert(`סרטונים נוספו: ${d.totalInserted ?? 0}${d.errors?.length ? '\nשגיאות: ' + d.errors.join(', ') : ''}`);
+                  }} style={{ padding: '4px 10px', borderRadius: 9999, border: '1px solid var(--border)', background: 'transparent', cursor: 'pointer', fontWeight: 600, fontSize: '0.72rem', color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>
+                    🎬 סרטוני YouTube
+                  </button>
                 </div>
               </div>
 

@@ -44,7 +44,8 @@ export async function generateDailyPost(forceType?: PostType): Promise<SocialPos
 
   let content_he = '';
   let content_en = '';
-  let hashtags = '#רכב #ישראל #CarIssuesIL #ביקורותרכב';
+  // Rich base hashtags — Hebrew + English mix for max reach
+  let hashtags = '#רכב #ישראל #CarIssuesIL #ביקורותרכב #קנייתרכב #רכבמומלץ #יד2 #טסטדרייב #בחירתרכב #נהיגה #רכביםישראל #autoil';
   let metadata: Record<string, unknown> = {};
 
   if (postType === 'top_rated' || postType === 'worst_rated') {
@@ -69,7 +70,7 @@ export async function generateDailyPost(forceType?: PostType): Promise<SocialPos
       }).join('\n');
       content_he = `🏆 הרכבים הכי מדורגים בישראל השבוע:\n\n${cars}\n\nדירוג מבוסס על ביקורות אמיתיות של בעלי רכב בישראל + AI.\nפרטים: carissues.co.il/rankings`;
       content_en = `Top rated cars in Israel this week:\n${top.map((r, i) => { const info = lookup.get(r.key)!; return `${i + 1}. ${info.makeEn} ${info.modelEn} — ${r.combined.toFixed(1)}/10`; }).join('\n')}\ncarissues.co.il/rankings`;
-      hashtags += ' #TopRated #BestCars';
+      hashtags += ' #TopRated #BestCars #רכבמובחר #דירוגרכבים #הכיטוב';
     } else {
       // Pick randomly from bottom 5 for variety
       const pool = ranked.slice(0, 5);
@@ -78,7 +79,7 @@ export async function generateDailyPost(forceType?: PostType): Promise<SocialPos
       const ratingCount = (reviewMap.get(pick.key) ?? []).length;
       content_he = `⚠️ ${car.makeHe} ${car.modelHe} — הרכב עם הדירוג הנמוך ביותר החודש\n\nציון משולב: ${pick.combined.toFixed(1)}/10\nמבוסס על ${ratingCount} ביקורות של בעלים בישראל.\n\nקרא את הביקורות: carissues.co.il/cars/${car.makeSlug}/${car.modelSlug}`;
       content_en = `${car.makeEn} ${car.modelEn} — lowest rated car this month (${pick.combined.toFixed(1)}/10)\ncarissues.co.il/cars/${car.makeSlug}/${car.modelSlug}`;
-      hashtags += ` #${car.makeEn.replace(/\s/g, '')}`;
+      hashtags += ` #${car.makeEn.replace(/\s/g, '')} #ביקורתשלילית #רכבבעייתי`;
       metadata = { carSlug: `${car.makeSlug}/${car.modelSlug}` };
     }
   } else if (postType === 'new_review') {
@@ -91,7 +92,7 @@ export async function generateDailyPost(forceType?: PostType): Promise<SocialPos
     const excerpt = (latest.title || latest.body || '').slice(0, 100);
     content_he = `${stars} ביקורת: ${info.makeHe} ${info.modelHe}\n\n"${excerpt}..."\n\n— ${latest.author || 'בעל רכב'}\n\nקרא עוד: carissues.co.il/cars/${info.makeSlug}/${info.modelSlug}`;
     content_en = `Review: ${info.makeEn} ${info.modelEn} — ${latest.rating}/5 stars\ncarissues.co.il/cars/${info.makeSlug}/${info.modelSlug}`;
-    hashtags += ` #${info.makeEn.replace(/\s/g, '')} #${info.modelEn.replace(/\s/g, '')}`;
+    hashtags += ` #${info.makeEn.replace(/\s/g, '')} #${info.modelEn.replace(/\s/g, '')} #ביקורתרכב #חוותדעת #בעלירכב`;
     metadata = { carSlug: `${info.makeSlug}/${info.modelSlug}`, postType: 'new_review' };
   } else if (postType === 'most_reviewed') {
     const sorted = [...reviewMap.entries()].sort((a, b) => b[1].length - a[1].length).slice(0, 3);
@@ -101,7 +102,7 @@ export async function generateDailyPost(forceType?: PostType): Promise<SocialPos
     }).join('\n');
     content_he = `📊 הרכבים עם הכי הרבה ביקורות בישראל:\n\n${cars}\n\nשתף את הניסיון שלך: carissues.co.il`;
     content_en = `Most reviewed cars in Israel:\n${sorted.map((r, i) => { const info = lookup.get(r[0])!; return `${i + 1}. ${info.makeEn} ${info.modelEn} — ${r[1].length} reviews`; }).join('\n')}\ncarissues.co.il`;
-    hashtags += ' #CarReviews';
+    hashtags += ' #CarReviews #ביקורותרכב #פופולרי #הכיהרבה';
   } else if (postType === 'comparison') {
     // Pick two random cars from top 10 most reviewed for variety
     const pool = [...reviewMap.entries()].filter(([k]) => lookup.has(k)).sort((a, b) => b[1].length - a[1].length).slice(0, 10);
@@ -115,7 +116,7 @@ export async function generateDailyPost(forceType?: PostType): Promise<SocialPos
     const avg2 = ratings2.reduce((a, b) => a + b, 0) / ratings2.length;
     content_he = `⚖️ ${c1.makeHe} ${c1.modelHe} מול ${c2.makeHe} ${c2.modelHe}\n\n${c1.makeHe} ${c1.modelHe}: ${avg1.toFixed(1)}/5 ⭐ (${ratings1.length} ביקורות)\n${c2.makeHe} ${c2.modelHe}: ${avg2.toFixed(1)}/5 ⭐ (${ratings2.length} ביקורות)\n\nהשוואה מלאה: carissues.co.il/cars/compare/${c1.makeSlug}/${c1.modelSlug}/${c2.makeSlug}/${c2.modelSlug}`;
     content_en = `${c1.makeEn} ${c1.modelEn} vs ${c2.makeEn} ${c2.modelEn}\ncarissues.co.il/cars/compare/${c1.makeSlug}/${c1.modelSlug}/${c2.makeSlug}/${c2.modelSlug}`;
-    hashtags += ` #${c1.makeEn.replace(/\s/g, '')} #${c2.makeEn.replace(/\s/g, '')} #CarComparison`;
+    hashtags += ` #${c1.makeEn.replace(/\s/g, '')} #${c2.makeEn.replace(/\s/g, '')} #CarComparison #השוואתרכבים #איזהרכבטוביותר #vsרכב`;
     metadata = { compareUrl: `/cars/compare/${c1.makeSlug}/${c1.modelSlug}/${c2.makeSlug}/${c2.modelSlug}` };
   }
 
@@ -143,7 +144,7 @@ export async function generateDailyPost(forceType?: PostType): Promise<SocialPos
     const hook = hooks[Math.floor(Math.random() * hooks.length)];
     content_he = `${hook}${has3d ? '\n\n🎮 כולל מודל תלת מימד אינטראקטיבי' : ''}\n\nקרא את כל הביקורות וראה ניתוח מלא: carissues.co.il/cars/${car.makeSlug}/${car.modelSlug}`;
     content_en = `${car.makeEn} ${car.modelEn} — Full AI Summary${has3d ? ' + 3D Model' : ''} (${pick.score.toFixed(1)}/10)\ncarissues.co.il/cars/${car.makeSlug}/${car.modelSlug}`;
-    hashtags += ` #${car.makeEn.replace(/\s/g, '')} #${car.modelEn.replace(/\s/g, '')} #AIReview`;
+    hashtags += ` #${car.makeEn.replace(/\s/g, '')} #${car.modelEn.replace(/\s/g, '')} #AIReview #סיכוםAI #ביקורתמקצועית #רכבחדש #מודלתלתמימד`;
     metadata = { carSlug: `${car.makeSlug}/${car.modelSlug}` };
   }
 

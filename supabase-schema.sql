@@ -150,3 +150,23 @@ insert into reviews (make_slug, model_slug, year, rating, title, body, category,
   ('volkswagen', 'golf', 2020, 4, 'גולף — הקלאסיקה שלא מתיישנת', 'תגובת הגה מדויקת, נוחות גבוהה. עלות תחזוקה גבוהה יחסית אבל שווה כל שקל.', 'general', 60000, 'עמית ברק'),
   ('toyota', 'rav4', 2021, 5, 'היברידי מושלם לישראל', 'חוסך לי 30% בדלק לעומת הרכב הקודם. מנוע שקט, אמין, מרווח. חובה לכל משפחה.', 'mechanical', 40000, 'נועה שמיר')
 on conflict do nothing;
+
+-- ── Car YouTube Videos ────────────────────────────────────────────────────────
+create table if not exists car_videos (
+  id           uuid primary key default gen_random_uuid(),
+  make_slug    text not null,
+  model_slug   text not null,
+  youtube_id   text not null unique,
+  title        text not null,
+  channel      text not null default '',
+  published_at timestamptz not null default now(),
+  thumbnail_url text not null default '',
+  created_at   timestamptz not null default now()
+);
+
+create index if not exists car_videos_make_model on car_videos (make_slug, model_slug);
+
+alter table car_videos enable row level security;
+-- Public read
+create policy "car_videos_public_read" on car_videos for select using (true);
+-- Service role writes only
