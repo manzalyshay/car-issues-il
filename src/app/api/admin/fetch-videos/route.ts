@@ -21,7 +21,7 @@ export async function POST(req: NextRequest) {
           make.nameEn, model.nameEn,
           make.nameHe, model.nameHe,
         );
-        totalInserted += result.inserted;
+        totalInserted += result.inserted ?? 0;
         if (result.error) errors.push(`${make.slug}/${model.slug}: ${result.error}`);
       }
     }

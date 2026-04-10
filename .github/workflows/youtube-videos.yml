@@ -1,0 +1,19 @@
+name: Fetch YouTube Car Review Videos
+
+on:
+  schedule:
+    - cron: '0 4 * * 1'  # Every Monday at 04:00 UTC
+  workflow_dispatch:       # Allow manual trigger from GitHub Actions UI
+
+jobs:
+  fetch-videos:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger video fetch
+        run: |
+          curl -s -X POST \
+            "${{ secrets.SITE_URL }}/api/admin/fetch-videos" \
+            -H "Content-Type: application/json" \
+            -H "Authorization: Bearer ${{ secrets.ADMIN_SECRET }}" \
+            -d '{"all": true}' \
+            | jq '.'
