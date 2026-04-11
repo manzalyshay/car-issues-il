@@ -102,37 +102,8 @@ export async function POST(req: NextRequest) {
       results.facebook_error = String(e);
     }
 
-    // Instagram story
-    if (includeStory) {
-      try {
-        const storyContainer = await gql(`${IG_ID()}/media`, 'POST', {
-          image_url: storyUrl,
-          media_type: 'STORIES',
-          link_sticker: storyLinkUrl,
-        });
-        if (storyContainer.error) throw new Error(storyContainer.error.message);
-        const storyPublished = await gql(`${IG_ID()}/media_publish`, 'POST', { creation_id: storyContainer.id });
-        results.instagram_story = storyPublished;
-      } catch (e) {
-        results.instagram_story_error = String(e);
-      }
-
-      // Facebook story — try photo_stories, fall back to video_stories approach
-      try {
-        const t = await getToken();
-        // photo_stories requires multipart or file_url; try both param names
-        const rawRes = await fetch(`${API}/${PAGE_ID()}/photo_stories`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ url: storyUrl, file_url: storyUrl, access_token: t }),
-        });
-        const fbStory = await rawRes.json();
-        if (fbStory?.error) throw new Error(`(${fbStory.error.code}) ${fbStory.error.message}`);
-        results.facebook_story = fbStory;
-      } catch (e) {
-        results.facebook_story_error = String(e);
-      }
-    }
+    // Stories are handled manually by the user via the story helper modal in the admin panel
+    // (API-posted stories don't support link stickers reliably)
 
     // Log everything for debugging
     console.error('[publish] results:', JSON.stringify(results));

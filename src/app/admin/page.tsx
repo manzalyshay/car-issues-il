@@ -146,6 +146,7 @@ export default function AdminPage() {
   const [pageInfoSaving, setPageInfoSaving] = useState(false);
   const [pageInfoForm, setPageInfoForm] = useState({ about: '', description: '', website: '' });
   const [existingPostsTab, setExistingPostsTab] = useState<'instagram' | 'facebook'>('instagram');
+  const [storyHelper, setStoryHelper] = useState<{ storyImageUrl: string; carUrl: string } | null>(null);
   const [loadingExisting, setLoadingExisting] = useState(false);
   const [tokenStatus, setTokenStatus] = useState<{ daysLeft: number | null; expiresAt: string | null } | null>(null);
   const [tokenRefreshing, setTokenRefreshing] = useState(false);
@@ -509,6 +510,12 @@ export default function AdminPage() {
       }
       alert(lines.join('\n'));
       await fetchSocialPosts();
+      // After successful post, show story helper if story was requested
+      if (includeStory && (data.ig_post_id || data.fb_post_id)) {
+        const storyImageUrl = (meta?.story_image_url as string) ?? (meta?.image_url as string) ?? '';
+        const carUrl = meta?.carSlug ? `https://carissues.co.il/cars/${meta.carSlug}` : 'https://carissues.co.il';
+        if (storyImageUrl) setStoryHelper({ storyImageUrl, carUrl });
+      }
     } catch (err) {
       alert(`שגיאת רשת: ${String(err)}`);
     } finally {
@@ -1661,6 +1668,70 @@ export default function AdminPage() {
         })()}
 
         {/* ── Post Preview Modal ───────────────────────────────────────────────── */}
+        {/* ── STORY HELPER MODAL ──────────────────────────────────────────── */}
+        {storyHelper && (
+          <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.88)', zIndex: 3000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24 }} onClick={() => setStoryHelper(null)}>
+            <div style={{ background: 'var(--bg-card)', borderRadius: 16, padding: 28, maxWidth: 420, width: '100%', direction: 'rtl' }} onClick={e => e.stopPropagation()}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
+                <h3 style={{ fontWeight: 800, fontSize: '1.1rem' }}>📖 פרסום סטורי ידני</h3>
+                <button onClick={() => setStoryHelper(null)} style={{ background: 'none', border: 'none', fontSize: '1.3rem', cursor: 'pointer', color: 'var(--text-muted)' }}>✕</button>
+              </div>
+
+              <p style={{ fontSize: '0.875rem', color: 'var(--text-muted)', marginBottom: 20, lineHeight: 1.6 }}>
+                הפוסטים עלו ✅<br />
+                עכשיו פרסם את הסטורי ידנית — לחץ <strong>שתף לסטורי</strong>, בחר Instagram Stories, ואז הוסף את הלינק כסטיקר.
+              </p>
+
+              {/* Story image preview */}
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={storyHelper.storyImageUrl} alt="story" style={{ width: '100%', borderRadius: 10, marginBottom: 16, maxHeight: 300, objectFit: 'cover' }} />
+
+              {/* Car URL to copy */}
+              <div style={{ background: 'var(--bg-muted)', borderRadius: 8, padding: '10px 14px', marginBottom: 16, display: 'flex', alignItems: 'center', gap: 10 }}>
+                <span style={{ flex: 1, fontSize: '0.8rem', color: 'var(--text-primary)', wordBreak: 'break-all', fontFamily: 'monospace' }}>{storyHelper.carUrl}</span>
+                <button
+                  onClick={() => { navigator.clipboard.writeText(storyHelper.carUrl); }}
+                  style={{ flexShrink: 0, padding: '5px 12px', borderRadius: 6, border: '1px solid var(--border)', background: 'transparent', cursor: 'pointer', fontSize: '0.78rem', fontWeight: 600, color: 'var(--text-secondary)', whiteSpace: 'nowrap' }}
+                >
+                  📋 העתק
+                </button>
+              </div>
+
+              {/* Action buttons */}
+              <div style={{ display: 'flex', gap: 10, flexDirection: 'column' }}>
+                <button
+                  onClick={async () => {
+                    try {
+                      const imgRes = await fetch(storyHelper.storyImageUrl);
+                      const blob = await imgRes.blob();
+                      const file = new File([blob], 'story.jpg', { type: blob.type });
+                      await navigator.share({ files: [file], title: 'CarIssues Story' });
+                    } catch {
+                      // Fallback: just open the image in a new tab for manual download
+                      window.open(storyHelper.storyImageUrl, '_blank');
+                    }
+                  }}
+                  className="btn btn-primary"
+                  style={{ width: '100%', height: 44, fontSize: '0.9375rem', fontWeight: 700 }}
+                >
+                  📱 שתף לסטורי (Instagram)
+                </button>
+                <a
+                  href={storyHelper.storyImageUrl}
+                  download="story.jpg"
+                  style={{ display: 'block', textAlign: 'center', padding: '10px', borderRadius: 8, border: '1px solid var(--border)', fontSize: '0.875rem', color: 'var(--text-secondary)', textDecoration: 'none' }}
+                >
+                  ⬇️ הורד תמונה
+                </a>
+              </div>
+
+              <p style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginTop: 14, textAlign: 'center' }}>
+                לחץ מחוץ לחלון לסגירה
+              </p>
+            </div>
+          </div>
+        )}
+
         {previewPost && (() => {
           const meta = previewPost.metadata as Record<string, unknown> | null;
           const imageUrl = meta?.image_url as string | undefined;
