@@ -54,7 +54,7 @@ Generate a social media post based on this brief: "${prompt}"
 Return ONLY a raw JSON object (no markdown, no code blocks) with these fields:
 - content_he: Hebrew caption, engaging, 2-4 short paragraphs, use emojis, end with the website link carissues.co.il. Write naturally for Israeli car owners.
 - hashtags: string of relevant Hebrew + English hashtags, space-separated (8-12 tags)
-- screenshot_path: best page path to use as post image — choose from: "/" | "/cars" | "/rankings" | "/news" | "/cars/compare"`;
+- screenshot_path: best page path to use as post image — choose from: "/" | "/cars" | "/rankings" | "/cars/compare"`;
 
     async function tryGemini(): Promise<string | null> {
       if (!process.env.GEMINI_API_KEY) return null;
