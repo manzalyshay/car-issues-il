@@ -42,7 +42,16 @@ async function fetchVideos(makeSlug, modelSlug, makeEn, modelEn, makeHe, modelHe
     try {
       const res = await fetch(url.toString());
       const data = await res.json();
-      if (data.error) { console.warn(`  API error for "${q}": ${data.error.message}`); continue; }
+      if (data.error) {
+        const code = data.error.code;
+        const reason = data.error.errors?.[0]?.reason;
+        if (code === 403 && (reason === 'quotaExceeded' || reason === 'dailyLimitExceeded')) {
+          console.error('\n⚠️  YouTube quota exceeded — stopping for today. Will resume tomorrow.');
+          return null; // signal quota exceeded
+        }
+        console.warn(`  API error for "${q}": ${data.error.message}`);
+        continue;
+      }
       for (const item of data.items ?? []) {
         const ytId = item.id?.videoId;
         if (!ytId || seen.has(ytId)) continue;
@@ -70,20 +79,39 @@ async function fetchVideos(makeSlug, modelSlug, makeEn, modelEn, makeHe, modelHe
 const { data: makes } = await sb.from('car_makes').select('slug,name_he,name_en');
 const { data: models } = await sb.from('car_models').select('slug,make_slug,name_he,name_en');
 
+// Find which car slugs already have at least one video
+const { data: existing } = await sb.from('car_videos').select('make_slug,model_slug');
+const hasVideos = new Set((existing ?? []).map(r => `${r.make_slug}/${r.model_slug}`));
+
 const makeMap = Object.fromEntries((makes ?? []).map(m => [m.slug, m]));
+
+// Only process cars with no videos yet
+const missing = (models ?? []).filter(m => !hasVideos.has(`${m.make_slug}/${m.slug}`));
+console.log(`Cars with videos: ${hasVideos.size} / ${(models ?? []).length}`);
+console.log(`Cars still missing videos: ${missing.length}\n`);
+
+if (missing.length === 0) {
+  console.log('All cars already have videos. Nothing to do.');
+  process.exit(0);
+}
 
 let total = 0;
 let i = 0;
-for (const model of models ?? []) {
+for (const model of missing) {
   const make = makeMap[model.make_slug];
   if (!make) continue;
   i++;
-  process.stdout.write(`[${i}/${models.length}] ${make.name_en} ${model.name_en}... `);
-  const inserted = await fetchVideos(make.slug, model.slug, make.name_en, model.name_en, make.name_he, model.name_he);
-  total += inserted;
-  console.log(`+${inserted} videos`);
+  process.stdout.write(`[${i}/${missing.length}] ${make.name_en} ${model.name_en}... `);
+  const result = await fetchVideos(make.slug, model.slug, make.name_en, model.name_en, make.name_he, model.name_he);
+  if (result === null) {
+    // quota exceeded — exit cleanly (GitHub Actions won't mark it as failure)
+    console.log(`\nStopped after ${i - 1} cars. Total videos inserted this run: ${total}`);
+    process.exit(0);
+  }
+  total += result;
+  console.log(`+${result} videos`);
   // Small delay to avoid hitting YouTube quota too fast
-  await new Promise(r => setTimeout(r, 200));
+  await new Promise(r => setTimeout(r, 300));
 }
 
 console.log(`\nDone! Total videos inserted: ${total}`);
