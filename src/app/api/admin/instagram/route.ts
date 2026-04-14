@@ -257,11 +257,19 @@ export async function POST(req: NextRequest) {
 
     if (igPostId) {
       try {
-        // IG media insights: impressions, reach, likes, comments, saves
-        const ins = await fetch(`${API}/${igPostId}/insights?metric=impressions,reach,likes,comments,saved&access_token=${t}`).then(r => r.json());
+        // Valid IG media insights metrics (likes/comments are NOT valid insight metrics)
+        const ins = await fetch(`${API}/${igPostId}/insights?metric=impressions,reach,saved&access_token=${t}`).then(r => r.json());
         if (ins.data) {
           for (const m of ins.data) metrics[`ig_${m.name}`] = m.values?.[0]?.value ?? m.value;
+        } else if (ins.error) {
+          metrics.ig_insights_error = ins.error.message;
         }
+      } catch { /* non-fatal */ }
+      try {
+        // Like count and comments count come from the media object itself
+        const media = await fetch(`${API}/${igPostId}?fields=like_count,comments_count&access_token=${t}`).then(r => r.json());
+        if (media.like_count != null) metrics.ig_likes = media.like_count;
+        if (media.comments_count != null) metrics.ig_comments = media.comments_count;
       } catch { /* non-fatal */ }
     }
 
@@ -271,6 +279,8 @@ export async function POST(req: NextRequest) {
         const ins = await fetch(`${API}/${fbPostId}/insights?metric=post_impressions,post_reactions_by_type_total,post_clicks&access_token=${t}`).then(r => r.json());
         if (ins.data) {
           for (const m of ins.data) metrics[`fb_${m.name}`] = m.values?.[0]?.value ?? m.value;
+        } else if (ins.error) {
+          metrics.fb_insights_error = ins.error.message;
         }
       } catch { /* non-fatal */ }
     }

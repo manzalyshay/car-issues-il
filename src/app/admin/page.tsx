@@ -1868,6 +1868,30 @@ export default function AdminPage() {
                 </details>
               </div>
 
+              {/* Delete reel to free storage */}
+              <button
+                onClick={async () => {
+                  if (!confirm('מחק את קובץ הריל מהאחסון? תצטרך ליצור אותו מחדש בפעם הבאה.')) return;
+                  const slugParts = reelHelper.carUrl.replace('https://carissues.co.il/cars/', '').split('/');
+                  const [mkSlug, mdSlug] = slugParts;
+                  const t = await getToken();
+                  const matchPost = socialPosts.find(p => {
+                    const m = p.metadata as Record<string, unknown> | null;
+                    return m?.reel_url === reelHelper.reelUrl;
+                  });
+                  await fetch('/api/admin/trigger-reel', {
+                    method: 'DELETE',
+                    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${t}` },
+                    body: JSON.stringify({ makeSlug: mkSlug, modelSlug: mdSlug, postId: matchPost?.id }),
+                  });
+                  setReelHelper(null);
+                  await fetchSocialPosts();
+                }}
+                style={{ marginTop: 8, width: '100%', padding: '8px', borderRadius: 8, border: '1px solid #f43f5e40', background: 'transparent', cursor: 'pointer', fontSize: '0.78rem', fontWeight: 600, color: '#f43f5e' }}
+              >
+                🗑 מחק ריל מהאחסון (לאחר פרסום)
+              </button>
+
               <p style={{ fontSize: '0.7rem', color: 'var(--text-muted)', marginTop: 12, textAlign: 'center' }}>
                 לחץ מחוץ לחלון לסגירה
               </p>

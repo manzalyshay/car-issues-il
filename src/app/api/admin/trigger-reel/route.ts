@@ -3,6 +3,30 @@ import { isAdmin, getServiceClient } from '@/lib/adminAuth';
 
 export const dynamic = 'force-dynamic';
 
+export async function DELETE(req: NextRequest) {
+  if (!await isAdmin(req)) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+
+  const { makeSlug, modelSlug, postId } = await req.json();
+  const sb = getServiceClient();
+
+  // Remove MP4 from Supabase storage
+  await sb.storage.from('social-screenshots').remove([`reels/${makeSlug}_${modelSlug}.mp4`]);
+
+  // Clear reel_url from car_3d_models
+  await sb.from('car_3d_models').update({ reel_url: null })
+    .eq('make_slug', makeSlug).eq('model_slug', modelSlug);
+
+  // Clear reel fields from post metadata
+  if (postId) {
+    const { data: post } = await sb.from('social_posts').select('metadata').eq('id', postId).single();
+    const meta = (post?.metadata ?? {}) as Record<string, unknown>;
+    const { reel_url: _ru, reel_status: _rs, ...rest } = meta;
+    await sb.from('social_posts').update({ metadata: rest }).eq('id', postId);
+  }
+
+  return NextResponse.json({ ok: true });
+}
+
 export async function POST(req: NextRequest) {
   if (!await isAdmin(req)) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
