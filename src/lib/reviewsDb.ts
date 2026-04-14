@@ -1,3 +1,4 @@
+import { unstable_cache } from 'next/cache';
 import { supabase } from './supabase';
 import type { Review } from '@/data/reviews';
 
@@ -12,39 +13,51 @@ export async function getAllReviews(): Promise<Review[]> {
   return (data ?? []).map(dbToReview);
 }
 
-export async function getReviewsForModel(makeSlug: string, modelSlug: string): Promise<Review[]> {
-  const { data, error } = await supabase
-    .from('reviews')
-    .select('*')
-    .eq('make_slug', makeSlug)
-    .eq('model_slug', modelSlug)
-    .order('created_at', { ascending: false });
-  if (error) { console.error('getReviewsForModel:', error.message); return []; }
-  return (data ?? []).map(dbToReview);
-}
+export const getReviewsForModel = unstable_cache(
+  async (makeSlug: string, modelSlug: string): Promise<Review[]> => {
+    const { data, error } = await supabase
+      .from('reviews')
+      .select('*')
+      .eq('make_slug', makeSlug)
+      .eq('model_slug', modelSlug)
+      .order('created_at', { ascending: false });
+    if (error) { console.error('getReviewsForModel:', error.message); return []; }
+    return (data ?? []).map(dbToReview);
+  },
+  ['reviews-model'],
+  { revalidate: 300, tags: ['reviews'] }, // 5m fallback; invalidated on new review
+);
 
-export async function getReviewsForCar(makeSlug: string, modelSlug: string, year: number): Promise<Review[]> {
-  const { data, error } = await supabase
-    .from('reviews')
-    .select('*')
-    .eq('make_slug', makeSlug)
-    .eq('model_slug', modelSlug)
-    .eq('year', year)
-    .order('helpful', { ascending: false })
-    .order('created_at', { ascending: false });
-  if (error) { console.error('getReviewsForCar:', error.message); return []; }
-  return (data ?? []).map(dbToReview);
-}
+export const getReviewsForCar = unstable_cache(
+  async (makeSlug: string, modelSlug: string, year: number): Promise<Review[]> => {
+    const { data, error } = await supabase
+      .from('reviews')
+      .select('*')
+      .eq('make_slug', makeSlug)
+      .eq('model_slug', modelSlug)
+      .eq('year', year)
+      .order('helpful', { ascending: false })
+      .order('created_at', { ascending: false });
+    if (error) { console.error('getReviewsForCar:', error.message); return []; }
+    return (data ?? []).map(dbToReview);
+  },
+  ['reviews-car'],
+  { revalidate: 300, tags: ['reviews'] },
+);
 
-export async function getAverageRating(makeSlug: string, modelSlug: string): Promise<number | null> {
-  const { data, error } = await supabase
-    .from('reviews')
-    .select('rating')
-    .eq('make_slug', makeSlug)
-    .eq('model_slug', modelSlug);
-  if (error || !data?.length) return null;
-  return data.reduce((s: number, r: { rating: number }) => s + r.rating, 0) / data.length;
-}
+export const getAverageRating = unstable_cache(
+  async (makeSlug: string, modelSlug: string): Promise<number | null> => {
+    const { data, error } = await supabase
+      .from('reviews')
+      .select('rating')
+      .eq('make_slug', makeSlug)
+      .eq('model_slug', modelSlug);
+    if (error || !data?.length) return null;
+    return data.reduce((s: number, r: { rating: number }) => s + r.rating, 0) / data.length;
+  },
+  ['reviews-avg'],
+  { revalidate: 300, tags: ['reviews'] },
+);
 
 // ── Write ─────────────────────────────────────────────────────────────────────
 

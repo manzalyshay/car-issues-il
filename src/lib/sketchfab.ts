@@ -11,21 +11,23 @@ export interface SketchfabModel {
   author: string;
   license: string;
   viewerUrl: string;
+  reelUrl: string | null;
 }
 
 const fetch3dModels = unstable_cache(
-  async (): Promise<Record<string, { uid: string; name: string; author: string; license: string }>> => {
+  async (): Promise<Record<string, { uid: string; name: string; author: string; license: string; reelUrl: string | null }>> => {
     const { data, error } = await getServiceClient()
       .from('car_3d_models')
-      .select('make_slug,model_slug,sketchfab_uid,sketchfab_name,sketchfab_author,license');
+      .select('make_slug,model_slug,sketchfab_uid,sketchfab_name,sketchfab_author,license,reel_url');
     if (error) throw new Error(`car_3d_models: ${error.message}`);
-    const map: Record<string, { uid: string; name: string; author: string; license: string }> = {};
+    const map: Record<string, { uid: string; name: string; author: string; license: string; reelUrl: string | null }> = {};
     for (const row of data ?? []) {
       map[`${row.make_slug}/${row.model_slug}`] = {
         uid: row.sketchfab_uid,
         name: row.sketchfab_name,
         author: row.sketchfab_author,
         license: row.license,
+        reelUrl: row.reel_url ?? null,
       };
     }
     return map;
@@ -47,5 +49,6 @@ export async function findCarModel(
     author: entry.author,
     license: entry.license,
     viewerUrl: `https://sketchfab.com/models/${entry.uid}`,
+    reelUrl: entry.reelUrl,
   };
 }

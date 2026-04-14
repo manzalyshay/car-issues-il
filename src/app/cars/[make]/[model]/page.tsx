@@ -5,7 +5,6 @@ import { getMakeBySlug, getModelBySlug, getCategoryLabel } from '@/lib/carsDb';
 import { getReviewsForModel } from '@/lib/reviewsDb';
 import { findCarModel } from '@/lib/sketchfab';
 import { getExpertReviews } from '@/lib/expertReviews';
-import { getVideosForCar } from '@/lib/youtubeVideos';
 import StarRating from '@/components/StarRating';
 import MakeLogo from '@/components/MakeLogo';
 import Car3DViewer from '@/components/Car3DViewer';
@@ -43,11 +42,10 @@ export default async function ModelPage({ params }: Props) {
   const model = await getModelBySlug(makeSlug, modelSlug);
   if (!model) notFound();
 
-  const [allReviews, expertReviewsList, sketchfabModel, videos] = await Promise.all([
+  const [allReviews, expertReviewsList, sketchfabModel] = await Promise.all([
     getReviewsForModel(makeSlug, modelSlug),
     getExpertReviews(makeSlug, modelSlug),
     findCarModel(makeSlug, modelSlug),
-    getVideosForCar(makeSlug, modelSlug),
   ]);
   const expertReview = expertReviewsList[0] ?? null;
   const avgRating = allReviews.length
@@ -118,6 +116,44 @@ export default async function ModelPage({ params }: Props) {
           </Link>
         </div>
 
+        {/* Year selector */}
+        <div className="card" style={{ padding: '20px 24px', marginBottom: 32 }}>
+          <h2 style={{ fontSize: '1rem', fontWeight: 700, marginBottom: 14, color: 'var(--text-secondary)' }}>
+            ביקורות לפי שנה
+          </h2>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+            {model.years.map((y) => (
+              <Link
+                key={y}
+                href={`/cars/${make.slug}/${model.slug}/${y}`}
+                style={{
+                  padding: '6px 16px',
+                  borderRadius: 20,
+                  border: '1.5px solid var(--border)',
+                  background: 'var(--bg-muted)',
+                  color: 'var(--text-primary)',
+                  fontSize: '0.875rem',
+                  fontWeight: 600,
+                  textDecoration: 'none',
+                  transition: 'background 0.15s, border-color 0.15s',
+                }}
+                onMouseEnter={(e) => {
+                  (e.currentTarget as HTMLAnchorElement).style.background = 'var(--brand-red)';
+                  (e.currentTarget as HTMLAnchorElement).style.color = '#fff';
+                  (e.currentTarget as HTMLAnchorElement).style.borderColor = 'var(--brand-red)';
+                }}
+                onMouseLeave={(e) => {
+                  (e.currentTarget as HTMLAnchorElement).style.background = 'var(--bg-muted)';
+                  (e.currentTarget as HTMLAnchorElement).style.color = 'var(--text-primary)';
+                  (e.currentTarget as HTMLAnchorElement).style.borderColor = 'var(--border)';
+                }}
+              >
+                {y}
+              </Link>
+            ))}
+          </div>
+        </div>
+
         {/* General AI summary — combined score includes user reviews */}
         <ExpertReviewsSection
           review={expertReview}
@@ -133,7 +169,6 @@ export default async function ModelPage({ params }: Props) {
           modelSlug={modelSlug}
           makeNameHe={make.nameHe}
           modelNameHe={model.nameHe}
-          videos={videos}
         >
           {/* Reviews tab content */}
           <div>

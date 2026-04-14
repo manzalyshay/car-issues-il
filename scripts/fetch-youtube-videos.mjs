@@ -1,4 +1,16 @@
 import { createClient } from '@supabase/supabase-js';
+import { readFileSync } from 'fs';
+import { resolve, dirname } from 'path';
+import { fileURLToPath } from 'url';
+
+try {
+  const __dir = dirname(fileURLToPath(import.meta.url));
+  const raw = readFileSync(resolve(__dir, '../.env.local'), 'utf8');
+  for (const line of raw.split('\n')) {
+    const m = line.match(/^([^#=]+)=(.*)$/);
+    if (m) process.env[m[1].trim()] = m[2].trim();
+  }
+} catch { /* ignore */ }
 
 const sb = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL,

@@ -1078,7 +1078,12 @@ export async function getExpertReviewsForYear(
       .limit(1);
 
     if (yearData && yearData.length > 0) {
-      return { review: mapRow(yearData[0]), isYearSpecific: true };
+      const row = yearData[0];
+      // Only treat as year-specific if real scraped posts were found for this year
+      const hasRealData = (row.local_post_count ?? 0) + (row.global_post_count ?? 0) > 0;
+      if (hasRealData) {
+        return { review: mapRow(row), isYearSpecific: true };
+      }
     }
 
     // No DB row — fall back to general model summary (no inline LLM generation)

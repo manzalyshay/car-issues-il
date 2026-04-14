@@ -54,6 +54,7 @@ export default async function CarYearPage({ params }: Props) {
     getReviewsForCar(makeSlug, modelSlug, yearNum),
     getExpertReviewsForYear(makeSlug, modelSlug, yearNum),
   ]);
+
   const avgRating = reviews.length
     ? reviews.reduce((s, r) => s + r.rating, 0) / reviews.length
     : null;
@@ -218,12 +219,15 @@ export default async function CarYearPage({ params }: Props) {
           />
         )}
 
-        {/* Client component handles reviews list + review form */}
+        {/* Client component handles reviews list + review form + on-demand AI generation + video tab */}
         <CarYearClient
           makeSlug={makeSlug}
           modelSlug={modelSlug}
           year={yearNum}
           initialReviews={reviews}
+          isYearSpecific={isYearSpecific}
+          makeNameHe={make.nameHe}
+          modelNameHe={model.nameHe}
         />
 
         {/* Recalls for this year */}

@@ -1,3 +1,4 @@
+import { unstable_cache } from 'next/cache';
 import { getServiceClient } from './adminAuth';
 
 export interface CarVideo {
@@ -43,17 +44,24 @@ function isLikelyReview(title: string): boolean {
   return hasReviewSignal || true; // pass through if no explicit spam signal
 }
 
-export async function getVideosForCar(makeSlug: string, modelSlug: string): Promise<CarVideo[]> {
-  const sb = getServiceClient();
-  const { data } = await sb
-    .from('car_videos')
-    .select('*')
-    .eq('make_slug', makeSlug)
-    .eq('model_slug', modelSlug)
-    .order('published_at', { ascending: false })
-    .limit(12);
-  return (data ?? []) as CarVideo[];
-}
+export const getVideosForCar = unstable_cache(
+  async (makeSlug: string, modelSlug: string): Promise<CarVideo[]> => {
+    const sb = getServiceClient();
+    const { data } = await sb
+      .from('car_videos')
+      .select('*')
+      .eq('make_slug', makeSlug)
+      .eq('model_slug', modelSlug)
+      .order('published_at', { ascending: false })
+      .limit(12);
+    return (data ?? []) as CarVideo[];
+  },
+  ['car-videos'],
+  {
+    revalidate: 86400, // 24h fallback
+    tags: ['car-media'],
+  },
+);
 
 export async function fetchAndStoreVideos(
   makeSlug: string,
