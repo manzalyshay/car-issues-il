@@ -9,10 +9,11 @@ export const contentType = 'image/png';
 interface Props { params: Promise<{ make: string; model: string }> }
 
 export default async function OgImage({ params }: Props) {
+  try {
   const { make: makeSlug, model: modelSlug } = await params;
-  const make = await getMakeBySlug(makeSlug);
-  const model = make ? await getModelBySlug(makeSlug, modelSlug) : null;
-  const reviews = make && model ? await getReviewsForModel(makeSlug, modelSlug) : [];
+  const make = await getMakeBySlug(makeSlug).catch(() => undefined);
+  const model = make ? await getModelBySlug(makeSlug, modelSlug).catch(() => undefined) : undefined;
+  const reviews = make && model ? await getReviewsForModel(makeSlug, modelSlug).catch(() => []) : [];
   const avgRating = reviews.length ? reviews.reduce((s, r) => s + r.rating, 0) / reviews.length : null;
   const stars = avgRating ? Math.round(avgRating) : 0;
 
@@ -118,4 +119,12 @@ export default async function OgImage({ params }: Props) {
     ),
     { ...size }
   );
+  } catch {
+    return new ImageResponse(
+      (<div style={{ width: 1200, height: 630, background: '#1a1a2e', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <div style={{ color: '#fff', fontSize: 48, fontWeight: 900 }}>CarIssues IL</div>
+      </div>),
+      { ...size }
+    );
+  }
 }

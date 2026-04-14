@@ -10,15 +10,21 @@ export const contentType = 'image/png';
 interface Props { params: Promise<{ make: string; model: string; year: string }> }
 
 export default async function OGImage({ params }: Props) {
+  try {
   const { make: makeSlug, model: modelSlug, year } = await params;
-  const make = await getMakeBySlug(makeSlug);
-  const model = make ? await getModelBySlug(makeSlug, modelSlug) : null;
-  if (!make || !model) return new Response('Not found', { status: 404 });
+  const make = await getMakeBySlug(makeSlug).catch(() => undefined);
+  const model = make ? await getModelBySlug(makeSlug, modelSlug).catch(() => undefined) : undefined;
+  if (!make || !model) return new ImageResponse(
+    (<div style={{ width: 1200, height: 630, background: '#1a1a2e', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      <div style={{ color: '#fff', fontSize: 48, fontWeight: 900 }}>CarIssues IL</div>
+    </div>),
+    { ...size }
+  );
 
   const yearNum = parseInt(year);
   const [reviews, { review: expertReview }] = await Promise.all([
-    getReviewsForCar(makeSlug, modelSlug, yearNum),
-    getExpertReviewsForYear(makeSlug, modelSlug, yearNum),
+    getReviewsForCar(makeSlug, modelSlug, yearNum).catch(() => []),
+    getExpertReviewsForYear(makeSlug, modelSlug, yearNum).catch(() => ({ review: null, isYearSpecific: false })),
   ]);
 
   const avgRating = reviews.length
@@ -128,4 +134,12 @@ export default async function OGImage({ params }: Props) {
     ),
     { ...size },
   );
+  } catch {
+    return new ImageResponse(
+      (<div style={{ width: 1200, height: 630, background: '#1a1a2e', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <div style={{ color: '#fff', fontSize: 48, fontWeight: 900 }}>CarIssues IL</div>
+      </div>),
+      { ...size }
+    );
+  }
 }
