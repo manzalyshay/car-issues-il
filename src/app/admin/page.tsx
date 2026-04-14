@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, type ReactNode } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/lib/authContext';
@@ -135,6 +135,7 @@ export default function AdminPage() {
   const [promptText, setPromptText] = useState('');
   const [promptGenerating, setPromptGenerating] = useState(false);
   const [includeStory, setIncludeStory] = useState(true);
+  const [includeReel, setIncludeReel] = useState(false);
   const [screenshotting, setScreenshotting] = useState<Record<string, boolean>>({});
   const [screenshotPath, setScreenshotPath] = useState<Record<string, string>>({});
   const [publishingPost, setPublishingPost] = useState<Record<string, boolean>>({});
@@ -473,7 +474,7 @@ export default function AdminPage() {
       const res = await fetch('/api/admin/instagram', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ action: 'publish', imageUrl, storyImageUrl: (meta?.story_image_url as string) ?? undefined, caption: post.content_he, hashtags: post.hashtags, postId: post.id, includeStory, storyLink: meta?.carSlug ? `https://carissues.co.il/cars/${meta.carSlug}` : undefined }),
+        body: JSON.stringify({ action: 'publish', imageUrl, storyImageUrl: (meta?.story_image_url as string) ?? undefined, caption: post.content_he, hashtags: post.hashtags, postId: post.id, includeStory, storyLink: meta?.carSlug ? `https://carissues.co.il/cars/${meta.carSlug}` : undefined, reelUrl: (includeReel && meta?.reel_url) ? (meta.reel_url as string) : undefined }),
       });
       const data = await res.json();
       // Build a human-readable per-platform result
@@ -1349,6 +1350,70 @@ export default function AdminPage() {
                     const isPublishing = !!publishingPost[post.id];
                     const isScreenshotting = !!screenshotting[post.id];
 
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                    const platformRow = (isPosted || isFailed) ? (
+                      <div style={{ borderTop: '1px solid var(--border)', background: 'var(--bg-muted)' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '9px 14px', borderBottom: '1px solid var(--border)' }}>
+                          <span style={{ fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-muted)', width: 28, flexShrink: 0 }}>📸</span>
+                          <span style={{ fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-secondary)', width: 80, flexShrink: 0 }}>Instagram</span>
+                          {igOk ? (
+                            <>
+                              <span style={{ fontSize: '0.78rem', fontWeight: 800, color: '#10b981' }}>✓ פורסם</span>
+                              <a href={String(meta?.ig_permalink ?? '#')} target="_blank" rel="noreferrer" style={{ marginRight: 'auto', fontSize: '0.72rem', fontWeight: 700, color: '#10b981', textDecoration: 'none', padding: '2px 8px', borderRadius: 5, border: '1px solid #10b98140', whiteSpace: 'nowrap' }}>↗ פתח בIG</a>
+                            </>
+                          ) : (
+                            <>
+                              <span style={{ fontSize: '0.78rem', fontWeight: 800, color: '#f43f5e' }}>✗ נכשל</span>
+                              {!!meta?.instagram_error ? (
+                                <span style={{ fontSize: '0.68rem', color: '#f43f5e', flex: 1, direction: 'ltr', textAlign: 'left', userSelect: 'text', cursor: 'text', wordBreak: 'break-all' }}>
+                                  {String(meta.instagram_error)}
+                                  <button onClick={() => navigator.clipboard.writeText(String(meta.instagram_error))} title="העתק שגיאה" style={{ marginRight: 6, padding: '1px 6px', fontSize: '0.65rem', cursor: 'pointer', borderRadius: 4, border: '1px solid #f43f5e80', background: 'transparent', color: '#f43f5e' }}>העתק</button>
+                                </span>
+                              ) : null}
+                            </>
+                          )}
+                        </div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '9px 14px', borderBottom: hasStoryResult ? '1px solid var(--border)' : undefined }}>
+                          <span style={{ fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-muted)', width: 28, flexShrink: 0 }}>👍</span>
+                          <span style={{ fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-secondary)', width: 80, flexShrink: 0 }}>Facebook</span>
+                          {fbOk ? (
+                            <>
+                              <span style={{ fontSize: '0.78rem', fontWeight: 800, color: '#10b981' }}>✓ פורסם</span>
+                              <a href={String(meta?.fb_post_url ?? '#')} target="_blank" rel="noreferrer" style={{ marginRight: 'auto', fontSize: '0.72rem', fontWeight: 700, color: '#1877f2', textDecoration: 'none', padding: '2px 8px', borderRadius: 5, border: '1px solid #1877f240', whiteSpace: 'nowrap' }}>↗ פתח בFB</a>
+                            </>
+                          ) : (
+                            <>
+                              <span style={{ fontSize: '0.78rem', fontWeight: 800, color: '#f43f5e' }}>✗ נכשל</span>
+                              {!!meta?.facebook_error ? (
+                                <span style={{ fontSize: '0.68rem', color: '#f43f5e', flex: 1, direction: 'ltr', textAlign: 'left', userSelect: 'text', cursor: 'text', wordBreak: 'break-all' }}>
+                                  {String(meta.facebook_error)}
+                                  <button onClick={() => navigator.clipboard.writeText(String(meta.facebook_error))} title="העתק שגיאה" style={{ marginRight: 6, padding: '1px 6px', fontSize: '0.65rem', cursor: 'pointer', borderRadius: 4, border: '1px solid #f43f5e80', background: 'transparent', color: '#f43f5e' }}>העתק</button>
+                                </span>
+                              ) : null}
+                            </>
+                          )}
+                        </div>
+                        {hasStoryResult ? (
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '9px 14px', flexWrap: 'wrap' }}>
+                            <span style={{ fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-muted)', width: 28, flexShrink: 0 }}>🎬</span>
+                            <span style={{ fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-secondary)', width: 80, flexShrink: 0 }}>Story</span>
+                            {(igStoryOk || fbStoryOk)
+                              ? <span style={{ fontSize: '0.78rem', fontWeight: 800, color: '#10b981' }}>✓ פורסם</span>
+                              : <>
+                                  <span style={{ fontSize: '0.78rem', fontWeight: 800, color: '#f43f5e' }}>✗ נכשל</span>
+                                  {!!(meta?.instagram_story_error || meta?.facebook_story_error) ? (
+                                    <span style={{ fontSize: '0.68rem', color: '#f43f5e', flex: 1, direction: 'ltr', textAlign: 'left', userSelect: 'text', cursor: 'text', wordBreak: 'break-all' }}>
+                                      {String(meta?.instagram_story_error || meta?.facebook_story_error)}
+                                      <button onClick={() => navigator.clipboard.writeText(String(meta?.instagram_story_error || meta?.facebook_story_error))} style={{ marginRight: 6, padding: '1px 6px', fontSize: '0.65rem', cursor: 'pointer', borderRadius: 4, border: '1px solid #f43f5e80', background: 'transparent', color: '#f43f5e' }}>העתק</button>
+                                    </span>
+                                  ) : null}
+                                </>
+                            }
+                          </div>
+                        ) : null}
+                      </div>
+                    ) : null;
+
                     return (
                       <div key={post.id} style={{ borderRadius: 12, border: '1px solid var(--border)', background: 'var(--bg-card)', overflow: 'hidden', borderRight: `4px solid ${statusC}` }}>
 
@@ -1406,93 +1471,29 @@ export default function AdminPage() {
                         </div>
 
                         {/* ── ROW 3A: PLATFORM RESULTS (posted/failed) ─────── */}
-                        {(isPosted || isFailed) && (
-                          <div style={{ borderTop: '1px solid var(--border)', background: 'var(--bg-muted)' }}>
-                            {/* Instagram row */}
-                            <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '9px 14px', borderBottom: '1px solid var(--border)' }}>
-                              <span style={{ fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-muted)', width: 28, flexShrink: 0 }}>📸</span>
-                              <span style={{ fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-secondary)', width: 80, flexShrink: 0 }}>Instagram</span>
-                              {igOk ? (
-                                <>
-                                  <span style={{ fontSize: '0.78rem', fontWeight: 800, color: '#10b981' }}>✓ פורסם</span>
-                                  <a href={String(meta?.ig_permalink ?? '#')} target="_blank" rel="noreferrer" style={{ marginRight: 'auto', fontSize: '0.72rem', fontWeight: 700, color: '#10b981', textDecoration: 'none', padding: '2px 8px', borderRadius: 5, border: '1px solid #10b98140', whiteSpace: 'nowrap' }}>↗ פתח בIG</a>
-                                </>
-                              ) : (
-                                <>
-                                  <span style={{ fontSize: '0.78rem', fontWeight: 800, color: '#f43f5e' }}>✗ נכשל</span>
-                                  {!!meta?.instagram_error && (
-                                    <span style={{ fontSize: '0.68rem', color: '#f43f5e', flex: 1, direction: 'ltr', textAlign: 'left', userSelect: 'text', cursor: 'text', wordBreak: 'break-all' }}>
-                                      {String(meta.instagram_error)}
-                                      <button onClick={() => navigator.clipboard.writeText(String(meta.instagram_error))} title="העתק שגיאה" style={{ marginRight: 6, padding: '1px 6px', fontSize: '0.65rem', cursor: 'pointer', borderRadius: 4, border: '1px solid #f43f5e80', background: 'transparent', color: '#f43f5e' }}>העתק</button>
-                                    </span>
-                                  )}
-                                </>
-                              )}
-                            </div>
-                            {/* Facebook row */}
-                            <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '9px 14px', borderBottom: hasStoryResult ? '1px solid var(--border)' : undefined }}>
-                              <span style={{ fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-muted)', width: 28, flexShrink: 0 }}>👍</span>
-                              <span style={{ fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-secondary)', width: 80, flexShrink: 0 }}>Facebook</span>
-                              {fbOk ? (
-                                <>
-                                  <span style={{ fontSize: '0.78rem', fontWeight: 800, color: '#10b981' }}>✓ פורסם</span>
-                                  <a href={String(meta?.fb_post_url ?? '#')} target="_blank" rel="noreferrer" style={{ marginRight: 'auto', fontSize: '0.72rem', fontWeight: 700, color: '#1877f2', textDecoration: 'none', padding: '2px 8px', borderRadius: 5, border: '1px solid #1877f240', whiteSpace: 'nowrap' }}>↗ פתח בFB</a>
-                                </>
-                              ) : (
-                                <>
-                                  <span style={{ fontSize: '0.78rem', fontWeight: 800, color: '#f43f5e' }}>✗ נכשל</span>
-                                  {!!meta?.facebook_error && (
-                                    <span style={{ fontSize: '0.68rem', color: '#f43f5e', flex: 1, direction: 'ltr', textAlign: 'left', userSelect: 'text', cursor: 'text', wordBreak: 'break-all' }}>
-                                      {String(meta.facebook_error)}
-                                      <button onClick={() => navigator.clipboard.writeText(String(meta.facebook_error))} title="העתק שגיאה" style={{ marginRight: 6, padding: '1px 6px', fontSize: '0.65rem', cursor: 'pointer', borderRadius: 4, border: '1px solid #f43f5e80', background: 'transparent', color: '#f43f5e' }}>העתק</button>
-                                    </span>
-                                  )}
-                                </>
-                              )}
-                            </div>
-                            {/* Story row (if applicable) */}
-                            {hasStoryResult && (
-                              <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '9px 14px', flexWrap: 'wrap' }}>
-                                <span style={{ fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-muted)', width: 28, flexShrink: 0 }}>🎬</span>
-                                <span style={{ fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-secondary)', width: 80, flexShrink: 0 }}>Story</span>
-                                {(igStoryOk || fbStoryOk)
-                                  ? <span style={{ fontSize: '0.78rem', fontWeight: 800, color: '#10b981' }}>✓ פורסם</span>
-                                  : <>
-                                      <span style={{ fontSize: '0.78rem', fontWeight: 800, color: '#f43f5e' }}>✗ נכשל</span>
-                                      {!!(meta?.instagram_story_error || meta?.facebook_story_error) && (
-                                        <span style={{ fontSize: '0.68rem', color: '#f43f5e', flex: 1, direction: 'ltr', textAlign: 'left', userSelect: 'text', cursor: 'text', wordBreak: 'break-all' }}>
-                                          {String(meta?.instagram_story_error || meta?.facebook_story_error)}
-                                          <button onClick={() => navigator.clipboard.writeText(String(meta?.instagram_story_error || meta?.facebook_story_error))} style={{ marginRight: 6, padding: '1px 6px', fontSize: '0.65rem', cursor: 'pointer', borderRadius: 4, border: '1px solid #f43f5e80', background: 'transparent', color: '#f43f5e' }}>העתק</button>
-                                        </span>
-                                      )}
-                                    </>
-                                }
-                              </div>
-                            )}
-                          </div>
-                        )}
+                        {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
+                        {platformRow as any}
 
                         {/* ── ROW 3C: METRICS (posted only) ───────────────── */}
-                        {isPosted && (igOk || fbOk) && (() => {
+                        {isPosted && (igOk || fbOk) ? (() => {
                           const m = meta as Record<string, unknown> | null;
-                          const hasMetrics = m && Object.keys(m).some(k => k.startsWith('ig_') && !['ig_post_id','ig_permalink','ig_media_url'].includes(k));
+                          const hasMetrics = !!(m && Object.keys(m).some(k => k.startsWith('ig_') && !['ig_post_id','ig_permalink','ig_media_url'].includes(k)));
                           return (
                             <div style={{ borderTop: '1px solid var(--border)', padding: '8px 14px', background: 'var(--bg-muted)', display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
                               <span style={{ fontSize: '0.72rem', fontWeight: 700, color: 'var(--text-muted)' }}>📊</span>
                               {hasMetrics ? (
                                 <>
-                                  {m?.ig_impressions != null && <span style={{ fontSize: '0.72rem', color: 'var(--text-secondary)' }}>👁 {String(m.ig_impressions)}</span>}
-                                  {m?.ig_reach != null && <span style={{ fontSize: '0.72rem', color: 'var(--text-secondary)' }}>📡 {String(m.ig_reach)}</span>}
-                                  {m?.ig_likes != null && <span style={{ fontSize: '0.72rem', color: 'var(--text-secondary)' }}>❤️ {String(m.ig_likes)}</span>}
-                                  {m?.ig_comments != null && <span style={{ fontSize: '0.72rem', color: 'var(--text-secondary)' }}>💬 {String(m.ig_comments)}</span>}
-                                  {m?.ig_saved != null && <span style={{ fontSize: '0.72rem', color: 'var(--text-secondary)' }}>🔖 {String(m.ig_saved)}</span>}
+                                  {m?.ig_impressions != null ? <span style={{ fontSize: '0.72rem', color: 'var(--text-secondary)' }}>👁 {String(m.ig_impressions)}</span> : null}
+                                  {m?.ig_reach != null ? <span style={{ fontSize: '0.72rem', color: 'var(--text-secondary)' }}>📡 {String(m.ig_reach)}</span> : null}
+                                  {m?.ig_likes != null ? <span style={{ fontSize: '0.72rem', color: 'var(--text-secondary)' }}>❤️ {String(m.ig_likes)}</span> : null}
+                                  {m?.ig_comments != null ? <span style={{ fontSize: '0.72rem', color: 'var(--text-secondary)' }}>💬 {String(m.ig_comments)}</span> : null}
+                                  {m?.ig_saved != null ? <span style={{ fontSize: '0.72rem', color: 'var(--text-secondary)' }}>🔖 {String(m.ig_saved)}</span> : null}
                                 </>
                               ) : (
                                 <button onClick={async () => {
                                   const t = await getToken();
                                   const r = await fetch('/api/admin/instagram', { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${t}` }, body: JSON.stringify({ action: 'get_metrics', igPostId: meta?.ig_post_id, fbPostId: meta?.fb_post_id }) });
                                   const d = await r.json();
-                                  // Save metrics into post metadata
                                   const tok = await getToken();
                                   await fetch('/api/admin/social-posts', { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${tok}` }, body: JSON.stringify({ action: 'update', id: post.id, metadata: { ...meta, ...d } }) });
                                   await fetchSocialPosts();
@@ -1502,7 +1503,7 @@ export default function AdminPage() {
                               )}
                             </div>
                           );
-                        })()}
+                        })() : null}
 
                         {/* ── ROW 3B: SCREENSHOT TOOLS (pending/failed) ────── */}
                         {(isPending || isFailed) && (
@@ -1583,16 +1584,22 @@ export default function AdminPage() {
 
                         {/* ── ROW 4: PUBLISH BAR (pending + has image) ─────── */}
                         {isPending && hasLocalImg && (
-                          <div style={{ borderTop: '1px solid var(--border)', padding: '10px 14px', display: 'flex', gap: 10, alignItems: 'center' }}>
-                            <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: '0.8rem', color: 'var(--text-secondary)', cursor: 'pointer', userSelect: 'none', flexShrink: 0, fontWeight: 600 }}>
-                              <input type="checkbox" checked={includeStory} onChange={e => setIncludeStory(e.target.checked)} style={{ accentColor: 'var(--brand-red)', width: 14, height: 14 }} />
+                          <div style={{ borderTop: '1px solid var(--border)', padding: '10px 14px', display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
+                            <label style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: '0.78rem', color: 'var(--text-secondary)', cursor: 'pointer', userSelect: 'none', flexShrink: 0, fontWeight: 600 }}>
+                              <input type="checkbox" checked={includeStory} onChange={e => setIncludeStory(e.target.checked)} style={{ accentColor: 'var(--brand-red)', width: 13, height: 13 }} />
                               + סטורי
                             </label>
+                            {!!meta?.reel_url && (
+                              <label style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: '0.78rem', color: includeReel ? '#7c3aed' : 'var(--text-secondary)', cursor: 'pointer', userSelect: 'none', flexShrink: 0, fontWeight: 600 }}>
+                                <input type="checkbox" checked={includeReel} onChange={e => setIncludeReel(e.target.checked)} style={{ accentColor: '#7c3aed', width: 13, height: 13 }} />
+                                🎬 + ריל (קרוסלה)
+                              </label>
+                            )}
                             <button onClick={() => publishPost(post)} disabled={isPublishing} style={{
                               flex: 1, padding: '9px 16px', borderRadius: 8, border: 'none', cursor: 'pointer', fontWeight: 800, color: '#fff', fontSize: '0.875rem', whiteSpace: 'nowrap',
                               background: isPublishing ? '#555' : 'linear-gradient(90deg, #405de6, #5851db, #833ab4, #c13584, #e1306c, #fd1d1d)',
                             }}>
-                              {isPublishing ? '⏳ מפרסם...' : `🚀 פרסם ל-Instagram + Facebook${includeStory ? ' + סטורי' : ''}`}
+                              {isPublishing ? '⏳ מפרסם...' : `🚀 פרסם${includeReel ? ' (קרוסלה 🖼+🎬)' : ''}${includeStory ? ' + סטורי' : ''}`}
                             </button>
                           </div>
                         )}

@@ -44,6 +44,22 @@ async function gql(path: string, method = 'GET', body?: Record<string, unknown>)
   return json;
 }
 
+export const maxDuration = 120; // video carousel processing needs time
+
+/** Poll an IG container until its status_code is FINISHED or ERROR (max ~60s) */
+async function waitForIgContainer(containerId: string): Promise<boolean> {
+  const t = await getToken();
+  for (let i = 0; i < 20; i++) {
+    await new Promise(r => setTimeout(r, 3000));
+    try {
+      const s = await fetch(`${API}/${containerId}?fields=status_code&access_token=${t}`).then(r => r.json());
+      if (s.status_code === 'FINISHED') return true;
+      if (s.status_code === 'ERROR') return false;
+    } catch { /* keep polling */ }
+  }
+  return false;
+}
+
 export async function POST(req: NextRequest) {
   if (!await isAdmin(req)) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
@@ -56,54 +72,110 @@ export async function POST(req: NextRequest) {
     return text.includes(SITE_URL) ? text : `${text}\n\n🔗 ${SITE_URL}`;
   }
 
-  // ── Publish to Instagram + Facebook (post + optional story) ──────────────────
+  // ── Publish to Instagram + Facebook (post + optional carousel with reel) ────
   if (action === 'publish') {
-    const { imageUrl, storyImageUrl, caption, hashtags, postId, includeStory = false, storyLink } = body;
-    const storyUrl = storyImageUrl ?? imageUrl; // fall back to feed image if no story image
+    const { imageUrl, storyImageUrl, caption, hashtags, postId, includeStory = false, storyLink, reelUrl } = body;
+    const storyUrl = storyImageUrl ?? imageUrl;
     const storyLinkUrl = storyLink ?? SITE_URL;
     const fullCaption = ensureSiteLink(`${caption}\n\n${hashtags}`);
+    const captionNoHashtags = ensureSiteLink(caption);
     const results: Record<string, unknown> = {};
 
-    // Instagram post: create container → publish → fetch media details → post 1st comment with hashtags
+    // ── Instagram ──────────────────────────────────────────────────────────────
     try {
-      const captionNoHashtags = ensureSiteLink(caption);
-      const container = await gql(`${IG_ID()}/media`, 'POST', { image_url: imageUrl, caption: captionNoHashtags });
-      if (container.error) throw new Error(container.error.message);
-      const published = await gql(`${IG_ID()}/media_publish`, 'POST', { creation_id: container.id });
+      let published: Record<string, unknown>;
+
+      if (reelUrl) {
+        // Carousel: image (slide 1) + video/reel (slide 2)
+        results.ig_carousel = true;
+
+        // Create image carousel item
+        const imgItem = await gql(`${IG_ID()}/media`, 'POST', {
+          image_url: imageUrl,
+          is_carousel_item: true,
+        });
+
+        // Create video carousel item
+        const vidItem = await gql(`${IG_ID()}/media`, 'POST', {
+          video_url: reelUrl,
+          media_type: 'VIDEO',
+          is_carousel_item: true,
+        });
+
+        // Wait for video to finish processing (required before creating carousel)
+        const videoReady = await waitForIgContainer(vidItem.id);
+        if (!videoReady) throw new Error('Video processing timed out or failed');
+
+        // Create carousel container
+        const carousel = await gql(`${IG_ID()}/media`, 'POST', {
+          media_type: 'CAROUSEL',
+          children: `${imgItem.id},${vidItem.id}`,
+          caption: captionNoHashtags,
+        });
+
+        // Publish carousel
+        published = await gql(`${IG_ID()}/media_publish`, 'POST', { creation_id: carousel.id });
+      } else {
+        // Regular single-image post
+        const container = await gql(`${IG_ID()}/media`, 'POST', { image_url: imageUrl, caption: captionNoHashtags });
+        published = await gql(`${IG_ID()}/media_publish`, 'POST', { creation_id: container.id });
+      }
+
       results.instagram = published;
       results.ig_post_id = published.id;
-      // Fetch permalink and media_url for the published post
+
+      // Fetch permalink + media_url
       try {
         const t = await getToken();
         const details = await fetch(`${API}/${published.id}?fields=permalink,media_url&access_token=${t}`).then(r => r.json());
         if (details.permalink) results.ig_permalink = details.permalink;
         if (details.media_url) results.ig_media_url = details.media_url;
       } catch { /* non-fatal */ }
-      // Post hashtags as first comment for cleaner caption
+
+      // Post hashtags as first comment
       if (hashtags && published.id) {
-        try {
-          await gql(`${published.id}/comments`, 'POST', { message: hashtags });
-        } catch { /* non-fatal — post already published */ }
+        try { await gql(`${published.id}/comments`, 'POST', { message: hashtags }); } catch { /* non-fatal */ }
       }
     } catch (e) {
       results.instagram_error = String(e);
     }
 
-    // Facebook post
+    // ── Facebook ───────────────────────────────────────────────────────────────
     try {
-      const fb = await gql(`${PAGE_ID()}/photos`, 'POST', { url: imageUrl, message: fullCaption });
-      results.facebook = fb;
-      const fbId = (fb as Record<string, string>).post_id ?? (fb as Record<string, string>).id;
-      if (fbId) {
-        results.fb_post_id = fbId;
-        results.fb_post_url = `https://www.facebook.com/${fbId}`;
+      if (reelUrl) {
+        // Multi-media post: stage image + video unpublished, then post together
+        const [photoRes, videoRes] = await Promise.all([
+          gql(`${PAGE_ID()}/photos`, 'POST', { url: imageUrl, published: false }),
+          gql(`${PAGE_ID()}/videos`,  'POST', { file_url: reelUrl, published: false, description: fullCaption }),
+        ]);
+        const photoFbid = (photoRes as Record<string, string>).id;
+        const videoFbid = (videoRes as Record<string, string>).id;
+
+        // Small wait for video to be processable
+        await new Promise(r => setTimeout(r, 5000));
+
+        const fb = await gql(`${PAGE_ID()}/feed`, 'POST', {
+          message: fullCaption,
+          attached_media: [
+            { media_fbid: photoFbid },
+            { media_fbid: videoFbid },
+          ],
+        });
+        results.facebook = fb;
+        const fbId = (fb as Record<string, string>).id;
+        if (fbId) { results.fb_post_id = fbId; results.fb_post_url = `https://www.facebook.com/${fbId}`; }
+        results.fb_carousel = true;
+      } else {
+        const fb = await gql(`${PAGE_ID()}/photos`, 'POST', { url: imageUrl, message: fullCaption });
+        results.facebook = fb;
+        const fbId = (fb as Record<string, string>).post_id ?? (fb as Record<string, string>).id;
+        if (fbId) { results.fb_post_id = fbId; results.fb_post_url = `https://www.facebook.com/${fbId}`; }
       }
     } catch (e) {
       results.facebook_error = String(e);
     }
 
-    // Stories are handled manually by the user via the story helper modal in the admin panel
-    // (API-posted stories don't support link stickers reliably)
+    // Stories are handled manually via the story helper modal
 
     // Log everything for debugging
     console.error('[publish] results:', JSON.stringify(results));
