@@ -3,7 +3,7 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { getMakeBySlug, getModelBySlug, getCategoryLabel } from '@/lib/carsDb';
 import { getReviewsForCar, getAverageRating } from '@/lib/reviewsDb';
-import { getExpertReviewsForYear } from '@/lib/expertReviews';
+import { getExpertReviewsForYear, getExpertReviews } from '@/lib/expertReviews';
 import StarRating from '@/components/StarRating';
 import ExpertReviewsSection from '@/components/ExpertReviewsSection';
 import CarYearClient from './CarYearClient';
@@ -11,6 +11,7 @@ import MakeLogo from '@/components/MakeLogo';
 import ShareButtons from '@/components/ShareButtons';
 import RecallsSection from '@/components/RecallsSection';
 import RecallsBadge from '@/components/RecallsBadge';
+import YearHero from './YearHero';
 
 export const dynamic = 'force-dynamic';
 
@@ -50,10 +51,12 @@ export default async function CarYearPage({ params }: Props) {
   const yearNum = parseInt(year);
   if (!model.years.includes(yearNum)) notFound();
 
-  const [reviews, { review: yearReview, isYearSpecific }] = await Promise.all([
+  const [reviews, { review: yearReview, isYearSpecific }, generalReviewsList] = await Promise.all([
     getReviewsForCar(makeSlug, modelSlug, yearNum),
     getExpertReviewsForYear(makeSlug, modelSlug, yearNum),
+    getExpertReviews(makeSlug, modelSlug),
   ]);
+  const generalReview = generalReviewsList[0] ?? null;
 
   const avgRating = reviews.length
     ? reviews.reduce((s, r) => s + r.rating, 0) / reviews.length
@@ -144,20 +147,26 @@ export default async function CarYearPage({ params }: Props) {
           <span style={{ color: 'var(--text-primary)' }}>{year}</span>
         </div>
 
-        {/* Page header */}
-        <div style={{ marginBottom: 36 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 12 }}>
-            <MakeLogo logoUrl={make.logoUrl} nameEn={make.nameEn} size={52} />
-            <div>
-              <h1 style={{ fontSize: 'clamp(1.5rem, 4vw, 2.25rem)', fontWeight: 900, lineHeight: 1.15 }}>
-                {make.nameHe} {model.nameHe} {year}
-              </h1>
-              <p style={{ color: 'var(--text-secondary)', marginTop: 4 }}>
-                {make.nameEn} {model.nameEn} · {getCategoryLabel(model.category)}
-              </p>
-            </div>
+        {/* Hero image */}
+        <YearHero
+          makeSlug={makeSlug}
+          modelSlug={modelSlug}
+          year={yearNum}
+          makeNameHe={make.nameHe}
+          modelNameHe={model.nameHe}
+          makeNameEn={make.nameEn}
+          modelNameEn={model.nameEn}
+        />
+
+        {/* Page header — logo + share + recalls */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 32, flexWrap: 'wrap' }}>
+          <MakeLogo logoUrl={make.logoUrl} nameEn={make.nameEn} size={40} />
+          <div style={{ flex: 1 }}>
+            <p style={{ color: 'var(--text-secondary)', fontSize: '0.875rem' }}>
+              {make.nameEn} {model.nameEn} · {getCategoryLabel(model.category)}
+            </p>
           </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 12, flexWrap: 'wrap' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
             <ShareButtons title={`${make.nameHe} ${model.nameHe} ${year} — ביקורות ובעיות נפוצות | CarIssues IL`} url={`https://carissues.co.il/cars/${make.slug}/${model.slug}/${year}`} />
             <RecallsBadge makeEn={make.nameEn} modelEn={model.nameEn} year={yearNum} />
           </div>
@@ -206,14 +215,76 @@ export default async function CarYearPage({ params }: Props) {
           </div>
         )}
 
-        {/* AI summary — year-specific if real data exists, otherwise general */}
-        {yearReview && (
+        {/* Expert reviews — year-specific above general */}
+        {isYearSpecific && yearReview && (
+          <div style={{ position: 'relative', marginBottom: 24 }}>
+            {/* Year-specific badge */}
+            <div style={{
+              display: 'inline-flex', alignItems: 'center', gap: 6,
+              background: 'var(--brand-red)', color: '#fff',
+              fontSize: '0.8125rem', fontWeight: 700,
+              padding: '4px 14px', borderRadius: '10px 10px 0 0',
+              marginBottom: -1,
+              position: 'relative', zIndex: 1,
+            }}>
+              <span>✦</span>
+              <span>סיכום ייחודי לשנת {yearNum}</span>
+            </div>
+            <div style={{
+              border: '2px solid var(--brand-red)',
+              borderRadius: '0 12px 12px 12px',
+              boxShadow: '0 0 28px rgba(230,57,70,0.18)',
+              overflow: 'hidden',
+            }}>
+              <ExpertReviewsSection
+                review={yearReview}
+                makeNameHe={make.nameHe}
+                modelNameHe={model.nameHe}
+                year={yearNum}
+                isYearSpecific={true}
+                userAvgRating={avgRating}
+                userReviewCount={reviews.length}
+              />
+            </div>
+          </div>
+        )}
+
+        {/* General model review — always show, labeled */}
+        {generalReview && (
+          <div style={{ position: 'relative', marginBottom: 32 }}>
+            {isYearSpecific && (
+              <div style={{
+                display: 'inline-flex', alignItems: 'center', gap: 6,
+                background: 'var(--bg-muted)', color: 'var(--text-muted)',
+                fontSize: '0.8125rem', fontWeight: 600,
+                padding: '4px 14px', borderRadius: '10px 10px 0 0',
+                border: '1px solid var(--border)', borderBottom: 'none',
+                marginBottom: -1,
+                position: 'relative', zIndex: 1,
+              }}>
+                סיכום כללי — {make.nameHe} {model.nameHe}
+              </div>
+            )}
+            <ExpertReviewsSection
+              review={generalReview}
+              makeNameHe={make.nameHe}
+              modelNameHe={model.nameHe}
+              year={isYearSpecific ? undefined : yearNum}
+              isYearSpecific={false}
+              userAvgRating={isYearSpecific ? null : avgRating}
+              userReviewCount={isYearSpecific ? 0 : reviews.length}
+            />
+          </div>
+        )}
+
+        {/* Fallback: show year-specific review when no general exists */}
+        {!generalReview && !isYearSpecific && yearReview && (
           <ExpertReviewsSection
             review={yearReview}
             makeNameHe={make.nameHe}
             modelNameHe={model.nameHe}
             year={yearNum}
-            isYearSpecific={isYearSpecific}
+            isYearSpecific={false}
             userAvgRating={avgRating}
             userReviewCount={reviews.length}
           />
