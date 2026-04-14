@@ -126,27 +126,7 @@ export default async function ModelPage({ params }: Props) {
               <Link
                 key={y}
                 href={`/cars/${make.slug}/${model.slug}/${y}`}
-                style={{
-                  padding: '6px 16px',
-                  borderRadius: 20,
-                  border: '1.5px solid var(--border)',
-                  background: 'var(--bg-muted)',
-                  color: 'var(--text-primary)',
-                  fontSize: '0.875rem',
-                  fontWeight: 600,
-                  textDecoration: 'none',
-                  transition: 'background 0.15s, border-color 0.15s',
-                }}
-                onMouseEnter={(e) => {
-                  (e.currentTarget as HTMLAnchorElement).style.background = 'var(--brand-red)';
-                  (e.currentTarget as HTMLAnchorElement).style.color = '#fff';
-                  (e.currentTarget as HTMLAnchorElement).style.borderColor = 'var(--brand-red)';
-                }}
-                onMouseLeave={(e) => {
-                  (e.currentTarget as HTMLAnchorElement).style.background = 'var(--bg-muted)';
-                  (e.currentTarget as HTMLAnchorElement).style.color = 'var(--text-primary)';
-                  (e.currentTarget as HTMLAnchorElement).style.borderColor = 'var(--border)';
-                }}
+                className="year-pill"
               >
                 {y}
               </Link>
