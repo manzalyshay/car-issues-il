@@ -187,3 +187,7 @@ alter table page_views enable row level security;
 create policy "page_views_public_insert" on page_views for insert with check (true);
 -- Public read (admin dashboard)
 create policy "page_views_select_all"   on page_views for select using (true);
+
+-- ── Reel URL on 3D models ──────────────────────────────────────────────────────
+-- alter table car_3d_models add column if not exists reel_url text;
+-- (already applied via Management API)

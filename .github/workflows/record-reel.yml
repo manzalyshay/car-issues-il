@@ -1,0 +1,48 @@
+name: Record Car Reel Video
+
+on:
+  workflow_dispatch:
+    inputs:
+      make_slug:
+        description: 'Car make slug (e.g. kia)'
+        required: true
+      model_slug:
+        description: 'Car model slug (e.g. cerato)'
+        required: true
+      post_id:
+        description: 'Social post ID to update when done (optional)'
+        required: false
+        default: ''
+
+jobs:
+  record:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Playwright Chromium + system deps
+        run: npx playwright install chromium --with-deps
+
+      # ffmpeg is pre-installed on ubuntu-latest
+      - name: Verify ffmpeg
+        run: ffmpeg -version | head -1
+
+      - name: Record reel
+        env:
+          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          MAKE_SLUG: ${{ github.event.inputs.make_slug }}
+          MODEL_SLUG: ${{ github.event.inputs.model_slug }}
+          POST_ID: ${{ github.event.inputs.post_id }}
+          SITE_URL: https://carissues.co.il
+        run: node scripts/record-reel.mjs

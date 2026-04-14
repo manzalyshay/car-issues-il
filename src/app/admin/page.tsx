@@ -147,6 +147,7 @@ export default function AdminPage() {
   const [pageInfoForm, setPageInfoForm] = useState({ about: '', description: '', website: '' });
   const [existingPostsTab, setExistingPostsTab] = useState<'instagram' | 'facebook'>('instagram');
   const [storyHelper, setStoryHelper] = useState<{ storyImageUrl: string; carUrl: string } | null>(null);
+  const [reelHelper, setReelHelper] = useState<{ reelUrl: string; carUrl: string } | null>(null);
   const [loadingExisting, setLoadingExisting] = useState(false);
   const [tokenStatus, setTokenStatus] = useState<{ daysLeft: number | null; expiresAt: string | null } | null>(null);
   const [tokenRefreshing, setTokenRefreshing] = useState(false);
@@ -1538,6 +1539,48 @@ export default function AdminPage() {
                           </div>
                         )}
 
+                        {/* ── ROW 3D: REEL (car_3d_summary only) ─────────── */}
+                        {postType === 'car_3d_summary' && meta?.carSlug && (() => {
+                          const reelUrl = meta?.reel_url as string | undefined;
+                          const reelStatus = meta?.reel_status as string | undefined;
+                          const isGenerating = reelStatus === 'generating';
+                          const slugParts = (meta.carSlug as string).split('/');
+                          const [mkSlug, mdSlug] = slugParts;
+                          const carUrl = `https://carissues.co.il/cars/${meta.carSlug}`;
+                          return (
+                            <div style={{ borderTop: '1px solid var(--border)', padding: '10px 14px', background: 'var(--bg-muted)', display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+                              <span style={{ fontSize: '0.72rem', fontWeight: 700, color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>🎬 ריל</span>
+                              {reelUrl ? (
+                                <>
+                                  <span style={{ fontSize: '0.72rem', fontWeight: 700, color: '#10b981' }}>✓ מוכן</span>
+                                  <button onClick={() => setReelHelper({ reelUrl: reelUrl!, carUrl })}
+                                    style={{ padding: '3px 10px', borderRadius: 6, border: 'none', background: '#7c3aed', color: '#fff', cursor: 'pointer', fontSize: '0.72rem', fontWeight: 700, whiteSpace: 'nowrap' }}>
+                                    📤 שתף ריל / סטורי
+                                  </button>
+                                  <a href={reelUrl} target="_blank" rel="noreferrer" style={{ fontSize: '0.72rem', color: 'var(--text-muted)', textDecoration: 'none' }}>↗ פתח</a>
+                                </>
+                              ) : (
+                                <button
+                                  disabled={isGenerating}
+                                  onClick={async () => {
+                                    const t = await getToken();
+                                    const r = await fetch('/api/admin/trigger-reel', {
+                                      method: 'POST',
+                                      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${t}` },
+                                      body: JSON.stringify({ makeSlug: mkSlug, modelSlug: mdSlug, postId: post.id }),
+                                    });
+                                    const d = await r.json();
+                                    if (d.ok) { await fetchSocialPosts(); alert('✅ הריל יוכן בעוד ~5 דקות. רענן לאחר שהוורקפלו ב-GitHub יסתיים.'); }
+                                    else alert('שגיאה: ' + d.error);
+                                  }}
+                                  style={{ padding: '3px 10px', borderRadius: 6, border: 'none', background: isGenerating ? 'var(--bg-muted)' : '#7c3aed', color: isGenerating ? 'var(--text-muted)' : '#fff', cursor: isGenerating ? 'default' : 'pointer', fontSize: '0.72rem', fontWeight: 700, whiteSpace: 'nowrap', opacity: isGenerating ? 0.7 : 1 }}>
+                                  {isGenerating ? '⏳ בהכנה...' : '🎬 צור ריל'}
+                                </button>
+                              )}
+                            </div>
+                          );
+                        })()}
+
                         {/* ── ROW 4: PUBLISH BAR (pending + has image) ─────── */}
                         {isPending && hasLocalImg && (
                           <div style={{ borderTop: '1px solid var(--border)', padding: '10px 14px', display: 'flex', gap: 10, alignItems: 'center' }}>
@@ -1747,6 +1790,82 @@ export default function AdminPage() {
                 >
                   <span style={{ fontSize: '1.1rem' }}>📸</span> פתח Instagram
                 </a>
+              </div>
+
+              <p style={{ fontSize: '0.7rem', color: 'var(--text-muted)', marginTop: 12, textAlign: 'center' }}>
+                לחץ מחוץ לחלון לסגירה
+              </p>
+            </div>
+          </div>
+        )}
+
+        {/* ── REEL HELPER MODAL ───────────────────────────────────────────── */}
+        {reelHelper && (
+          <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.92)', zIndex: 3000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24 }} onClick={() => setReelHelper(null)}>
+            <div style={{ background: 'var(--bg-card)', borderRadius: 16, padding: 28, maxWidth: 460, width: '100%', direction: 'rtl', maxHeight: '92vh', overflowY: 'auto' }} onClick={e => e.stopPropagation()}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+                <h3 style={{ fontWeight: 800, fontSize: '1.1rem' }}>🎬 שיתוף ריל / סטורי</h3>
+                <button onClick={() => setReelHelper(null)} style={{ background: 'none', border: 'none', fontSize: '1.3rem', cursor: 'pointer', color: 'var(--text-muted)' }}>✕</button>
+              </div>
+
+              {/* Video preview */}
+              <div style={{ margin: '0 auto 16px', maxWidth: 180, borderRadius: 12, overflow: 'hidden', border: '2px solid var(--border)', aspectRatio: '9/16', background: '#000' }}>
+                <video src={reelHelper.reelUrl} muted autoPlay loop playsInline style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
+              </div>
+
+              {/* Car URL */}
+              <div style={{ background: 'var(--bg-muted)', borderRadius: 8, padding: '10px 14px', marginBottom: 16, display: 'flex', alignItems: 'center', gap: 10 }}>
+                <span style={{ flex: 1, fontSize: '0.75rem', color: 'var(--text-primary)', wordBreak: 'break-all', fontFamily: 'monospace' }}>{reelHelper.carUrl}</span>
+                <button onClick={() => navigator.clipboard.writeText(reelHelper.carUrl)} style={{ flexShrink: 0, padding: '5px 12px', borderRadius: 6, border: '1px solid var(--border)', background: 'transparent', cursor: 'pointer', fontSize: '0.78rem', fontWeight: 600, color: 'var(--text-secondary)', whiteSpace: 'nowrap' }}>
+                  📋 העתק
+                </button>
+              </div>
+
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                {/* Download / Native share */}
+                <button
+                  onClick={async () => {
+                    const canShare = typeof navigator.share === 'function';
+                    if (canShare) {
+                      try {
+                        const res = await fetch(reelHelper.reelUrl);
+                        const blob = await res.blob();
+                        const file = new File([blob], 'reel.mp4', { type: 'video/mp4' });
+                        if (navigator.canShare?.({ files: [file] })) {
+                          await navigator.share({ files: [file], title: 'CarIssues Reel' });
+                          return;
+                        }
+                      } catch { /* fall through */ }
+                    }
+                    const a = document.createElement('a');
+                    a.href = reelHelper.reelUrl;
+                    a.download = 'reel.mp4';
+                    a.click();
+                  }}
+                  className="btn btn-primary"
+                  style={{ width: '100%', height: 44, fontSize: '0.9rem', fontWeight: 700, background: 'linear-gradient(90deg,#7c3aed,#a855f7)' }}
+                >
+                  🎬 הורד / שתף לריל
+                </button>
+
+                <a href="https://www.instagram.com/reels/" target="_blank" rel="noreferrer"
+                  style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, padding: '10px', borderRadius: 8, border: '1px solid var(--border)', fontSize: '0.875rem', color: 'var(--text-secondary)', textDecoration: 'none', fontWeight: 600 }}>
+                  <span style={{ fontSize: '1.1rem' }}>📸</span> פתח Instagram Reels
+                </a>
+
+                {/* Desktop instructions */}
+                <details style={{ borderRadius: 8, border: '1px solid var(--border)', overflow: 'hidden' }}>
+                  <summary style={{ padding: '9px 14px', cursor: 'pointer', fontSize: '0.78rem', fontWeight: 700, color: 'var(--text-secondary)', listStyle: 'none', background: 'var(--bg-muted)' }}>
+                    💻 הוראות מהמחשב
+                  </summary>
+                  <ol style={{ margin: 0, padding: '10px 14px 12px 14px', paddingRight: 30, lineHeight: 2.1, fontSize: '0.8rem', color: 'var(--text-secondary)', direction: 'rtl' }}>
+                    <li>לחץ <strong>הורד / שתף לריל</strong> כדי להוריד את הסרטון</li>
+                    <li>פתח <a href="https://www.instagram.com" target="_blank" rel="noreferrer" style={{ color: 'var(--brand-red)' }}>Instagram.com</a> או האפליקציה בטלפון</li>
+                    <li>לחץ <strong>+ → Reel</strong>, העלה את הסרטון</li>
+                    <li>אפשר להוסיף מוזיקה, טקסט וסטיקר לינק בתוך האפליקציה</li>
+                    <li>פרסם!</li>
+                  </ol>
+                </details>
               </div>
 
               <p style={{ fontSize: '0.7rem', color: 'var(--text-muted)', marginTop: 12, textAlign: 'center' }}>
