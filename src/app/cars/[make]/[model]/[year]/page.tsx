@@ -217,52 +217,49 @@ export default async function CarYearPage({ params }: Props) {
 
         {/* Expert reviews — year-specific above general */}
         {isYearSpecific && yearReview && (
-          <div style={{ position: 'relative', marginBottom: 24 }}>
-            {/* Year-specific badge */}
+          <div style={{ marginBottom: 20 }}>
+            {/* Subtle year-specific label */}
             <div style={{
-              display: 'inline-flex', alignItems: 'center', gap: 6,
-              background: 'var(--brand-red)', color: '#fff',
-              fontSize: '0.8125rem', fontWeight: 700,
-              padding: '4px 14px', borderRadius: '10px 10px 0 0',
-              marginBottom: -1,
-              position: 'relative', zIndex: 1,
+              display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10,
             }}>
-              <span>✦</span>
-              <span>סיכום ייחודי לשנת {yearNum}</span>
+              <span style={{
+                display: 'inline-flex', alignItems: 'center', gap: 5,
+                background: 'rgba(230,57,70,0.1)', color: 'var(--brand-red)',
+                fontSize: '0.8rem', fontWeight: 700, letterSpacing: '0.04em',
+                padding: '3px 12px', borderRadius: 20,
+              }}>
+                סיכום שנת {yearNum}
+              </span>
+              <div style={{ flex: 1, height: 1, background: 'var(--border)' }} />
             </div>
-            <div style={{
-              border: '2px solid var(--brand-red)',
-              borderRadius: '0 12px 12px 12px',
-              boxShadow: '0 0 28px rgba(230,57,70,0.18)',
-              overflow: 'hidden',
-            }}>
-              <ExpertReviewsSection
-                review={yearReview}
-                makeNameHe={make.nameHe}
-                modelNameHe={model.nameHe}
-                year={yearNum}
-                isYearSpecific={true}
-                userAvgRating={avgRating}
-                userReviewCount={reviews.length}
-              />
-            </div>
+            <ExpertReviewsSection
+              review={yearReview}
+              makeNameHe={make.nameHe}
+              modelNameHe={model.nameHe}
+              year={yearNum}
+              isYearSpecific={true}
+              userAvgRating={avgRating}
+              userReviewCount={reviews.length}
+            />
           </div>
         )}
 
-        {/* General model review — always show, labeled */}
+        {/* General model review — always show, labeled when both exist */}
         {generalReview && (
-          <div style={{ position: 'relative', marginBottom: 32 }}>
+          <div style={{ marginBottom: 32 }}>
             {isYearSpecific && (
               <div style={{
-                display: 'inline-flex', alignItems: 'center', gap: 6,
-                background: 'var(--bg-muted)', color: 'var(--text-muted)',
-                fontSize: '0.8125rem', fontWeight: 600,
-                padding: '4px 14px', borderRadius: '10px 10px 0 0',
-                border: '1px solid var(--border)', borderBottom: 'none',
-                marginBottom: -1,
-                position: 'relative', zIndex: 1,
+                display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10,
               }}>
-                סיכום כללי — {make.nameHe} {model.nameHe}
+                <span style={{
+                  display: 'inline-flex', alignItems: 'center',
+                  background: 'var(--bg-muted)', color: 'var(--text-muted)',
+                  fontSize: '0.8rem', fontWeight: 600, letterSpacing: '0.04em',
+                  padding: '3px 12px', borderRadius: 20,
+                }}>
+                  סיכום כללי
+                </span>
+                <div style={{ flex: 1, height: 1, background: 'var(--border)' }} />
               </div>
             )}
             <ExpertReviewsSection
