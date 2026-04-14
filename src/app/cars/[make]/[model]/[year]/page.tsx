@@ -206,14 +206,14 @@ export default async function CarYearPage({ params }: Props) {
           </div>
         )}
 
-        {/* Year-specific AI summary — combined score includes this year's user reviews */}
-        {isYearSpecific && yearReview && (
+        {/* AI summary — year-specific if real data exists, otherwise general */}
+        {yearReview && (
           <ExpertReviewsSection
             review={yearReview}
             makeNameHe={make.nameHe}
             modelNameHe={model.nameHe}
             year={yearNum}
-            isYearSpecific={true}
+            isYearSpecific={isYearSpecific}
             userAvgRating={avgRating}
             userReviewCount={reviews.length}
           />

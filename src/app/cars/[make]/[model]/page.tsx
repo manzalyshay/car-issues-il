@@ -117,9 +117,9 @@ export default async function ModelPage({ params }: Props) {
         </div>
 
         {/* Year selector */}
-        <div className="card" style={{ padding: '20px 24px', marginBottom: 32 }}>
-          <h2 style={{ fontSize: '1rem', fontWeight: 700, marginBottom: 14, color: 'var(--text-secondary)' }}>
-            ביקורות לפי שנה
+        <div style={{ marginBottom: 36 }}>
+          <h2 style={{ fontSize: '1rem', fontWeight: 700, marginBottom: 12, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+            בחר שנה לביקורת מפורטת
           </h2>
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
             {model.years.map((y) => (

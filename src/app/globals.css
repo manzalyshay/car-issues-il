@@ -157,18 +157,23 @@ body {
 }
 
 .year-pill {
-  padding: 6px 16px;
-  border-radius: 20px;
-  border: 1.5px solid var(--border);
-  background: var(--bg-muted);
+  padding: 8px 20px;
+  border-radius: 10px;
+  border: 2px solid var(--border);
+  background: var(--bg-card);
   color: var(--text-primary);
-  font-size: 0.875rem;
-  font-weight: 600;
+  font-size: 1rem;
+  font-weight: 700;
   text-decoration: none;
-  transition: background 0.15s, border-color 0.15s, color 0.15s;
+  transition: background 0.15s, border-color 0.15s, color 0.15s, transform 0.1s, box-shadow 0.15s;
+  display: inline-block;
+  min-width: 72px;
+  text-align: center;
 }
 .year-pill:hover {
   background: var(--brand-red);
   border-color: var(--brand-red);
   color: #fff;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(230, 57, 70, 0.35);
 }

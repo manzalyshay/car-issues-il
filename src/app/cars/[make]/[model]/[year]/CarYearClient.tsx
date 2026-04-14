@@ -73,7 +73,7 @@ export default function CarYearClient({ makeSlug, modelSlug, year, initialReview
     if (next === 'images' && images === null && !imagesLoading) {
       setImagesLoading(true);
       try {
-        const res = await fetch(`/api/car-media?make=${makeSlug}&model=${modelSlug}&type=images`);
+        const res = await fetch(`/api/car-media?make=${makeSlug}&model=${modelSlug}&type=images&year=${year}`);
         setImages(await res.json());
       } catch { setImages([]); }
       finally { setImagesLoading(false); }
