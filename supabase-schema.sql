@@ -170,3 +170,20 @@ alter table car_videos enable row level security;
 -- Public read
 create policy "car_videos_public_read" on car_videos for select using (true);
 -- Service role writes only
+
+-- ── Page Views (analytics) ─────────────────────────────────────────────────────
+create table if not exists page_views (
+  id         uuid primary key default gen_random_uuid(),
+  path       text not null,
+  session_id text not null,
+  created_at timestamptz not null default now()
+);
+
+create index if not exists page_views_created_at on page_views (created_at);
+create index if not exists page_views_session    on page_views (session_id);
+
+alter table page_views enable row level security;
+-- Public insert (anonymous visitors)
+create policy "page_views_public_insert" on page_views for insert with check (true);
+-- Public read (admin dashboard)
+create policy "page_views_select_all"   on page_views for select using (true);

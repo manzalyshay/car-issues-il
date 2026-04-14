@@ -1671,24 +1671,23 @@ export default function AdminPage() {
         {/* ── STORY HELPER MODAL ──────────────────────────────────────────── */}
         {storyHelper && (
           <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.88)', zIndex: 3000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24 }} onClick={() => setStoryHelper(null)}>
-            <div style={{ background: 'var(--bg-card)', borderRadius: 16, padding: 28, maxWidth: 420, width: '100%', direction: 'rtl' }} onClick={e => e.stopPropagation()}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
-                <h3 style={{ fontWeight: 800, fontSize: '1.1rem' }}>📖 פרסום סטורי ידני</h3>
+            <div style={{ background: 'var(--bg-card)', borderRadius: 16, padding: 28, maxWidth: 460, width: '100%', direction: 'rtl', maxHeight: '92vh', overflowY: 'auto' }} onClick={e => e.stopPropagation()}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+                <h3 style={{ fontWeight: 800, fontSize: '1.1rem' }}>📖 פרסום סטורי</h3>
                 <button onClick={() => setStoryHelper(null)} style={{ background: 'none', border: 'none', fontSize: '1.3rem', cursor: 'pointer', color: 'var(--text-muted)' }}>✕</button>
               </div>
 
-              <p style={{ fontSize: '0.875rem', color: 'var(--text-muted)', marginBottom: 20, lineHeight: 1.6 }}>
-                הפוסטים עלו ✅<br />
-                עכשיו פרסם את הסטורי ידנית — לחץ <strong>שתף לסטורי</strong>, בחר Instagram Stories, ואז הוסף את הלינק כסטיקר.
-              </p>
+              <p style={{ fontSize: '0.8rem', color: '#10b981', marginBottom: 16, fontWeight: 700 }}>✅ הפוסטים עלו בהצלחה!</p>
 
-              {/* Story image preview */}
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={storyHelper.storyImageUrl} alt="story" style={{ width: '100%', borderRadius: 10, marginBottom: 16, maxHeight: 300, objectFit: 'cover' }} />
+              {/* Story image preview — 9:16 aspect */}
+              <div style={{ margin: '0 auto 16px', maxWidth: 180, borderRadius: 12, overflow: 'hidden', border: '2px solid var(--border)', aspectRatio: '9/16', position: 'relative', background: '#000' }}>
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={storyHelper.storyImageUrl} alt="story" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
+              </div>
 
               {/* Car URL to copy */}
               <div style={{ background: 'var(--bg-muted)', borderRadius: 8, padding: '10px 14px', marginBottom: 16, display: 'flex', alignItems: 'center', gap: 10 }}>
-                <span style={{ flex: 1, fontSize: '0.8rem', color: 'var(--text-primary)', wordBreak: 'break-all', fontFamily: 'monospace' }}>{storyHelper.carUrl}</span>
+                <span style={{ flex: 1, fontSize: '0.75rem', color: 'var(--text-primary)', wordBreak: 'break-all', fontFamily: 'monospace' }}>{storyHelper.carUrl}</span>
                 <button
                   onClick={() => { navigator.clipboard.writeText(storyHelper.carUrl); }}
                   style={{ flexShrink: 0, padding: '5px 12px', borderRadius: 6, border: '1px solid var(--border)', background: 'transparent', cursor: 'pointer', fontSize: '0.78rem', fontWeight: 600, color: 'var(--text-secondary)', whiteSpace: 'nowrap' }}
@@ -1698,34 +1697,59 @@ export default function AdminPage() {
               </div>
 
               {/* Action buttons */}
-              <div style={{ display: 'flex', gap: 10, flexDirection: 'column' }}>
+              <div style={{ display: 'flex', gap: 8, flexDirection: 'column' }}>
+                {/* Mobile: native share. Desktop: download */}
                 <button
                   onClick={async () => {
-                    try {
-                      const imgRes = await fetch(storyHelper.storyImageUrl);
-                      const blob = await imgRes.blob();
-                      const file = new File([blob], 'story.jpg', { type: blob.type });
-                      await navigator.share({ files: [file], title: 'CarIssues Story' });
-                    } catch {
-                      // Fallback: just open the image in a new tab for manual download
-                      window.open(storyHelper.storyImageUrl, '_blank');
+                    const canShare = typeof navigator.share === 'function' && navigator.canShare;
+                    if (canShare) {
+                      try {
+                        const imgRes = await fetch(storyHelper.storyImageUrl);
+                        const blob = await imgRes.blob();
+                        const file = new File([blob], 'story.jpg', { type: blob.type });
+                        if (navigator.canShare({ files: [file] })) {
+                          await navigator.share({ files: [file], title: 'CarIssues Story' });
+                          return;
+                        }
+                      } catch { /* fall through to download */ }
                     }
+                    // Desktop fallback: trigger download
+                    const a = document.createElement('a');
+                    a.href = storyHelper.storyImageUrl;
+                    a.download = 'story.jpg';
+                    a.click();
                   }}
                   className="btn btn-primary"
-                  style={{ width: '100%', height: 44, fontSize: '0.9375rem', fontWeight: 700 }}
+                  style={{ width: '100%', height: 44, fontSize: '0.9rem', fontWeight: 700 }}
                 >
-                  📱 שתף לסטורי (Instagram)
+                  📱 שתף / הורד סטורי
                 </button>
+
+                {/* Desktop instructions */}
+                <details style={{ borderRadius: 8, border: '1px solid var(--border)', overflow: 'hidden' }}>
+                  <summary style={{ padding: '9px 14px', cursor: 'pointer', fontSize: '0.78rem', fontWeight: 700, color: 'var(--text-secondary)', listStyle: 'none', background: 'var(--bg-muted)' }}>
+                    💻 הוראות מהמחשב
+                  </summary>
+                  <ol style={{ margin: 0, padding: '10px 14px 12px 14px', paddingRight: 30, lineHeight: 2.1, fontSize: '0.8rem', color: 'var(--text-secondary)', direction: 'rtl' }}>
+                    <li>לחץ <strong>שתף / הורד סטורי</strong> כדי להוריד את התמונה</li>
+                    <li>פתח את <a href="https://www.instagram.com" target="_blank" rel="noreferrer" style={{ color: 'var(--brand-red)' }}>Instagram.com</a> בדפדפן (או באפליקציה בטלפון)</li>
+                    <li>לחץ <strong>+ פוסט חדש → Stories</strong> ובחר את התמונה שהורדת</li>
+                    <li>הוסף סטיקר <strong>Link</strong> והדבק את הכתובת שהעתקת למעלה</li>
+                    <li>שלח!</li>
+                  </ol>
+                </details>
+
                 <a
-                  href={storyHelper.storyImageUrl}
-                  download="story.jpg"
-                  style={{ display: 'block', textAlign: 'center', padding: '10px', borderRadius: 8, border: '1px solid var(--border)', fontSize: '0.875rem', color: 'var(--text-secondary)', textDecoration: 'none' }}
+                  href="https://www.instagram.com"
+                  target="_blank"
+                  rel="noreferrer"
+                  style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, padding: '10px', borderRadius: 8, border: '1px solid var(--border)', fontSize: '0.875rem', color: 'var(--text-secondary)', textDecoration: 'none', fontWeight: 600 }}
                 >
-                  ⬇️ הורד תמונה
+                  <span style={{ fontSize: '1.1rem' }}>📸</span> פתח Instagram
                 </a>
               </div>
 
-              <p style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginTop: 14, textAlign: 'center' }}>
+              <p style={{ fontSize: '0.7rem', color: 'var(--text-muted)', marginTop: 12, textAlign: 'center' }}>
                 לחץ מחוץ לחלון לסגירה
               </p>
             </div>
