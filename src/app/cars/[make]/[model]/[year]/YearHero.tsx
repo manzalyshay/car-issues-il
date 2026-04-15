@@ -17,24 +17,24 @@ export default function YearHero({ makeSlug, modelSlug, year, makeNameHe, modelN
   const [loaded, setLoaded] = useState(false);
 
   useEffect(() => {
-    fetch(`/api/car-media?make=${makeSlug}&model=${modelSlug}&type=images&year=${year}`)
+    fetch(`/api/car-media?make=${makeSlug}&model=${modelSlug}&type=images`)
       .then(r => r.json())
       .then((imgs: { url: string; thumbnail_url: string | null }[]) => {
         if (imgs?.[0]) setImgUrl(imgs[0].thumbnail_url ?? imgs[0].url);
       })
       .catch(() => {});
-  }, [makeSlug, modelSlug, year]);
+  }, [makeSlug, modelSlug]);
 
   return (
     <div style={{
       position: 'relative',
       width: '100%',
-      borderRadius: 16,
+      borderRadius: 12,
       overflow: 'hidden',
-      marginBottom: 36,
+      marginBottom: 24,
       background: 'var(--bg-muted)',
-      aspectRatio: '21/9',
-      minHeight: 220,
+      aspectRatio: '16/5',
+      minHeight: 140,
     }}>
       {/* Skeleton shimmer */}
       {!loaded && (
@@ -51,63 +51,50 @@ export default function YearHero({ makeSlug, modelSlug, year, makeNameHe, modelN
         // eslint-disable-next-line @next/next/no-img-element
         <img
           src={imgUrl}
-          alt={`${makeNameHe} ${modelNameHe} ${year}`}
+          alt={`${makeNameHe} ${modelNameHe}`}
           onLoad={() => setLoaded(true)}
           style={{
             position: 'absolute', inset: 0,
             width: '100%', height: '100%',
             objectFit: 'cover',
             opacity: loaded ? 1 : 0,
-            transition: 'opacity 0.6s ease',
+            transition: 'opacity 0.5s ease',
           }}
         />
       )}
 
-      {/* Gradient overlay */}
-      <div style={{
-        position: 'absolute', inset: 0,
-        background: imgUrl && loaded
-          ? 'linear-gradient(to top, rgba(0,0,0,0.82) 0%, rgba(0,0,0,0.35) 45%, transparent 75%)'
-          : 'transparent',
-        transition: 'background 0.6s ease',
-      }} />
-
-      {/* Red accent line */}
-      <div style={{
-        position: 'absolute', bottom: 0, left: 0, right: 0,
-        height: 3,
-        background: 'linear-gradient(90deg, var(--brand-red), transparent)',
-      }} />
+      {/* Gradient overlay — only when image loaded */}
+      {imgUrl && loaded && (
+        <div style={{
+          position: 'absolute', inset: 0,
+          background: 'linear-gradient(to top, rgba(0,0,0,0.65) 0%, rgba(0,0,0,0.1) 50%, transparent 80%)',
+        }} />
+      )}
 
       {/* Text overlay */}
       <div style={{
         position: 'absolute',
         bottom: 0, right: 0, left: 0,
-        padding: '28px 28px 24px',
+        padding: '20px 24px 18px',
         display: 'flex',
         alignItems: 'flex-end',
         justifyContent: 'space-between',
-        flexWrap: 'wrap',
         gap: 12,
       }}>
-        <div>
+        <div style={{ opacity: loaded || !imgUrl ? 1 : 0, transition: 'opacity 0.5s ease 0.15s' }}>
           <div style={{
-            fontSize: 'clamp(1.5rem, 4vw, 2.5rem)',
-            fontWeight: 900,
-            color: '#fff',
-            lineHeight: 1.1,
-            textShadow: '0 2px 12px rgba(0,0,0,0.5)',
-            opacity: loaded || !imgUrl ? 1 : 0,
-            transition: 'opacity 0.6s ease 0.2s',
+            fontSize: 'clamp(1.25rem, 3vw, 1.875rem)',
+            fontWeight: 800,
+            color: imgUrl && loaded ? '#fff' : 'var(--text-primary)',
+            lineHeight: 1.15,
+            textShadow: imgUrl && loaded ? '0 1px 8px rgba(0,0,0,0.4)' : 'none',
           }}>
             {makeNameHe} {modelNameHe}
           </div>
           <div style={{
-            fontSize: '0.9rem',
-            color: 'rgba(255,255,255,0.55)',
-            marginTop: 3,
-            opacity: loaded || !imgUrl ? 1 : 0,
-            transition: 'opacity 0.6s ease 0.3s',
+            fontSize: '0.8125rem',
+            color: imgUrl && loaded ? 'rgba(255,255,255,0.6)' : 'var(--text-muted)',
+            marginTop: 2,
           }}>
             {makeNameEn} {modelNameEn}
           </div>
@@ -117,15 +104,14 @@ export default function YearHero({ makeSlug, modelSlug, year, makeNameHe, modelN
         <div style={{
           background: 'var(--brand-red)',
           color: '#fff',
-          fontWeight: 900,
-          fontSize: 'clamp(1.4rem, 3.5vw, 2.2rem)',
+          fontWeight: 700,
+          fontSize: 'clamp(1.1rem, 2.5vw, 1.5rem)',
           lineHeight: 1,
-          padding: '8px 18px',
-          borderRadius: 10,
-          letterSpacing: '0.02em',
-          boxShadow: '0 4px 20px rgba(230,57,70,0.5)',
+          padding: '6px 14px',
+          borderRadius: 8,
           opacity: loaded || !imgUrl ? 1 : 0,
-          transition: 'opacity 0.6s ease 0.4s',
+          transition: 'opacity 0.5s ease 0.25s',
+          flexShrink: 0,
         }}>
           {year}
         </div>
