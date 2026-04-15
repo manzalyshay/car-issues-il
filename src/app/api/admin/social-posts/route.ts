@@ -172,6 +172,15 @@ Return ONLY a raw JSON object (no markdown, no code blocks) with these fields:
     return NextResponse.json({ ok: true });
   }
 
+  if (action === 'reset_reel_status') {
+    const { id } = body;
+    const { data: post } = await sb.from('social_posts').select('metadata').eq('id', id).single();
+    const meta = (post?.metadata ?? {}) as Record<string, unknown>;
+    const { reel_status: _rs, reel_logs_url: _rl, ...rest } = meta;
+    await sb.from('social_posts').update({ metadata: rest }).eq('id', id);
+    return NextResponse.json({ ok: true });
+  }
+
   if (action === 'reset_post') {
     const { id } = body;
     const { data: post } = await sb.from('social_posts').select('metadata').eq('id', id).single();

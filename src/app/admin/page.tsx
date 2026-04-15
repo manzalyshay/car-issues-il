@@ -1656,6 +1656,22 @@ export default function AdminPage() {
                                   {isGenerating ? '⏳ בהכנה...' : '🎬 צור ריל'}
                                 </button>
                               )}
+                              {isGenerating && (
+                                <button
+                                  onClick={async () => {
+                                    const t = await getToken();
+                                    await fetch('/api/admin/social-posts', {
+                                      method: 'POST',
+                                      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${t}` },
+                                      body: JSON.stringify({ action: 'reset_reel_status', id: post.id }),
+                                    });
+                                    await fetchSocialPosts();
+                                  }}
+                                  title="איפוס סטטוס תקוע"
+                                  style={{ padding: '3px 8px', borderRadius: 6, border: '1px solid var(--border)', background: 'transparent', color: 'var(--text-muted)', cursor: 'pointer', fontSize: '0.68rem' }}>
+                                  ✕ איפוס
+                                </button>
+                              )}
                             </div>
                           );
                         })()}
