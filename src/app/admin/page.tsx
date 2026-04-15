@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useCallback, type ReactNode } from 'react';
+import { useEffect, useState, useCallback, useRef, type ReactNode } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/lib/authContext';
@@ -153,6 +153,8 @@ export default function AdminPage() {
   const [tokenStatus, setTokenStatus] = useState<{ daysLeft: number | null; expiresAt: string | null } | null>(null);
   const [tokenRefreshing, setTokenRefreshing] = useState(false);
   const [pasteToken, setPasteToken] = useState('');
+  const [reelToast, setReelToast] = useState<string | null>(null);
+  const socialPostsRef = useRef<SocialPostRow[]>([]);
 
 
   const getToken = useCallback(async () => {
@@ -274,6 +276,35 @@ export default function AdminPage() {
       setSocialFetching(false);
     }
   }, [getToken]);
+
+  // Keep a ref in sync so polling closure can compare without stale state
+  useEffect(() => { socialPostsRef.current = socialPosts; }, [socialPosts]);
+
+  // Auto-poll every 15s while any reel is generating
+  useEffect(() => {
+    if (!isAdmin || tab !== 'social_posts') return;
+    const poll = async () => {
+      const hasGenerating = socialPostsRef.current.some(p => (p.metadata?.reel_status as string) === 'generating' && !p.metadata?.reel_url);
+      if (!hasGenerating) return;
+      try {
+        const token = await getToken();
+        const res = await fetch('/api/admin/social-posts', { headers: { Authorization: `Bearer ${token}` } });
+        if (!res.ok) return;
+        const newPosts: SocialPostRow[] = await res.json();
+        const newlyReady = newPosts.filter(np => {
+          const prev = socialPostsRef.current.find(op => op.id === np.id);
+          return prev && (prev.metadata?.reel_status as string) === 'generating' && !prev.metadata?.reel_url && !!np.metadata?.reel_url;
+        });
+        setSocialPosts(newPosts);
+        if (newlyReady.length > 0) {
+          setReelToast(`✅ ריל מוכן! לחץ על "שתף ריל / סטורי" כדי לפרסם`);
+          setTimeout(() => setReelToast(null), 8000);
+        }
+      } catch { /* ignore */ }
+    };
+    const id = setInterval(poll, 15000);
+    return () => clearInterval(id);
+  }, [isAdmin, tab, getToken]);
 
   useEffect(() => {
     if (isAdmin && tab === 'social_posts') {
@@ -705,6 +736,19 @@ export default function AdminPage() {
 
   return (
     <div style={{ padding: '40px 0 80px' }}>
+      {/* Reel status toast */}
+      {reelToast && (
+        <div style={{
+          position: 'fixed', bottom: 24, left: '50%', transform: 'translateX(-50%)',
+          zIndex: 9999, background: '#1a1a2e', border: '1px solid #7c3aed',
+          color: '#fff', padding: '12px 24px', borderRadius: 12,
+          fontSize: '0.9rem', fontWeight: 600, boxShadow: '0 4px 24px rgba(124,58,237,0.35)',
+          display: 'flex', alignItems: 'center', gap: 10,
+        }}>
+          <span>{reelToast}</span>
+          <button onClick={() => setReelToast(null)} style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', fontSize: '1rem', lineHeight: 1, padding: 0 }}>✕</button>
+        </div>
+      )}
       <div className="container">
         <h1 style={{ fontSize: '1.75rem', fontWeight: 900, marginBottom: 24 }}>פאנל ניהול</h1>
 
@@ -1571,7 +1615,7 @@ export default function AdminPage() {
                                       body: JSON.stringify({ makeSlug: mkSlug, modelSlug: mdSlug, postId: post.id }),
                                     });
                                     const d = await r.json();
-                                    if (d.ok) { await fetchSocialPosts(); alert('✅ הריל יוכן בעוד ~5 דקות. רענן לאחר שהוורקפלו ב-GitHub יסתיים.'); }
+                                    if (d.ok) { await fetchSocialPosts(); setReelToast('⏳ ריל בהכנה (~5 דק׳)... הדף יתעדכן אוטומטית'); setTimeout(() => setReelToast(null), 6000); }
                                     else alert('שגיאה: ' + d.error);
                                   }}
                                   style={{ padding: '3px 10px', borderRadius: 6, border: 'none', background: isGenerating ? 'var(--bg-muted)' : '#7c3aed', color: isGenerating ? 'var(--text-muted)' : '#fff', cursor: isGenerating ? 'default' : 'pointer', fontSize: '0.72rem', fontWeight: 700, whiteSpace: 'nowrap', opacity: isGenerating ? 0.7 : 1 }}>
