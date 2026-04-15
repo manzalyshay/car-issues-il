@@ -27,7 +27,35 @@ export async function GET(req: NextRequest) {
     .limit(100);
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-  return NextResponse.json(data ?? []);
+
+  const posts = data ?? [];
+
+  // Reconcile posts stuck at reel_status='generating' against car_3d_models.reel_url
+  const stuckPosts = posts.filter(p => {
+    const meta = (p.metadata ?? {}) as Record<string, unknown>;
+    return meta.reel_status === 'generating' && !meta.reel_url && meta.carSlug;
+  });
+
+  if (stuckPosts.length > 0) {
+    const { data: models } = await sb.from('car_3d_models').select('make_slug,model_slug,reel_url').not('reel_url', 'is', null);
+    const reelMap: Record<string, string> = {};
+    for (const m of models ?? []) {
+      if (m.reel_url) reelMap[`${m.make_slug}/${m.model_slug}`] = m.reel_url;
+    }
+    for (const post of stuckPosts) {
+      const meta = (post.metadata ?? {}) as Record<string, unknown>;
+      const carSlug = meta.carSlug as string;
+      const reelUrl = reelMap[carSlug];
+      if (reelUrl) {
+        await sb.from('social_posts').update({
+          metadata: { ...meta, reel_url: reelUrl, reel_status: 'ready' },
+        }).eq('id', post.id);
+        post.metadata = { ...meta, reel_url: reelUrl, reel_status: 'ready' };
+      }
+    }
+  }
+
+  return NextResponse.json(posts);
 }
 
 export async function POST(req: NextRequest) {
