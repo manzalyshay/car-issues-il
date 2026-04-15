@@ -38,6 +38,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       title: `${make.nameHe} ${model.nameHe} ${year} | CarIssues IL`,
       description: `ביקורות ובעיות נפוצות — ${make.nameHe} ${model.nameHe} ${year}`,
       url,
+      images: [{ url: '/og-default.svg', width: 1200, height: 630 }],
     },
   };
 }

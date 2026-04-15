@@ -31,7 +31,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     title: `${make.nameHe} ${model.nameHe} — בעיות וביקורות`,
     description: `בעיות נפוצות ב${make.nameHe} ${model.nameHe} (${make.nameEn} ${model.nameEn}). ביקורות אמיתיות מבעלי רכב בישראל, דירוגים, יתרונות וחסרונות.`,
     alternates: { canonical: url },
-    openGraph: { title: `${make.nameHe} ${model.nameHe} | CarIssues IL`, description: `ביקורות ובעיות נפוצות — ${make.nameHe} ${model.nameHe}`, url },
+    openGraph: { title: `${make.nameHe} ${model.nameHe} | CarIssues IL`, description: `ביקורות ובעיות נפוצות — ${make.nameHe} ${model.nameHe}`, url, images: [{ url: '/og-default.svg', width: 1200, height: 630 }] },
   };
 }
 

@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback, Suspense } from 'react';
-import { useSearchParams } from 'next/navigation';
+import { useSearchParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import StarRating from '@/components/StarRating';
 import type { CarMake } from '@/data/cars';
@@ -94,6 +94,7 @@ function ScoreBar({ label, value, max = 10 }: { label: string; value: number | n
 
 function ComparePageInner() {
   const searchParams = useSearchParams();
+  const router = useRouter();
   const [options, setOptions]   = useState<CarOption[]>([]);
   const [car1, setCar1]         = useState<CarOption | null>(null);
   const [car2, setCar2]         = useState<CarOption | null>(null);
@@ -103,6 +104,15 @@ function ComparePageInner() {
   const [loading2, setLoading2] = useState(false);
 
   useEffect(() => {
+    // Redirect query-param URLs to canonical clean URLs for SEO
+    const car1Param = searchParams.get('car1');
+    const car2Param = searchParams.get('car2');
+    if (car1Param && car2Param) {
+      const [s1, s2] = [car1Param, car2Param].sort();
+      router.replace(`/cars/compare/${s1}/${s2}`);
+      return;
+    }
+
     fetch('/api/cars')
       .then(r => r.json())
       .then((makes: CarMake[]) => {
@@ -110,15 +120,14 @@ function ComparePageInner() {
           m.models.map(mo => ({ makeSlug: m.slug, modelSlug: mo.slug, makeHe: m.nameHe, modelHe: mo.nameHe, makeEn: m.nameEn, modelEn: mo.nameEn }))
         );
         setOptions(opts);
-        // Pre-select car1 from URL param ?car1=make/model
-        const car1Param = searchParams.get('car1');
+        // Pre-select car1 from URL param ?car1=make/model (single car, no redirect)
         if (car1Param) {
           const [makeSlug, modelSlug] = car1Param.split('/');
           const opt = opts.find(o => o.makeSlug === makeSlug && o.modelSlug === modelSlug);
           if (opt) setCar1(opt);
         }
       });
-  }, [searchParams]);
+  }, [searchParams, router]);
 
   const loadCar = useCallback(async (opt: CarOption, setData: (d: CarData | null) => void, setLoading: (b: boolean) => void) => {
     setLoading(true);

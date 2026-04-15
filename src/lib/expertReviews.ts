@@ -1335,9 +1335,21 @@ export async function scrapeExpertReviews(
   modelNameEn: string,
   year?: number,
 ): Promise<number> {
-  const { local: localPosts, global: globalPosts, primary } = await gatherUserPosts(
+  const { local: rawLocal, global: rawGlobal, primary } = await gatherUserPosts(
     makeNameHe, modelNameHe, makeNameEn, modelNameEn, year,
   );
+
+  // When generating a year-specific review, only use posts that explicitly
+  // mention the target year in their title or snippet.
+  let localPosts = rawLocal;
+  let globalPosts = rawGlobal;
+  if (year) {
+    const yearStr = String(year);
+    const mentionsYear = (p: UserPost) =>
+      p.title.includes(yearStr) || p.snippet.includes(yearStr);
+    localPosts  = rawLocal.filter(mentionsYear);
+    globalPosts = rawGlobal.filter(mentionsYear);
+  }
 
   let [localOut, globalOut] = await Promise.all([
     localPosts.length  > 0 ? summarizeGroup(localPosts,  makeNameHe, modelNameHe, 'local')  : null,
