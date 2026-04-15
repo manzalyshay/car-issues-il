@@ -14,6 +14,8 @@ export interface CarImage {
   source: string;
   width: number | null;
   height: number | null;
+  hidden: boolean | null;
+  hidden_reason: string | null;
 }
 
 export const getImagesForCar = unstable_cache(
@@ -25,6 +27,7 @@ export const getImagesForCar = unstable_cache(
       .eq('make_slug', makeSlug)
       .eq('model_slug', modelSlug)
       .is('year', null)
+      .not('hidden', 'is', true)
       .order('created_at', { ascending: true })
       .limit(20);
     return (data ?? []) as CarImage[];
@@ -46,6 +49,7 @@ export const getImagesForYear = unstable_cache(
       .eq('make_slug', makeSlug)
       .eq('model_slug', modelSlug)
       .eq('year', year)
+      .not('hidden', 'is', true)
       .order('created_at', { ascending: true })
       .limit(20);
     if (yearData && yearData.length > 0) return yearData as CarImage[];

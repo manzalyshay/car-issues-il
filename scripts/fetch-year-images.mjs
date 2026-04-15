@@ -81,12 +81,12 @@ async function searchWikimediaForYear(makeEn, modelEn, year) {
         const title = (page.title ?? '').toLowerCase();
         if (/logo|badge|icon|emblem|coat|flag|sign|symbol|map|interior|engine|diagram/.test(title)) continue;
 
-        // Must mention the year in filename or description
+        // Must mention the year in filename or description text
+        // NOTE: We do NOT use DateTimeOriginal (photo taken date) because a photo
+        // taken in 2023 may depict an older generation of the model.
         const desc = (info.extmetadata?.ImageDescription?.value ?? '').toLowerCase();
-        const dateStr = (info.extmetadata?.DateTimeOriginal?.value ?? info.extmetadata?.DateTime?.value ?? '');
-        const fileDate = dateStr.slice(0, 4); // Extract year from date
 
-        const mentionsYear = title.includes(yearStr) || desc.includes(yearStr) || fileDate === yearStr;
+        const mentionsYear = title.includes(yearStr) || desc.includes(yearStr);
         if (!mentionsYear) continue;
 
         const origUrl = info.url;
