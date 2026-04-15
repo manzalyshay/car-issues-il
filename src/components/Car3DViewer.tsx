@@ -1,21 +1,31 @@
 'use client';
 
 import { useState } from 'react';
+import { useAuth } from '@/lib/authContext';
+import { supabase } from '@/lib/supabase';
 
 interface Props {
   uid: string;
   modelName: string;
   author?: string;
   viewerUrl?: string;
+  makeSlug?: string;
+  modelSlug?: string;
+  onHidden?: () => void;
 }
 
-export default function Car3DViewer({ uid, modelName, author }: Props) {
+export default function Car3DViewer({ uid, modelName, author, makeSlug, modelSlug, onHidden }: Props) {
+  const { isAdmin } = useAuth();
   const [loaded, setLoaded] = useState(() => {
     if (typeof navigator === 'undefined') return false;
-    const mem = (navigator as { deviceMemory?: number }).deviceMemory ?? 4; // unknown → assume capable
+    const mem = (navigator as { deviceMemory?: number }).deviceMemory ?? 4;
     const cores = navigator.hardwareConcurrency ?? 4;
     return mem >= 4 && cores >= 4;
   });
+  const [showFlagMenu, setShowFlagMenu] = useState(false);
+  const [flagReason, setFlagReason] = useState('');
+  const [flagging, setFlagging] = useState(false);
+  const [hidden, setHidden] = useState(false);
 
   const embedUrl = [
     `https://sketchfab.com/models/${uid}/embed`,
@@ -35,6 +45,27 @@ export default function Car3DViewer({ uid, modelName, author }: Props) {
   ].join('&').replace('embed&', 'embed?');
 
   const thumbnailUrl = `https://media.sketchfab.com/models/${uid}/thumbnails/result.jpg`;
+
+  const handleFlag = async () => {
+    if (!makeSlug || !modelSlug) return;
+    setFlagging(true);
+    try {
+      const { data } = await supabase.auth.getSession();
+      const token = data.session?.access_token ?? '';
+      await fetch('/api/admin/flag-3d-model', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ makeSlug, modelSlug, reason: flagReason || null }),
+      });
+      setHidden(true);
+      setShowFlagMenu(false);
+      onHidden?.();
+    } catch { /* ignore */ } finally {
+      setFlagging(false);
+    }
+  };
+
+  if (hidden) return null;
 
   return (
     <div style={{ position: 'relative', width: '100%', height: 300, borderRadius: 12, overflow: 'hidden', border: '1px solid var(--border)', background: '#111' }}>
@@ -75,6 +106,73 @@ export default function Car3DViewer({ uid, modelName, author }: Props) {
             {author && <div style={{ color: 'rgba(255,255,255,0.45)', fontSize: '0.7rem' }}>by {author}</div>}
           </div>
         </button>
+      )}
+
+      {/* Admin flag button — top-left */}
+      {isAdmin && makeSlug && modelSlug && (
+        <div style={{ position: 'absolute', top: 8, left: 8, zIndex: 20 }}>
+          {!showFlagMenu ? (
+            <button
+              onClick={() => setShowFlagMenu(true)}
+              title="הסתר מודל תלת-ממד זה"
+              style={{
+                background: 'rgba(0,0,0,0.65)', color: '#fff',
+                border: '1px solid rgba(255,255,255,0.2)',
+                borderRadius: 7, padding: '4px 10px', cursor: 'pointer',
+                fontSize: '0.72rem', fontWeight: 600,
+                backdropFilter: 'blur(4px)',
+                display: 'flex', alignItems: 'center', gap: 5,
+              }}
+            >
+              🚩 הסתר מודל
+            </button>
+          ) : (
+            <div
+              style={{
+                background: 'rgba(10,10,20,0.92)', backdropFilter: 'blur(8px)',
+                border: '1px solid var(--border)', borderRadius: 10, padding: 12,
+                display: 'flex', flexDirection: 'column', gap: 8, minWidth: 220,
+              }}
+              onClick={e => e.stopPropagation()}
+            >
+              <span style={{ fontSize: '0.8rem', fontWeight: 700, color: '#fff' }}>סיבת הסרה (אופציונלי)</span>
+              <input
+                autoFocus
+                value={flagReason}
+                onChange={e => setFlagReason(e.target.value)}
+                placeholder="למשל: רכב שגוי, מודל לא מתאים..."
+                onKeyDown={e => { if (e.key === 'Enter') handleFlag(); if (e.key === 'Escape') setShowFlagMenu(false); }}
+                style={{
+                  background: 'rgba(255,255,255,0.08)', border: '1px solid var(--border)',
+                  borderRadius: 6, padding: '5px 8px', color: '#fff', fontSize: '0.78rem',
+                  outline: 'none', direction: 'rtl',
+                }}
+              />
+              <div style={{ display: 'flex', gap: 6 }}>
+                <button
+                  disabled={flagging}
+                  onClick={handleFlag}
+                  style={{
+                    flex: 1, padding: '5px 10px', borderRadius: 6, border: 'none',
+                    background: 'var(--brand-red)', color: '#fff', cursor: 'pointer',
+                    fontSize: '0.78rem', fontWeight: 700,
+                  }}
+                >
+                  {flagging ? '...' : 'הסתר'}
+                </button>
+                <button
+                  onClick={() => { setShowFlagMenu(false); setFlagReason(''); }}
+                  style={{
+                    padding: '5px 10px', borderRadius: 6, border: '1px solid var(--border)',
+                    background: 'transparent', color: 'var(--text-muted)', cursor: 'pointer', fontSize: '0.78rem',
+                  }}
+                >
+                  ביטול
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
       )}
     </div>
   );

@@ -18,7 +18,8 @@ const fetch3dModels = unstable_cache(
   async (): Promise<Record<string, { uid: string; name: string; author: string; license: string; reelUrl: string | null }>> => {
     const { data, error } = await getServiceClient()
       .from('car_3d_models')
-      .select('make_slug,model_slug,sketchfab_uid,sketchfab_name,sketchfab_author,license,reel_url');
+      .select('make_slug,model_slug,sketchfab_uid,sketchfab_name,sketchfab_author,license,reel_url')
+      .not('hidden', 'is', true);
     if (error) throw new Error(`car_3d_models: ${error.message}`);
     const map: Record<string, { uid: string; name: string; author: string; license: string; reelUrl: string | null }> = {};
     for (const row of data ?? []) {

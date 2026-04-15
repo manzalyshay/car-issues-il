@@ -98,7 +98,7 @@ export default async function ModelPage({ params }: Props) {
           {/* Right: 3D viewer */}
           {sketchfabModel && (
             <div style={{ flex: '1 1 320px', minWidth: 280 }}>
-              <Car3DViewer uid={sketchfabModel.uid} modelName={`${make.nameHe} ${model.nameHe}`} />
+              <Car3DViewer uid={sketchfabModel.uid} modelName={`${make.nameHe} ${model.nameHe}`} makeSlug={makeSlug} modelSlug={modelSlug} />
               <p style={{ fontSize: '0.7rem', color: 'var(--text-muted)', marginTop: 6, textAlign: 'center' }}>
                 <a href={sketchfabModel.viewerUrl} target="_blank" rel="noopener noreferrer" style={{ color: 'var(--text-muted)' }}>
                   &ldquo;{sketchfabModel.name}&rdquo; by {sketchfabModel.author} · Sketchfab (CC BY 4.0)
