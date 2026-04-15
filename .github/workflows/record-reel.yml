@@ -31,7 +31,8 @@ jobs:
         run: npm ci
 
       - name: Install Playwright Chromium + system deps
-        run: npx playwright install chromium --with-deps
+        # Use playwright-core's own CLI so the installed browser matches the exact version
+        run: node node_modules/playwright-core/cli.js install --with-deps chromium
 
       # ffmpeg is pre-installed on ubuntu-latest
       - name: Verify ffmpeg
@@ -45,4 +46,18 @@ jobs:
           MODEL_SLUG: ${{ github.event.inputs.model_slug }}
           POST_ID: ${{ github.event.inputs.post_id }}
           SITE_URL: https://carissues.co.il
+          GITHUB_RUN_ID: ${{ github.run_id }}
+          GITHUB_REPO: ${{ github.repository }}
         run: node scripts/record-reel.mjs
+
+      - name: Report failure to DB
+        if: failure()
+        env:
+          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          MAKE_SLUG: ${{ github.event.inputs.make_slug }}
+          MODEL_SLUG: ${{ github.event.inputs.model_slug }}
+          POST_ID: ${{ github.event.inputs.post_id }}
+          GITHUB_RUN_ID: ${{ github.run_id }}
+          GITHUB_REPO: ${{ github.repository }}
+        run: node scripts/report-reel-status.mjs failure

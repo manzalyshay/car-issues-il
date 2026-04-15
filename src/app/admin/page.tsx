@@ -295,10 +295,17 @@ export default function AdminPage() {
           const prev = socialPostsRef.current.find(op => op.id === np.id);
           return prev && (prev.metadata?.reel_status as string) === 'generating' && !prev.metadata?.reel_url && !!np.metadata?.reel_url;
         });
+        const newlyFailed = newPosts.filter(np => {
+          const prev = socialPostsRef.current.find(op => op.id === np.id);
+          return prev && (prev.metadata?.reel_status as string) === 'generating' && (np.metadata?.reel_status as string) === 'failed';
+        });
         setSocialPosts(newPosts);
         if (newlyReady.length > 0) {
           setReelToast(`✅ ריל מוכן! לחץ על "שתף ריל / סטורי" כדי לפרסם`);
           setTimeout(() => setReelToast(null), 8000);
+        } else if (newlyFailed.length > 0) {
+          setReelToast(`❌ יצירת הריל נכשלה — לחץ על "לוגים" לפרטים`);
+          setTimeout(() => setReelToast(null), 10000);
         }
       } catch { /* ignore */ }
     };
@@ -1588,7 +1595,9 @@ export default function AdminPage() {
                         {postType === 'car_3d_summary' && meta?.carSlug && (() => {
                           const reelUrl = meta?.reel_url as string | undefined;
                           const reelStatus = meta?.reel_status as string | undefined;
+                          const reelLogsUrl = meta?.reel_logs_url as string | undefined;
                           const isGenerating = reelStatus === 'generating';
+                          const isFailed = reelStatus === 'failed';
                           const slugParts = (meta.carSlug as string).split('/');
                           const [mkSlug, mdSlug] = slugParts;
                           const carUrl = `https://carissues.co.il/cars/${meta.carSlug}`;
@@ -1603,6 +1612,31 @@ export default function AdminPage() {
                                     📤 שתף ריל / סטורי
                                   </button>
                                   <a href={reelUrl} target="_blank" rel="noreferrer" style={{ fontSize: '0.72rem', color: 'var(--text-muted)', textDecoration: 'none' }}>↗ פתח</a>
+                                </>
+                              ) : isFailed ? (
+                                <>
+                                  <span style={{ fontSize: '0.72rem', fontWeight: 700, color: 'var(--brand-red)' }}>✗ נכשל</span>
+                                  {reelLogsUrl && (
+                                    <a href={reelLogsUrl} target="_blank" rel="noreferrer"
+                                      style={{ fontSize: '0.72rem', color: '#f59e0b', textDecoration: 'none', fontWeight: 600 }}>
+                                      📋 לוגים
+                                    </a>
+                                  )}
+                                  <button
+                                    onClick={async () => {
+                                      const t = await getToken();
+                                      const r = await fetch('/api/admin/trigger-reel', {
+                                        method: 'POST',
+                                        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${t}` },
+                                        body: JSON.stringify({ makeSlug: mkSlug, modelSlug: mdSlug, postId: post.id }),
+                                      });
+                                      const d = await r.json();
+                                      if (d.ok) { await fetchSocialPosts(); setReelToast('⏳ ריל בהכנה (~5 דק׳)... הדף יתעדכן אוטומטית'); setTimeout(() => setReelToast(null), 6000); }
+                                      else alert('שגיאה: ' + d.error);
+                                    }}
+                                    style={{ padding: '3px 10px', borderRadius: 6, border: 'none', background: 'var(--brand-red)', color: '#fff', cursor: 'pointer', fontSize: '0.72rem', fontWeight: 700, whiteSpace: 'nowrap' }}>
+                                    ↺ נסה שוב
+                                  </button>
                                 </>
                               ) : (
                                 <button

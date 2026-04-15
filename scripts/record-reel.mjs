@@ -133,10 +133,14 @@ await sb.from('car_3d_models')
   .eq('model_slug', modelSlug);
 
 // ── Update social post metadata (optional) ────────────────────────────────────
+const runId   = process.env.GITHUB_RUN_ID ?? '';
+const repoStr = process.env.GITHUB_REPO   ?? 'manzalyshay/car-issues-il';
+const logsUrl = runId ? `https://github.com/${repoStr}/actions/runs/${runId}` : null;
+
 if (postId) {
   const { data: post } = await sb.from('social_posts').select('metadata').eq('id', postId).single();
   await sb.from('social_posts').update({
-    metadata: { ...(post?.metadata ?? {}), reel_url: publicUrl, reel_status: 'ready' },
+    metadata: { ...(post?.metadata ?? {}), reel_url: publicUrl, reel_status: 'ready', reel_logs_url: logsUrl },
   }).eq('id', postId);
   console.log(`   Updated post ${postId}`);
 }
