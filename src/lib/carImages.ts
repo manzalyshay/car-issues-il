@@ -5,6 +5,7 @@ export interface CarImage {
   id: string;
   make_slug: string;
   model_slug: string;
+  year: number | null;
   url: string;
   thumbnail_url: string | null;
   title: string | null;
@@ -23,13 +24,37 @@ export const getImagesForCar = unstable_cache(
       .select('*')
       .eq('make_slug', makeSlug)
       .eq('model_slug', modelSlug)
+      .is('year', null)
       .order('created_at', { ascending: true })
       .limit(20);
     return (data ?? []) as CarImage[];
   },
   ['car-images'],
   {
-    revalidate: 86400, // 24h fallback
+    revalidate: 86400,
+    tags: ['car-media'],
+  },
+);
+
+export const getImagesForYear = unstable_cache(
+  async (makeSlug: string, modelSlug: string, year: number): Promise<CarImage[]> => {
+    const sb = getServiceClient();
+    // Try year-specific first
+    const { data: yearData } = await sb
+      .from('car_images')
+      .select('*')
+      .eq('make_slug', makeSlug)
+      .eq('model_slug', modelSlug)
+      .eq('year', year)
+      .order('created_at', { ascending: true })
+      .limit(20);
+    if (yearData && yearData.length > 0) return yearData as CarImage[];
+    // Fall back to general images
+    return getImagesForCar(makeSlug, modelSlug);
+  },
+  ['car-images-year'],
+  {
+    revalidate: 86400,
     tags: ['car-media'],
   },
 );

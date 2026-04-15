@@ -17,13 +17,13 @@ export default function YearHero({ makeSlug, modelSlug, year, makeNameHe, modelN
   const [loaded, setLoaded] = useState(false);
 
   useEffect(() => {
-    fetch(`/api/car-media?make=${makeSlug}&model=${modelSlug}&type=images`)
+    fetch(`/api/car-media?make=${makeSlug}&model=${modelSlug}&type=images&year=${year}`)
       .then(r => r.json())
       .then((imgs: { url: string; thumbnail_url: string | null }[]) => {
         if (imgs?.[0]) setImgUrl(imgs[0].thumbnail_url ?? imgs[0].url);
       })
       .catch(() => {});
-  }, [makeSlug, modelSlug]);
+  }, [makeSlug, modelSlug, year]);
 
   return (
     <div style={{
