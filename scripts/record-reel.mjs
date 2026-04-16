@@ -64,12 +64,14 @@ const page = await context.newPage();
 await page.setViewportSize({ width: 1080, height: 1920 });
 
 console.log('   Loading page...');
-await page.goto(reelUrl, { waitUntil: 'networkidle', timeout: 30000 });
+// Use 'load' not 'networkidle' — Sketchfab iframe streams 3D assets continuously
+// so networkidle is never reached. 'load' fires once the HTML + fonts are ready.
+await page.goto(reelUrl, { waitUntil: 'load', timeout: 60000 });
 
 // Wait for the Sketchfab 3D model to load and start spinning
 // The viewer typically takes 4-6 seconds to initialise
-console.log('   Waiting for 3D model to initialise (8s)...');
-await page.waitForTimeout(8000);
+console.log('   Waiting for 3D model to initialise (10s)...');
+await page.waitForTimeout(10000);
 
 // Record another 10 seconds of spinning
 console.log('   Recording 10 seconds...');
