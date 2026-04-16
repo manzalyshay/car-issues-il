@@ -34,7 +34,9 @@ jobs:
         # Use playwright-core's own CLI so the installed browser matches the exact version
         run: node node_modules/playwright-core/cli.js install --with-deps chromium
 
-      # ffmpeg is pre-installed on ubuntu-latest
+      - name: Install ffmpeg
+        run: sudo apt-get install -y ffmpeg
+
       - name: Verify ffmpeg
         run: ffmpeg -version | head -1
 
