@@ -68,12 +68,8 @@ console.log('   Loading page...');
 // so networkidle is never reached. 'load' fires once the HTML + fonts are ready.
 await page.goto(reelUrl, { waitUntil: 'load', timeout: 60000 });
 
-// Sketchfab requires a user gesture to start even with autostart=1 in headless browsers.
-// Click the iframe to trigger the viewer, then wait for it to spin up.
-console.log('   Clicking iframe to trigger Sketchfab autostart...');
-await page.click('iframe').catch(() => page.mouse.click(540, 960));
-
-// Wait for the viewer to initialise and begin spinning
+// Sketchfab JS API calls api.start() programmatically — no click needed.
+// Wait for the viewer to initialise and begin spinning.
 console.log('   Waiting for 3D model to initialise (12s)...');
 await page.waitForTimeout(12000);
 
