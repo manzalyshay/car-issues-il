@@ -4,8 +4,10 @@ import { notFound } from 'next/navigation';
 import { getMakeBySlug, getModelBySlug, getAllMakes } from '@/lib/carsDb';
 import { getReviewsForModel } from '@/lib/reviewsDb';
 import { getExpertReviews } from '@/lib/expertReviews';
+import { findCarModel } from '@/lib/sketchfab';
 import StarRating from '@/components/StarRating';
 import MakeLogo from '@/components/MakeLogo';
+import Car3DViewer from '@/components/Car3DViewer';
 
 interface Props { params: Promise<{ make1: string; model1: string; make2: string; model2: string }> }
 
@@ -60,11 +62,13 @@ export default async function ComparePage({ params }: Props) {
   const [modA, modB] = await Promise.all([getModelBySlug(make1, model1), getModelBySlug(make2, model2)]);
   if (!modA || !modB) notFound();
 
-  const [reviewsA, reviewsB, expertA, expertB] = await Promise.all([
+  const [reviewsA, reviewsB, expertA, expertB, carModelA, carModelB] = await Promise.all([
     getReviewsForModel(make1, model1),
     getReviewsForModel(make2, model2),
     getExpertReviews(make1, model1),
     getExpertReviews(make2, model2),
+    findCarModel(make1, model1),
+    findCarModel(make2, model2),
   ]);
 
   const avgA = reviewsA.length ? reviewsA.reduce((s, r) => s + r.rating, 0) / reviewsA.length : null;
@@ -134,6 +138,27 @@ export default async function ComparePage({ params }: Props) {
             </Link>
           </div>
         </div>
+
+        {/* 3D Viewers */}
+        {(carModelA || carModelB) && (
+          <div className="card" style={{ padding: '20px', marginBottom: 28 }}>
+            <h2 style={{ fontWeight: 800, fontSize: '1rem', marginBottom: 16 }}>מודל תלת-ממד</h2>
+            <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap' }}>
+              <div style={{ flex: 1, minWidth: 280 }}>
+                {carModelA
+                  ? <Car3DViewer uid={carModelA.uid} modelName={`${mA.nameHe} ${modA.nameHe}`} makeSlug={make1} modelSlug={model1} />
+                  : <div style={{ height: 220, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--bg-muted)', borderRadius: 12, color: 'var(--text-muted)', fontSize: '0.875rem' }}>אין מודל 3D</div>
+                }
+              </div>
+              <div style={{ flex: 1, minWidth: 280 }}>
+                {carModelB
+                  ? <Car3DViewer uid={carModelB.uid} modelName={`${mB.nameHe} ${modB.nameHe}`} makeSlug={make2} modelSlug={model2} />
+                  : <div style={{ height: 220, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--bg-muted)', borderRadius: 12, color: 'var(--text-muted)', fontSize: '0.875rem' }}>אין מודל 3D</div>
+                }
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Scores */}
         <div className="card" style={{ padding: '24px 28px', marginBottom: 28 }}>
