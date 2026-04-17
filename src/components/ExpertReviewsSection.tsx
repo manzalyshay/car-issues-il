@@ -77,12 +77,12 @@ function SourceRow({ item }: { item: SourceBreakdown }) {
         </span>
         <span style={{
           fontSize: '0.67rem', fontWeight: 700,
-          color: 'var(--text-muted)',
+          color: item.postCount === 0 ? 'var(--text-muted)' : 'var(--text-muted)',
           background: 'var(--bg-card)',
           border: '1px solid var(--border)',
           padding: '1px 7px', borderRadius: 99,
         }}>
-          {item.postCount} דיונים
+          {item.postCount === 0 ? 'AI ידע' : `${item.postCount} דיונים`}
         </span>
         {item.score != null && (
           <span style={{

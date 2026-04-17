@@ -1297,7 +1297,14 @@ export async function summarizeFromPosts(
   const allCons = [...(localOut?.cons ?? []), ...(globalOut?.cons ?? [])].slice(0, 4);
 
   const allPostsForBreakdown = [...localPosts.map(toUserPost), ...globalPosts.map(toUserPost)];
-  const sourcesBreakdown = allPostsForBreakdown.length > 0 ? await summarizePerSource(allPostsForBreakdown, makeNameHe, modelNameHe) : [];
+  let sourcesBreakdown = allPostsForBreakdown.length > 0
+    ? await summarizePerSource(allPostsForBreakdown, makeNameHe, modelNameHe)
+    : [];
+
+  // Fallback: if no real scraped posts, generate knowledge-based per-source summaries
+  if (sourcesBreakdown.length === 0) {
+    sourcesBreakdown = await generateKnowledgeSourcesBreakdown(makeNameHe, modelNameHe, makeNameEn, modelNameEn);
+  }
 
   const sb = getSupabase(true);
   await sb.from('expert_reviews').delete().eq('make_slug', makeSlug).eq('model_slug', modelSlug).is('year', null);
@@ -1388,6 +1395,56 @@ ${snippets}
       source:    String(item.source ?? ''),
       flag:      LOCAL_SOURCES.has(String(item.source ?? '')) ? '🇮🇱' : '🌍',
       postCount: Number(item.postCount ?? 0),
+      score:     item.score != null ? Number(item.score) : null,
+      summary:   String(item.summary ?? ''),
+    })).filter(b => b.source && b.summary.length > 20);
+  } catch { return []; }
+}
+
+/** Generate per-source summaries from AI knowledge when no real posts were scraped */
+async function generateKnowledgeSourcesBreakdown(
+  makeNameHe: string, modelNameHe: string,
+  makeNameEn: string, modelNameEn: string,
+): Promise<SourceBreakdown[]> {
+  const apiKey = process.env.MISTRAL_API_KEY;
+  if (!apiKey) return [];
+
+  const prompt = `אתה מומחה לביקורות רכב. עבור ${makeNameHe} ${modelNameHe} (${makeNameEn} ${modelNameEn}), כתוב סיכום קצר (2-3 משפטים) של מה שבעלי הרכב אומרים בכל אחד מהמקורות הבאים, בהתבסס על הידע שלך.
+
+המקורות:
+- CarZone ביקורות גולשים (ישראל)
+- פורום טפוז מכוניות (ישראל)
+- KBB - Kelley Blue Book (בינלאומי)
+- Edmunds Owner Reviews (בינלאומי)
+- ZigWheels Owner Reviews (בינלאומי)
+
+לכל מקור: סיכום קצר בעברית, ציון 1-10.
+אם אין לך מידע ספציפי על מקור מסוים — דלג עליו.
+
+החזר JSON בלבד:
+[{"source":"שם המקור","summary":"...","score":7}, ...]`;
+
+  try {
+    const res = await fetch(MISTRAL_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${apiKey}` },
+      body: JSON.stringify({
+        model: 'mistral-small-latest',
+        temperature: 0.3,
+        max_tokens: 1000,
+        messages: [{ role: 'user', content: prompt }],
+      }),
+      signal: AbortSignal.timeout(25000),
+    });
+    if (!res.ok) return [];
+    const json = await res.json();
+    const text: string = json.choices?.[0]?.message?.content ?? '';
+    const parsed = JSON.parse(text.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim());
+    if (!Array.isArray(parsed)) return [];
+    return parsed.map((item: any): SourceBreakdown => ({
+      source:    String(item.source ?? ''),
+      flag:      LOCAL_SOURCES.has(String(item.source ?? '')) ? '🇮🇱' : '🌍',
+      postCount: 0, // 0 = knowledge-based, not real scraped posts
       score:     item.score != null ? Number(item.score) : null,
       summary:   String(item.summary ?? ''),
     })).filter(b => b.source && b.summary.length > 20);

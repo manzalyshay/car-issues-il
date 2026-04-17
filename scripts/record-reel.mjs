@@ -76,15 +76,15 @@ await page.waitForTimeout(14000);
 // Zoom out so the whole car is visible — positive deltaY = zoom out
 console.log('   Zooming out...');
 await page.mouse.move(540, 800);
-for (let i = 0; i < 15; i++) {
-  await page.mouse.wheel(0, 120);
-  await page.waitForTimeout(100);
+for (let i = 0; i < 30; i++) {
+  await page.mouse.wheel(0, 150);
+  await page.waitForTimeout(80);
 }
-await page.waitForTimeout(800);
+await page.waitForTimeout(1200);
 
-// Model is now spinning via autospin — record 12s (we'll trim to 10s in ffmpeg)
-console.log('   Recording 12s of auto-spin...');
-await page.waitForTimeout(12000);
+// Model is now spinning via autospin — record 14s (we'll trim to 10s in ffmpeg)
+console.log('   Recording 14s of auto-spin...');
+await page.waitForTimeout(14000);
 
 // Grab the path BEFORE closing (closing finalises the file)
 const videoPathRaw = await page.video()?.path();
@@ -109,12 +109,12 @@ console.log(`   Raw video: ${webmPath}`);
 
 // ── Convert WebM → MP4 (H.264) ────────────────────────────────────────────────
 console.log('   Converting to MP4...');
-// -ss 18: skip ~14s init + ~2s page-load + ~2s zoom-out = clean spinning portion
+// -ss 20: skip ~14s init + ~2s page-load + ~4s zoom-out = clean spinning portion
 // -t 10:  keep exactly 10 seconds of the auto-spinning model
 execFileSync('ffmpeg', [
   '-y',
   '-i', webmPath,
-  '-ss', '18',
+  '-ss', '20',
   '-t', '10',
   '-c:v', 'libx264',
   '-preset', 'fast',
