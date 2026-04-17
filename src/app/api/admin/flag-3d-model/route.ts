@@ -20,7 +20,7 @@ export async function POST(req: NextRequest) {
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
 
   // Bust the cache so the model disappears immediately on next page load
-  revalidateTag('car-data');
+  revalidateTag('car-data', 'max');
 
   return NextResponse.json({ ok: true });
 }
