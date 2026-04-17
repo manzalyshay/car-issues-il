@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState, useCallback, useRef, type ReactNode } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/lib/authContext';
 import type { CarMake } from '@/lib/carsDb';
@@ -87,7 +87,17 @@ function dbToReview(row: Record<string, unknown>): Review {
 export default function AdminPage() {
   const { user, isAdmin, loading } = useAuth();
   const router = useRouter();
-  const [tab, setTab] = useState<Tab>('reviews_ai');
+  const searchParams = useSearchParams();
+  const VALID_TABS: Tab[] = ['reviews_ai', 'user_reviews', 'reports', 'metrics', 'users', 'social_posts'];
+  const tabFromUrl = searchParams.get('tab') as Tab | null;
+  const [tab, setTabState] = useState<Tab>(VALID_TABS.includes(tabFromUrl as Tab) ? tabFromUrl! : 'user_reviews');
+
+  const setTab = useCallback((t: Tab) => {
+    setTabState(t);
+    const url = new URL(window.location.href);
+    url.searchParams.set('tab', t);
+    window.history.pushState({}, '', url.toString());
+  }, []);
 
   // ── AI Reviews tab state ─────────────────────────────────────────────────────
   const [models, setModels] = useState<ModelRow[]>([]);
