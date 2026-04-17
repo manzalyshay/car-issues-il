@@ -228,32 +228,6 @@ async function searchDrive(makeHe: string, modelHe: string, year?: number): Prom
   return posts;
 }
 
-// ── rotter.net (Israeli forum — car section) ───────────────────────────────────
-async function searchRotter(makeHe: string, modelHe: string, year?: number): Promise<UserPost[]> {
-  const posts: UserPost[] = [];
-  try {
-    const query = encodeURIComponent(year ? `${makeHe} ${modelHe} ${year}` : `${makeHe} ${modelHe}`);
-    const res = await fetch(
-      `https://rotter.net/cgi-bin/forum/dcboard.cgi?az=search&query=${query}&forum=cars`,
-      {
-        headers: { 'User-Agent': 'Mozilla/5.0', 'Accept-Language': 'he-IL,he;q=0.9' },
-        signal: AbortSignal.timeout(10000),
-      }
-    );
-    if (!res.ok) return posts;
-    const html = await res.text();
-
-    const linkRe = /<a[^>]+href="([^"]*dcboard[^"]*az=show[^"]*)"[^>]*>\s*([^<]{8,150})\s*<\/a>/gi;
-    let m;
-    while ((m = linkRe.exec(html)) !== null && posts.length < 5) {
-      const title = m[2].replace(/&[a-z#\d]+;/g, '').trim();
-      if (!title || title.length < 8) continue;
-      const url = m[1].startsWith('http') ? m[1] : `https://rotter.net${m[1]}`;
-      posts.push({ title, url, sourceName: 'פורום רוטר רכב', snippet: '' });
-    }
-  } catch { /* ignore */ }
-  return posts;
-}
 
 // ── Facebook public posts (via DuckDuckGo search + og:description) ──────────────
 // Finds public Israeli Facebook posts about car models.
@@ -319,62 +293,7 @@ async function searchFacebook(makeHe: string, modelHe: string, year?: number): P
   return posts;
 }
 
-// ── walla.co.il (Israeli portal — car section reviews) ────────────────────────
-async function searchWalla(makeHe: string, modelHe: string, year?: number): Promise<UserPost[]> {
-  const posts: UserPost[] = [];
-  try {
-    const query = encodeURIComponent(year ? `${makeHe} ${modelHe} ${year}` : `${makeHe} ${modelHe}`);
-    const res = await fetch(
-      `https://auto.walla.co.il/search?q=${query}`,
-      {
-        headers: { 'User-Agent': 'Mozilla/5.0', 'Accept-Language': 'he-IL,he;q=0.9' },
-        signal: AbortSignal.timeout(10000),
-      }
-    );
-    if (!res.ok) return posts;
-    const html = await res.text();
 
-    const cardRe = /<a[^>]+href="(https:\/\/auto\.walla\.co\.il\/item\/[^"]+)"[^>]*>([\s\S]*?)<\/a>/gi;
-    let m;
-    while ((m = cardRe.exec(html)) !== null && posts.length < 5) {
-      const inner = m[2].replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
-      if (inner.length < 8) continue;
-      posts.push({ title: inner.slice(0, 150), url: m[1], sourceName: 'וואלה אוטו', snippet: '' });
-    }
-  } catch { /* ignore */ }
-  return posts;
-}
-
-// ── One.co.il (Israeli forum, public search) ──────────────────────────────────
-async function searchOne(makeHe: string, modelHe: string): Promise<UserPost[]> {
-  const posts: UserPost[] = [];
-  try {
-    const query = encodeURIComponent(`${makeHe} ${modelHe} רכב`);
-    const res = await fetch(
-      `https://www.one.co.il/search/?q=${query}&section=forums`,
-      {
-        headers: { 'User-Agent': 'Mozilla/5.0', 'Accept-Language': 'he-IL,he;q=0.9' },
-        signal: AbortSignal.timeout(10000),
-      }
-    );
-    if (!res.ok) return posts;
-    const html = await res.text();
-
-    const linkRe = /<a[^>]+href="(\/forums\/[^"]+)"[^>]*>\s*([^<]{10,120})\s*<\/a>/gi;
-    let m;
-    while ((m = linkRe.exec(html)) !== null && posts.length < 4) {
-      const title = m[2].replace(/&[a-z]+;/g, '').trim();
-      if (!title || title.length < 8) continue;
-      posts.push({
-        title,
-        url: `https://www.one.co.il${m[1]}`,
-        sourceName: 'פורום ONE רכב',
-        snippet: '',
-      });
-    }
-  } catch { /* ignore */ }
-  return posts;
-}
 
 // ── icar.co.il (Ynet car reviews — has search + real review text) ─────────────
 async function searchIcar(makeHe: string, modelHe: string, year?: number): Promise<UserPost[]> {
@@ -1219,13 +1138,12 @@ async function gatherUserPosts(
   year?: number,
 ): Promise<{ local: UserPost[]; global: UserPost[]; primary?: UserPost }> {
   const [
-    tapuzPosts, onePosts, icarPosts, carzonePosts,
-    carComplaintsPosts, nhtsaPosts, edmundsPosts, zigWheelsPosts, drivePosts, rotterPosts, wallaPosts,
+    tapuzPosts, icarPosts, carzonePosts,
+    carComplaintsPosts, nhtsaPosts, edmundsPosts, zigWheelsPosts, drivePosts,
     carsComPosts, autoExpressPosts, whatCarPosts, carExpertPosts, carSalesPosts,
     facebookPosts,
   ] = await Promise.all([
     searchTapuz(makeNameHe, modelNameHe, year),
-    searchOne(makeNameHe, modelNameHe),
     searchIcar(makeNameHe, modelNameHe, year),
     searchCarzone(makeNameHe, modelNameHe, makeNameEn, modelNameEn, year),
     searchCarComplaints(makeNameEn, modelNameEn),
@@ -1233,8 +1151,6 @@ async function gatherUserPosts(
     searchEdmunds(makeNameEn, modelNameEn, year),
     searchZigWheels(makeNameEn, modelNameEn),
     searchDrive(makeNameHe, modelNameHe, year),
-    searchRotter(makeNameHe, modelNameHe, year),
-    searchWalla(makeNameHe, modelNameHe, year),
     searchCarsCom(makeNameEn, modelNameEn, year),
     searchAutoExpress(makeNameEn, modelNameEn),
     searchWhatCar(makeNameEn, modelNameEn),
@@ -1243,9 +1159,9 @@ async function gatherUserPosts(
     searchFacebook(makeNameHe, modelNameHe, year),
   ]);
   return {
-    local:   [...icarPosts, ...drivePosts, ...wallaPosts, ...carzonePosts, ...tapuzPosts, ...rotterPosts, ...onePosts, ...facebookPosts],
+    local:   [...icarPosts, ...drivePosts, ...carzonePosts, ...tapuzPosts, ...facebookPosts],
     global:  [...zigWheelsPosts, ...edmundsPosts, ...nhtsaPosts, ...carComplaintsPosts, ...carsComPosts, ...autoExpressPosts, ...whatCarPosts, ...carExpertPosts, ...carSalesPosts],
-    primary: tapuzPosts[0] ?? onePosts[0] ?? zigWheelsPosts[0] ?? nhtsaPosts[0],
+    primary: tapuzPosts[0] ?? zigWheelsPosts[0] ?? nhtsaPosts[0],
   };
 }
 
