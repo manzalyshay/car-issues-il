@@ -66,54 +66,58 @@ export default async function ModelPage({ params }: Props) {
           <span style={{ color: 'var(--text-primary)' }}>{model.nameHe}</span>
         </div>
 
-        {/* Model header + 3D viewer */}
-        <div className="card" style={{ padding: '28px', marginBottom: 40, display: 'flex', gap: 32, alignItems: 'stretch', flexWrap: 'wrap' }}>
-          {/* Left: title + badges */}
-          <div style={{ flex: '1 1 240px', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 10 }}>
-              <MakeLogo logoUrl={make.logoUrl} nameEn={make.nameEn} size={48} />
-              <div>
-                <h1 style={{ fontSize: '1.75rem', fontWeight: 900 }}>{make.nameHe} {model.nameHe}</h1>
-                <p style={{ color: 'var(--text-muted)', fontSize: '0.9375rem' }}>{make.nameEn} {model.nameEn}</p>
-              </div>
-            </div>
-            <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'center' }}>
-              <span className="badge badge-gray">{getCategoryLabel(model.category)}</span>
-              <span className="badge badge-blue">{model.years[model.years.length - 1]}–{model.years[0]}</span>
-              <RecallsBadge makeEn={make.nameEn} modelEn={model.nameEn} years={model.years} />
-              {avgRating !== null && (
-                <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                  <StarRating rating={avgRating} size={16} />
-                  <span style={{ fontSize: '0.875rem', fontWeight: 700, color: 'var(--text-primary)' }}>
-                    {avgRating.toFixed(1)}
-                  </span>
-                  <span style={{ fontSize: '0.8125rem', color: 'var(--text-muted)' }}>
-                    ({allReviews.length} ביקורות)
-                  </span>
-                </div>
-              )}
-            </div>
+        {/* Header row */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 16, flexWrap: 'wrap' }}>
+          <MakeLogo logoUrl={make.logoUrl} nameEn={make.nameEn} size={44} />
+          <div style={{ flex: 1 }}>
+            <h1 style={{ fontSize: 'clamp(1.4rem,3vw,2rem)', fontWeight: 900, margin: 0 }}>{make.nameHe} {model.nameHe}</h1>
+            <p style={{ color: 'var(--text-muted)', fontSize: '0.875rem', margin: 0 }}>{make.nameEn} {model.nameEn}</p>
           </div>
+          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
+            <span className="badge badge-gray">{getCategoryLabel(model.category)}</span>
+            <span className="badge badge-blue">{model.years[model.years.length - 1]}–{model.years[0]}</span>
+            <RecallsBadge makeEn={make.nameEn} modelEn={model.nameEn} years={model.years} />
+            {avgRating !== null && (
+              <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+                <StarRating rating={avgRating} size={15} />
+                <span style={{ fontSize: '0.875rem', fontWeight: 700 }}>{avgRating.toFixed(1)}</span>
+                <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>({allReviews.length})</span>
+              </div>
+            )}
+          </div>
+        </div>
 
+        {/* Actions */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap', marginBottom: 28 }}>
+          <SharePopup title={`${make.nameHe} ${model.nameHe} — ביקורות ובעיות נפוצות | CarIssues IL`} url={`https://carissues.co.il/cars/${make.slug}/${model.slug}`} />
+          <Link href={`/cars/compare?car1=${make.slug}/${model.slug}`} className="btn btn-outline" style={{ height: 36, padding: '0 16px', fontSize: '0.875rem', textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+            ⚖️ השווה לרכב אחר
+          </Link>
+        </div>
+
+        {/* AI summary + 3D viewer side by side */}
+        <div style={{ display: 'flex', gap: 24, alignItems: 'flex-start', flexWrap: 'wrap', marginBottom: 32 }}>
+          {/* Left: AI summary */}
+          <div style={{ flex: '1 1 300px', minWidth: 0 }}>
+            <ExpertReviewsSection
+              review={expertReview}
+              makeNameHe={make.nameHe}
+              modelNameHe={model.nameHe}
+              userAvgRating={avgRating}
+              userReviewCount={allReviews.length}
+            />
+          </div>
           {/* Right: 3D viewer */}
           {sketchfabModel && (
             <div style={{ flex: '1 1 320px', minWidth: 280 }}>
               <Car3DViewer uid={sketchfabModel.uid} modelName={`${make.nameHe} ${model.nameHe}`} makeSlug={makeSlug} modelSlug={modelSlug} />
               <p style={{ fontSize: '0.7rem', color: 'var(--text-muted)', marginTop: 6, textAlign: 'center' }}>
                 <a href={sketchfabModel.viewerUrl} target="_blank" rel="noopener noreferrer" style={{ color: 'var(--text-muted)' }}>
-                  &ldquo;{sketchfabModel.name}&rdquo; by {sketchfabModel.author} · Sketchfab (CC BY 4.0)
+                  &ldquo;{sketchfabModel.name}&rdquo; by {sketchfabModel.author} · CC BY 4.0
                 </a>
               </p>
             </div>
           )}
-        </div>
-
-        {/* Share + Compare */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap', marginBottom: 32 }}>
-          <SharePopup title={`${make.nameHe} ${model.nameHe} — ביקורות ובעיות נפוצות | CarIssues IL`} url={`https://carissues.co.il/cars/${make.slug}/${model.slug}`} />
-          <Link href={`/cars/compare?car1=${make.slug}/${model.slug}`} className="btn btn-outline" style={{ height: 36, padding: '0 16px', fontSize: '0.875rem', textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: 6 }}>
-            ⚖️ השווה לרכב אחר
-          </Link>
         </div>
 
         {/* Year selector */}
@@ -123,25 +127,10 @@ export default async function ModelPage({ params }: Props) {
           </h2>
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
             {model.years.map((y) => (
-              <Link
-                key={y}
-                href={`/cars/${make.slug}/${model.slug}/${y}`}
-                className="year-pill"
-              >
-                {y}
-              </Link>
+              <Link key={y} href={`/cars/${make.slug}/${model.slug}/${y}`} className="year-pill">{y}</Link>
             ))}
           </div>
         </div>
-
-        {/* General AI summary — combined score includes user reviews */}
-        <ExpertReviewsSection
-          review={expertReview}
-          makeNameHe={make.nameHe}
-          modelNameHe={model.nameHe}
-          userAvgRating={avgRating}
-          userReviewCount={allReviews.length}
-        />
 
         {/* Tabbed: Reviews | Videos */}
         <CarPageTabs

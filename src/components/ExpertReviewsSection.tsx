@@ -1,4 +1,4 @@
-import type { ExpertReview } from '@/lib/expertReviews';
+import type { ExpertReview, SourceBreakdown } from '@/lib/expertReviews';
 
 interface Props {
   review: ExpertReview | null;
@@ -42,47 +42,37 @@ function ScoreRing({ score, size = 52 }: { score: number; size?: number }) {
           strokeLinecap="round"
         />
       </svg>
-      <div style={{
-        position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column',
-        alignItems: 'center', justifyContent: 'center',
-      }}>
+      <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
         <span style={{ fontSize: size * 0.28, fontWeight: 900, color, lineHeight: 1 }}>{score.toFixed(1)}</span>
       </div>
     </div>
   );
 }
 
-interface InsightRowProps {
-  flag: string;
-  label: string;
-  count: number;
-  score: number | null;
-  summary: string;
-  accent: string;
-}
-
-function InsightRow({ flag, label, count, score, summary, accent }: InsightRowProps) {
+function SourceRow({ item }: { item: SourceBreakdown }) {
   return (
     <div style={{
-      display: 'grid',
-      gridTemplateColumns: '1fr auto',
-      gap: '8px 12px',
-      padding: '14px 16px',
+      padding: '12px 16px',
       borderRadius: 10,
       background: 'var(--bg-muted)',
       position: 'relative',
       overflow: 'hidden',
     }}>
-      {/* accent strip */}
+      {/* flag accent strip */}
       <div style={{
         position: 'absolute', right: 0, top: 0, bottom: 0,
-        width: 3, background: accent, borderRadius: '0 10px 10px 0',
+        width: 3,
+        background: item.flag === '🇮🇱' ? '#3b82f6' : '#8b5cf6',
+        borderRadius: '0 10px 10px 0',
       }} />
 
-      {/* top row: label + count chip */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-        <span style={{ fontSize: '0.75rem', fontWeight: 800, color: accent, letterSpacing: '0.02em' }}>
-          {flag} {label}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6, flexWrap: 'wrap' }}>
+        <span style={{ fontSize: '0.8rem' }}>{item.flag}</span>
+        <span style={{
+          fontSize: '0.75rem', fontWeight: 800,
+          color: item.flag === '🇮🇱' ? '#3b82f6' : '#8b5cf6',
+        }}>
+          {item.source}
         </span>
         <span style={{
           fontSize: '0.67rem', fontWeight: 700,
@@ -91,30 +81,20 @@ function InsightRow({ flag, label, count, score, summary, accent }: InsightRowPr
           border: '1px solid var(--border)',
           padding: '1px 7px', borderRadius: 99,
         }}>
-          {count} דיונים
+          {item.postCount} דיונים
         </span>
-      </div>
-
-      {/* score */}
-      {score != null && (
-        <div style={{
-          gridRow: '1 / 3',
-          display: 'flex', alignItems: 'center', justifyContent: 'flex-end',
-        }}>
-          <span style={{ fontSize: '1rem', fontWeight: 900, color: scoreColor(score) }}>
-            {score.toFixed(1)}
-            <span style={{ fontSize: '0.65rem', fontWeight: 600, color: 'var(--text-muted)' }}>/10</span>
+        {item.score != null && (
+          <span style={{
+            marginRight: 'auto',
+            fontSize: '0.85rem', fontWeight: 900,
+            color: scoreColor(item.score),
+          }}>
+            {item.score.toFixed(1)}<span style={{ fontSize: '0.6rem', fontWeight: 500, color: 'var(--text-muted)' }}>/10</span>
           </span>
-        </div>
-      )}
-
-      {/* summary text */}
-      <p style={{
-        margin: 0, gridColumn: 1,
-        fontSize: '0.875rem', lineHeight: 1.65,
-        color: 'var(--text-secondary)',
-      }}>
-        {summary}
+        )}
+      </div>
+      <p style={{ margin: 0, fontSize: '0.875rem', lineHeight: 1.65, color: 'var(--text-secondary)' }}>
+        {item.summary}
       </p>
     </div>
   );
@@ -129,20 +109,27 @@ export default function ExpertReviewsSection({
   const globalSummary = noData(review.globalSummaryHe) ? null : review.globalSummaryHe!;
   const fallback      = !localSummary && !globalSummary && !noData(review.summaryHe) ? review.summaryHe : null;
 
-  const hasContent = localSummary || globalSummary || fallback || review.pros.length > 0 || review.cons.length > 0;
+  const hasPerSource = review.sourcesBreakdown && review.sourcesBreakdown.length > 0;
+  const hasContent = hasPerSource || localSummary || globalSummary || fallback || review.pros.length > 0 || review.cons.length > 0;
   if (!hasContent) return null;
 
   const localScore  = review.localScore  != null && localSummary  ? review.localScore  : null;
   const globalScore = review.globalScore != null && globalSummary ? review.globalScore : null;
   const userScore   = userAvgRating != null && userAvgRating > 0 ? userAvgRating * 2 : null;
 
-  const scoreInputs = [localScore, globalScore, userScore].filter((s): s is number => s != null);
+  const scoreInputs = hasPerSource
+    ? [
+        ...review.sourcesBreakdown.map(s => s.score).filter((s): s is number => s != null),
+        ...(userScore != null ? [userScore] : []),
+      ]
+    : [localScore, globalScore, userScore].filter((s): s is number => s != null);
+
   const combined = scoreInputs.length > 0
     ? scoreInputs.reduce((a, b) => a + b, 0) / scoreInputs.length
     : (fallback ? review.topScore : null);
 
   const totalPosts = (review.localPostCount ?? 0) + (review.globalPostCount ?? 0);
-  const isKnowledge = totalPosts === 0;
+  const isKnowledge = totalPosts === 0 && !hasPerSource;
 
   const title = year
     ? `מה אומרים הבעלים — ${makeNameHe} ${modelNameHe} ${year}`
@@ -152,13 +139,15 @@ export default function ExpertReviewsSection({
     ? 'סיכום כללי'
     : isKnowledge
       ? 'AI ידע'
-      : `AI · ${totalPosts} דיונים`;
+      : hasPerSource
+        ? `AI · ${review.sourcesBreakdown.reduce((s, b) => s + b.postCount, 0)} דיונים`
+        : `AI · ${totalPosts} דיונים`;
 
   return (
     <section style={{ marginBottom: 32 }}>
       <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
 
-        {/* ── Header ─────────────────────────────────────────────────────────── */}
+        {/* Header */}
         <div style={{
           display: 'flex', alignItems: 'center', justifyContent: 'space-between',
           gap: 12, padding: '16px 20px',
@@ -166,9 +155,7 @@ export default function ExpertReviewsSection({
           background: 'linear-gradient(135deg, rgba(230,57,70,0.04) 0%, transparent 60%)',
         }}>
           <div style={{ minWidth: 0 }}>
-            <h2 style={{ fontSize: '1rem', fontWeight: 800, margin: 0, lineHeight: 1.3 }}>
-              {title}
-            </h2>
+            <h2 style={{ fontSize: '1rem', fontWeight: 800, margin: 0, lineHeight: 1.3 }}>{title}</h2>
             <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 5, flexWrap: 'wrap' }}>
               <span style={{
                 fontSize: '0.68rem', fontWeight: 700, letterSpacing: '0.04em',
@@ -188,81 +175,69 @@ export default function ExpertReviewsSection({
               )}
             </div>
           </div>
-
           {combined != null && (
             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3, flexShrink: 0 }}>
               <ScoreRing score={combined} size={56} />
-              <span style={{ fontSize: '0.6rem', fontWeight: 700, color: 'var(--text-muted)', letterSpacing: '0.05em' }}>
-                ציון כולל
-              </span>
+              <span style={{ fontSize: '0.6rem', fontWeight: 700, color: 'var(--text-muted)', letterSpacing: '0.05em' }}>ציון כולל</span>
             </div>
           )}
         </div>
 
-        {/* ── Insight rows ────────────────────────────────────────────────────── */}
+        {/* Per-source rows (new) OR local/global fallback */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 8, padding: '12px 16px' }}>
-
-          {localSummary && (
-            <InsightRow
-              flag="🇮🇱"
-              label="ביקורות ישראליות"
-              count={review.localPostCount}
-              score={localScore}
-              summary={localSummary}
-              accent="#3b82f6"
-            />
-          )}
-
-          {globalSummary && (
-            <InsightRow
-              flag="🌍"
-              label="ביקורות בינלאומיות"
-              count={review.globalPostCount}
-              score={globalScore}
-              summary={globalSummary}
-              accent="#8b5cf6"
-            />
-          )}
-
-          {fallback && !localSummary && !globalSummary && (
-            <p style={{
-              margin: 0, padding: '10px 4px',
-              fontSize: '0.9375rem', lineHeight: 1.7,
-              color: 'var(--text-secondary)',
-            }}>
-              {fallback}
-            </p>
+          {hasPerSource ? (
+            review.sourcesBreakdown.map((item, i) => (
+              <SourceRow key={i} item={item} />
+            ))
+          ) : (
+            <>
+              {localSummary && (
+                <div style={{
+                  padding: '12px 16px', borderRadius: 10, background: 'var(--bg-muted)',
+                  position: 'relative', overflow: 'hidden',
+                }}>
+                  <div style={{ position: 'absolute', right: 0, top: 0, bottom: 0, width: 3, background: '#3b82f6', borderRadius: '0 10px 10px 0' }} />
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6, flexWrap: 'wrap' }}>
+                    <span style={{ fontSize: '0.8rem' }}>🇮🇱</span>
+                    <span style={{ fontSize: '0.75rem', fontWeight: 800, color: '#3b82f6' }}>ביקורות ישראליות</span>
+                    {review.localPostCount > 0 && <span style={{ fontSize: '0.67rem', fontWeight: 700, color: 'var(--text-muted)', background: 'var(--bg-card)', border: '1px solid var(--border)', padding: '1px 7px', borderRadius: 99 }}>{review.localPostCount} דיונים</span>}
+                    {localScore != null && <span style={{ marginRight: 'auto', fontSize: '0.85rem', fontWeight: 900, color: scoreColor(localScore) }}>{localScore.toFixed(1)}<span style={{ fontSize: '0.6rem', fontWeight: 500, color: 'var(--text-muted)' }}>/10</span></span>}
+                  </div>
+                  <p style={{ margin: 0, fontSize: '0.875rem', lineHeight: 1.65, color: 'var(--text-secondary)' }}>{localSummary}</p>
+                </div>
+              )}
+              {globalSummary && (
+                <div style={{
+                  padding: '12px 16px', borderRadius: 10, background: 'var(--bg-muted)',
+                  position: 'relative', overflow: 'hidden',
+                }}>
+                  <div style={{ position: 'absolute', right: 0, top: 0, bottom: 0, width: 3, background: '#8b5cf6', borderRadius: '0 10px 10px 0' }} />
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6, flexWrap: 'wrap' }}>
+                    <span style={{ fontSize: '0.8rem' }}>🌍</span>
+                    <span style={{ fontSize: '0.75rem', fontWeight: 800, color: '#8b5cf6' }}>ביקורות בינלאומיות</span>
+                    {review.globalPostCount > 0 && <span style={{ fontSize: '0.67rem', fontWeight: 700, color: 'var(--text-muted)', background: 'var(--bg-card)', border: '1px solid var(--border)', padding: '1px 7px', borderRadius: 99 }}>{review.globalPostCount} דיונים</span>}
+                    {globalScore != null && <span style={{ marginRight: 'auto', fontSize: '0.85rem', fontWeight: 900, color: scoreColor(globalScore) }}>{globalScore.toFixed(1)}<span style={{ fontSize: '0.6rem', fontWeight: 500, color: 'var(--text-muted)' }}>/10</span></span>}
+                  </div>
+                  <p style={{ margin: 0, fontSize: '0.875rem', lineHeight: 1.65, color: 'var(--text-secondary)' }}>{globalSummary}</p>
+                </div>
+              )}
+              {fallback && !localSummary && !globalSummary && (
+                <p style={{ margin: 0, padding: '10px 4px', fontSize: '0.9375rem', lineHeight: 1.7, color: 'var(--text-secondary)' }}>{fallback}</p>
+              )}
+            </>
           )}
         </div>
 
-        {/* ── Pros / Cons chips ───────────────────────────────────────────────── */}
+        {/* Pros / Cons chips */}
         {(review.pros.length > 0 || review.cons.length > 0) && (
-          <div style={{
-            display: 'flex', flexWrap: 'wrap', gap: 6,
-            padding: '10px 16px 16px',
-            borderTop: '1px solid var(--border)',
-          }}>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, padding: '10px 16px 16px', borderTop: '1px solid var(--border)' }}>
             {review.pros.map((p, i) => (
-              <span key={`pro-${i}`} style={{
-                display: 'inline-flex', alignItems: 'center', gap: 5,
-                fontSize: '0.78rem', fontWeight: 600,
-                color: '#16a34a',
-                background: 'rgba(22,163,74,0.08)',
-                border: '1px solid rgba(22,163,74,0.2)',
-                padding: '4px 10px', borderRadius: 99,
-              }}>
+              <span key={`pro-${i}`} style={{ display: 'inline-flex', alignItems: 'center', gap: 5, fontSize: '0.78rem', fontWeight: 600, color: '#16a34a', background: 'rgba(22,163,74,0.08)', border: '1px solid rgba(22,163,74,0.2)', padding: '4px 10px', borderRadius: 99 }}>
                 <span style={{ fontSize: '0.65rem' }}>✓</span>{p}
               </span>
             ))}
             {review.cons.map((c, i) => (
-              <span key={`con-${i}`} style={{
-                display: 'inline-flex', alignItems: 'center', gap: 5,
-                fontSize: '0.78rem', fontWeight: 600,
-                color: 'var(--brand-red)',
-                background: 'rgba(230,57,70,0.07)',
-                border: '1px solid rgba(230,57,70,0.18)',
-                padding: '4px 10px', borderRadius: 99,
-              }}>
+              <span key={`con-${i}`} style={{ display: 'inline-flex', alignItems: 'center', gap: 5, fontSize: '0.78rem', fontWeight: 600, color: 'var(--brand-red)', background: 'rgba(230,57,70,0.07)', border: '1px solid rgba(230,57,70,0.18)', padding: '4px 10px', borderRadius: 99 }}>
                 <span style={{ fontSize: '0.65rem' }}>✗</span>{c}
               </span>
             ))}

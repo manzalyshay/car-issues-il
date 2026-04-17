@@ -21,6 +21,14 @@ import { getMakeBySlug, getModelBySlug } from '@/lib/carsDb';
 
 const MISTRAL_URL = 'https://api.mistral.ai/v1/chat/completions';
 
+export interface SourceBreakdown {
+  source: string;       // e.g. "KBB Consumer Reviews"
+  flag: string;         // "🇮🇱" | "🌍"
+  postCount: number;
+  score: number | null;
+  summary: string;
+}
+
 export interface ExpertReview {
   id: string;
   makeSlug: string;
@@ -39,6 +47,7 @@ export interface ExpertReview {
   cons: string[];
   localPostCount: number;
   globalPostCount: number;
+  sourcesBreakdown: SourceBreakdown[];
   scrapedAt: string;
 }
 
@@ -1018,6 +1027,7 @@ function mapRow(r: any): ExpertReview {
     cons: r.cons ?? [],
     localPostCount: r.local_post_count ?? 0,
     globalPostCount: r.global_post_count ?? 0,
+    sourcesBreakdown: Array.isArray(r.sources_breakdown) ? r.sources_breakdown : [],
     scrapedAt: r.scraped_at,
   };
 }
@@ -1286,6 +1296,9 @@ export async function summarizeFromPosts(
   const allPros = [...(localOut?.pros ?? []), ...(globalOut?.pros ?? [])].slice(0, 4);
   const allCons = [...(localOut?.cons ?? []), ...(globalOut?.cons ?? [])].slice(0, 4);
 
+  const allPostsForBreakdown = [...localPosts.map(toUserPost), ...globalPosts.map(toUserPost)];
+  const sourcesBreakdown = allPostsForBreakdown.length > 0 ? await summarizePerSource(allPostsForBreakdown, makeNameHe, modelNameHe) : [];
+
   const sb = getSupabase(true);
   await sb.from('expert_reviews').delete().eq('make_slug', makeSlug).eq('model_slug', modelSlug).is('year', null);
   const { error } = await sb.from('expert_reviews').insert({
@@ -1303,9 +1316,82 @@ export async function summarizeFromPosts(
     cons:             allCons,
     local_post_count:  localPosts.length,
     global_post_count: globalPosts.length,
+    sources_breakdown: sourcesBreakdown,
     scraped_at:       new Date().toISOString(),
   });
   return error ? 0 : 1;
+}
+
+const LOCAL_SOURCES = new Set([
+  'פורום טפוז מכוניות', 'Drive.co.il מגזין רכב', 'CarZone ביקורות גולשים',
+  'iCar מבחני רכב', 'פייסבוק',
+]);
+
+async function summarizePerSource(
+  allPosts: UserPost[],
+  makeNameHe: string,
+  modelNameHe: string,
+): Promise<SourceBreakdown[]> {
+  // Group by source name, keep sources with ≥2 posts
+  const groups = new Map<string, UserPost[]>();
+  for (const p of allPosts) {
+    const arr = groups.get(p.sourceName) ?? [];
+    arr.push(p);
+    groups.set(p.sourceName, arr);
+  }
+
+  const eligible = [...groups.entries()].filter(([, posts]) => posts.length >= 2);
+  if (eligible.length === 0) return [];
+
+  const snippets = eligible.map(([source, posts]) => {
+    const lines = posts.slice(0, 6).map((p, i) => `  ${i + 1}. "${p.title}"${p.snippet ? ` — ${p.snippet.slice(0, 200)}` : ''}`).join('\n');
+    return `### ${source} (${posts.length} פוסטים)\n${lines}`;
+  }).join('\n\n');
+
+  const prompt = `אתה עוזר לאתר ביקורות רכב. סכם ביקורות על ${makeNameHe} ${modelNameHe} לפי מקור.
+
+${snippets}
+
+עבור כל מקור, כתוב משפט-שניים קצרים על מה הנהגים אומרים. ציון 1-10.
+
+החזר JSON בלבד — מערך של אובייקטים:
+[{"source":"שם המקור","summary":"...","score":7,"postCount":5}, ...]
+
+רק מקורות שיש להם מספיק מידע. אל תמציא.`;
+
+  const result = await callLlm(prompt, 0.3, 8);
+  if (!result) return [];
+
+  // callLlm returns SummarizeOutput — we need to parse the raw JSON from summary_he
+  // Actually callLlm parses JSON already. We need a different approach here.
+  // Re-call directly since callLlm expects specific shape.
+  try {
+    const apiKey = process.env.MISTRAL_API_KEY;
+    if (!apiKey) return [];
+    const res = await fetch(MISTRAL_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${apiKey}` },
+      body: JSON.stringify({
+        model: 'mistral-small-latest',
+        temperature: 0.3,
+        max_tokens: 1200,
+        messages: [{ role: 'user', content: prompt }],
+      }),
+      signal: AbortSignal.timeout(30000),
+    });
+    if (!res.ok) return [];
+    const json = await res.json();
+    const text: string = json.choices?.[0]?.message?.content ?? '';
+    const parsed = JSON.parse(text.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim());
+    if (!Array.isArray(parsed)) return [];
+    return parsed.map((item: any): SourceBreakdown => ({
+      source:    String(item.source ?? ''),
+      flag:      LOCAL_SOURCES.has(String(item.source ?? '')) ? '🇮🇱' : '🌍',
+      postCount: Number(item.postCount ?? 0),
+      score:     item.score != null ? Number(item.score) : null,
+      summary:   String(item.summary ?? ''),
+    })).filter(b => b.source && b.summary.length > 20);
+  } catch { return []; }
 }
 
 export async function scrapeExpertReviews(
@@ -1352,6 +1438,9 @@ export async function scrapeExpertReviews(
   const allPros = [...(localOut?.pros ?? []), ...(globalOut?.pros ?? [])].slice(0, 4);
   const allCons = [...(localOut?.cons ?? []), ...(globalOut?.cons ?? [])].slice(0, 4);
 
+  const allPosts = [...localPosts, ...globalPosts];
+  const sourcesBreakdown = allPosts.length > 0 ? await summarizePerSource(allPosts, makeNameHe, modelNameHe) : [];
+
   const sb = getSupabase(true);
 
   // Always delete then insert — avoids the upsert conflict ambiguity between
@@ -1384,6 +1473,7 @@ export async function scrapeExpertReviews(
     cons:                allCons,
     local_post_count:    localPosts.length,
     global_post_count:   globalPosts.length,
+    sources_breakdown:   sourcesBreakdown,
     scraped_at:          new Date().toISOString(),
     next_scrape_at: computeNextScrapeAt(year, false),
   });
