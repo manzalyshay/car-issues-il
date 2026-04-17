@@ -30,7 +30,7 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ mak
   const cons = review?.cons?.slice(0, 1) ?? [];
 
   const embedUrl = carModel?.uid
-    ? `https://sketchfab.com/models/${carModel.uid}/embed?autostart=1&preload=1&ui_infos=0&ui_controls=0&ui_watermark=0&ui_stop=0&ui_ar=0&ui_help=0&ui_settings=0&ui_annotations=0`
+    ? `https://sketchfab.com/models/${carModel.uid}/embed?autostart=1&preload=1&autospin=0.1&ui_infos=0&ui_controls=0&ui_watermark=0&ui_stop=0&ui_ar=0&ui_help=0&ui_settings=0&ui_annotations=0&dnt=1`
     : null;
 
   const html = `<!DOCTYPE html>

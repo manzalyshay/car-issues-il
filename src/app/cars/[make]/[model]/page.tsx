@@ -95,10 +95,45 @@ export default async function ModelPage({ params }: Props) {
           </Link>
         </div>
 
-        {/* AI summary + 3D viewer side by side */}
-        <div style={{ display: 'flex', gap: 24, alignItems: 'flex-start', flexWrap: 'wrap', marginBottom: 32 }}>
-          {/* Left: AI summary */}
-          <div style={{ flex: '1 1 300px', minWidth: 0 }}>
+        {/* Unified panel — AI summary + 3D viewer, equal height */}
+        {sketchfabModel ? (
+          <div style={{
+            display: 'grid',
+            gridTemplateColumns: 'minmax(300px, 1.1fr) minmax(280px, 1fr)',
+            alignItems: 'stretch',
+            background: 'var(--bg-card)',
+            border: '1px solid var(--border)',
+            borderRadius: 16,
+            overflow: 'hidden',
+            boxShadow: '0 1px 4px rgba(0,0,0,0.06)',
+            marginBottom: 32,
+            minHeight: 400,
+          }}>
+            {/* Left: AI insights (inline — no nested card) */}
+            <div style={{ overflowY: 'auto', borderLeft: '1px solid var(--border)' }}>
+              <ExpertReviewsSection
+                review={expertReview}
+                makeNameHe={make.nameHe}
+                modelNameHe={model.nameHe}
+                userAvgRating={avgRating}
+                userReviewCount={allReviews.length}
+                inline
+              />
+            </div>
+            {/* Right: 3D viewer fills full height */}
+            <div style={{ display: 'flex', flexDirection: 'column' }}>
+              <div style={{ flex: 1, minHeight: 0 }}>
+                <Car3DViewer uid={sketchfabModel.uid} modelName={`${make.nameHe} ${model.nameHe}`} makeSlug={makeSlug} modelSlug={modelSlug} />
+              </div>
+              <p style={{ fontSize: '0.65rem', color: 'var(--text-muted)', margin: 0, padding: '5px 10px', textAlign: 'center', borderTop: '1px solid var(--border)' }}>
+                <a href={sketchfabModel.viewerUrl} target="_blank" rel="noopener noreferrer" style={{ color: 'var(--text-muted)' }}>
+                  &ldquo;{sketchfabModel.name}&rdquo; by {sketchfabModel.author} · CC BY 4.0
+                </a>
+              </p>
+            </div>
+          </div>
+        ) : (
+          <div style={{ marginBottom: 32 }}>
             <ExpertReviewsSection
               review={expertReview}
               makeNameHe={make.nameHe}
@@ -107,18 +142,7 @@ export default async function ModelPage({ params }: Props) {
               userReviewCount={allReviews.length}
             />
           </div>
-          {/* Right: 3D viewer */}
-          {sketchfabModel && (
-            <div style={{ flex: '1 1 320px', minWidth: 280 }}>
-              <Car3DViewer uid={sketchfabModel.uid} modelName={`${make.nameHe} ${model.nameHe}`} makeSlug={makeSlug} modelSlug={modelSlug} />
-              <p style={{ fontSize: '0.7rem', color: 'var(--text-muted)', marginTop: 6, textAlign: 'center' }}>
-                <a href={sketchfabModel.viewerUrl} target="_blank" rel="noopener noreferrer" style={{ color: 'var(--text-muted)' }}>
-                  &ldquo;{sketchfabModel.name}&rdquo; by {sketchfabModel.author} · CC BY 4.0
-                </a>
-              </p>
-            </div>
-          )}
-        </div>
+        )}
 
         {/* Year selector */}
         <div style={{ marginBottom: 36 }}>

@@ -85,7 +85,7 @@ function dbToReview(row: Record<string, unknown>): Review {
 
 
 function AdminPageInner() {
-  const { user, isAdmin, loading } = useAuth();
+  const { user, isAdmin, loading, profileLoading } = useAuth();
   const router = useRouter();
   const searchParams = useSearchParams();
   const VALID_TABS: Tab[] = ['reviews_ai', 'user_reviews', 'reports', 'metrics', 'users', 'social_posts'];
@@ -203,8 +203,8 @@ function AdminPageInner() {
   }, []);
 
   useEffect(() => {
-    if (!loading && (!user || !isAdmin)) router.replace('/');
-  }, [loading, user, isAdmin, router]);
+    if (!loading && !profileLoading && (!user || !isAdmin)) router.replace('/');
+  }, [loading, profileLoading, user, isAdmin, router]);
 
   useEffect(() => {
     if (!isAdmin) return;
@@ -737,7 +737,7 @@ function AdminPageInner() {
     }
   };
 
-  if (loading || !isAdmin) return null;
+  if (loading || profileLoading || !isAdmin) return null;
 
   const filtered = models.filter((m) => {
     if (filter === 'scraped') return m.scraped;

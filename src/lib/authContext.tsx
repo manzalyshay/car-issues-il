@@ -8,6 +8,7 @@ interface AuthContextValue {
   user: User | null;
   session: Session | null;
   loading: boolean;
+  profileLoading: boolean;
   isAdmin: boolean;
   signUp: (email: string, password: string, displayName: string) => Promise<string | null>;
   signIn: (email: string, password: string) => Promise<string | null>;
@@ -19,6 +20,7 @@ const AuthContext = createContext<AuthContextValue>({
   user: null,
   session: null,
   loading: true,
+  profileLoading: true,
   isAdmin: false,
   signUp: async () => null,
   signIn: async () => null,
@@ -30,9 +32,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
+  const [profileLoading, setProfileLoading] = useState(true);
   const [isAdmin, setIsAdmin] = useState(false);
 
   async function loadProfile(token: string) {
+    setProfileLoading(true);
     try {
       const res = await fetch('/api/auth/profile', {
         headers: { Authorization: `Bearer ${token}` },
@@ -45,6 +49,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
     } catch {
       setIsAdmin(false);
+    } finally {
+      setProfileLoading(false);
     }
   }
 
@@ -52,15 +58,23 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     supabase.auth.getSession().then(({ data }) => {
       setSession(data.session);
       setUser(data.session?.user ?? null);
-      setLoading(false); // unblock UI immediately — don't wait for profile
-      if (data.session?.access_token) loadProfile(data.session.access_token);
+      setLoading(false);
+      if (data.session?.access_token) {
+        loadProfile(data.session.access_token);
+      } else {
+        setProfileLoading(false); // no session → not admin, done
+      }
     });
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setSession(session);
       setUser(session?.user ?? null);
-      if (session?.access_token) loadProfile(session.access_token);
-      else setIsAdmin(false);
+      if (session?.access_token) {
+        loadProfile(session.access_token);
+      } else {
+        setIsAdmin(false);
+        setProfileLoading(false);
+      }
     });
 
     return () => subscription.unsubscribe();
@@ -97,7 +111,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   return (
-    <AuthContext.Provider value={{ user, session, loading, isAdmin, signUp, signIn, signInWithGoogle, signOut }}>
+    <AuthContext.Provider value={{ user, session, loading, profileLoading, isAdmin, signUp, signIn, signInWithGoogle, signOut }}>
       {children}
     </AuthContext.Provider>
   );

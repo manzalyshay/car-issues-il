@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { revalidateTag } from 'next/cache';
 import { isAdmin, getServiceClient } from '@/lib/adminAuth';
 
 export const dynamic = 'force-dynamic';
@@ -17,5 +18,9 @@ export async function POST(req: NextRequest) {
     .eq('model_slug', modelSlug);
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+
+  // Bust the cache so the model disappears immediately on next page load
+  revalidateTag('car-data');
+
   return NextResponse.json({ ok: true });
 }

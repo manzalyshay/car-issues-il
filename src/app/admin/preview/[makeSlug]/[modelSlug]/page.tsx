@@ -29,7 +29,7 @@ function timeAgo(iso: string): string {
 }
 
 export default function PreviewPage() {
-  const { user, isAdmin, loading } = useAuth();
+  const { user, isAdmin, loading, profileLoading } = useAuth();
   const router   = useRouter();
   const params   = useParams();
   const makeSlug  = params.makeSlug  as string;
@@ -53,8 +53,8 @@ export default function PreviewPage() {
   const [deleteNote, setDeleteNote]       = useState('');
 
   useEffect(() => {
-    if (!loading && (!user || !isAdmin)) router.replace('/');
-  }, [loading, user, isAdmin, router]);
+    if (!loading && !profileLoading && (!user || !isAdmin)) router.replace('/');
+  }, [loading, profileLoading, user, isAdmin, router]);
 
   useEffect(() => {
     if (!makeSlug || !modelSlug) return;
@@ -161,7 +161,7 @@ export default function PreviewPage() {
     } catch { /* ignore */ } finally { setSummarizing(false); }
   }, [posts, makeSlug, modelSlug, getToken, router]);
 
-  if (loading || !isAdmin) return null;
+  if (loading || profileLoading || !isAdmin) return null;
 
   const localPosts  = posts.filter(p => p.scope === 'local');
   const globalPosts = posts.filter(p => p.scope === 'global');

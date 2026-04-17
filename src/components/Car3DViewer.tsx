@@ -68,7 +68,7 @@ export default function Car3DViewer({ uid, modelName, author, makeSlug, modelSlu
   if (hidden) return null;
 
   return (
-    <div style={{ position: 'relative', width: '100%', height: 300, borderRadius: 12, overflow: 'hidden', border: '1px solid var(--border)', background: '#111' }}>
+    <div style={{ position: 'relative', width: '100%', height: '100%', minHeight: 300, borderRadius: 12, overflow: 'hidden', border: '1px solid var(--border)', background: '#111' }}>
       {loaded ? (
         <iframe
           title={`${modelName} 3D`}

@@ -8,6 +8,7 @@ interface Props {
   isYearSpecific?: boolean;
   userAvgRating?: number | null;
   userReviewCount?: number;
+  inline?: boolean;
 }
 
 const NO_DATA_PHRASES = [
@@ -101,7 +102,7 @@ function SourceRow({ item }: { item: SourceBreakdown }) {
 }
 
 export default function ExpertReviewsSection({
-  review, makeNameHe, modelNameHe, year, isYearSpecific, userAvgRating, userReviewCount,
+  review, makeNameHe, modelNameHe, year, isYearSpecific, userAvgRating, userReviewCount, inline,
 }: Props) {
   if (!review) return null;
 
@@ -143,9 +144,11 @@ export default function ExpertReviewsSection({
         ? `AI · ${review.sourcesBreakdown.reduce((s, b) => s + b.postCount, 0)} דיונים`
         : `AI · ${totalPosts} דיונים`;
 
-  return (
-    <section style={{ marginBottom: 32 }}>
-      <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
+  const inner = (
+    <div className={inline ? undefined : 'card'} style={inline
+      ? { padding: 0, overflow: 'hidden', height: '100%', display: 'flex', flexDirection: 'column' }
+      : { padding: 0, overflow: 'hidden' }
+    }>
 
         {/* Header */}
         <div style={{
@@ -245,9 +248,20 @@ export default function ExpertReviewsSection({
         )}
       </div>
 
-      <p style={{ fontSize: '0.68rem', color: 'var(--text-muted)', marginTop: 6, paddingRight: 4 }}>
+      <p style={inline
+        ? { fontSize: '0.68rem', color: 'var(--text-muted)', padding: '4px 16px 12px', margin: 0 }
+        : { fontSize: '0.68rem', color: 'var(--text-muted)', marginTop: 6, paddingRight: 4 }
+      }>
         AI סיכם ביקורות ודיונים אמיתיים של בעלי רכבים מפורומים ואתרי ביקורות.
       </p>
+    </div>
+  );
+
+  if (inline) return inner;
+
+  return (
+    <section style={{ marginBottom: 32 }}>
+      {inner}
     </section>
   );
 }
