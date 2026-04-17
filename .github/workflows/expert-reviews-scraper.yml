@@ -9,6 +9,10 @@ on:
         description: 'Scrape mode: all | generals | years'
         required: false
         default: 'all'
+      skip_existing:
+        description: 'Skip already-seeded entries? (true/false)'
+        required: false
+        default: 'true'
 
 env:
   NEXT_PUBLIC_SUPABASE_URL:      ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
@@ -35,7 +39,7 @@ jobs:
 
       - name: Seed general reviews (knowledge only — no scraping)
         run: |
-          GENERAL_ONLY=true SKIP_EXISTING=true DELAY_MS=500 \
+          GENERAL_ONLY=true SKIP_EXISTING=${{ github.event.inputs.skip_existing || 'true' }} DELAY_MS=500 \
             node scripts/seed-knowledge.mjs
 
   # ── Step 2: Seed year-specific summaries (can run in parallel) ───────────
@@ -55,7 +59,7 @@ jobs:
 
       - name: Seed year-specific reviews (knowledge only — no scraping)
         run: |
-          YEARS_ONLY=true SKIP_EXISTING=true DELAY_MS=500 \
+          YEARS_ONLY=true SKIP_EXISTING=${{ github.event.inputs.skip_existing || 'true' }} DELAY_MS=500 \
             node scripts/seed-knowledge.mjs
 
   # ── Step 3: Daily enrichment — add real scraped data on top ──────────────
