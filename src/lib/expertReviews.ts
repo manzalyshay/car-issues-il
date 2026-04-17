@@ -1332,7 +1332,7 @@ async function summarizePerSource(
   makeNameHe: string,
   modelNameHe: string,
 ): Promise<SourceBreakdown[]> {
-  // Group by source name, keep sources with ≥2 posts
+  // Group by source name, keep sources with ≥1 post
   const groups = new Map<string, UserPost[]>();
   for (const p of allPosts) {
     const arr = groups.get(p.sourceName) ?? [];
@@ -1340,7 +1340,7 @@ async function summarizePerSource(
     groups.set(p.sourceName, arr);
   }
 
-  const eligible = [...groups.entries()].filter(([, posts]) => posts.length >= 2);
+  const eligible = [...groups.entries()].filter(([, posts]) => posts.length >= 1);
   if (eligible.length === 0) return [];
 
   const snippets = eligible.map(([source, posts]) => {

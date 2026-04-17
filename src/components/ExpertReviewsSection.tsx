@@ -237,19 +237,33 @@ export default function ExpertReviewsSection({
           )}
         </div>
 
-        {/* Pros / Cons chips */}
+        {/* Pros / Cons */}
         {(review.pros.length > 0 || review.cons.length > 0) && (
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, padding: '10px 16px 16px', borderTop: '1px solid var(--border)' }}>
-            {review.pros.map((p, i) => (
-              <span key={`pro-${i}`} style={{ display: 'inline-flex', alignItems: 'center', gap: 5, fontSize: '0.78rem', fontWeight: 600, color: '#16a34a', background: 'rgba(22,163,74,0.08)', border: '1px solid rgba(22,163,74,0.2)', padding: '4px 10px', borderRadius: 99 }}>
-                <span style={{ fontSize: '0.65rem' }}>✓</span>{p}
-              </span>
-            ))}
-            {review.cons.map((c, i) => (
-              <span key={`con-${i}`} style={{ display: 'inline-flex', alignItems: 'center', gap: 5, fontSize: '0.78rem', fontWeight: 600, color: 'var(--brand-red)', background: 'rgba(230,57,70,0.07)', border: '1px solid rgba(230,57,70,0.18)', padding: '4px 10px', borderRadius: 99 }}>
-                <span style={{ fontSize: '0.65rem' }}>✗</span>{c}
-              </span>
-            ))}
+          <div style={{ display: 'grid', gridTemplateColumns: review.pros.length > 0 && review.cons.length > 0 ? '1fr 1fr' : '1fr', gap: 0, borderTop: '1px solid var(--border)' }}>
+            {review.pros.length > 0 && (
+              <div style={{ padding: '10px 14px 14px', borderLeft: review.cons.length > 0 ? '1px solid var(--border)' : 'none' }}>
+                <div style={{ fontSize: '0.65rem', fontWeight: 800, color: '#16a34a', letterSpacing: '0.06em', marginBottom: 7, textTransform: 'uppercase' }}>יתרונות</div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
+                  {review.pros.map((p, i) => (
+                    <div key={`pro-${i}`} style={{ display: 'flex', alignItems: 'flex-start', gap: 6, fontSize: '0.78rem', fontWeight: 600, color: '#16a34a', lineHeight: 1.4 }}>
+                      <span style={{ flexShrink: 0, marginTop: 1 }}>✓</span><span>{p}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+            {review.cons.length > 0 && (
+              <div style={{ padding: '10px 14px 14px' }}>
+                <div style={{ fontSize: '0.65rem', fontWeight: 800, color: 'var(--brand-red)', letterSpacing: '0.06em', marginBottom: 7, textTransform: 'uppercase' }}>חסרונות</div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
+                  {review.cons.map((c, i) => (
+                    <div key={`con-${i}`} style={{ display: 'flex', alignItems: 'flex-start', gap: 6, fontSize: '0.78rem', fontWeight: 600, color: 'var(--brand-red)', lineHeight: 1.4 }}>
+                      <span style={{ flexShrink: 0, marginTop: 1 }}>✗</span><span>{c}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
         )}
       </div>
