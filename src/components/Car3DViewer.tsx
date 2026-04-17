@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useAuth } from '@/lib/authContext';
 import { supabase } from '@/lib/supabase';
 
@@ -14,8 +14,18 @@ interface Props {
   onHidden?: () => void;
 }
 
+declare global {
+  interface Window {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    Sketchfab: new (iframe: HTMLIFrameElement) => any;
+  }
+}
+
+const ZOOM_OUT_FACTOR = 1.9; // pull camera 1.9× further back from model center
+
 export default function Car3DViewer({ uid, modelName, author, makeSlug, modelSlug, onHidden }: Props) {
   const { isAdmin } = useAuth();
+  const iframeRef = useRef<HTMLIFrameElement>(null);
   const [loaded, setLoaded] = useState(() => {
     if (typeof navigator === 'undefined') return false;
     const mem = (navigator as { deviceMemory?: number }).deviceMemory ?? 4;
@@ -27,24 +37,64 @@ export default function Car3DViewer({ uid, modelName, author, makeSlug, modelSlu
   const [flagging, setFlagging] = useState(false);
   const [hidden, setHidden] = useState(false);
 
-  const embedUrl = [
-    `https://sketchfab.com/models/${uid}/embed`,
-    'autostart=1',
-    'preload=1',
-    'ui_hint=0',
-    'ui_watermark=0',
-    'ui_infos=0',
-    'ui_stop=0',
-    'ui_inspector=0',
-    'ui_vr=0',
-    'ui_ar=0',
-    'ui_help=0',
-    'ui_settings=0',
-    'ui_annotations=0',
-    'dnt=1',
-  ].join('&').replace('embed&', 'embed?');
-
   const thumbnailUrl = `https://media.sketchfab.com/models/${uid}/thumbnails/result.jpg`;
+
+  // Use Sketchfab Viewer API so we can pull the camera back on load
+  useEffect(() => {
+    if (!loaded || !iframeRef.current) return;
+
+    let scriptEl: HTMLScriptElement | null = null;
+
+    const initViewer = () => {
+      if (!iframeRef.current || !window.Sketchfab) return;
+      const client = new window.Sketchfab(iframeRef.current);
+      client.init(uid, {
+        success: (api: any) => { // eslint-disable-line @typescript-eslint/no-explicit-any
+          api.start();
+          api.addEventListener('viewerready', () => {
+            api.getCameraLookAt((_err: unknown, camera: { position: number[]; target: number[] }) => {
+              if (_err || !camera) return;
+              const { position, target } = camera;
+              const newPos = [
+                target[0] + (position[0] - target[0]) * ZOOM_OUT_FACTOR,
+                target[1] + (position[1] - target[1]) * ZOOM_OUT_FACTOR,
+                target[2] + (position[2] - target[2]) * ZOOM_OUT_FACTOR,
+              ];
+              api.setCameraLookAt(newPos, target, 0.6);
+            });
+          });
+        },
+        error: () => { /* silently fall back to default view */ },
+        autostart: 1,
+        preload: 1,
+        ui_hint: 0,
+        ui_watermark: 0,
+        ui_infos: 0,
+        ui_stop: 0,
+        ui_inspector: 0,
+        ui_vr: 0,
+        ui_ar: 0,
+        ui_help: 0,
+        ui_settings: 0,
+        ui_annotations: 0,
+        dnt: 1,
+      });
+    };
+
+    if (window.Sketchfab) {
+      initViewer();
+    } else {
+      scriptEl = document.createElement('script');
+      scriptEl.src = 'https://static.sketchfab.com/api/sketchfab-viewer-1.12.1.js';
+      scriptEl.async = true;
+      scriptEl.onload = initViewer;
+      document.head.appendChild(scriptEl);
+    }
+
+    return () => {
+      if (scriptEl?.parentNode) scriptEl.parentNode.removeChild(scriptEl);
+    };
+  }, [loaded, uid]);
 
   const handleFlag = async () => {
     if (!makeSlug || !modelSlug) return;
@@ -70,11 +120,13 @@ export default function Car3DViewer({ uid, modelName, author, makeSlug, modelSlu
   return (
     <div style={{ position: 'relative', width: '100%', height: '100%', minHeight: 300, borderRadius: 12, overflow: 'hidden', border: '1px solid var(--border)', background: '#111' }}>
       {loaded ? (
+        // No src — Sketchfab API initialises the iframe and controls the camera
         <iframe
+          ref={iframeRef}
           title={`${modelName} 3D`}
-          src={embedUrl}
           frameBorder={0}
           allow="autoplay; fullscreen; xr-spatial-tracking"
+          allowFullScreen
           style={{ width: '100%', height: '100%', display: 'block' }}
         />
       ) : (
