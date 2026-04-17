@@ -52,6 +52,74 @@ function ScoreRing({ score, size = 52 }: { score: number; size?: number }) {
   );
 }
 
+interface InsightRowProps {
+  flag: string;
+  label: string;
+  count: number;
+  score: number | null;
+  summary: string;
+  accent: string;
+}
+
+function InsightRow({ flag, label, count, score, summary, accent }: InsightRowProps) {
+  return (
+    <div style={{
+      display: 'grid',
+      gridTemplateColumns: '1fr auto',
+      gap: '8px 12px',
+      padding: '14px 16px',
+      borderRadius: 10,
+      background: 'var(--bg-muted)',
+      position: 'relative',
+      overflow: 'hidden',
+    }}>
+      {/* accent strip */}
+      <div style={{
+        position: 'absolute', right: 0, top: 0, bottom: 0,
+        width: 3, background: accent, borderRadius: '0 10px 10px 0',
+      }} />
+
+      {/* top row: label + count chip */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+        <span style={{ fontSize: '0.75rem', fontWeight: 800, color: accent, letterSpacing: '0.02em' }}>
+          {flag} {label}
+        </span>
+        <span style={{
+          fontSize: '0.67rem', fontWeight: 700,
+          color: 'var(--text-muted)',
+          background: 'var(--bg-card)',
+          border: '1px solid var(--border)',
+          padding: '1px 7px', borderRadius: 99,
+        }}>
+          {count} דיונים
+        </span>
+      </div>
+
+      {/* score */}
+      {score != null && (
+        <div style={{
+          gridRow: '1 / 3',
+          display: 'flex', alignItems: 'center', justifyContent: 'flex-end',
+        }}>
+          <span style={{ fontSize: '1rem', fontWeight: 900, color: scoreColor(score) }}>
+            {score.toFixed(1)}
+            <span style={{ fontSize: '0.65rem', fontWeight: 600, color: 'var(--text-muted)' }}>/10</span>
+          </span>
+        </div>
+      )}
+
+      {/* summary text */}
+      <p style={{
+        margin: 0, gridColumn: 1,
+        fontSize: '0.875rem', lineHeight: 1.65,
+        color: 'var(--text-secondary)',
+      }}>
+        {summary}
+      </p>
+    </div>
+  );
+}
+
 export default function ExpertReviewsSection({
   review, makeNameHe, modelNameHe, year, isYearSpecific, userAvgRating, userReviewCount,
 }: Props) {
@@ -77,8 +145,8 @@ export default function ExpertReviewsSection({
   const isKnowledge = totalPosts === 0;
 
   const title = year
-    ? `${makeNameHe} ${modelNameHe} ${year} — מה אומרים הבעלים`
-    : `${makeNameHe} ${modelNameHe} — מה אומרים הבעלים`;
+    ? `מה אומרים הבעלים — ${makeNameHe} ${modelNameHe} ${year}`
+    : `מה אומרים הבעלים — ${makeNameHe} ${modelNameHe}`;
 
   const badge = isYearSpecific === false && year
     ? 'סיכום כללי'
@@ -87,21 +155,21 @@ export default function ExpertReviewsSection({
       : `AI · ${totalPosts} דיונים`;
 
   return (
-    <section style={{ marginBottom: 28 }}>
+    <section style={{ marginBottom: 32 }}>
       <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
 
-        {/* ── Header ────────────────────────────────────────────── */}
+        {/* ── Header ─────────────────────────────────────────────────────────── */}
         <div style={{
           display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-          gap: 12, padding: '14px 20px',
+          gap: 12, padding: '16px 20px',
           borderBottom: '1px solid var(--border)',
           background: 'linear-gradient(135deg, rgba(230,57,70,0.04) 0%, transparent 60%)',
         }}>
           <div style={{ minWidth: 0 }}>
-            <h2 style={{ fontSize: '0.9375rem', fontWeight: 800, margin: 0, lineHeight: 1.3 }}>
+            <h2 style={{ fontSize: '1rem', fontWeight: 800, margin: 0, lineHeight: 1.3 }}>
               {title}
             </h2>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 4, flexWrap: 'wrap' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 5, flexWrap: 'wrap' }}>
               <span style={{
                 fontSize: '0.68rem', fontWeight: 700, letterSpacing: '0.04em',
                 color: 'var(--text-muted)', background: 'var(--bg-muted)',
@@ -115,90 +183,59 @@ export default function ExpertReviewsSection({
                   color: '#f59e0b', background: 'rgba(245,158,11,0.1)',
                   padding: '2px 8px', borderRadius: 99,
                 }}>
-                  ⭐ {userReviewCount} ביקורות · {userScore.toFixed(1)}/10
+                  ⭐ {userReviewCount} ביקורות משתמשים · {userScore.toFixed(1)}/10
                 </span>
               )}
             </div>
           </div>
+
           {combined != null && (
-            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2, flexShrink: 0 }}>
-              <ScoreRing score={combined} size={52} />
-              <span style={{ fontSize: '0.58rem', fontWeight: 700, color: 'var(--text-muted)', letterSpacing: '0.05em' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3, flexShrink: 0 }}>
+              <ScoreRing score={combined} size={56} />
+              <span style={{ fontSize: '0.6rem', fontWeight: 700, color: 'var(--text-muted)', letterSpacing: '0.05em' }}>
                 ציון כולל
               </span>
             </div>
           )}
         </div>
 
-        {/* ── Summaries ─────────────────────────────────────────── */}
-        <div style={{ padding: '16px 20px', display: 'flex', flexDirection: 'column', gap: 14 }}>
+        {/* ── Insight rows ────────────────────────────────────────────────────── */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 8, padding: '12px 16px' }}>
 
           {localSummary && (
-            <div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
-                <span style={{ fontSize: '0.8rem' }}>🇮🇱</span>
-                <span style={{ fontSize: '0.75rem', fontWeight: 700, color: '#3b82f6' }}>
-                  ביקורות ישראליות
-                </span>
-                {review.localPostCount > 0 && (
-                  <span style={{ fontSize: '0.65rem', color: 'var(--text-muted)', fontWeight: 500 }}>
-                    {review.localPostCount} דיונים
-                  </span>
-                )}
-                {localScore != null && (
-                  <span style={{
-                    marginRight: 'auto', fontSize: '0.75rem', fontWeight: 800,
-                    color: scoreColor(localScore),
-                  }}>
-                    {localScore.toFixed(1)}<span style={{ fontSize: '0.6rem', color: 'var(--text-muted)', fontWeight: 500 }}>/10</span>
-                  </span>
-                )}
-              </div>
-              <p style={{ margin: 0, fontSize: '0.875rem', lineHeight: 1.7, color: 'var(--text-secondary)' }}>
-                {localSummary}
-              </p>
-            </div>
-          )}
-
-          {localSummary && globalSummary && (
-            <div style={{ height: 1, background: 'var(--border)' }} />
+            <InsightRow
+              flag="🇮🇱"
+              label="ביקורות ישראליות"
+              count={review.localPostCount}
+              score={localScore}
+              summary={localSummary}
+              accent="#3b82f6"
+            />
           )}
 
           {globalSummary && (
-            <div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
-                <span style={{ fontSize: '0.8rem' }}>🌍</span>
-                <span style={{ fontSize: '0.75rem', fontWeight: 700, color: '#8b5cf6' }}>
-                  ביקורות בינלאומיות
-                </span>
-                {review.globalPostCount > 0 && (
-                  <span style={{ fontSize: '0.65rem', color: 'var(--text-muted)', fontWeight: 500 }}>
-                    {review.globalPostCount} דיונים
-                  </span>
-                )}
-                {globalScore != null && (
-                  <span style={{
-                    marginRight: 'auto', fontSize: '0.75rem', fontWeight: 800,
-                    color: scoreColor(globalScore),
-                  }}>
-                    {globalScore.toFixed(1)}<span style={{ fontSize: '0.6rem', color: 'var(--text-muted)', fontWeight: 500 }}>/10</span>
-                  </span>
-                )}
-              </div>
-              <p style={{ margin: 0, fontSize: '0.875rem', lineHeight: 1.7, color: 'var(--text-secondary)' }}>
-                {globalSummary}
-              </p>
-            </div>
+            <InsightRow
+              flag="🌍"
+              label="ביקורות בינלאומיות"
+              count={review.globalPostCount}
+              score={globalScore}
+              summary={globalSummary}
+              accent="#8b5cf6"
+            />
           )}
 
           {fallback && !localSummary && !globalSummary && (
-            <p style={{ margin: 0, fontSize: '0.9375rem', lineHeight: 1.7, color: 'var(--text-secondary)' }}>
+            <p style={{
+              margin: 0, padding: '10px 4px',
+              fontSize: '0.9375rem', lineHeight: 1.7,
+              color: 'var(--text-secondary)',
+            }}>
               {fallback}
             </p>
           )}
         </div>
 
-        {/* ── Pros / Cons chips ─────────────────────────────────── */}
+        {/* ── Pros / Cons chips ───────────────────────────────────────────────── */}
         {(review.pros.length > 0 || review.cons.length > 0) && (
           <div style={{
             display: 'flex', flexWrap: 'wrap', gap: 6,

@@ -52,335 +52,203 @@ export default async function ModelPage({ params }: Props) {
     ? allReviews.reduce((s, r) => s + r.rating, 0) / allReviews.length
     : null;
 
-  const yearMin = model.years[model.years.length - 1];
-  const yearMax = model.years[0];
-
   return (
-    <div>
-      {/* ── HERO ──────────────────────────────────────────────────────── */}
-      <div style={{
-        background: 'linear-gradient(135deg, #0d1117 0%, #1a1a2e 55%, #16213e 100%)',
-        position: 'relative',
-        overflow: 'hidden',
-      }}>
-        {/* dot grid texture */}
-        <div style={{
-          position: 'absolute', inset: 0, pointerEvents: 'none',
-          backgroundImage: 'radial-gradient(circle, rgba(255,255,255,0.06) 1px, transparent 1px)',
-          backgroundSize: '28px 28px',
-        }} />
-        {/* red glow orb */}
-        <div style={{
-          position: 'absolute', top: -80, right: -80,
-          width: 360, height: 360,
-          background: 'radial-gradient(circle, rgba(230,57,70,0.18) 0%, transparent 70%)',
-          pointerEvents: 'none',
-        }} />
+    <div style={{ padding: '48px 0 80px' }}>
+      <div className="container">
+        {/* Breadcrumb */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: 'var(--text-muted)', fontSize: '0.875rem', marginBottom: 24, flexWrap: 'wrap' }}>
+          <Link href="/" style={{ color: 'var(--text-muted)', textDecoration: 'none' }}>בית</Link>
+          <span>›</span>
+          <Link href="/cars" style={{ color: 'var(--text-muted)', textDecoration: 'none' }}>יצרנים</Link>
+          <span>›</span>
+          <Link href={`/cars/${make.slug}`} style={{ color: 'var(--text-muted)', textDecoration: 'none' }}>{make.nameHe}</Link>
+          <span>›</span>
+          <span style={{ color: 'var(--text-primary)' }}>{model.nameHe}</span>
+        </div>
 
-        <div className="container" style={{ position: 'relative' }}>
-          {/* Breadcrumb */}
-          <div style={{
-            display: 'flex', alignItems: 'center', gap: 8,
-            color: 'rgba(255,255,255,0.35)', fontSize: '0.8rem',
-            padding: '20px 0 0', flexWrap: 'wrap',
-          }}>
-            <Link href="/" style={{ color: 'rgba(255,255,255,0.35)', transition: 'color 0.15s' }}>בית</Link>
-            <span>›</span>
-            <Link href="/cars" style={{ color: 'rgba(255,255,255,0.35)' }}>יצרנים</Link>
-            <span>›</span>
-            <Link href={`/cars/${make.slug}`} style={{ color: 'rgba(255,255,255,0.35)' }}>{make.nameHe}</Link>
-            <span>›</span>
-            <span style={{ color: 'rgba(255,255,255,0.7)' }}>{model.nameHe}</span>
-          </div>
-
-          {/* Hero grid */}
-          <div style={{
-            display: 'flex', gap: 32, alignItems: 'center',
-            flexWrap: 'wrap', padding: '28px 0 36px',
-          }}>
-            {/* Left: identity */}
-            <div style={{ flex: '1 1 260px', minWidth: 0 }}>
-              {/* Brand row */}
-              <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 18 }}>
-                <div style={{
-                  background: 'rgba(255,255,255,0.08)',
-                  border: '1px solid rgba(255,255,255,0.12)',
-                  borderRadius: 14, padding: 10, flexShrink: 0,
-                }}>
-                  <MakeLogo logoUrl={make.logoUrl} nameEn={make.nameEn} size={44} />
-                </div>
-                <div>
-                  <p style={{ color: 'rgba(255,255,255,0.45)', fontSize: '0.8rem', letterSpacing: '0.05em', marginBottom: 2 }}>
-                    {make.nameEn} {model.nameEn}
-                  </p>
-                  <h1 style={{
-                    color: '#fff', fontWeight: 900, lineHeight: 1.05,
-                    fontSize: 'clamp(1.8rem, 4vw, 2.6rem)', margin: 0,
-                  }}>
-                    {make.nameHe} {model.nameHe}
-                  </h1>
-                </div>
-              </div>
-
-              {/* Meta pills */}
-              <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 20 }}>
-                <span style={{
-                  background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.12)',
-                  color: 'rgba(255,255,255,0.6)', fontSize: '0.75rem', fontWeight: 600,
-                  padding: '4px 12px', borderRadius: 99,
-                }}>
-                  {getCategoryLabel(model.category)}
-                </span>
-                <span style={{
-                  background: 'rgba(59,130,246,0.15)', border: '1px solid rgba(59,130,246,0.3)',
-                  color: '#93c5fd', fontSize: '0.75rem', fontWeight: 600,
-                  padding: '4px 12px', borderRadius: 99,
-                }}>
-                  {yearMin}–{yearMax}
-                </span>
-                {avgRating !== null && (
-                  <span style={{
-                    background: 'rgba(245,158,11,0.15)', border: '1px solid rgba(245,158,11,0.3)',
-                    color: '#fcd34d', fontSize: '0.75rem', fontWeight: 700,
-                    padding: '4px 12px', borderRadius: 99,
-                    display: 'inline-flex', alignItems: 'center', gap: 5,
-                  }}>
-                    ★ {avgRating.toFixed(1)} <span style={{ opacity: 0.6, fontWeight: 400 }}>({allReviews.length})</span>
-                  </span>
-                )}
-              </div>
-
-              {/* Actions */}
-              <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'center' }}>
-                <SharePopup
-                  title={`${make.nameHe} ${model.nameHe} — ביקורות ובעיות נפוצות | CarIssues IL`}
-                  url={`https://carissues.co.il/cars/${make.slug}/${model.slug}`}
-                />
-                <Link
-                  href={`/cars/compare?car1=${make.slug}/${model.slug}`}
-                  style={{
-                    display: 'inline-flex', alignItems: 'center', gap: 6,
-                    height: 36, padding: '0 14px', borderRadius: 99,
-                    background: 'rgba(255,255,255,0.08)',
-                    border: '1px solid rgba(255,255,255,0.18)',
-                    color: 'rgba(255,255,255,0.75)', fontSize: '0.8125rem', fontWeight: 600,
-                    textDecoration: 'none', transition: 'background 0.15s',
-                  }}
-                >
-                  ⚖️ השווה לרכב אחר
-                </Link>
-                <RecallsBadge makeEn={make.nameEn} modelEn={model.nameEn} years={model.years} />
+        {/* Model header + 3D viewer */}
+        <div className="card" style={{ padding: '28px', marginBottom: 40, display: 'flex', gap: 32, alignItems: 'stretch', flexWrap: 'wrap' }}>
+          {/* Left: title + badges */}
+          <div style={{ flex: '1 1 240px', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 10 }}>
+              <MakeLogo logoUrl={make.logoUrl} nameEn={make.nameEn} size={48} />
+              <div>
+                <h1 style={{ fontSize: '1.75rem', fontWeight: 900 }}>{make.nameHe} {model.nameHe}</h1>
+                <p style={{ color: 'var(--text-muted)', fontSize: '0.9375rem' }}>{make.nameEn} {model.nameEn}</p>
               </div>
             </div>
-
-            {/* Right: 3D viewer */}
-            {sketchfabModel ? (
-              <div style={{ flex: '1 1 340px', minWidth: 280 }}>
-                <div style={{
-                  borderRadius: 16,
-                  overflow: 'hidden',
-                  border: '1px solid rgba(255,255,255,0.1)',
-                  boxShadow: '0 20px 60px rgba(0,0,0,0.4)',
-                }}>
-                  <Car3DViewer
-                    uid={sketchfabModel.uid}
-                    modelName={`${make.nameHe} ${model.nameHe}`}
-                    makeSlug={makeSlug}
-                    modelSlug={modelSlug}
-                  />
-                </div>
-                <p style={{ fontSize: '0.62rem', color: 'rgba(255,255,255,0.2)', marginTop: 6, textAlign: 'center' }}>
-                  <a href={sketchfabModel.viewerUrl} target="_blank" rel="noopener noreferrer" style={{ color: 'rgba(255,255,255,0.2)' }}>
-                    &ldquo;{sketchfabModel.name}&rdquo; by {sketchfabModel.author} · Sketchfab (CC BY 4.0)
-                  </a>
-                </p>
-              </div>
-            ) : (
-              /* No 3D model — show rating summary instead */
-              avgRating !== null && (
-                <div style={{ flex: '0 0 auto', textAlign: 'center', padding: '24px 32px' }}>
-                  <div style={{ fontSize: '4rem', fontWeight: 900, color: '#fff', lineHeight: 1 }}>
+            <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'center' }}>
+              <span className="badge badge-gray">{getCategoryLabel(model.category)}</span>
+              <span className="badge badge-blue">{model.years[model.years.length - 1]}–{model.years[0]}</span>
+              <RecallsBadge makeEn={make.nameEn} modelEn={model.nameEn} years={model.years} />
+              {avgRating !== null && (
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <StarRating rating={avgRating} size={16} />
+                  <span style={{ fontSize: '0.875rem', fontWeight: 700, color: 'var(--text-primary)' }}>
                     {avgRating.toFixed(1)}
-                  </div>
-                  <div style={{ marginTop: 8 }}>
-                    <StarRating rating={avgRating} size={20} />
-                  </div>
-                  <div style={{ color: 'rgba(255,255,255,0.4)', fontSize: '0.8rem', marginTop: 6 }}>
-                    {allReviews.length} ביקורות
-                  </div>
+                  </span>
+                  <span style={{ fontSize: '0.8125rem', color: 'var(--text-muted)' }}>
+                    ({allReviews.length} ביקורות)
+                  </span>
                 </div>
-              )
-            )}
+              )}
+            </div>
           </div>
-        </div>
-      </div>
 
-      {/* ── YEAR RAIL ─────────────────────────────────────────────────── */}
-      <div style={{
-        background: 'var(--bg-card)',
-        borderBottom: '2px solid var(--border)',
-        boxShadow: '0 2px 8px rgba(0,0,0,0.04)',
-      }}>
-        <div className="container">
-          <div style={{
-            display: 'flex', alignItems: 'center', gap: 10,
-            padding: '12px 0', overflowX: 'auto',
-            scrollbarWidth: 'none',
-          }}>
-            <span style={{
-              color: 'var(--text-muted)', fontSize: '0.72rem', fontWeight: 700,
-              letterSpacing: '0.07em', textTransform: 'uppercase', flexShrink: 0,
-            }}>
-              שנת ייצור
-            </span>
-            <div style={{ width: 1, height: 20, background: 'var(--border)', flexShrink: 0 }} />
-            {model.years.map((y, i) => (
+          {/* Right: 3D viewer */}
+          {sketchfabModel && (
+            <div style={{ flex: '1 1 320px', minWidth: 280 }}>
+              <Car3DViewer uid={sketchfabModel.uid} modelName={`${make.nameHe} ${model.nameHe}`} makeSlug={makeSlug} modelSlug={modelSlug} />
+              <p style={{ fontSize: '0.7rem', color: 'var(--text-muted)', marginTop: 6, textAlign: 'center' }}>
+                <a href={sketchfabModel.viewerUrl} target="_blank" rel="noopener noreferrer" style={{ color: 'var(--text-muted)' }}>
+                  &ldquo;{sketchfabModel.name}&rdquo; by {sketchfabModel.author} · Sketchfab (CC BY 4.0)
+                </a>
+              </p>
+            </div>
+          )}
+        </div>
+
+        {/* Share + Compare */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap', marginBottom: 32 }}>
+          <SharePopup title={`${make.nameHe} ${model.nameHe} — ביקורות ובעיות נפוצות | CarIssues IL`} url={`https://carissues.co.il/cars/${make.slug}/${model.slug}`} />
+          <Link href={`/cars/compare?car1=${make.slug}/${model.slug}`} className="btn btn-outline" style={{ height: 36, padding: '0 16px', fontSize: '0.875rem', textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+            ⚖️ השווה לרכב אחר
+          </Link>
+        </div>
+
+        {/* Year selector */}
+        <div style={{ marginBottom: 36 }}>
+          <h2 style={{ fontSize: '1rem', fontWeight: 700, marginBottom: 12, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+            בחר שנה לביקורת מפורטת
+          </h2>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+            {model.years.map((y) => (
               <Link
                 key={y}
                 href={`/cars/${make.slug}/${model.slug}/${y}`}
-                style={{
-                  display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-                  height: 34, padding: '0 16px', borderRadius: 8,
-                  border: i === 0 ? '1.5px solid var(--brand-red)' : '1.5px solid var(--border)',
-                  background: i === 0 ? 'rgba(230,57,70,0.06)' : 'transparent',
-                  color: i === 0 ? 'var(--brand-red)' : 'var(--text-secondary)',
-                  fontSize: '0.875rem', fontWeight: i === 0 ? 700 : 500,
-                  textDecoration: 'none', flexShrink: 0,
-                  transition: 'all 0.15s',
-                }}
+                className="year-pill"
               >
                 {y}
-                {i === 0 && (
-                  <span style={{
-                    marginRight: 5, fontSize: '0.58rem', fontWeight: 800,
-                    color: 'var(--brand-red)', letterSpacing: '0.03em',
-                  }}>
-                    חדש
-                  </span>
-                )}
               </Link>
             ))}
           </div>
         </div>
-      </div>
 
-      {/* ── CONTENT ───────────────────────────────────────────────────── */}
-      <div style={{ padding: '40px 0 80px' }}>
-        <div className="container">
+        {/* General AI summary — combined score includes user reviews */}
+        <ExpertReviewsSection
+          review={expertReview}
+          makeNameHe={make.nameHe}
+          modelNameHe={model.nameHe}
+          userAvgRating={avgRating}
+          userReviewCount={allReviews.length}
+        />
 
-          {/* General AI summary */}
-          <ExpertReviewsSection
-            review={expertReview}
-            makeNameHe={make.nameHe}
-            modelNameHe={model.nameHe}
-            userAvgRating={avgRating}
-            userReviewCount={allReviews.length}
-          />
-
-          {/* Tabbed: Reviews | Videos | Images */}
-          <CarPageTabs
-            makeSlug={makeSlug}
-            modelSlug={modelSlug}
-            makeNameHe={make.nameHe}
-            modelNameHe={model.nameHe}
-          >
-            <div>
-              {allReviews.length === 0 && (
-                <FirstReviewCta makeNameHe={make.nameHe} modelNameHe={model.nameHe} />
-              )}
-              <div id="write-review" style={{ marginBottom: 48 }}>
-                <ModelReviewsSection
-                  makeSlug={makeSlug}
-                  modelSlug={modelSlug}
-                  years={model.years}
-                  trims={model.trims}
-                  initialReviews={allReviews}
-                />
-              </div>
-              <div style={{ marginTop: 48 }}>
-                <RecallsSection makeEn={make.nameEn} modelEn={model.nameEn} years={model.years} />
-              </div>
+        {/* Tabbed: Reviews | Videos */}
+        <CarPageTabs
+          makeSlug={makeSlug}
+          modelSlug={modelSlug}
+          makeNameHe={make.nameHe}
+          modelNameHe={model.nameHe}
+        >
+          {/* Reviews tab content */}
+          <div>
+            {allReviews.length === 0 && (
+              <FirstReviewCta makeNameHe={make.nameHe} modelNameHe={model.nameHe} />
+            )}
+            <div id="write-review" style={{ marginBottom: 48 }}>
+              <ModelReviewsSection
+                makeSlug={makeSlug}
+                modelSlug={modelSlug}
+                years={model.years}
+                trims={model.trims}
+                initialReviews={allReviews}
+              />
             </div>
-          </CarPageTabs>
-        </div>
-      </div>
+            <div style={{ marginTop: 48 }}>
+              <RecallsSection makeEn={make.nameEn} modelEn={model.nameEn} years={model.years} />
+            </div>
+          </div>
+        </CarPageTabs>
 
-      {/* JSON-LD */}
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{
-          __html: JSON.stringify({
-            '@context': 'https://schema.org',
-            '@graph': [
-              ...(avgRating !== null || expertReview?.topScore != null ? [{
-                '@type': 'Product',
-                name: `${make.nameEn} ${model.nameEn}`,
-                brand: { '@type': 'Brand', name: make.nameEn },
-                url: `https://carissues.co.il/cars/${make.slug}/${model.slug}`,
-                ...(avgRating !== null ? {
-                  aggregateRating: {
-                    '@type': 'AggregateRating',
-                    ratingValue: avgRating.toFixed(1),
-                    reviewCount: allReviews.length,
-                    bestRating: 5,
-                    worstRating: 1,
-                  },
-                } : {
-                  review: {
-                    '@type': 'Review',
-                    author: { '@type': 'Organization', name: 'CarIssues AI' },
-                    reviewRating: {
-                      '@type': 'Rating',
-                      ratingValue: expertReview!.topScore!.toFixed(1),
-                      bestRating: 10,
-                      worstRating: 0,
+        {/* JSON-LD */}
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify({
+              '@context': 'https://schema.org',
+              '@graph': [
+                // Only emit Product schema when we have the required aggregateRating or review
+                ...(avgRating !== null || expertReview?.topScore != null ? [{
+                  '@type': 'Product',
+                  name: `${make.nameEn} ${model.nameEn}`,
+                  brand: { '@type': 'Brand', name: make.nameEn },
+                  url: `https://carissues.co.il/cars/${make.slug}/${model.slug}`,
+                  ...(avgRating !== null ? {
+                    aggregateRating: {
+                      '@type': 'AggregateRating',
+                      ratingValue: avgRating.toFixed(1),
+                      reviewCount: allReviews.length,
+                      bestRating: 5,
+                      worstRating: 1,
                     },
-                  },
-                }),
-              }] : []),
-              {
-                '@type': 'BreadcrumbList',
-                itemListElement: [
-                  { '@type': 'ListItem', position: 1, name: 'בית', item: 'https://carissues.co.il' },
-                  { '@type': 'ListItem', position: 2, name: 'יצרנים', item: 'https://carissues.co.il/cars' },
-                  { '@type': 'ListItem', position: 3, name: make.nameHe, item: `https://carissues.co.il/cars/${make.slug}` },
-                  { '@type': 'ListItem', position: 4, name: model.nameHe, item: `https://carissues.co.il/cars/${make.slug}/${model.slug}` },
-                ],
-              },
-              ...(expertReview && (expertReview.pros.length > 0 || expertReview.cons.length > 0) ? [{
-                '@type': 'FAQPage',
-                mainEntity: [
-                  expertReview.pros.length > 0 && {
-                    '@type': 'Question',
-                    name: `מה היתרונות של ${make.nameHe} ${model.nameHe}?`,
-                    acceptedAnswer: { '@type': 'Answer', text: expertReview.pros.join('. ') },
-                  },
-                  expertReview.cons.length > 0 && {
-                    '@type': 'Question',
-                    name: `מה החסרונות של ${make.nameHe} ${model.nameHe}?`,
-                    acceptedAnswer: { '@type': 'Answer', text: expertReview.cons.join('. ') },
-                  },
-                  expertReview.localSummaryHe && {
-                    '@type': 'Question',
-                    name: `מה אומרים בעלי ${make.nameHe} ${model.nameHe} בישראל?`,
-                    acceptedAnswer: { '@type': 'Answer', text: expertReview.localSummaryHe },
-                  },
-                  expertReview.globalSummaryHe && {
-                    '@type': 'Question',
-                    name: `מה חוות הדעת הבינלאומית על ${make.nameHe} ${model.nameHe}?`,
-                    acceptedAnswer: { '@type': 'Answer', text: expertReview.globalSummaryHe },
-                  },
-                  expertReview.topScore !== null && {
-                    '@type': 'Question',
-                    name: `מה הציון של ${make.nameHe} ${model.nameHe}?`,
-                    acceptedAnswer: { '@type': 'Answer', text: `${make.nameHe} ${model.nameHe} קיבל ציון ${expertReview.topScore?.toFixed(1)} מתוך 10 בסיכום AI המבוסס על חוות דעת בעלי רכב בישראל ובעולם.` },
-                  },
-                ].filter(Boolean),
-              }] : []),
-            ],
-          }),
-        }}
-      />
+                  } : {
+                    // No user reviews — use expert AI score as a single Review to satisfy Google's requirement
+                    review: {
+                      '@type': 'Review',
+                      author: { '@type': 'Organization', name: 'CarIssues AI' },
+                      reviewRating: {
+                        '@type': 'Rating',
+                        ratingValue: expertReview!.topScore!.toFixed(1),
+                        bestRating: 10,
+                        worstRating: 0,
+                      },
+                    },
+                  }),
+                }] : []),
+                {
+                  '@type': 'BreadcrumbList',
+                  itemListElement: [
+                    { '@type': 'ListItem', position: 1, name: 'בית', item: 'https://carissues.co.il' },
+                    { '@type': 'ListItem', position: 2, name: 'יצרנים', item: 'https://carissues.co.il/cars' },
+                    { '@type': 'ListItem', position: 3, name: make.nameHe, item: `https://carissues.co.il/cars/${make.slug}` },
+                    { '@type': 'ListItem', position: 4, name: model.nameHe, item: `https://carissues.co.il/cars/${make.slug}/${model.slug}` },
+                  ],
+                },
+                ...(expertReview && (expertReview.pros.length > 0 || expertReview.cons.length > 0) ? [{
+                  '@type': 'FAQPage',
+                  mainEntity: [
+                    expertReview.pros.length > 0 && {
+                      '@type': 'Question',
+                      name: `מה היתרונות של ${make.nameHe} ${model.nameHe}?`,
+                      acceptedAnswer: { '@type': 'Answer', text: expertReview.pros.join('. ') },
+                    },
+                    expertReview.cons.length > 0 && {
+                      '@type': 'Question',
+                      name: `מה החסרונות של ${make.nameHe} ${model.nameHe}?`,
+                      acceptedAnswer: { '@type': 'Answer', text: expertReview.cons.join('. ') },
+                    },
+                    expertReview.localSummaryHe && {
+                      '@type': 'Question',
+                      name: `מה אומרים בעלי ${make.nameHe} ${model.nameHe} בישראל?`,
+                      acceptedAnswer: { '@type': 'Answer', text: expertReview.localSummaryHe },
+                    },
+                    expertReview.globalSummaryHe && {
+                      '@type': 'Question',
+                      name: `מה חוות הדעת הבינלאומית על ${make.nameHe} ${model.nameHe}?`,
+                      acceptedAnswer: { '@type': 'Answer', text: expertReview.globalSummaryHe },
+                    },
+                    expertReview.topScore !== null && {
+                      '@type': 'Question',
+                      name: `מה הציון של ${make.nameHe} ${model.nameHe}?`,
+                      acceptedAnswer: { '@type': 'Answer', text: `${make.nameHe} ${model.nameHe} קיבל ציון ${expertReview.topScore?.toFixed(1)} מתוך 10 בסיכום AI המבוסס על חוות דעת בעלי רכב בישראל ובעולם.` },
+                    },
+                  ].filter(Boolean),
+                }] : []),
+              ],
+            }),
+          }}
+        />
+      </div>
     </div>
   );
 }

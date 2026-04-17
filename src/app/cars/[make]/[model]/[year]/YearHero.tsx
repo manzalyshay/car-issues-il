@@ -95,7 +95,7 @@ export default function YearHero({ makeSlug, modelSlug, year, makeNameHe, modelN
           style={{
             position: 'absolute', inset: 0,
             width: '100%', height: '100%',
-            objectFit: 'contain',
+            objectFit: 'cover',
             opacity: loaded ? 1 : 0,
             transition: 'opacity 0.5s ease',
           }}
