@@ -68,14 +68,36 @@ console.log('   Loading page...');
 // so networkidle is never reached. 'load' fires once the HTML + fonts are ready.
 await page.goto(reelUrl, { waitUntil: 'load', timeout: 60000 });
 
-// Sketchfab JS API calls api.start() programmatically — no click needed.
-// Wait for the viewer to initialise and begin spinning.
-console.log('   Waiting for 3D model to initialise (12s)...');
-await page.waitForTimeout(12000);
+// Wait for Sketchfab to initialise the 3D model
+console.log('   Waiting for 3D model to initialise (14s)...');
+await page.waitForTimeout(14000);
 
-// Record 10 seconds of spinning
-console.log('   Recording 10 seconds...');
-await page.waitForTimeout(10000);
+// Zoom out — Sketchfab scrolls: positive deltaY = zoom out
+console.log('   Zooming out...');
+await page.mouse.move(540, 800);
+for (let i = 0; i < 6; i++) {
+  await page.mouse.wheel(0, 150);
+  await page.waitForTimeout(200);
+}
+await page.waitForTimeout(500);
+
+// Rotate the model by simulating a slow mouse drag across the canvas.
+// Playwright/CDP dispatches mousemove at any coordinate (including negative x)
+// so one continuous drag can cover many full rotations without releasing.
+console.log('   Recording 10s of rotation via mouse drag...');
+const dragStartX = 800;
+const dragStartY = 800;
+await page.mouse.move(dragStartX, dragStartY);
+await page.mouse.down();
+// Drag ~5000px left over 10 seconds → typically 3-4 full rotations
+const DRAG_PX    = 5000;
+const DRAG_MS    = 10000;
+const DRAG_STEPS = 300;
+for (let i = 1; i <= DRAG_STEPS; i++) {
+  await page.mouse.move(dragStartX - (DRAG_PX * i / DRAG_STEPS), dragStartY);
+  await new Promise(r => setTimeout(r, DRAG_MS / DRAG_STEPS));
+}
+await page.mouse.up();
 
 // Grab the path BEFORE closing (closing finalises the file)
 const videoPathRaw = await page.video()?.path();
@@ -100,9 +122,13 @@ console.log(`   Raw video: ${webmPath}`);
 
 // ── Convert WebM → MP4 (H.264) ────────────────────────────────────────────────
 console.log('   Converting to MP4...');
+// -ss 16: skip ~14s init + ~2s zoom-out = only the spinning portion
+// -t 10:  keep exactly 10 seconds
 execFileSync('ffmpeg', [
   '-y',
   '-i', webmPath,
+  '-ss', '16',
+  '-t', '10',
   '-c:v', 'libx264',
   '-preset', 'fast',
   '-crf', '22',

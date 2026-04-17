@@ -29,7 +29,9 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ mak
   const pros = review?.pros?.slice(0, 2) ?? [];
   const cons = review?.cons?.slice(0, 1) ?? [];
 
-  const sketchfabUid = carModel?.uid ?? null;
+  const embedUrl = carModel?.uid
+    ? `https://sketchfab.com/models/${carModel.uid}/embed?autostart=1&preload=1&ui_infos=0&ui_controls=0&ui_watermark=0&ui_stop=0&ui_ar=0&ui_help=0&ui_settings=0&ui_annotations=0`
+    : null;
 
   const html = `<!DOCTYPE html>
 <html lang="he" dir="rtl">
@@ -47,7 +49,7 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ mak
     }
 
     /* Full-screen Sketchfab embed */
-    #api-frame {
+    iframe {
       position: absolute;
       inset: 0;
       width: 100%;
@@ -147,44 +149,8 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ mak
 <body>
 <div class="scene">
 
-  ${sketchfabUid
-    ? `<iframe id="api-frame" allow="autoplay; fullscreen; xr-spatial-tracking" allowfullscreen></iframe>
-  <script src="https://static.sketchfab.com/api/sketchfab-viewer-1.12.1.js"></script>
-  <script>
-    var client = new Sketchfab(document.getElementById('api-frame'));
-    client.init('${sketchfabUid}', {
-      autostart: 1,
-      preload: 1,
-      ui_infos: 0, ui_controls: 0, ui_watermark: 0,
-      ui_stop: 0, ui_ar: 0, ui_help: 0, ui_settings: 0,
-      ui_annotations: 0, camera: 0,
-      success: function(api) {
-        api.start();
-        api.addEventListener('viewerready', function() {
-          api.getCameraLookAt(function(err, camera) {
-            if (err) return;
-            var target = camera.target;
-            var pos    = camera.position;
-            var dx     = pos[0] - target[0];
-            var dz     = pos[2] - target[2];
-            var radius = Math.sqrt(dx * dx + dz * dz);
-            var vy     = pos[1] - target[1];
-            var angle  = Math.atan2(dz, dx);
-            // ~0.6 rad/s at 60 fps → full rotation in ~10 s
-            var step = 0.6 / 60;
-            (function spin() {
-              angle += step;
-              api.setCameraLookAt(
-                [target[0] + radius * Math.cos(angle), target[1] + vy, target[2] + radius * Math.sin(angle)],
-                target, 0
-              );
-              requestAnimationFrame(spin);
-            })();
-          });
-        });
-      }
-    });
-  </script>`
+  ${embedUrl
+    ? `<iframe src="${embedUrl}" allow="autoplay; fullscreen; xr-spatial-tracking" allowfullscreen></iframe>`
     : `<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;background:${CARD};">
          <img src="${make.logoUrl}" style="width:500px;height:500px;object-fit:contain;opacity:0.15;" alt=""/>
        </div>`
