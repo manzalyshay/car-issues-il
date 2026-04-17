@@ -144,11 +144,17 @@ export default function ExpertReviewsSection({
         ? `AI · ${review.sourcesBreakdown.reduce((s, b) => s + b.postCount, 0)} דיונים`
         : `AI · ${totalPosts} דיונים`;
 
+  const wrapperStyle = inline
+    ? { padding: 0, overflow: 'hidden', height: '100%', display: 'flex', flexDirection: 'column' as const }
+    : { padding: 0, overflow: 'hidden' };
+
+  const footerStyle = inline
+    ? { fontSize: '0.68rem', color: 'var(--text-muted)', padding: '4px 16px 12px', margin: 0 }
+    : { fontSize: '0.68rem', color: 'var(--text-muted)', marginTop: 6, paddingRight: 4 };
+
   const inner = (
-    <div className={inline ? undefined : 'card'} style={inline
-      ? { padding: 0, overflow: 'hidden', height: '100%', display: 'flex', flexDirection: 'column' }
-      : { padding: 0, overflow: 'hidden' }
-    }>
+    <>
+    <div className={inline ? undefined : 'card'} style={wrapperStyle}>
 
         {/* Header */}
         <div style={{
@@ -248,13 +254,10 @@ export default function ExpertReviewsSection({
         )}
       </div>
 
-      <p style={inline
-        ? { fontSize: '0.68rem', color: 'var(--text-muted)', padding: '4px 16px 12px', margin: 0 }
-        : { fontSize: '0.68rem', color: 'var(--text-muted)', marginTop: 6, paddingRight: 4 }
-      }>
+      <p style={footerStyle}>
         AI סיכם ביקורות ודיונים אמיתיים של בעלי רכבים מפורומים ואתרי ביקורות.
       </p>
-    </div>
+    </>
   );
 
   if (inline) return inner;
