@@ -173,50 +173,7 @@ export default async function CarYearPage({ params }: Props) {
           </div>
         </div>
 
-        {/* Rating overview + reviews client component */}
-        {avgRating !== null && (
-          <div className="card" style={{ padding: '28px 28px', marginBottom: 40 }}>
-            <div style={{ display: 'flex', gap: 40, flexWrap: 'wrap', alignItems: 'flex-start' }}>
-              {/* Big rating */}
-              <div style={{ textAlign: 'center', minWidth: 120 }}>
-                <div style={{ fontSize: '3.5rem', fontWeight: 900, color: 'var(--text-primary)', lineHeight: 1 }}>
-                  {avgRating.toFixed(1)}
-                </div>
-                <StarRating rating={avgRating} size={22} />
-                <div style={{ color: 'var(--text-muted)', fontSize: '0.8125rem', marginTop: 6 }}>
-                  {reviews.length} ביקורות
-                </div>
-              </div>
-
-              {/* Distribution */}
-              <div style={{ flex: 1, minWidth: 200 }}>
-                {ratingDist.map(({ stars, count }) => (
-                  <div key={stars} style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8 }}>
-                    <span style={{ width: 36, color: 'var(--text-muted)', fontSize: '0.8125rem', textAlign: 'center', flexShrink: 0 }}>
-                      {stars}★
-                    </span>
-                    <div style={{ flex: 1, height: 8, background: 'var(--bg-muted)', borderRadius: 9999, overflow: 'hidden' }}>
-                      <div
-                        style={{
-                          width: reviews.length ? `${(count / reviews.length) * 100}%` : '0%',
-                          height: '100%',
-                          background: stars >= 4 ? '#16a34a' : stars === 3 ? '#ca8a04' : 'var(--brand-red)',
-                          borderRadius: 9999,
-                          transition: 'width 0.6s ease',
-                        }}
-                      />
-                    </div>
-                    <span style={{ width: 24, color: 'var(--text-muted)', fontSize: '0.8125rem', textAlign: 'left', flexShrink: 0 }}>
-                      {count}
-                    </span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Expert reviews — year-specific above general */}
+        {/* Expert reviews — year-specific first, right after hero */}
         {isYearSpecific && yearReview && (
           <div style={{ marginBottom: 20 }}>
             {/* Subtle year-specific label */}
@@ -286,6 +243,39 @@ export default async function CarYearPage({ params }: Props) {
             userAvgRating={avgRating}
             userReviewCount={reviews.length}
           />
+        )}
+
+        {/* Rating distribution — below AI summaries */}
+        {avgRating !== null && (
+          <div className="card" style={{ padding: '20px 24px', marginBottom: 32 }}>
+            <div style={{ display: 'flex', gap: 32, flexWrap: 'wrap', alignItems: 'flex-start' }}>
+              <div style={{ textAlign: 'center', minWidth: 90 }}>
+                <div style={{ fontSize: '2.75rem', fontWeight: 900, color: 'var(--text-primary)', lineHeight: 1 }}>
+                  {avgRating.toFixed(1)}
+                </div>
+                <StarRating rating={avgRating} size={18} />
+                <div style={{ color: 'var(--text-muted)', fontSize: '0.75rem', marginTop: 5 }}>
+                  {reviews.length} ביקורות
+                </div>
+              </div>
+              <div style={{ flex: 1, minWidth: 180 }}>
+                {ratingDist.map(({ stars, count }) => (
+                  <div key={stars} style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
+                    <span style={{ width: 28, color: 'var(--text-muted)', fontSize: '0.75rem', textAlign: 'center', flexShrink: 0 }}>{stars}★</span>
+                    <div style={{ flex: 1, height: 6, background: 'var(--bg-muted)', borderRadius: 9999, overflow: 'hidden' }}>
+                      <div style={{
+                        width: reviews.length ? `${(count / reviews.length) * 100}%` : '0%',
+                        height: '100%',
+                        background: stars >= 4 ? '#16a34a' : stars === 3 ? '#ca8a04' : 'var(--brand-red)',
+                        borderRadius: 9999,
+                      }} />
+                    </div>
+                    <span style={{ width: 20, color: 'var(--text-muted)', fontSize: '0.75rem', textAlign: 'left', flexShrink: 0 }}>{count}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
         )}
 
         {/* Client component handles reviews list + review form + on-demand AI generation + video tab */}

@@ -661,6 +661,73 @@ async function searchWhatCar(makeEn: string, modelEn: string): Promise<UserPost[
   return posts;
 }
 
+// ── KBB.com consumer reviews (__NEXT_DATA__ JSON — no bot block, clean structure) ─
+// URL: kbb.com/{make}/{model}/{year}/consumer-reviews/
+// Full review objects are in __NEXT_DATA__ — no JS rendering needed.
+async function searchKbb(makeEn: string, modelEn: string, year?: number): Promise<UserPost[]> {
+  const posts: UserPost[] = [];
+  try {
+    const makeSlug  = makeEn.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
+    const modelSlug = modelEn.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
+    const currentYear = new Date().getFullYear();
+    const targetYear  = year ?? currentYear;
+    // Try target year first, then one year back as fallback
+    const years = [...new Set([targetYear, targetYear - 1])];
+
+    for (const y of years) {
+      const url = `https://www.kbb.com/${makeSlug}/${modelSlug}/${y}/consumer-reviews/`;
+      try {
+        const res = await fetch(url, {
+          headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36', 'Accept-Language': 'en-US,en;q=0.9' },
+          signal: AbortSignal.timeout(12000),
+        });
+        if (!res.ok) continue;
+        const html = await res.text();
+
+        // Extract __NEXT_DATA__ JSON blob
+        const ndMatch = html.match(/<script id="__NEXT_DATA__" type="application\/json">([\s\S]*?)<\/script>/);
+        if (!ndMatch) continue;
+        const nd = JSON.parse(ndMatch[1]) as any;
+
+        // Reviews live at various nested paths — walk to find the reviews array
+        const findReviews = (obj: any, depth = 0): any[] => {
+          if (depth > 8 || !obj || typeof obj !== 'object') return [];
+          if (Array.isArray(obj)) {
+            if (obj.length > 0 && obj[0]?.reviewText) return obj;
+            for (const item of obj) { const r = findReviews(item, depth + 1); if (r.length) return r; }
+          } else {
+            for (const val of Object.values(obj)) { const r = findReviews(val, depth + 1); if (r.length) return r; }
+          }
+          return [];
+        };
+        const reviews = findReviews(nd);
+        if (reviews.length === 0) continue;
+
+        const seen = new Set<string>();
+        for (const r of reviews.slice(0, 10)) {
+          const text = (r.reviewText ?? '').trim();
+          if (text.length < 30) continue;
+          const key = text.slice(0, 60);
+          if (seen.has(key)) continue;
+          seen.add(key);
+          const dateStr = r.submissionDate ?? r.date ?? '';
+          const reviewYear = dateStr.match(/\b(20\d{2})\b/)?.[1] ? parseInt(dateStr.match(/\b(20\d{2})\b/)![1]) : undefined;
+          posts.push({
+            title: r.title ?? `${makeEn} ${modelEn} owner review`,
+            url,
+            sourceName: 'KBB Consumer Reviews',
+            snippet: text.slice(0, 400),
+            score: r.ratingOverall ?? r.ratingValue,
+            reviewYear,
+          });
+        }
+        if (posts.length > 0) break; // found reviews for this year, stop
+      } catch { continue; }
+    }
+  } catch { /* ignore */ }
+  return posts;
+}
+
 // ── ZigWheels (Asian market owner reviews — JSON-LD, no blocking) ─────────────
 // List page links to individual review pages; each individual page embeds all
 // recent reviews in JSON-LD itemReviewed.review[] — so we only need one fetch.
@@ -1139,7 +1206,7 @@ async function gatherUserPosts(
 ): Promise<{ local: UserPost[]; global: UserPost[]; primary?: UserPost }> {
   const [
     tapuzPosts, icarPosts, carzonePosts,
-    carComplaintsPosts, nhtsaPosts, edmundsPosts, zigWheelsPosts, drivePosts,
+    carComplaintsPosts, nhtsaPosts, edmundsPosts, zigWheelsPosts, kbbPosts, drivePosts,
     carsComPosts, autoExpressPosts, whatCarPosts, carExpertPosts, carSalesPosts,
     facebookPosts,
   ] = await Promise.all([
@@ -1150,6 +1217,7 @@ async function gatherUserPosts(
     searchNHTSA(makeNameEn, modelNameEn, year),
     searchEdmunds(makeNameEn, modelNameEn, year),
     searchZigWheels(makeNameEn, modelNameEn),
+    searchKbb(makeNameEn, modelNameEn, year),
     searchDrive(makeNameHe, modelNameHe, year),
     searchCarsCom(makeNameEn, modelNameEn, year),
     searchAutoExpress(makeNameEn, modelNameEn),
@@ -1160,8 +1228,8 @@ async function gatherUserPosts(
   ]);
   return {
     local:   [...icarPosts, ...drivePosts, ...carzonePosts, ...tapuzPosts, ...facebookPosts],
-    global:  [...zigWheelsPosts, ...edmundsPosts, ...nhtsaPosts, ...carComplaintsPosts, ...carsComPosts, ...autoExpressPosts, ...whatCarPosts, ...carExpertPosts, ...carSalesPosts],
-    primary: tapuzPosts[0] ?? zigWheelsPosts[0] ?? nhtsaPosts[0],
+    global:  [...kbbPosts, ...zigWheelsPosts, ...edmundsPosts, ...nhtsaPosts, ...carComplaintsPosts, ...carsComPosts, ...autoExpressPosts, ...whatCarPosts, ...carExpertPosts, ...carSalesPosts],
+    primary: tapuzPosts[0] ?? kbbPosts[0] ?? zigWheelsPosts[0] ?? nhtsaPosts[0],
   };
 }
 

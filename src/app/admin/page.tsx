@@ -1609,9 +1609,24 @@ export default function AdminPage() {
                                   <span style={{ fontSize: '0.72rem', fontWeight: 700, color: '#10b981' }}>✓ מוכן</span>
                                   <button onClick={() => setReelHelper({ reelUrl: reelUrl!, carUrl })}
                                     style={{ padding: '3px 10px', borderRadius: 6, border: 'none', background: '#7c3aed', color: '#fff', cursor: 'pointer', fontSize: '0.72rem', fontWeight: 700, whiteSpace: 'nowrap' }}>
-                                    📤 שתף ריל / סטורי
+                                    📤 שתף
                                   </button>
                                   <a href={reelUrl} target="_blank" rel="noreferrer" style={{ fontSize: '0.72rem', color: 'var(--text-muted)', textDecoration: 'none' }}>↗ פתח</a>
+                                  <button
+                                    onClick={async () => {
+                                      if (!confirm('מחק את הריל מהאחסון ואפשר יצירה מחדש?')) return;
+                                      const t = await getToken();
+                                      await fetch('/api/admin/trigger-reel', {
+                                        method: 'DELETE',
+                                        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${t}` },
+                                        body: JSON.stringify({ makeSlug: mkSlug, modelSlug: mdSlug, postId: post.id }),
+                                      });
+                                      await fetchSocialPosts();
+                                    }}
+                                    title="מחק ריל מהאחסון"
+                                    style={{ padding: '3px 8px', borderRadius: 6, border: '1px solid #f43f5e40', background: 'transparent', color: '#f43f5e', cursor: 'pointer', fontSize: '0.68rem', marginRight: 'auto' }}>
+                                    🗑
+                                  </button>
                                 </>
                               ) : isFailed ? (
                                 <>
