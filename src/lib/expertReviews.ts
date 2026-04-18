@@ -851,10 +851,21 @@ function isEmptySummary(s: string | null | undefined): boolean {
   return NO_DATA_PHRASES.some((p) => s.includes(p));
 }
 
+// Phrases that indicate meta-commentary about reviews/videos rather than actual car traits
+const META_PHRASES = [
+  'סרטוני ביקורת', 'סרטון ביקורת', 'בסרטון', 'טיפים כלליים', 'ביקורת וידאו',
+  'ביקורות וידאו', 'צפייה בסרטון', 'ערוץ יוטיוב', 'יוטיוב', 'ביקורת כללית',
+  'תוכן הסרטון', 'מצגת', 'מידע כללי', 'מידע נוסף זמין', 'ראה סרטון',
+];
+
 function filterListItems(items: string[]): string[] {
-  return items.filter(
-    (item) => item.trim().length > 2 && !NO_DATA_PHRASES.some((p) => item.includes(p))
-  );
+  return items.filter((item) => {
+    const t = item.trim();
+    if (t.length < 4) return false;
+    if (NO_DATA_PHRASES.some(p => t.includes(p))) return false;
+    if (META_PHRASES.some(p => t.includes(p))) return false;
+    return true;
+  });
 }
 
 // ── LLM caller — Mistral primary (60 RPM, free, no daily quota), Gemini fallback ──
@@ -973,6 +984,7 @@ ${postList}
 - ציון: 1=גרוע מאוד, 5=ממוצע, 10=מעולה — לפי הרושם הכולל
 - יתרונות/חסרונות: רק מה שמוזכר — אם אין, החזר []
 - אם אין מספיק מידע — כתוב "אין מספיק ביקורות משתמשים כרגע" וציון 5
+- יתרונות וחסרונות חייבים להיות על הרכב עצמו — לא על הסרטון, לא על המקור, לא טיפי קנייה כלליים
 
 החזר JSON בלבד (ללא \`\`\` ולא markdown):
 {"summary_he":"2-3 משפטים","score":7,"pros":["יתרון 1","יתרון 2"],"cons":["חיסרון 1","חיסרון 2"]}`;
@@ -1123,7 +1135,8 @@ async function generateKnowledgeSummary(
 - אל תשתמש במילה "סלון" — השתמש בסדאן/SUV/האצ'בק
 - אסור לציין גדלי מנוע, מספרים טכניים ספציפיים, או פרטים שאתה לא בטוח לגביהם — שמור על רמה כללית
 - ציון: 9-10 רכב שבעלים ממליצים בחום, 7-8 שביעות רצון כללית, 5-6 מעורב, 3-4 תלונות רבות
-- יתרונות/חסרונות: רק מה שבעלים בפועל מציינים — תכונות ספציפיות, לא כלליות
+- יתרונות/חסרונות: רק מה שבעלים בפועל מציינים — תכונות ספציפיות של הרכב, לא כלליות
+- אסור לכתוב יתרון/חיסרון על סרטונים, טיפים לקנייה, מקורות מידע — רק על הרכב עצמו
 
 החזר JSON בלבד:
 {"summary_he":"...","score":8,"pros":["...","..."],"cons":["...","..."]}`;
@@ -1359,7 +1372,12 @@ async function summarizePerSource(
 
 ${snippets}
 
-עבור כל מקור, כתוב משפט-שניים קצרים על מה הנהגים אומרים. ציון 1-10.
+עבור כל מקור, כתוב משפט-שניים קצרים על מה הנהגים אומרים על הרכב עצמו. ציון 1-10.
+
+חוקים חשובים:
+- כתוב רק על תכונות הרכב — נהיגה, תחזוקה, אמינות, נוחות, עלויות
+- אל תזכיר את הסרטון, הביקורת, המקור, טיפי קנייה — רק מה שהנהגים חושבים על הרכב
+- אל תמציא מידע שאינו בפוסטים
 
 החזר JSON בלבד — מערך של אובייקטים:
 [{"source":"שם המקור","summary":"...","score":7,"postCount":5}, ...]
