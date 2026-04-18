@@ -69,33 +69,19 @@ console.log('   Loading page...');
 await page.goto(reelUrl, { waitUntil: 'load', timeout: 60000 });
 
 // Wait for Sketchfab to load the 3D model.
-console.log('   Waiting for 3D model to load (20s)...');
-await page.waitForTimeout(20000);
+// 25s is generous; SwiftShader is slow but model is usually ready by 15-18s.
+console.log('   Waiting for 3D model + autospin to settle (25s)...');
+await page.waitForTimeout(25000);
 
-// Click OUTSIDE the iframe (on the page background) to give user-activation
-// without disturbing the Sketchfab view. This enables autospin.
-await page.mouse.click(540, 60);   // top of page, outside iframe
-await page.waitForTimeout(500);
+// ⚠️  DO NOT click or scroll inside the iframe.
+//     Any mouse interaction pauses Sketchfab's autospin and requires ~4s to resume.
+//     The reel template already applies CSS scale(0.72) to zoom the car out visually,
+//     so no additional scroll-zoom is needed.
+//     autospin=0.07 (set in the embed URL) starts automatically via autostart=1.
 
-// Click on the iframe center to ensure autospin activates inside it.
-await page.mouse.click(540, 700);
-await page.waitForTimeout(500);
-
-// Scroll to zoom out — wheel events on the outer page still reach the iframe.
-console.log('   Zooming out...');
-for (let i = 0; i < 15; i++) {
-  await page.mouse.move(540, 700);
-  await page.mouse.wheel(0, -250);
-  await page.waitForTimeout(120);
-}
-await page.waitForTimeout(1500);
-
-// Let autospin run. autospin=0.07 = 0.07 rev/s = 4.3°/s.
-// At SwiftShader ~5fps, that's only ~0.86° per rendered frame — nearly invisible jump.
-// This is far smoother than manual drag (which produced ~7° per frame).
-// We record 15s of autospin; ffmpeg will take the middle 10s.
-console.log('   Recording autospin (15s)...');
-await page.waitForTimeout(15000);
+// Record autospin for 12s; ffmpeg will take the cleanest 10s slice.
+console.log('   Recording autospin (12s)...');
+await page.waitForTimeout(12000);
 
 // Grab the path BEFORE closing (closing finalises the file)
 const videoPathRaw = await page.video()?.path();
@@ -120,8 +106,8 @@ console.log(`   Raw video: ${webmPath}`);
 
 // ── Convert WebM → MP4 (H.264) ────────────────────────────────────────────────
 console.log('   Converting to MP4...');
-// Timeline: 0–20s model load, ~21s zooms (15×120ms + 1.5s = ~3.3s), ~24.3s autospin starts.
-// -ss 26: skip load + zoom + 2s autospin ramp-up to avoid initial camera jitter
+// Timeline: 0–25s model load + autospin settle, 25–37s clean autospin recording.
+// -ss 26: skip load phase + 1s autospin ramp-up
 // -t 10:  capture 10s of clean autospin
 // minterpolate blend: smooth 30fps output from ~5fps SwiftShader frames.
 //   'blend' mode is fast and produces acceptable smoothing for slow rotation.
