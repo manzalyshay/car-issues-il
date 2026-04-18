@@ -1,3 +1,6 @@
+'use client';
+
+import { useState } from 'react';
 import type { ExpertReview, SourceBreakdown } from '@/lib/expertReviews';
 
 interface Props {
@@ -188,6 +191,8 @@ function SourceGroup({
 export default function ExpertReviewsSection({
   review, makeNameHe, modelNameHe, year, isYearSpecific, userAvgRating, userReviewCount, inline,
 }: Props) {
+  const [expanded, setExpanded] = useState(false);
+
   if (!review) return null;
 
   const localSummary  = noData(review.localSummaryHe)  ? null : review.localSummaryHe!;
@@ -299,7 +304,7 @@ export default function ExpertReviewsSection({
 
           {hasPerSource ? (
             <>
-              {/* 🇮🇱 Israeli group */}
+              {/* 🇮🇱 Israeli group — always visible */}
               {localSources.length > 0 && (
                 <SourceGroup
                   sources={localSources}
@@ -309,22 +314,45 @@ export default function ExpertReviewsSection({
                 />
               )}
 
-              {/* Divider between groups */}
-              {localSources.length > 0 && globalSources.length > 0 && (
-                <div style={{
-                  margin: '0 12px 0',
-                  borderTop: '1px dashed var(--border)',
-                }} />
+              {/* Collapsed section: global + pros/cons */}
+              {!expanded && (localSources.length > 0 || globalSources.length > 0) && (
+                <button
+                  onClick={() => setExpanded(true)}
+                  style={{
+                    margin: '4px 10px 10px',
+                    padding: '7px 14px',
+                    background: 'var(--bg-muted)',
+                    border: '1px solid var(--border)',
+                    borderRadius: 8,
+                    fontSize: '0.75rem',
+                    fontWeight: 700,
+                    color: 'var(--text-muted)',
+                    cursor: 'pointer',
+                    textAlign: 'center',
+                    width: 'calc(100% - 20px)',
+                  }}
+                >
+                  הצג ביקורות בינלאומיות ויתרונות / חסרונות ↓
+                </button>
               )}
 
-              {/* 🌍 Global group */}
-              {globalSources.length > 0 && (
-                <SourceGroup
-                  sources={globalSources}
-                  label="ביקורות בינלאומיות"
-                  accent="#8b5cf6"
-                  bgAccent="rgba(139,92,246,0.04)"
-                />
+              {expanded && (
+                <>
+                  {/* Divider */}
+                  {localSources.length > 0 && globalSources.length > 0 && (
+                    <div style={{ margin: '0 12px', borderTop: '1px dashed var(--border)' }} />
+                  )}
+
+                  {/* 🌍 Global group */}
+                  {globalSources.length > 0 && (
+                    <SourceGroup
+                      sources={globalSources}
+                      label="ביקורות בינלאומיות"
+                      accent="#8b5cf6"
+                      bgAccent="rgba(139,92,246,0.04)"
+                    />
+                  )}
+                </>
               )}
             </>
           ) : (
@@ -358,8 +386,8 @@ export default function ExpertReviewsSection({
             </div>
           )}
 
-          {/* ── Pros / Cons ── */}
-          {(review.pros.length > 0 || review.cons.length > 0) && (
+          {/* ── Pros / Cons — only when expanded ── */}
+          {expanded && (review.pros.length > 0 || review.cons.length > 0) && (
             <div style={{
               borderTop: '1px solid var(--border)',
               display: 'grid',

@@ -145,9 +145,9 @@ export default async function ModelPage({ params }: Props) {
           <h2 style={{ fontSize: '1rem', fontWeight: 700, marginBottom: 12, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
             בחר שנה לביקורת מפורטת
           </h2>
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+          <div style={{ display: 'flex', overflowX: 'auto', gap: 8, paddingBottom: 4 }}>
             {model.years.map((y) => (
-              <Link key={y} href={`/cars/${make.slug}/${model.slug}/${y}`} className="year-pill">{y}</Link>
+              <Link key={y} href={`/cars/${make.slug}/${model.slug}/${y}`} className="year-pill" style={{ flexShrink: 0 }}>{y}</Link>
             ))}
           </div>
         </div>
