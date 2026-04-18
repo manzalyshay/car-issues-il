@@ -70,7 +70,7 @@ export default async function ModelPage({ params }: Props) {
         <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12, marginBottom: 16, flexWrap: 'wrap' }}>
           <MakeLogo logoUrl={make.logoUrl} nameEn={make.nameEn} size={44} />
           <div style={{ flex: 1, minWidth: 0 }}>
-            <h1 style={{ fontSize: 'clamp(1.25rem,4vw,2rem)', fontWeight: 900, margin: 0, lineHeight: 1.2 }}>{make.nameHe} {model.nameHe}</h1>
+            <h1 style={{ fontSize: 'clamp(1.5rem,5vw,2rem)', fontWeight: 900, margin: 0, lineHeight: 1.2 }}>{make.nameHe} {model.nameHe}</h1>
             <p style={{ color: 'var(--text-muted)', fontSize: '0.875rem', margin: '2px 0 8px' }}>{make.nameEn} {model.nameEn}</p>
             <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
               <span className="badge badge-gray">{getCategoryLabel(model.category)}</span>
@@ -113,6 +113,13 @@ export default async function ModelPage({ params }: Props) {
             <div className="model-unified-panel-viewer">
               <div className="model-unified-panel-viewer-inner">
                 <Car3DViewer uid={sketchfabModel.uid} modelName={`${make.nameHe} ${model.nameHe}`} makeSlug={makeSlug} modelSlug={modelSlug} />
+                {/* Mobile-only: car name overlay (magazine-cover style) */}
+                <div className="viewer-hero-overlay" aria-hidden="true">
+                  <div>
+                    <div className="viewer-hero-make">{make.nameHe}</div>
+                    <div className="viewer-hero-model">{model.nameHe}</div>
+                  </div>
+                </div>
               </div>
               <p style={{ fontSize: '0.65rem', color: 'var(--text-muted)', margin: 0, padding: '5px 10px', textAlign: 'center', borderTop: '1px solid var(--border)' }}>
                 <a href={sketchfabModel.viewerUrl} target="_blank" rel="noopener noreferrer" style={{ color: 'var(--text-muted)' }}>

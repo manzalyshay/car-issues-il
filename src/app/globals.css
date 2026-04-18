@@ -138,6 +138,9 @@ button { font-family: inherit; cursor: pointer; }
 .rating-dist { display: flex; gap: 32px; flex-wrap: wrap; align-items: flex-start; }
 .rating-dist-bars { flex: 1; min-width: 180px; }
 
+/* Car name overlay inside 3D viewer — mobile only */
+.viewer-hero-overlay { display: none; }
+
 /* Unified 3D-viewer + AI-summary panel */
 .model-unified-panel {
   display: grid;
@@ -188,25 +191,60 @@ button { font-family: inherit; cursor: pointer; }
   /* Admin page table helper */
   .admin-table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
 
-  /* Unified panel: stack vertically on mobile */
+  /* Unified panel: stack vertically on mobile — viewer FIRST as hero */
   .model-unified-panel {
     grid-template-columns: 1fr;
     min-height: unset;
+    border-radius: 12px;
+    /* Slightly deeper shadow for card depth on mobile */
+    box-shadow: 0 2px 16px rgba(0,0,0,0.10);
   }
+  /* Viewer floats to top of the card on mobile */
+  .model-unified-panel-viewer { order: -1; }
   .model-unified-panel-ai {
-    border-left: none;
-    border-bottom: 1px solid var(--border);
+    order: 0;
+    border-left: none !important;
+    border-top: 1px solid var(--border);
+    border-bottom: none;
   }
+  /* Tall cinematic hero on mobile */
   .model-unified-panel-viewer-inner {
-    min-height: 300px;
+    min-height: max(260px, 58vw);
+    position: relative;
+  }
+  /* Car name overlay — magazine-cover style */
+  .viewer-hero-overlay {
+    display: flex;
+    align-items: flex-end;
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(to bottom, transparent 45%, rgba(10,11,15,0.62) 100%);
+    padding: 16px 20px;
+    pointer-events: none;
+  }
+  .viewer-hero-make {
+    font-size: 0.72rem;
+    font-weight: 700;
+    color: rgba(255,255,255,0.8);
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    margin-bottom: 2px;
+  }
+  .viewer-hero-model {
+    font-size: 1.75rem;
+    font-weight: 900;
+    color: #fff;
+    line-height: 1.05;
+    letter-spacing: -0.03em;
+    text-shadow: 0 2px 12px rgba(0,0,0,0.45);
   }
 
   /* Model page header */
   .model-page-header { flex-direction: column; align-items: flex-start !important; gap: 8px !important; }
   .model-page-badges { flex-wrap: wrap; }
 
-  /* Year pills — smaller on mobile */
-  .year-pill { padding: 5px 12px; font-size: 0.875rem; min-width: 52px; }
+  /* Year pills — compact but tap-friendly */
+  .year-pill { padding: 6px 14px; font-size: 0.875rem; min-width: 52px; min-height: 36px; }
 
   /* Smaller heading on make header */
   .make-header-title { font-size: 1.5rem !important; }
