@@ -76,22 +76,22 @@ await page.waitForTimeout(16000);
 await page.mouse.click(540, 700);
 await page.waitForTimeout(400);
 
-// Scroll to zoom out — Playwright CDP wheel events reach cross-origin iframes.
-// Negative deltaY = scroll up = zoom out in Sketchfab.
+// Scroll to zoom out — more scrolls for a wider view.
 console.log('   Zooming out...');
-for (let i = 0; i < 8; i++) {
+for (let i = 0; i < 15; i++) {
   await page.mouse.wheel(0, -300);
-  await page.waitForTimeout(120);
+  await page.waitForTimeout(100);
 }
-await page.waitForTimeout(600);
+await page.waitForTimeout(800);
 
-// Rotate the model by slowly dragging left across the viewer.
-// Drag distance of ~640px ≈ one full orbit in Sketchfab's default sensitivity.
-console.log('   Rotating model via mouse drag (14s)...');
+// Rotate the model via slow drag. SwiftShader renders at ~5fps, so we drag
+// very slowly (24s for ~640px) so each rendered frame shows minimal angle change.
+// Small per-frame delta = smooth-looking motion even at low render rate.
+console.log('   Rotating model via mouse drag (24s)...');
 const DRAG_START_X = 860;
 const DRAG_END_X   = 220;
 const DRAG_Y       = 700;
-const DRAG_STEPS   = 280; // one step every 50ms → smooth 14s sweep
+const DRAG_STEPS   = 400; // one step every 60ms → 24s total
 
 await page.mouse.move(DRAG_START_X, DRAG_Y);
 await page.mouse.down({ button: 'left' });
@@ -100,7 +100,7 @@ for (let i = 0; i <= DRAG_STEPS; i++) {
     DRAG_START_X + (DRAG_END_X - DRAG_START_X) * (i / DRAG_STEPS),
     DRAG_Y,
   );
-  await new Promise(r => setTimeout(r, Math.round(14000 / DRAG_STEPS)));
+  await new Promise(r => setTimeout(r, Math.round(24000 / DRAG_STEPS)));
 }
 await page.mouse.up({ button: 'left' });
 
@@ -127,12 +127,12 @@ console.log(`   Raw video: ${webmPath}`);
 
 // ── Convert WebM → MP4 (H.264) ────────────────────────────────────────────────
 console.log('   Converting to MP4...');
-// -ss 20: skip ~2s page-load + 16s model init + ~2s click/scroll = start of drag rotation
-// -t 10:  keep exactly 10 seconds of the 14s drag
+// -ss 22: skip page-load + 16s model init + zoom + 2s drag lead-in (avoids jitter at drag start)
+// -t 10:  keep exactly 10 seconds from the middle of the 24s drag
 execFileSync('ffmpeg', [
   '-y',
   '-i', webmPath,
-  '-ss', '20',
+  '-ss', '22',
   '-t', '10',
   '-c:v', 'libx264',
   '-preset', 'fast',

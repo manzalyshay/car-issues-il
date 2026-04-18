@@ -52,6 +52,8 @@ export default function Car3DViewer({ uid, modelName, author, makeSlug, modelSlu
         success: (api: any) => { // eslint-disable-line @typescript-eslint/no-explicit-any
           api.start();
           api.addEventListener('viewerready', () => {
+            // Mobile: use Sketchfab's default camera position
+            if (typeof window !== 'undefined' && window.innerWidth <= 640) return;
             api.getCameraLookAt((_err: unknown, camera: { position: number[]; target: number[] }) => {
               if (_err || !camera) return;
               const { position, target } = camera;
