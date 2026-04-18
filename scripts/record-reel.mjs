@@ -68,15 +68,41 @@ console.log('   Loading page...');
 // so networkidle is never reached. 'load' fires once the HTML + fonts are ready.
 await page.goto(reelUrl, { waitUntil: 'load', timeout: 60000 });
 
-// Wait for Sketchfab to load the 3D model via the direct embed URL.
-// autospin=0.07 starts immediately once the model is loaded.
-// Zoom is handled via CSS scale(0.72) on the iframe — no JS needed.
+// Wait for Sketchfab to load the 3D model.
 console.log('   Waiting for 3D model to load (16s)...');
 await page.waitForTimeout(16000);
 
-// Model is now spinning — record 14s of continuous slow rotation
-console.log('   Recording 14s of slow spin...');
-await page.waitForTimeout(14000);
+// Click to give the viewer user-activation (needed for autospin + input events).
+await page.mouse.click(540, 700);
+await page.waitForTimeout(400);
+
+// Scroll to zoom out — Playwright CDP wheel events reach cross-origin iframes.
+// Negative deltaY = scroll up = zoom out in Sketchfab.
+console.log('   Zooming out...');
+for (let i = 0; i < 8; i++) {
+  await page.mouse.wheel(0, -300);
+  await page.waitForTimeout(120);
+}
+await page.waitForTimeout(600);
+
+// Rotate the model by slowly dragging left across the viewer.
+// Drag distance of ~640px ≈ one full orbit in Sketchfab's default sensitivity.
+console.log('   Rotating model via mouse drag (14s)...');
+const DRAG_START_X = 860;
+const DRAG_END_X   = 220;
+const DRAG_Y       = 700;
+const DRAG_STEPS   = 280; // one step every 50ms → smooth 14s sweep
+
+await page.mouse.move(DRAG_START_X, DRAG_Y);
+await page.mouse.down({ button: 'left' });
+for (let i = 0; i <= DRAG_STEPS; i++) {
+  await page.mouse.move(
+    DRAG_START_X + (DRAG_END_X - DRAG_START_X) * (i / DRAG_STEPS),
+    DRAG_Y,
+  );
+  await new Promise(r => setTimeout(r, Math.round(14000 / DRAG_STEPS)));
+}
+await page.mouse.up({ button: 'left' });
 
 // Grab the path BEFORE closing (closing finalises the file)
 const videoPathRaw = await page.video()?.path();
@@ -101,12 +127,12 @@ console.log(`   Raw video: ${webmPath}`);
 
 // ── Convert WebM → MP4 (H.264) ────────────────────────────────────────────────
 console.log('   Converting to MP4...');
-// -ss 18: skip ~16s model init + ~2s page-load = clean spinning portion
-// -t 10:  keep exactly 10 seconds
+// -ss 20: skip ~2s page-load + 16s model init + ~2s click/scroll = start of drag rotation
+// -t 10:  keep exactly 10 seconds of the 14s drag
 execFileSync('ffmpeg', [
   '-y',
   '-i', webmPath,
-  '-ss', '18',
+  '-ss', '20',
   '-t', '10',
   '-c:v', 'libx264',
   '-preset', 'fast',
