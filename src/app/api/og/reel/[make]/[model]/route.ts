@@ -191,7 +191,7 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ mak
       </div>
       <div>
         <div class="score-label">ניקוד נהגים</div>
-        <div class="score-desc">על בסיס ביקורות אמיתיות<br/>של נהגים ישראלים</div>
+        <div class="score-desc">על בסיס ביקורות אמיתיות<br/>של נהגים מכל העולם</div>
       </div>
     </div>` : ''}
 
