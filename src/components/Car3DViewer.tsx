@@ -28,6 +28,9 @@ export default function Car3DViewer({ uid, modelName, author, makeSlug, modelSlu
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const [loaded, setLoaded] = useState(() => {
     if (typeof navigator === 'undefined') return false;
+    // On mobile, never auto-load — the iframe captures all touch events and
+    // blocks page scrolling. User must tap explicitly to load the viewer.
+    if (typeof window !== 'undefined' && window.innerWidth <= 768) return false;
     const mem = (navigator as { deviceMemory?: number }).deviceMemory ?? 4;
     const cores = navigator.hardwareConcurrency ?? 4;
     return mem >= 4 && cores >= 4;

@@ -1352,10 +1352,11 @@ export async function summarizeFromPosts(
   return error ? 0 : 1;
 }
 
-const LOCAL_SOURCES = new Set([
-  'פורום טפוז מכוניות', 'Drive.co.il מגזין רכב', 'CarZone ביקורות גולשים',
-  'iCar מבחני רכב', 'פייסבוק',
-]);
+const IL_KEYWORDS = ['ישראל', 'טפוז', 'carzone', 'drive.co.il', 'icar', 'פייסבוק'];
+function isLocalSource(name: string): boolean {
+  const lower = name.toLowerCase();
+  return IL_KEYWORDS.some(k => lower.includes(k));
+}
 
 async function summarizePerSource(
   allPosts: UserPost[],
@@ -1415,7 +1416,7 @@ ${snippets}
     if (!Array.isArray(parsed)) return [];
     return parsed.map((item: any): SourceBreakdown => ({
       source:    String(item.source ?? ''),
-      flag:      LOCAL_SOURCES.has(String(item.source ?? '')) ? '🇮🇱' : '🌍',
+      flag:      isLocalSource(String(item.source ?? '')) ? '🇮🇱' : '🌍',
       postCount: Number(item.postCount ?? 0),
       score:     item.score != null ? Number(item.score) : null,
       summary:   String(item.summary ?? ''),
@@ -1465,7 +1466,7 @@ async function generateKnowledgeSourcesBreakdown(
     if (!Array.isArray(parsed)) return [];
     return parsed.map((item: any): SourceBreakdown => ({
       source:    String(item.source ?? ''),
-      flag:      LOCAL_SOURCES.has(String(item.source ?? '')) ? '🇮🇱' : '🌍',
+      flag:      isLocalSource(String(item.source ?? '')) ? '🇮🇱' : '🌍',
       postCount: 0, // 0 = knowledge-based, not real scraped posts
       score:     item.score != null ? Number(item.score) : null,
       summary:   String(item.summary ?? ''),

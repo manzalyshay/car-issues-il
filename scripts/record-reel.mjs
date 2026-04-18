@@ -69,40 +69,33 @@ console.log('   Loading page...');
 await page.goto(reelUrl, { waitUntil: 'load', timeout: 60000 });
 
 // Wait for Sketchfab to load the 3D model.
-console.log('   Waiting for 3D model to load (16s)...');
-await page.waitForTimeout(16000);
+console.log('   Waiting for 3D model to load (20s)...');
+await page.waitForTimeout(20000);
 
-// Click to give the viewer user-activation (needed for autospin + input events).
+// Click OUTSIDE the iframe (on the page background) to give user-activation
+// without disturbing the Sketchfab view. This enables autospin.
+await page.mouse.click(540, 60);   // top of page, outside iframe
+await page.waitForTimeout(500);
+
+// Click on the iframe center to ensure autospin activates inside it.
 await page.mouse.click(540, 700);
-await page.waitForTimeout(400);
+await page.waitForTimeout(500);
 
-// Scroll to zoom out — more scrolls for a wider view.
+// Scroll to zoom out — wheel events on the outer page still reach the iframe.
 console.log('   Zooming out...');
 for (let i = 0; i < 15; i++) {
-  await page.mouse.wheel(0, -300);
-  await page.waitForTimeout(100);
+  await page.mouse.move(540, 700);
+  await page.mouse.wheel(0, -250);
+  await page.waitForTimeout(120);
 }
-await page.waitForTimeout(800);
+await page.waitForTimeout(1500);
 
-// Rotate the model via slow drag. SwiftShader renders at ~5fps, so we drag
-// very slowly (24s for ~640px) so each rendered frame shows minimal angle change.
-// Small per-frame delta = smooth-looking motion even at low render rate.
-console.log('   Rotating model via mouse drag (24s)...');
-const DRAG_START_X = 860;
-const DRAG_END_X   = 220;
-const DRAG_Y       = 700;
-const DRAG_STEPS   = 400; // one step every 60ms → 24s total
-
-await page.mouse.move(DRAG_START_X, DRAG_Y);
-await page.mouse.down({ button: 'left' });
-for (let i = 0; i <= DRAG_STEPS; i++) {
-  await page.mouse.move(
-    DRAG_START_X + (DRAG_END_X - DRAG_START_X) * (i / DRAG_STEPS),
-    DRAG_Y,
-  );
-  await new Promise(r => setTimeout(r, Math.round(24000 / DRAG_STEPS)));
-}
-await page.mouse.up({ button: 'left' });
+// Let autospin run. autospin=0.07 = 0.07 rev/s = 4.3°/s.
+// At SwiftShader ~5fps, that's only ~0.86° per rendered frame — nearly invisible jump.
+// This is far smoother than manual drag (which produced ~7° per frame).
+// We record 15s of autospin; ffmpeg will take the middle 10s.
+console.log('   Recording autospin (15s)...');
+await page.waitForTimeout(15000);
 
 // Grab the path BEFORE closing (closing finalises the file)
 const videoPathRaw = await page.video()?.path();
@@ -127,13 +120,17 @@ console.log(`   Raw video: ${webmPath}`);
 
 // ── Convert WebM → MP4 (H.264) ────────────────────────────────────────────────
 console.log('   Converting to MP4...');
-// -ss 22: skip page-load + 16s model init + zoom + 2s drag lead-in (avoids jitter at drag start)
-// -t 10:  keep exactly 10 seconds from the middle of the 24s drag
+// Timeline: 0–20s model load, ~21s zooms (15×120ms + 1.5s = ~3.3s), ~24.3s autospin starts.
+// -ss 26: skip load + zoom + 2s autospin ramp-up to avoid initial camera jitter
+// -t 10:  capture 10s of clean autospin
+// minterpolate blend: smooth 30fps output from ~5fps SwiftShader frames.
+//   'blend' mode is fast and produces acceptable smoothing for slow rotation.
 execFileSync('ffmpeg', [
   '-y',
   '-i', webmPath,
-  '-ss', '22',
+  '-ss', '26',
   '-t', '10',
+  '-vf', "minterpolate='mi_mode=blend:fps=30'",
   '-c:v', 'libx264',
   '-preset', 'fast',
   '-crf', '22',
