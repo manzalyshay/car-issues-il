@@ -1366,12 +1366,6 @@ ${snippets}
 
 רק מקורות שיש להם מספיק מידע. אל תמציא.`;
 
-  const result = await callLlm(prompt, 0.3, 8);
-  if (!result) return [];
-
-  // callLlm returns SummarizeOutput — we need to parse the raw JSON from summary_he
-  // Actually callLlm parses JSON already. We need a different approach here.
-  // Re-call directly since callLlm expects specific shape.
   try {
     const apiKey = process.env.MISTRAL_API_KEY;
     if (!apiKey) return [];
