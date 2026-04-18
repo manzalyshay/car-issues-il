@@ -33,10 +33,10 @@ export default async function MakePage({ params }: Props) {
   const categories = [...new Set(make.models.map((m) => m.category))];
 
   return (
-    <div style={{ padding: '48px 0 80px' }}>
+    <div className="page-section">
       <div className="container">
         {/* Breadcrumb */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: 'var(--text-muted)', fontSize: '0.875rem', marginBottom: 24 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: 'var(--text-muted)', fontSize: '0.875rem', marginBottom: 24, flexWrap: 'wrap' }}>
           <Link href="/" style={{ color: 'var(--text-muted)', textDecoration: 'none' }}>בית</Link>
           <span>›</span>
           <Link href="/cars" style={{ color: 'var(--text-muted)', textDecoration: 'none' }}>יצרנים</Link>
@@ -46,9 +46,8 @@ export default async function MakePage({ params }: Props) {
 
         {/* Make header */}
         <div
-          className="card"
+          className="card card-hero"
           style={{
-            padding: '32px 32px',
             marginBottom: 40,
             background: 'linear-gradient(135deg, var(--bg-card) 0%, rgba(230,57,70,.03) 100%)',
             display: 'flex',
@@ -58,8 +57,8 @@ export default async function MakePage({ params }: Props) {
           }}
         >
           <MakeLogo logoUrl={make.logoUrl} nameEn={make.nameEn} size={72} />
-          <div>
-            <h1 style={{ fontSize: '2rem', fontWeight: 900, marginBottom: 4 }}>{make.nameHe}</h1>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <h1 className="make-header-title" style={{ fontSize: '2rem', fontWeight: 900, marginBottom: 4 }}>{make.nameHe}</h1>
             <p style={{ color: 'var(--text-muted)', fontSize: '1rem', marginBottom: 12 }}>{make.nameEn} · {make.country}</p>
             <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
               <span className="badge badge-red">{make.models.length} דגמים</span>
@@ -72,7 +71,7 @@ export default async function MakePage({ params }: Props) {
 
         {/* Models grid */}
         <h2 style={{ fontSize: '1.375rem', fontWeight: 700, marginBottom: 24 }}>בחר דגם</h2>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: 16 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: 16 }}>
           {make.models.map((model) => (
             <Link
               key={model.slug}

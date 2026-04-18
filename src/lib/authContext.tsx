@@ -55,20 +55,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data }) => {
-      setSession(data.session);
-      setUser(data.session?.user ?? null);
-      setLoading(false);
-      if (data.session?.access_token) {
-        loadProfile(data.session.access_token);
-      } else {
-        setProfileLoading(false); // no session → not admin, done
-      }
-    });
-
+    // Use onAuthStateChange exclusively — it fires INITIAL_SESSION immediately on
+    // mount with the persisted session, eliminating the getSession() + onAuthStateChange
+    // race condition that caused the admin page to redirect on hard refresh.
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setSession(session);
       setUser(session?.user ?? null);
+      setLoading(false); // INITIAL_SESSION is first event — safe to mark loading done
       if (session?.access_token) {
         loadProfile(session.access_token);
       } else {

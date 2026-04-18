@@ -239,9 +239,9 @@ export default function ExpertReviewsSection({
 
         {/* Pros / Cons */}
         {(review.pros.length > 0 || review.cons.length > 0) && (
-          <div style={{ display: 'grid', gridTemplateColumns: review.pros.length > 0 && review.cons.length > 0 ? '1fr 1fr' : '1fr', gap: 0, borderTop: '1px solid var(--border)' }}>
+          <div className={`pros-cons-grid ${review.pros.length > 0 && review.cons.length > 0 ? 'two-col' : 'one-col'}`}>
             {review.pros.length > 0 && (
-              <div style={{ padding: '10px 14px 14px', borderLeft: review.cons.length > 0 ? '1px solid var(--border)' : 'none' }}>
+              <div className="pros-col" style={{ padding: '10px 14px 14px', borderLeft: review.cons.length > 0 ? '1px solid var(--border)' : 'none' }}>
                 <div style={{ fontSize: '0.65rem', fontWeight: 800, color: '#16a34a', letterSpacing: '0.06em', marginBottom: 7, textTransform: 'uppercase' }}>יתרונות</div>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
                   {review.pros.map((p, i) => (

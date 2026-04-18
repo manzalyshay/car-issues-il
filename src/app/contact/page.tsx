@@ -34,7 +34,7 @@ export default function ContactPage() {
     setForm((prev) => ({ ...prev, [field]: e.target.value }));
 
   return (
-    <div style={{ padding: '48px 0 80px' }}>
+    <div className="page-section">
       <div className="container" style={{ maxWidth: 620 }}>
         {/* Breadcrumb */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: 'var(--text-muted)', fontSize: '0.875rem', marginBottom: 24 }}>

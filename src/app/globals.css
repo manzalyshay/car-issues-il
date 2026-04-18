@@ -115,6 +115,67 @@ button { font-family: inherit; cursor: pointer; }
 .car-loader-dot:nth-child(2) { animation-delay: 0.2s; }
 .car-loader-dot:nth-child(3) { animation-delay: 0.4s; }
 
+/* ── ExpertReviews pros/cons grid ──────────────────────────────────────── */
+.pros-cons-grid {
+  display: grid;
+  gap: 0;
+  border-top: 1px solid var(--border);
+}
+.pros-cons-grid.two-col { grid-template-columns: 1fr 1fr; }
+.pros-cons-grid.one-col { grid-template-columns: 1fr; }
+@media (max-width: 480px) {
+  .pros-cons-grid.two-col { grid-template-columns: 1fr; }
+  .pros-cons-grid .pros-col { border-left: none !important; border-bottom: 1px solid var(--border); }
+}
+
+/* ── Responsive page structure ─────────────────────────────────────────── */
+.page-section { padding: 48px 0 80px; }
+.section-header { margin-bottom: 32px; }
+.card-hero { padding: 32px; }
+.hero-stats { display: flex; justify-content: center; gap: 48px; margin-top: 56px; flex-wrap: wrap; }
+
+/* ── Responsive section spacing ──────────────────────────────────────────── */
+.rating-dist { display: flex; gap: 32px; flex-wrap: wrap; align-items: flex-start; }
+.rating-dist-bars { flex: 1; min-width: 180px; }
+
+/* Unified 3D-viewer + AI-summary panel */
+.model-unified-panel {
+  display: grid;
+  grid-template-columns: minmax(300px, 1.1fr) minmax(280px, 1fr);
+  align-items: stretch;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+  margin-bottom: 32px;
+  min-height: 400px;
+}
+.model-unified-panel-ai {
+  overflow-y: auto;
+  border-left: 1px solid var(--border);
+}
+.model-unified-panel-viewer {
+  display: flex;
+  flex-direction: column;
+}
+.model-unified-panel-viewer-inner {
+  flex: 1;
+  min-height: 0;
+}
+
+@media (max-width: 768px) {
+  /* Page sections */
+  .page-section { padding: 28px 0 56px; }
+  .card-hero { padding: 20px 16px; }
+  .hero-stats { gap: 28px; margin-top: 40px; }
+  .section-header { margin-bottom: 20px; }
+
+  /* Rating distribution — stack on mobile */
+  .rating-dist { flex-direction: column; gap: 16px; }
+  .rating-dist-bars { min-width: 0; width: 100%; }
+}
+
 @media (max-width: 640px) {
   .container { padding: 0 1rem; }
 
@@ -126,6 +187,33 @@ button { font-family: inherit; cursor: pointer; }
 
   /* Admin page table helper */
   .admin-table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+
+  /* Unified panel: stack vertically on mobile */
+  .model-unified-panel {
+    grid-template-columns: 1fr;
+    min-height: unset;
+  }
+  .model-unified-panel-ai {
+    border-left: none;
+    border-bottom: 1px solid var(--border);
+  }
+  .model-unified-panel-viewer-inner {
+    min-height: 300px;
+  }
+
+  /* Model page header */
+  .model-page-header { flex-direction: column; align-items: flex-start !important; gap: 8px !important; }
+  .model-page-badges { flex-wrap: wrap; }
+
+  /* Year pills — smaller on mobile */
+  .year-pill { padding: 5px 12px; font-size: 0.875rem; min-width: 52px; }
+
+  /* Smaller heading on make header */
+  .make-header-title { font-size: 1.5rem !important; }
+
+  /* Page section even smaller on phones */
+  .page-section { padding: 20px 0 48px; }
+  .card-hero { padding: 16px; }
 }
 
 /* Prevent horizontal overflow globally */

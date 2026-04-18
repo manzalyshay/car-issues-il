@@ -68,21 +68,13 @@ console.log('   Loading page...');
 // so networkidle is never reached. 'load' fires once the HTML + fonts are ready.
 await page.goto(reelUrl, { waitUntil: 'load', timeout: 60000 });
 
-// Wait for Sketchfab to initialise the 3D model
-// autospin=0.1 starts spinning as soon as the model loads
-console.log('   Waiting for 3D model to initialise (14s)...');
-await page.waitForTimeout(14000);
+// Wait for Sketchfab to initialise + Viewer API to load model and apply camera zoom-out.
+// The reel page uses the Viewer API (not a raw embed URL) so camera zoom is set
+// automatically via setCameraLookAt — no Playwright mouse interaction needed.
+console.log('   Waiting for 3D model + camera zoom to settle (18s)...');
+await page.waitForTimeout(18000);
 
-// Zoom out so the whole car is visible — positive deltaY = zoom out
-console.log('   Zooming out...');
-await page.mouse.move(540, 800);
-for (let i = 0; i < 30; i++) {
-  await page.mouse.wheel(0, 150);
-  await page.waitForTimeout(80);
-}
-await page.waitForTimeout(1200);
-
-// Model is now spinning via autospin — record 14s (we'll trim to 10s in ffmpeg)
+// Model is now spinning via autospin (0.04 rot/s = ~1 rotation per 25s) — record 14s
 console.log('   Recording 14s of auto-spin...');
 await page.waitForTimeout(14000);
 
@@ -109,8 +101,8 @@ console.log(`   Raw video: ${webmPath}`);
 
 // ── Convert WebM → MP4 (H.264) ────────────────────────────────────────────────
 console.log('   Converting to MP4...');
-// -ss 20: skip ~14s init + ~2s page-load + ~4s zoom-out = clean spinning portion
-// -t 10:  keep exactly 10 seconds of the auto-spinning model
+// -ss 20: skip ~18s model init + ~2s page-load = start of clean slow-spin portion
+// -t 10:  keep exactly 10 seconds
 execFileSync('ffmpeg', [
   '-y',
   '-i', webmPath,

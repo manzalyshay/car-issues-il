@@ -133,7 +133,7 @@ export default async function CarYearPage({ params }: Props) {
   };
 
   return (
-    <div style={{ padding: '48px 0 80px' }}>
+    <div className="page-section">
       <div className="container">
         {/* Breadcrumb */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: 'var(--text-muted)', fontSize: '0.875rem', marginBottom: 24, flexWrap: 'wrap' }}>
@@ -248,8 +248,8 @@ export default async function CarYearPage({ params }: Props) {
         {/* Rating distribution — below AI summaries */}
         {avgRating !== null && (
           <div className="card" style={{ padding: '20px 24px', marginBottom: 32 }}>
-            <div style={{ display: 'flex', gap: 32, flexWrap: 'wrap', alignItems: 'flex-start' }}>
-              <div style={{ textAlign: 'center', minWidth: 90 }}>
+            <div className="rating-dist">
+              <div style={{ textAlign: 'center', minWidth: 90, flexShrink: 0 }}>
                 <div style={{ fontSize: '2.75rem', fontWeight: 900, color: 'var(--text-primary)', lineHeight: 1 }}>
                   {avgRating.toFixed(1)}
                 </div>
@@ -258,7 +258,7 @@ export default async function CarYearPage({ params }: Props) {
                   {reviews.length} ביקורות
                 </div>
               </div>
-              <div style={{ flex: 1, minWidth: 180 }}>
+              <div className="rating-dist-bars">
                 {ratingDist.map(({ stars, count }) => (
                   <div key={stars} style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
                     <span style={{ width: 28, color: 'var(--text-muted)', fontSize: '0.75rem', textAlign: 'center', flexShrink: 0 }}>{stars}★</span>

@@ -29,9 +29,7 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ mak
   const pros = review?.pros?.slice(0, 2) ?? [];
   const cons = review?.cons?.slice(0, 1) ?? [];
 
-  const embedUrl = carModel?.uid
-    ? `https://sketchfab.com/models/${carModel.uid}/embed?autostart=1&preload=1&autospin=0.1&ui_infos=0&ui_controls=0&ui_watermark=0&ui_stop=0&ui_ar=0&ui_help=0&ui_settings=0&ui_annotations=0&dnt=1`
-    : null;
+  const sketchfabUid = carModel?.uid ?? null;
 
   const html = `<!DOCTYPE html>
 <html lang="he" dir="rtl">
@@ -39,6 +37,7 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ mak
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=1080"/>
   <link href="https://fonts.googleapis.com/css2?family=Rubik:wght@400;700;900&display=swap" rel="stylesheet"/>
+  ${sketchfabUid ? `<script src="https://static.sketchfab.com/api/sketchfab-viewer-1.12.1.js"></script>` : ''}
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
     html, body { width: 1080px; height: 1920px; overflow: hidden; background: ${BG}; font-family: 'Rubik', sans-serif; }
@@ -149,8 +148,35 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ mak
 <body>
 <div class="scene">
 
-  ${embedUrl
-    ? `<iframe src="${embedUrl}" allow="autoplay; fullscreen; xr-spatial-tracking" allowfullscreen></iframe>`
+  ${sketchfabUid
+    ? `<iframe id="fab" allow="autoplay; fullscreen; xr-spatial-tracking" allowfullscreen></iframe>
+  <script>
+    // Use Viewer API so we can control camera zoom + autospin speed
+    var ZOOM_OUT = 2.2; // push camera to 2.2× default distance → whole car visible
+    var client = new Sketchfab(document.getElementById('fab'));
+    client.init('${sketchfabUid}', {
+      success: function(api) {
+        api.start();
+        api.addEventListener('viewerready', function() {
+          api.getCameraLookAt(function(err, camera) {
+            if (err || !camera) return;
+            var t = camera.target, p = camera.position;
+            api.setCameraLookAt([
+              t[0] + (p[0]-t[0]) * ZOOM_OUT,
+              t[1] + (p[1]-t[1]) * ZOOM_OUT,
+              t[2] + (p[2]-t[2]) * ZOOM_OUT,
+            ], t, 1.5);
+          });
+        });
+      },
+      autostart: 1,
+      preload: 1,
+      autospin: 0.04,   // ~1 full rotation per 25 seconds — slow, cinematic
+      ui_infos: 0, ui_controls: 0, ui_watermark: 0,
+      ui_stop: 0, ui_ar: 0, ui_help: 0,
+      ui_settings: 0, ui_annotations: 0, dnt: 1,
+    });
+  </script>`
     : `<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;background:${CARD};">
          <img src="${make.logoUrl}" style="width:500px;height:500px;object-fit:contain;opacity:0.15;" alt=""/>
        </div>`

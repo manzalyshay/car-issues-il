@@ -53,7 +53,7 @@ export default async function ModelPage({ params }: Props) {
     : null;
 
   return (
-    <div style={{ padding: '48px 0 80px' }}>
+    <div className="page-section">
       <div className="container">
         {/* Breadcrumb */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: 'var(--text-muted)', fontSize: '0.875rem', marginBottom: 24, flexWrap: 'wrap' }}>
@@ -67,28 +67,28 @@ export default async function ModelPage({ params }: Props) {
         </div>
 
         {/* Header row */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 16, flexWrap: 'wrap' }}>
+        <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12, marginBottom: 16, flexWrap: 'wrap' }}>
           <MakeLogo logoUrl={make.logoUrl} nameEn={make.nameEn} size={44} />
-          <div style={{ flex: 1 }}>
-            <h1 style={{ fontSize: 'clamp(1.4rem,3vw,2rem)', fontWeight: 900, margin: 0 }}>{make.nameHe} {model.nameHe}</h1>
-            <p style={{ color: 'var(--text-muted)', fontSize: '0.875rem', margin: 0 }}>{make.nameEn} {model.nameEn}</p>
-          </div>
-          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
-            <span className="badge badge-gray">{getCategoryLabel(model.category)}</span>
-            <span className="badge badge-blue">{model.years[model.years.length - 1]}–{model.years[0]}</span>
-            <RecallsBadge makeEn={make.nameEn} modelEn={model.nameEn} years={model.years} />
-            {avgRating !== null && (
-              <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
-                <StarRating rating={avgRating} size={15} />
-                <span style={{ fontSize: '0.875rem', fontWeight: 700 }}>{avgRating.toFixed(1)}</span>
-                <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>({allReviews.length})</span>
-              </div>
-            )}
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <h1 style={{ fontSize: 'clamp(1.25rem,4vw,2rem)', fontWeight: 900, margin: 0, lineHeight: 1.2 }}>{make.nameHe} {model.nameHe}</h1>
+            <p style={{ color: 'var(--text-muted)', fontSize: '0.875rem', margin: '2px 0 8px' }}>{make.nameEn} {model.nameEn}</p>
+            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
+              <span className="badge badge-gray">{getCategoryLabel(model.category)}</span>
+              <span className="badge badge-blue">{model.years[model.years.length - 1]}–{model.years[0]}</span>
+              <RecallsBadge makeEn={make.nameEn} modelEn={model.nameEn} years={model.years} />
+              {avgRating !== null && (
+                <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+                  <StarRating rating={avgRating} size={15} />
+                  <span style={{ fontSize: '0.875rem', fontWeight: 700 }}>{avgRating.toFixed(1)}</span>
+                  <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>({allReviews.length})</span>
+                </div>
+              )}
+            </div>
           </div>
         </div>
 
         {/* Actions */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap', marginBottom: 28 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap', marginBottom: 24 }}>
           <SharePopup title={`${make.nameHe} ${model.nameHe} — ביקורות ובעיות נפוצות | CarIssues IL`} url={`https://carissues.co.il/cars/${make.slug}/${model.slug}`} />
           <Link href={`/cars/compare?car1=${make.slug}/${model.slug}`} className="btn btn-outline" style={{ height: 36, padding: '0 16px', fontSize: '0.875rem', textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: 6 }}>
             ⚖️ השווה לרכב אחר
@@ -97,20 +97,9 @@ export default async function ModelPage({ params }: Props) {
 
         {/* Unified panel — AI summary + 3D viewer, equal height */}
         {sketchfabModel ? (
-          <div style={{
-            display: 'grid',
-            gridTemplateColumns: 'minmax(300px, 1.1fr) minmax(280px, 1fr)',
-            alignItems: 'stretch',
-            background: 'var(--bg-card)',
-            border: '1px solid var(--border)',
-            borderRadius: 16,
-            overflow: 'hidden',
-            boxShadow: '0 1px 4px rgba(0,0,0,0.06)',
-            marginBottom: 32,
-            minHeight: 400,
-          }}>
+          <div className="model-unified-panel">
             {/* Left: AI insights (inline — no nested card) */}
-            <div style={{ overflowY: 'auto', borderLeft: '1px solid var(--border)' }}>
+            <div className="model-unified-panel-ai">
               <ExpertReviewsSection
                 review={expertReview}
                 makeNameHe={make.nameHe}
@@ -121,8 +110,8 @@ export default async function ModelPage({ params }: Props) {
               />
             </div>
             {/* Right: 3D viewer fills full height */}
-            <div style={{ display: 'flex', flexDirection: 'column' }}>
-              <div style={{ flex: 1, minHeight: 0 }}>
+            <div className="model-unified-panel-viewer">
+              <div className="model-unified-panel-viewer-inner">
                 <Car3DViewer uid={sketchfabModel.uid} modelName={`${make.nameHe} ${model.nameHe}`} makeSlug={makeSlug} modelSlug={modelSlug} />
               </div>
               <p style={{ fontSize: '0.65rem', color: 'var(--text-muted)', margin: 0, padding: '5px 10px', textAlign: 'center', borderTop: '1px solid var(--border)' }}>

@@ -92,7 +92,7 @@ export default function ProfilePage() {
     : null;
 
   return (
-    <div style={{ padding: '48px 0 80px' }}>
+    <div className="page-section">
       <div className="container">
         {/* Breadcrumb */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: 'var(--text-muted)', fontSize: '0.875rem', marginBottom: 24 }}>

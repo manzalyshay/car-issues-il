@@ -99,7 +99,7 @@ export default async function HomePage() {
   return (
     <>
       {/* ── Hero ── */}
-      <section style={{ background: 'linear-gradient(135deg, #1a1a2e 0%, #2d1b2e 50%, #1a1d3b 100%)', padding: '50px 0 60px', position: 'relative', overflow: 'hidden' }}>
+      <section style={{ background: 'linear-gradient(135deg, #1a1a2e 0%, #2d1b2e 50%, #1a1d3b 100%)', padding: 'clamp(32px, 6vw, 50px) 0 clamp(40px, 7vw, 60px)', position: 'relative', overflow: 'hidden' }}>
         <div aria-hidden style={{ position: 'absolute', inset: 0, backgroundImage: 'radial-gradient(ellipse 60% 50% at 50% -20%, rgba(230,57,70,.3) 0%, transparent 70%)', pointerEvents: 'none' }} />
 
         <div className="container" style={{ position: 'relative' }}>
@@ -117,7 +117,7 @@ export default async function HomePage() {
               <div style={{ padding: '0 16px' }}>
                 <HeroSearch />
               </div>
-              <div style={{ display: 'flex', justifyContent: 'center', gap: 48, marginTop: 56, flexWrap: 'wrap' }}>
+              <div className="hero-stats">
                 {[
                   { num: `${allMakes.length}+`, label: 'יצרנים' },
                   { num: `${allMakes.reduce((s, m) => s + m.models.length, 0)}+`, label: 'דגמים' },
@@ -145,7 +145,7 @@ export default async function HomePage() {
           .popular-widgets > div { flex: 1 1 260px; }
         }
       `}</style>
-      <section id="popular" style={{ padding: '64px 0' }}>
+      <section id="popular" style={{ padding: 'clamp(36px, 6vw, 64px) 0' }}>
         <div className="container">
           {/* Header — full width above the split */}
           <div style={{ marginBottom: 32 }}>
@@ -238,7 +238,7 @@ export default async function HomePage() {
       </section>
 
       {/* ── How it works ── */}
-      <section style={{ background: 'var(--bg-card)', padding: '64px 0', borderTop: '1px solid var(--border)', borderBottom: '1px solid var(--border)' }}>
+      <section style={{ background: 'var(--bg-card)', padding: 'clamp(36px, 6vw, 64px) 0', borderTop: '1px solid var(--border)', borderBottom: '1px solid var(--border)' }}>
         <div className="container">
           <h2 style={{ fontSize: '1.75rem', fontWeight: 800, textAlign: 'center', marginBottom: 48 }}>איך זה עובד?</h2>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 32 }}>

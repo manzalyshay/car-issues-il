@@ -24,7 +24,7 @@ export default async function CarsPage() {
   const all = [...byCountry, ...(others.length ? [{ country: 'אחר', makes: others }] : [])];
 
   return (
-    <div style={{ padding: '48px 0 80px' }}>
+    <div className="page-section">
       <div className="container">
         {/* Header */}
         <div style={{ marginBottom: 48 }}>
