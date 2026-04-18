@@ -1496,7 +1496,12 @@ export async function scrapeExpertReviews(
   const allCons = [...(localOut?.cons ?? []), ...(globalOut?.cons ?? [])].slice(0, 4);
 
   const allPosts = [...localPosts, ...globalPosts];
-  const sourcesBreakdown = allPosts.length > 0 ? await summarizePerSource(allPosts, makeNameHe, modelNameHe) : [];
+  let sourcesBreakdown = allPosts.length > 0 ? await summarizePerSource(allPosts, makeNameHe, modelNameHe) : [];
+
+  // Fallback: if no real posts produced a breakdown, generate from AI knowledge
+  if (sourcesBreakdown.length === 0) {
+    sourcesBreakdown = await generateKnowledgeSourcesBreakdown(makeNameHe, modelNameHe, makeNameEn, modelNameEn);
+  }
 
   const sb = getSupabase(true);
 

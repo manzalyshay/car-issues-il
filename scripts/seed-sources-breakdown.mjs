@@ -132,17 +132,18 @@ for (const { make, model } of targets) {
     });
 
     if (res.ok) {
-      const { saved: s } = await res.json();
-      if (s > 0) {
+      const body = await res.json();
+      if (body.saved > 0) {
         saved++;
         console.log('✓ saved');
       } else {
         skipped++;
-        console.log('– 0 posts found');
+        console.log(`✗ DB error (saved=0)`);
       }
     } else {
       skipped++;
-      console.log(`✗ HTTP ${res.status}`);
+      const txt = await res.text().catch(() => '');
+      console.log(`✗ HTTP ${res.status}${txt ? ` — ${txt.slice(0, 80)}` : ''}`);
     }
   } catch (e) {
     skipped++;
