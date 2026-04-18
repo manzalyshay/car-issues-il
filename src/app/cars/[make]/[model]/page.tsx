@@ -141,11 +141,15 @@ export default async function ModelPage({ params }: Props) {
         )}
 
         {/* Year selector */}
-        <div style={{ marginBottom: 36 }}>
-          <h2 style={{ fontSize: '1rem', fontWeight: 700, marginBottom: 12, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
-            בחר שנה לביקורת מפורטת
-          </h2>
-          <div style={{ display: 'flex', overflowX: 'auto', gap: 8, paddingBottom: 4 }}>
+        <div style={{ marginBottom: 28, display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'nowrap', overflow: 'hidden' }}>
+          <span style={{
+            fontSize: '0.65rem', fontWeight: 800, letterSpacing: '0.08em',
+            color: 'var(--text-muted)', textTransform: 'uppercase',
+            whiteSpace: 'nowrap', flexShrink: 0,
+          }}>
+            שנה ›
+          </span>
+          <div style={{ display: 'flex', overflowX: 'auto', gap: 6, paddingBottom: 2, flex: 1 }}>
             {model.years.map((y) => (
               <Link key={y} href={`/cars/${make.slug}/${model.slug}/${y}`} className="year-pill" style={{ flexShrink: 0 }}>{y}</Link>
             ))}

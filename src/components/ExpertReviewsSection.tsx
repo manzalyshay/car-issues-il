@@ -122,7 +122,10 @@ function SourceCard({ item, accent }: { item: SourceBreakdown; accent: string })
   );
 }
 
-// Section group: header bar + list of cards
+// Mobile show-count: show first N cards, rest behind "show more" (mobile only)
+const MOBILE_SHOW = 2;
+
+// Section group with per-card mobile collapse
 function SourceGroup({
   sources,
   label,
@@ -134,10 +137,13 @@ function SourceGroup({
   accent: string;
   bgAccent: string;
 }) {
+  const [expanded, setExpanded] = useState(false);
+
   if (sources.length === 0) return null;
   const totalPosts = sources.reduce((s, b) => s + b.postCount, 0);
   const scores = sources.map(s => s.score).filter((s): s is number => s != null);
   const groupAvg = scores.length > 0 ? scores.reduce((a, b) => a + b, 0) / scores.length : null;
+  const hiddenCount = Math.max(0, sources.length - MOBILE_SHOW);
 
   return (
     <div>
@@ -180,9 +186,50 @@ function SourceGroup({
 
       {/* Cards */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: 5, padding: '0 10px 10px' }}>
-        {sources.map((item, i) => (
+        {/* Always-visible first cards */}
+        {sources.slice(0, MOBILE_SHOW).map((item, i) => (
           <SourceCard key={i} item={item} accent={accent} />
         ))}
+
+        {/* Extra cards — hidden on mobile until expanded; always visible on desktop via CSS */}
+        {sources.length > MOBILE_SHOW && (
+          <div className={expanded ? 'ers-extra-expanded' : 'ers-extra-collapsed'}>
+            {sources.slice(MOBILE_SHOW).map((item, i) => (
+              <SourceCard key={i + MOBILE_SHOW} item={item} accent={accent} />
+            ))}
+          </div>
+        )}
+
+        {/* Show-more button — mobile only, disappears on desktop via CSS */}
+        {hiddenCount > 0 && !expanded && (
+          <button
+            className="ers-show-more"
+            onClick={() => setExpanded(true)}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: 5,
+              width: '100%',
+              padding: '6px 12px',
+              background: 'transparent',
+              border: `1px dashed ${accent}55`,
+              borderRadius: 7,
+              cursor: 'pointer',
+              fontSize: '0.72rem',
+              fontWeight: 700,
+              color: accent,
+              letterSpacing: '0.02em',
+            }}
+          >
+            <span style={{
+              display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+              width: 16, height: 16, borderRadius: '50%',
+              background: `${accent}15`, fontSize: '0.6rem', fontWeight: 900,
+            }}>+{hiddenCount}</span>
+            עוד מקורות ↓
+          </button>
+        )}
       </div>
     </div>
   );
@@ -191,8 +238,6 @@ function SourceGroup({
 export default function ExpertReviewsSection({
   review, makeNameHe, modelNameHe, year, isYearSpecific, userAvgRating, userReviewCount, inline,
 }: Props) {
-  const [expanded, setExpanded] = useState(false);
-
   if (!review) return null;
 
   const localSummary  = noData(review.localSummaryHe)  ? null : review.localSummaryHe!;
@@ -249,6 +294,21 @@ export default function ExpertReviewsSection({
 
   const inner = (
     <>
+      {/* CSS for mobile-only collapse behaviour */}
+      <style>{`
+        /* Extra source cards: hidden on mobile by default */
+        .ers-extra-collapsed { display: none; flex-direction: column; gap: 5px; }
+        .ers-extra-expanded  { display: flex; flex-direction: column; gap: 5px; }
+        /* Show-more button: hidden on desktop */
+        @media (min-width: 641px) {
+          .ers-show-more { display: none !important; }
+          .ers-extra-collapsed { display: flex !important; }
+        }
+        @media (max-width: 640px) {
+          .ers-show-more { display: flex; }
+        }
+      `}</style>
+
       <div style={wrapperStyle}>
 
         {/* ── Header ── */}
@@ -304,7 +364,7 @@ export default function ExpertReviewsSection({
 
           {hasPerSource ? (
             <>
-              {/* 🇮🇱 Israeli group — always visible */}
+              {/* 🇮🇱 Israeli group */}
               {localSources.length > 0 && (
                 <SourceGroup
                   sources={localSources}
@@ -314,45 +374,19 @@ export default function ExpertReviewsSection({
                 />
               )}
 
-              {/* Collapsed section: global + pros/cons */}
-              {!expanded && (localSources.length > 0 || globalSources.length > 0) && (
-                <button
-                  onClick={() => setExpanded(true)}
-                  style={{
-                    margin: '4px 10px 10px',
-                    padding: '7px 14px',
-                    background: 'var(--bg-muted)',
-                    border: '1px solid var(--border)',
-                    borderRadius: 8,
-                    fontSize: '0.75rem',
-                    fontWeight: 700,
-                    color: 'var(--text-muted)',
-                    cursor: 'pointer',
-                    textAlign: 'center',
-                    width: 'calc(100% - 20px)',
-                  }}
-                >
-                  הצג ביקורות בינלאומיות ויתרונות / חסרונות ↓
-                </button>
+              {/* Divider between groups */}
+              {localSources.length > 0 && globalSources.length > 0 && (
+                <div style={{ margin: '0 12px', borderTop: '1px dashed var(--border)' }} />
               )}
 
-              {expanded && (
-                <>
-                  {/* Divider */}
-                  {localSources.length > 0 && globalSources.length > 0 && (
-                    <div style={{ margin: '0 12px', borderTop: '1px dashed var(--border)' }} />
-                  )}
-
-                  {/* 🌍 Global group */}
-                  {globalSources.length > 0 && (
-                    <SourceGroup
-                      sources={globalSources}
-                      label="ביקורות בינלאומיות"
-                      accent="#8b5cf6"
-                      bgAccent="rgba(139,92,246,0.04)"
-                    />
-                  )}
-                </>
+              {/* 🌍 Global group — always shown */}
+              {globalSources.length > 0 && (
+                <SourceGroup
+                  sources={globalSources}
+                  label="ביקורות בינלאומיות"
+                  accent="#8b5cf6"
+                  bgAccent="rgba(139,92,246,0.04)"
+                />
               )}
             </>
           ) : (
@@ -386,8 +420,8 @@ export default function ExpertReviewsSection({
             </div>
           )}
 
-          {/* ── Pros / Cons — only when expanded ── */}
-          {expanded && (review.pros.length > 0 || review.cons.length > 0) && (
+          {/* ── Pros / Cons — always visible ── */}
+          {(review.pros.length > 0 || review.cons.length > 0) && (
             <div style={{
               borderTop: '1px solid var(--border)',
               display: 'grid',
