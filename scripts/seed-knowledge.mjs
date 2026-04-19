@@ -150,6 +150,61 @@ function buildGlobalPrompt(makeHe, modelHe, makeEn, modelEn, year) {
 {"summary_he":"2-3 משפטים","score":8,"pros":["יתרון 1","יתרון 2"],"cons":["חיסרון 1","חיסרון 2"]}`;
 }
 
+function buildBreakdownPrompt(makeHe, modelHe, makeEn, modelEn) {
+  return `אתה מומחה לביקורות רכב. עבור ${makeHe} ${modelHe} (${makeEn} ${modelEn}), כתוב סיכום קצר (2-3 משפטים) של מה שבעלי הרכב אומרים בכל אחד מהמקורות הבאים, בהתבסס על הידע שלך.
+
+המקורות:
+- CarZone ביקורות גולשים (ישראל)
+- פורום טפוז מכוניות (ישראל)
+- KBB - Kelley Blue Book (בינלאומי)
+- Edmunds Owner Reviews (בינלאומי)
+- ZigWheels Owner Reviews (בינלאומי)
+
+לכל מקור: סיכום קצר בעברית, ציון 1-10.
+אם אין לך מידע ספציפי על מקור מסוים — דלג עליו.
+
+החזר JSON בלבד — מערך:
+[{"source":"שם המקור","summary":"...","score":7}, ...]`;
+}
+
+const IL_BREAKDOWN_SOURCES = ['carzone', 'טפוז', 'ישראל'];
+function resolveBreakdownFlag(sourceName) {
+  const lower = sourceName.toLowerCase();
+  return IL_BREAKDOWN_SOURCES.some(k => lower.includes(k)) ? '🇮🇱' : '🌍';
+}
+
+async function generateBreakdown(makeHe, modelHe, makeEn, modelEn) {
+  const apiKey = MISTRAL_KEY;
+  if (!apiKey) return [];
+  try {
+    const res = await fetch(MISTRAL_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${apiKey}` },
+      body: JSON.stringify({
+        model: 'mistral-small-latest',
+        temperature: 0.3,
+        max_tokens: 1000,
+        messages: [{ role: 'user', content: buildBreakdownPrompt(makeHe, modelHe, makeEn, modelEn) }],
+      }),
+      signal: AbortSignal.timeout(25000),
+    });
+    if (!res.ok) return [];
+    const json = await res.json();
+    const text = json?.choices?.[0]?.message?.content ?? '';
+    const parsed = JSON.parse(text.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim());
+    if (!Array.isArray(parsed)) return [];
+    return parsed
+      .map(item => ({
+        source:    String(item.source ?? ''),
+        flag:      resolveBreakdownFlag(String(item.source ?? '')),
+        postCount: 0,
+        score:     item.score != null ? Number(item.score) : null,
+        summary:   String(item.summary ?? ''),
+      }))
+      .filter(b => b.source && b.summary.length > 20);
+  } catch { return []; }
+}
+
 function buildIsraeliPrompt(makeHe, modelHe, makeEn, modelEn, year) {
   const yearNote = year ? ` ${year}` : '';
   const yearInstr = year ? `\nהתמקד על ${year} ספציפית — תקלות ידועות, מה שבעלים ישראלים מציינים לאותה שנה.` : '';
@@ -270,7 +325,7 @@ function nextScrapeAt(year) {
   return new Date(Date.now() + days * 24 * 60 * 60 * 1000).toISOString();
 }
 
-async function saveRow(makeSlug, modelSlug, year, globalData, israeliData) {
+async function saveRow(makeSlug, modelSlug, year, globalData, israeliData, breakdown = []) {
   // Delete existing row first
   const del = sb.from('expert_reviews').delete()
     .eq('make_slug', makeSlug).eq('model_slug', modelSlug);
@@ -295,6 +350,7 @@ async function saveRow(makeSlug, modelSlug, year, globalData, israeliData) {
     cons: [...(israeliData?.cons ?? []), ...(globalData.cons ?? [])].slice(0, 4),
     local_post_count:  0,
     global_post_count: 0,
+    sources_breakdown: breakdown,
     scraped_at: new Date().toISOString(),
     next_scrape_at: nextScrapeAt(year),
   });
@@ -351,17 +407,23 @@ for (const { makeSlug, modelSlug, year } of targets) {
   const label = year ? `${makeSlug}/${modelSlug} ${year}` : `${makeSlug}/${modelSlug} (general)`;
   process.stdout.write(`[${done + 1}/${targets.length}] ${label.padEnd(44)}`);
 
-  const [globalData, israeliData] = await Promise.all([
+  // Generate summary + Israeli summary in parallel.
+  // For general (year=null) rows also generate per-source breakdown.
+  const promises = [
     getLlmSummary(makeHe, modelHe, makeEn, modelEn, year),
     getLlmIsraeliSummary(makeHe, modelHe, makeEn, modelEn, year),
-  ]);
+    ...(year == null ? [generateBreakdown(makeHe, modelHe, makeEn, modelEn)] : []),
+  ];
+  const [globalData, israeliData, breakdown] = await Promise.all(promises);
+
   if (!globalData) {
     process.stdout.write('— (no data)\n');
     failed++;
   } else {
-    const ok = await saveRow(makeSlug, modelSlug, year, globalData, israeliData ?? undefined);
+    const ok = await saveRow(makeSlug, modelSlug, year, globalData, israeliData ?? undefined, breakdown ?? []);
     if (ok) {
-      process.stdout.write(israeliData ? '✓ (🇮🇱+🌍)\n' : '✓ (🌍 only)\n');
+      const bdNote = year == null ? ` bd:${(breakdown ?? []).length}` : '';
+      process.stdout.write(israeliData ? `✓ (🇮🇱+🌍${bdNote})\n` : `✓ (🌍 only${bdNote})\n`);
       saved++;
     } else {
       process.stdout.write('✗ (db error)\n');
