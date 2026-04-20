@@ -843,7 +843,8 @@ const NO_DATA_PHRASES = [
   'אין מספיק', 'לא הביעו דעות', 'לא ניתן להסיק', 'אין מידע',
   'לא נמצא', 'מידע מוגבל', 'מוגבל ולא', 'אין ביקורות',
   'לא נמצאו', 'לא קיים מידע', 'לא ניתן', 'אין תוצאות',
-  'לא נאספו', 'לא ידוע', 'לא נסקר',
+  'לא נאספו', 'לא ידוע', 'לא נסקר', 'אין די',
+  'אזכור כללי', 'ללא פרטים ספציפיים', 'אין ביקורות ספציפיות',
 ];
 
 function isEmptySummary(s: string | null | undefined): boolean {
@@ -1420,7 +1421,7 @@ ${snippets}
       postCount: Number(item.postCount ?? 0),
       score:     item.score != null ? Number(item.score) : null,
       summary:   String(item.summary ?? ''),
-    })).filter(b => b.source && b.summary.length > 20);
+    })).filter(b => b.source && b.summary.length > 20 && !NO_DATA_PHRASES.some(p => b.summary.includes(p)));
   } catch { return []; }
 }
 
@@ -1470,7 +1471,7 @@ async function generateKnowledgeSourcesBreakdown(
       postCount: 0, // 0 = knowledge-based, not real scraped posts
       score:     item.score != null ? Number(item.score) : null,
       summary:   String(item.summary ?? ''),
-    })).filter(b => b.source && b.summary.length > 20);
+    })).filter(b => b.source && b.summary.length > 20 && !NO_DATA_PHRASES.some(p => b.summary.includes(p)));
   } catch { return []; }
 }
 

@@ -47,6 +47,176 @@ const getLocalDislikes = () => getLocalSet(LS_DISLIKE_KEY);
 const saveLocalDislike = (id: string) => saveLocalItem(LS_DISLIKE_KEY, id);
 const removeLocalDislike = (id: string) => removeLocalItem(LS_DISLIKE_KEY, id);
 
+interface Reply {
+  id: string;
+  author_name: string;
+  user_id: string | null;
+  body: string;
+  created_at: string;
+}
+
+function ReplySection({ reviewId, user }: { reviewId: string; user: { id: string; email?: string } | null }) {
+  const [open, setOpen]         = useState(false);
+  const [replies, setReplies]   = useState<Reply[]>([]);
+  const [loading, setLoading]   = useState(false);
+  const [showForm, setShowForm] = useState(false);
+  const [name, setName]         = useState('');
+  const [body, setBody]         = useState('');
+  const [submitting, setSubmitting] = useState(false);
+  const [count, setCount]       = useState<number | null>(null);
+
+  // Fetch count (light) on mount
+  useEffect(() => {
+    fetch(`/api/reviews/${reviewId}/replies`)
+      .then(r => r.json())
+      .then(d => setCount((d.replies ?? []).length))
+      .catch(() => {});
+  }, [reviewId]);
+
+  const load = async () => {
+    if (open) { setOpen(false); return; }
+    setLoading(true);
+    try {
+      const r = await fetch(`/api/reviews/${reviewId}/replies`);
+      const d = await r.json();
+      setReplies(d.replies ?? []);
+      setCount((d.replies ?? []).length);
+    } catch { /* ignore */ }
+    setLoading(false);
+    setOpen(true);
+  };
+
+  const submit = async () => {
+    const authorName = (user ? (user.email?.split('@')[0] ?? name) : name).trim();
+    if (!authorName || !body.trim()) return;
+    setSubmitting(true);
+    try {
+      const r = await fetch(`/api/reviews/${reviewId}/replies`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ authorName, userId: user?.id ?? null, replyBody: body }),
+      });
+      const d = await r.json();
+      if (d.reply) {
+        setReplies(prev => [...prev, d.reply]);
+        setCount(c => (c ?? 0) + 1);
+        setBody('');
+        setShowForm(false);
+        setOpen(true);
+      }
+    } catch { /* ignore */ }
+    setSubmitting(false);
+  };
+
+  const replyCount = count ?? 0;
+
+  return (
+    <div style={{ marginTop: 8 }}>
+      {/* Toggle button */}
+      <button
+        onClick={load}
+        disabled={loading}
+        style={{
+          background: 'none', border: 'none', cursor: loading ? 'default' : 'pointer',
+          color: 'var(--text-muted)', fontSize: '0.8125rem', padding: '4px 8px',
+          borderRadius: 6, fontFamily: 'inherit', transition: 'color 0.15s',
+          display: 'flex', alignItems: 'center', gap: 4,
+        }}
+        onMouseEnter={e => { if (!loading) (e.currentTarget as HTMLElement).style.color = 'var(--text-primary)'; }}
+        onMouseLeave={e => { (e.currentTarget as HTMLElement).style.color = 'var(--text-muted)'; }}
+      >
+        💬 {loading ? '...' : replyCount > 0 ? `${replyCount} תגובות` : 'הגב'}
+      </button>
+
+      {/* Replies + form */}
+      {open && (
+        <div style={{ marginTop: 10, paddingRight: 16, borderRight: '2px solid var(--border)' }}>
+          {replies.length > 0 && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 10 }}>
+              {replies.map(reply => (
+                <div key={reply.id} style={{ fontSize: '0.85rem', lineHeight: 1.6 }}>
+                  <span style={{ fontWeight: 700, color: 'var(--text-primary)', marginLeft: 6 }}>{reply.author_name}</span>
+                  <span style={{ color: 'var(--text-muted)', fontSize: '0.72rem' }}>
+                    {new Date(reply.created_at).toLocaleDateString('he-IL', { year: 'numeric', month: 'short', day: 'numeric' })}
+                  </span>
+                  <p style={{ margin: '3px 0 0', color: 'var(--text-secondary)' }}>{reply.body}</p>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {showForm ? (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+              {!user && (
+                <input
+                  placeholder="שמך"
+                  value={name}
+                  onChange={e => setName(e.target.value)}
+                  maxLength={50}
+                  style={{
+                    height: 34, padding: '0 10px', borderRadius: 8,
+                    border: '1.5px solid var(--border)', background: 'var(--bg-base)',
+                    color: 'var(--text-primary)', fontSize: '0.875rem', fontFamily: 'inherit',
+                  }}
+                />
+              )}
+              <textarea
+                placeholder="כתוב תגובה..."
+                value={body}
+                onChange={e => setBody(e.target.value)}
+                maxLength={1000}
+                rows={3}
+                style={{
+                  padding: '8px 10px', borderRadius: 8,
+                  border: '1.5px solid var(--border)', background: 'var(--bg-base)',
+                  color: 'var(--text-primary)', fontSize: '0.875rem', fontFamily: 'inherit',
+                  resize: 'vertical', lineHeight: 1.5,
+                }}
+              />
+              <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+                <button
+                  onClick={submit}
+                  disabled={submitting || !body.trim() || (!user && !name.trim())}
+                  style={{
+                    height: 30, padding: '0 16px', borderRadius: 8, border: 'none',
+                    background: 'var(--brand-red)', color: '#fff',
+                    fontSize: '0.8125rem', fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit',
+                    opacity: (submitting || !body.trim() || (!user && !name.trim())) ? 0.5 : 1,
+                  }}
+                >
+                  {submitting ? '...' : 'שלח'}
+                </button>
+                <button
+                  onClick={() => { setShowForm(false); setBody(''); }}
+                  style={{
+                    height: 30, padding: '0 12px', borderRadius: 8,
+                    border: '1px solid var(--border)', background: 'transparent',
+                    fontSize: '0.8125rem', cursor: 'pointer', fontFamily: 'inherit',
+                    color: 'var(--text-secondary)',
+                  }}
+                >
+                  ביטול
+                </button>
+              </div>
+            </div>
+          ) : (
+            <button
+              onClick={() => setShowForm(true)}
+              style={{
+                background: 'none', border: '1px dashed var(--border)', cursor: 'pointer',
+                color: 'var(--text-muted)', fontSize: '0.8rem', padding: '5px 12px',
+                borderRadius: 8, fontFamily: 'inherit', width: '100%', textAlign: 'center',
+              }}
+            >
+              + הוסף תגובה
+            </button>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
 const REPORT_REASONS = [
   { value: 'spam',      label: 'ספאם' },
   { value: 'fake',      label: 'ביקורת מזויפת' },
@@ -461,6 +631,9 @@ export default function ReviewList({ reviews, onHelpful, onDislike }: Props) {
                       url={`https://carissues.co.il/cars/${review.makeSlug}/${review.modelSlug}#review-${review.id}`}
                     />
                   </div>
+
+                  {/* Replies */}
+                  <ReplySection reviewId={review.id} user={user} />
                 </article>
               );
             })}
