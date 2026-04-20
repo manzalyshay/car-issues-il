@@ -25,7 +25,19 @@ interface ModelRow {
 }
 
 type ScrapeState = 'idle' | 'loading' | 'ok' | 'error';
-type Tab = 'reviews_ai' | 'user_reviews' | 'reports' | 'metrics' | 'users' | 'social_posts';
+type Tab = 'reviews_ai' | 'user_reviews' | 'reports' | 'metrics' | 'users' | 'social_posts' | 'contact';
+
+interface ContactMessage {
+  id: string;
+  name: string;
+  email: string;
+  subject: string;
+  message: string;
+  status: 'unread' | 'read' | 'replied';
+  reply_body: string | null;
+  replied_at: string | null;
+  created_at: string;
+}
 
 interface SocialPostRow {
   id: string;
@@ -88,7 +100,7 @@ function AdminPageInner() {
   const { user, isAdmin, loading, profileLoading } = useAuth();
   const router = useRouter();
   const searchParams = useSearchParams();
-  const VALID_TABS: Tab[] = ['reviews_ai', 'user_reviews', 'reports', 'metrics', 'users', 'social_posts'];
+  const VALID_TABS: Tab[] = ['reviews_ai', 'user_reviews', 'reports', 'metrics', 'users', 'social_posts', 'contact'];
   const tabFromUrl = searchParams.get('tab') as Tab | null;
   const [tab, setTabState] = useState<Tab>(VALID_TABS.includes(tabFromUrl as Tab) ? tabFromUrl! : 'user_reviews');
 
@@ -165,6 +177,13 @@ function AdminPageInner() {
   const [pasteToken, setPasteToken] = useState('');
   const [reelToast, setReelToast] = useState<string | null>(null);
   const socialPostsRef = useRef<SocialPostRow[]>([]);
+
+  // ── Contact Messages tab state ───────────────────────────────────────────────
+  const [contactMessages, setContactMessages] = useState<ContactMessage[]>([]);
+  const [contactFetching, setContactFetching] = useState(false);
+  const [contactReplyId, setContactReplyId] = useState<string | null>(null);
+  const [contactReplyBody, setContactReplyBody] = useState('');
+  const [contactReplying, setContactReplying] = useState(false);
 
 
   const getToken = useCallback(async () => {
@@ -275,6 +294,21 @@ function AdminPageInner() {
   useEffect(() => {
     if (isAdmin && tab === 'users') fetchUsers();
   }, [isAdmin, tab, fetchUsers]);
+
+  const fetchContactMessages = useCallback(async () => {
+    setContactFetching(true);
+    try {
+      const token = await getToken();
+      const res = await fetch('/api/admin/contact-messages', { headers: { Authorization: `Bearer ${token}` } });
+      if (res.ok) setContactMessages(await res.json());
+    } catch { /* ignore */ } finally {
+      setContactFetching(false);
+    }
+  }, [getToken]);
+
+  useEffect(() => {
+    if (isAdmin && tab === 'contact') fetchContactMessages();
+  }, [isAdmin, tab, fetchContactMessages]);
 
   const fetchSocialPosts = useCallback(async () => {
     setSocialFetching(true);
@@ -804,6 +838,7 @@ function AdminPageInner() {
             ['metrics', 'מדדים'],
             ['users', 'משתמשים'],
             ['social_posts', 'רשתות חברתיות'],
+            ['contact', `פניות${contactMessages.filter(m => m.status === 'unread').length ? ` (${contactMessages.filter(m => m.status === 'unread').length})` : ''}`],
             ['reviews_ai', 'סיכומי AI'],
           ] as [Tab, string][]).map(([t, label]) => (
             <button
@@ -2107,6 +2142,170 @@ function AdminPageInner() {
                 </div>
               </div>
             </div>
+          );
+        })()}
+
+        {/* ── Contact Messages Tab ─────────────────────────────────────────────── */}
+        {tab === 'contact' && (() => {
+          const unreadCount = contactMessages.filter(m => m.status === 'unread').length;
+          const SUBJECT_LABELS: Record<string, string> = {
+            general: 'שאלה כללית', content_removal: 'בקשת הסרת תוכן',
+            bug: 'דיווח על תקלה', review_issue: 'בעיה בביקורת', other: 'אחר',
+          };
+          const STATUS_STYLE: Record<string, React.CSSProperties> = {
+            unread: { background: 'rgba(230,57,70,0.12)', color: 'var(--brand-red)', fontWeight: 700 },
+            read: { background: 'var(--bg-muted)', color: 'var(--text-muted)', fontWeight: 600 },
+            replied: { background: 'rgba(16,185,129,0.12)', color: '#10b981', fontWeight: 700 },
+          };
+          const STATUS_LABELS: Record<string, string> = { unread: 'חדש', read: 'נקרא', replied: 'הושב' };
+
+          const markRead = async (id: string) => {
+            const token = await getToken();
+            await fetch('/api/admin/contact-messages', {
+              method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+              body: JSON.stringify({ action: 'mark_read', id }),
+            });
+            setContactMessages(prev => prev.map(m => m.id === id ? { ...m, status: 'read' } : m));
+          };
+
+          const sendReply = async () => {
+            if (!contactReplyId || !contactReplyBody.trim()) return;
+            setContactReplying(true);
+            try {
+              const token = await getToken();
+              const res = await fetch('/api/admin/contact-messages', {
+                method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+                body: JSON.stringify({ action: 'reply', id: contactReplyId, replyBody: contactReplyBody }),
+              });
+              if (res.ok) {
+                setContactMessages(prev => prev.map(m => m.id === contactReplyId
+                  ? { ...m, status: 'replied', reply_body: contactReplyBody, replied_at: new Date().toISOString() } : m));
+                setContactReplyId(null);
+                setContactReplyBody('');
+              } else {
+                const d = await res.json();
+                alert('שגיאה בשליחה: ' + (d.error ?? 'unknown'));
+              }
+            } finally {
+              setContactReplying(false);
+            }
+          };
+
+          const deleteMsg = async (id: string) => {
+            if (!confirm('למחוק את הפנייה?')) return;
+            const token = await getToken();
+            await fetch('/api/admin/contact-messages', {
+              method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+              body: JSON.stringify({ action: 'delete', id }),
+            });
+            setContactMessages(prev => prev.filter(m => m.id !== id));
+          };
+
+          return (
+            <>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24, flexWrap: 'wrap', gap: 12 }}>
+                <p style={{ color: 'var(--text-muted)', margin: 0 }}>
+                  {contactMessages.length} פניות{unreadCount > 0 ? ` — ${unreadCount} חדשות` : ''}
+                </p>
+                <button onClick={fetchContactMessages} disabled={contactFetching}
+                  style={{ padding: '8px 16px', borderRadius: 8, border: '1px solid var(--border)', background: 'transparent', cursor: 'pointer', fontWeight: 600, fontSize: '0.875rem', color: 'var(--text-secondary)' }}>
+                  {contactFetching ? 'טוען...' : 'רענן'}
+                </button>
+              </div>
+
+              {contactFetching ? (
+                <div style={{ textAlign: 'center', padding: 64, color: 'var(--text-muted)' }}>טוען...</div>
+              ) : contactMessages.length === 0 ? (
+                <div style={{ textAlign: 'center', padding: 64, color: 'var(--text-muted)' }}>אין פניות עדיין</div>
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                  {contactMessages.map(msg => (
+                    <div key={msg.id} className="card" style={{ padding: '20px 24px', opacity: msg.status === 'read' ? 0.75 : 1 }}>
+                      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap', marginBottom: 12 }}>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+                            <span style={{ fontWeight: 800, fontSize: '1rem' }}>{msg.name}</span>
+                            <a href={`mailto:${msg.email}`} style={{ fontSize: '0.875rem', color: 'var(--text-muted)', textDecoration: 'none' }}>{msg.email}</a>
+                            <span style={{ fontSize: '0.72rem', padding: '2px 8px', borderRadius: 99, ...STATUS_STYLE[msg.status] }}>{STATUS_LABELS[msg.status]}</span>
+                          </div>
+                          <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
+                            <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', background: 'var(--bg-muted)', padding: '2px 8px', borderRadius: 6 }}>{SUBJECT_LABELS[msg.subject] ?? msg.subject}</span>
+                            <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{new Date(msg.created_at).toLocaleDateString('he-IL', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })}</span>
+                          </div>
+                        </div>
+                        <div style={{ display: 'flex', gap: 8, flexShrink: 0 }}>
+                          {msg.status === 'unread' && (
+                            <button onClick={() => markRead(msg.id)}
+                              style={{ padding: '6px 12px', borderRadius: 7, border: '1px solid var(--border)', background: 'transparent', cursor: 'pointer', fontSize: '0.78rem', fontWeight: 600, color: 'var(--text-secondary)', whiteSpace: 'nowrap' }}>
+                              סמן כנקרא
+                            </button>
+                          )}
+                          <button onClick={() => { setContactReplyId(msg.id); setContactReplyBody(''); if (msg.status === 'unread') markRead(msg.id); }}
+                            style={{ padding: '6px 14px', borderRadius: 7, border: 'none', background: 'var(--brand-red)', color: '#fff', cursor: 'pointer', fontSize: '0.78rem', fontWeight: 700, whiteSpace: 'nowrap' }}>
+                            השב
+                          </button>
+                          <button onClick={() => deleteMsg(msg.id)}
+                            style={{ padding: '6px 10px', borderRadius: 7, border: '1px solid var(--border)', background: 'transparent', cursor: 'pointer', fontSize: '0.78rem', color: 'var(--text-muted)' }}>
+                            ✕
+                          </button>
+                        </div>
+                      </div>
+                      <p style={{ margin: 0, fontSize: '0.9rem', lineHeight: 1.7, whiteSpace: 'pre-wrap', color: 'var(--text-primary)' }}>{msg.message}</p>
+                      {msg.reply_body && (
+                        <div style={{ marginTop: 12, padding: '10px 14px', borderRadius: 8, background: 'rgba(16,185,129,0.06)', border: '1px solid rgba(16,185,129,0.2)' }}>
+                          <div style={{ fontSize: '0.72rem', fontWeight: 700, color: '#10b981', marginBottom: 6 }}>
+                            תגובה נשלחה {msg.replied_at ? new Date(msg.replied_at).toLocaleDateString('he-IL') : ''}
+                          </div>
+                          <p style={{ margin: 0, fontSize: '0.85rem', color: 'var(--text-secondary)', whiteSpace: 'pre-wrap' }}>{msg.reply_body}</p>
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {/* Reply modal */}
+              {contactReplyId && (() => {
+                const msg = contactMessages.find(m => m.id === contactReplyId);
+                if (!msg) return null;
+                return (
+                  <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', zIndex: 3000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24 }}
+                    onClick={() => setContactReplyId(null)}>
+                    <div style={{ background: 'var(--bg-card)', borderRadius: 16, padding: 28, maxWidth: 560, width: '100%', direction: 'rtl', maxHeight: '90vh', overflowY: 'auto' }}
+                      onClick={e => e.stopPropagation()}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
+                        <h3 style={{ fontWeight: 800, margin: 0, fontSize: '1.1rem' }}>השב ל-{msg.name}</h3>
+                        <button onClick={() => setContactReplyId(null)} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '1.2rem', color: 'var(--text-muted)' }}>✕</button>
+                      </div>
+                      <div style={{ marginBottom: 16, padding: '12px 16px', borderRadius: 8, background: 'var(--bg-muted)', fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
+                        <div style={{ fontWeight: 700, marginBottom: 4 }}>הפנייה המקורית:</div>
+                        <p style={{ margin: 0, whiteSpace: 'pre-wrap', lineHeight: 1.6 }}>{msg.message}</p>
+                      </div>
+                      <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)', marginBottom: 8 }}>
+                        שולח מ: contact@carissues.co.il → {msg.email}
+                      </div>
+                      <textarea
+                        value={contactReplyBody}
+                        onChange={e => setContactReplyBody(e.target.value)}
+                        rows={8}
+                        placeholder="כתוב תגובה..."
+                        style={{ width: '100%', padding: '12px', border: '1.5px solid var(--border)', borderRadius: 8, background: 'var(--bg-base)', color: 'var(--text-primary)', fontSize: '0.9rem', fontFamily: 'inherit', resize: 'vertical', boxSizing: 'border-box', lineHeight: 1.6 }}
+                      />
+                      <div style={{ display: 'flex', gap: 10, marginTop: 16, justifyContent: 'flex-end' }}>
+                        <button onClick={() => setContactReplyId(null)}
+                          style={{ padding: '10px 20px', borderRadius: 8, border: '1px solid var(--border)', background: 'transparent', cursor: 'pointer', fontWeight: 600, color: 'var(--text-secondary)' }}>
+                          ביטול
+                        </button>
+                        <button onClick={sendReply} disabled={contactReplying || !contactReplyBody.trim()}
+                          style={{ padding: '10px 24px', borderRadius: 8, border: 'none', background: 'var(--brand-red)', color: '#fff', cursor: 'pointer', fontWeight: 700, opacity: contactReplying || !contactReplyBody.trim() ? 0.6 : 1 }}>
+                          {contactReplying ? 'שולח...' : 'שלח תגובה'}
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })()}
+            </>
           );
         })()}
 
