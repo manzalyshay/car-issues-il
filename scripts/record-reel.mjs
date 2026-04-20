@@ -148,14 +148,15 @@ await sb.from('car_3d_models')
   .eq('make_slug', makeSlug)
   .eq('model_slug', modelSlug);
 
-// ── Clean up social post (optional) ──────────────────────────────────────────
-// The reel URL is permanently stored in car_3d_models.reel_url above.
-// The social_posts row was only needed to track the recording job — delete it
-// now to save space. Anyone wanting to display the reel uses car_3d_models.
+// ── Update social post with reel URL ─────────────────────────────────────────
 if (postId) {
-  const { error: delErr } = await sb.from('social_posts').delete().eq('id', postId);
-  if (delErr) console.warn(`   Could not delete post ${postId}:`, delErr.message);
-  else console.log(`   Deleted social_posts row ${postId} (reel URL saved in car_3d_models)`);
+  const { data: post } = await sb.from('social_posts').select('metadata').eq('id', postId).single();
+  const meta = (post?.metadata ?? {});
+  const { error: updErr } = await sb.from('social_posts')
+    .update({ metadata: { ...meta, reel_url: publicUrl, reel_status: 'ready' } })
+    .eq('id', postId);
+  if (updErr) console.warn(`   Could not update post ${postId}:`, updErr.message);
+  else console.log(`   Updated social_posts row ${postId} with reel_url`);
 }
 
 console.log(`\n✅ Done! Reel URL:\n   ${publicUrl}\n`);
