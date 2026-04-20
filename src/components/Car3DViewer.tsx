@@ -21,8 +21,6 @@ declare global {
   }
 }
 
-const ZOOM_OUT_FACTOR = 1.8; // pull camera 1.8× further back from model center
-
 export default function Car3DViewer({ uid, modelName, author, makeSlug, modelSlug, onHidden }: Props) {
   const { isAdmin } = useAuth();
   const iframeRef = useRef<HTMLIFrameElement>(null);
@@ -39,7 +37,7 @@ export default function Car3DViewer({ uid, modelName, author, makeSlug, modelSlu
 
   const thumbnailUrl = `https://media.sketchfab.com/models/${uid}/thumbnails/result.jpg`;
 
-  // Use Sketchfab Viewer API so we can pull the camera back on load
+  // Use Sketchfab Viewer API to initialise the embed
   useEffect(() => {
     if (!loaded || !iframeRef.current) return;
 
@@ -51,20 +49,6 @@ export default function Car3DViewer({ uid, modelName, author, makeSlug, modelSlu
       client.init(uid, {
         success: (api: any) => { // eslint-disable-line @typescript-eslint/no-explicit-any
           api.start();
-          api.addEventListener('viewerready', () => {
-            // Mobile: use Sketchfab's default camera position
-            if (typeof window !== 'undefined' && window.innerWidth <= 640) return;
-            api.getCameraLookAt((_err: unknown, camera: { position: number[]; target: number[] }) => {
-              if (_err || !camera) return;
-              const { position, target } = camera;
-              const newPos = [
-                target[0] + (position[0] - target[0]) * ZOOM_OUT_FACTOR,
-                target[1] + (position[1] - target[1]) * ZOOM_OUT_FACTOR,
-                target[2] + (position[2] - target[2]) * ZOOM_OUT_FACTOR,
-              ];
-              api.setCameraLookAt(newPos, target, 0.6);
-            });
-          });
         },
         error: () => { /* silently fall back to default view */ },
         autostart: 1,
