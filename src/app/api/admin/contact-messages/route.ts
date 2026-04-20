@@ -60,7 +60,7 @@ export async function POST(req: NextRequest) {
     const resend = new Resend(process.env.RESEND_API_KEY);
     const subjectLabel = SUBJECT_LABELS[msg.subject] ?? msg.subject ?? 'כללי';
 
-    const { error: sendError } = await resend.emails.send({
+    const { error: sendError, data: sendData } = await resend.emails.send({
       from: 'CarIssues IL <contact@carissues.co.il>',
       to: [msg.email],
       replyTo: 'contact@carissues.co.il',
@@ -82,9 +82,10 @@ export async function POST(req: NextRequest) {
     });
 
     if (sendError) {
-      console.error('[contact reply] resend error', sendError);
-      return NextResponse.json({ error: 'Failed to send email' }, { status: 500 });
+      console.error('[contact reply] resend error', JSON.stringify(sendError));
+      return NextResponse.json({ error: 'Failed to send email', detail: sendError }, { status: 500 });
     }
+    console.log('[contact reply] sent', sendData?.id);
 
     // Mark as replied in DB
     await sb.from('contact_messages').update({
