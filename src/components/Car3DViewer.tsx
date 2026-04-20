@@ -21,7 +21,7 @@ declare global {
   }
 }
 
-const ZOOM_OUT_FACTOR = 0.4; // pull camera 1.1× further back from model center
+const ZOOM_OUT_FACTOR = 1.8; // pull camera 1.8× further back from model center
 
 export default function Car3DViewer({ uid, modelName, author, makeSlug, modelSlug, onHidden }: Props) {
   const { isAdmin } = useAuth();
