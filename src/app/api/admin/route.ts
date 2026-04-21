@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { revalidateTag } from 'next/cache';
 import { getAllMakes, getMakeBySlug, getModelBySlug } from '@/lib/carsDb';
 import { scrapeExpertReviews } from '@/lib/expertReviews';
 import { isAdmin, getServiceClient } from '@/lib/adminAuth';
@@ -83,12 +84,16 @@ export async function POST(req: NextRequest) {
   if (action === 'delete_review') {
     if (!reviewId) return NextResponse.json({ error: 'Missing reviewId' }, { status: 400 });
     await getServiceClient().from('reviews').delete().eq('id', reviewId);
+    revalidateTag('reviews', 'default');
+    revalidateTag('reviews', 'max');
     return NextResponse.json({ ok: true });
   }
 
   if (action === 'bulk_delete_reviews') {
     if (!Array.isArray(ids) || ids.length === 0) return NextResponse.json({ ok: true });
     await getServiceClient().from('reviews').delete().in('id', ids);
+    revalidateTag('reviews', 'default');
+    revalidateTag('reviews', 'max');
     return NextResponse.json({ ok: true });
   }
 
