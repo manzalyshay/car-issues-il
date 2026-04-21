@@ -31,11 +31,10 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ mak
 
   const sketchfabUid = carModel?.uid ?? null;
   // transparent=1 removes Sketchfab's own background → the page bg (#0a0b0f) shows through.
-  // autospin=0.07 ≈ 1 full rotation per 14s — slow, cinematic.
-  // CSS scale(0.72) on the iframe visually zooms out the car so the whole vehicle is visible,
-  // with dark bg showing on sides (blends with the dark reel theme).
+  // Rotation is driven by the Sketchfab Viewer API via setCameraLookAt loop (not autospin param,
+  // which requires user interaction in modern browsers).
   const embedUrl = sketchfabUid
-    ? `https://sketchfab.com/models/${sketchfabUid}/embed?autostart=1&preload=1&autospin=0.07&transparent=1&ui_infos=0&ui_controls=0&ui_watermark=0&ui_stop=0&ui_ar=0&ui_help=0&ui_settings=0&ui_annotations=0&dnt=1`
+    ? `https://sketchfab.com/models/${sketchfabUid}/embed?autostart=1&preload=1&transparent=1&ui_infos=0&ui_controls=0&ui_watermark=0&ui_stop=0&ui_ar=0&ui_help=0&ui_settings=0&ui_annotations=0&dnt=1`
     : null;
 
   const html = `<!DOCTYPE html>
@@ -47,26 +46,14 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ mak
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
     html, body { width: 1080px; height: 1920px; overflow: hidden; background: ${BG}; font-family: 'Rubik', sans-serif; }
+    #viewer-iframe { position: absolute; width: 100%; height: 100%; border: none; background: transparent; transform: scale(0.72); transform-origin: center 28%; }
 
     .scene {
       position: absolute;
       inset: 0;
     }
 
-    /* Sketchfab embed — scaled down so the whole car is visible.
-       transparent=1 makes Sketchfab bg transparent, so the dark page
-       background shows in the space around the scaled iframe. */
-    iframe {
-      position: absolute;
-      width: 100%;
-      height: 100%;
-      border: none;
-      background: transparent;
-      /* Scale to 72% and anchor at top-center so car sits in the upper
-         portion of the frame, leaving room for the info overlay at bottom */
-      transform: scale(0.72);
-      transform-origin: center 28%;
-    }
+    /* Sketchfab iframe is positioned via #viewer-iframe id above */
 
     /* Dark gradient — transparent top, solid black bottom */
     .gradient-overlay {
@@ -159,8 +146,58 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ mak
 <body>
 <div class="scene">
 
-  ${embedUrl
-    ? `<iframe src="${embedUrl}" allow="autoplay; fullscreen; xr-spatial-tracking" allowfullscreen></iframe>`
+  ${sketchfabUid
+    ? `<iframe id="viewer-iframe" allow="autoplay; fullscreen; xr-spatial-tracking" allowfullscreen></iframe>
+  <script src="https://static.sketchfab.com/api/sketchfab-viewer-1.12.1.js"></script>
+  <script>
+    var uid = '${sketchfabUid}';
+    var iframe = document.getElementById('viewer-iframe');
+    var client = new Sketchfab(iframe);
+    client.init(uid, {
+      success: function(api) {
+        api.start();
+        api.addEventListener('viewerready', function() {
+          api.getCameraLookAt(function(err, camera) {
+            if (err) return;
+            var pos = camera.position;
+            var tgt = camera.target;
+            var dx = pos[0] - tgt[0];
+            var dz = pos[2] - tgt[2];
+            var radius = Math.sqrt(dx * dx + dz * dz);
+            var camY = pos[1];
+            var angle = Math.atan2(dx, dz);
+            // 1 full rotation every 14s (same as autospin=0.07)
+            var rotPerMs = (2 * Math.PI) / 14000;
+            var lastT = null;
+            function spin(t) {
+              if (lastT !== null) angle += rotPerMs * (t - lastT);
+              lastT = t;
+              api.setCameraLookAt(
+                [tgt[0] + radius * Math.sin(angle), camY, tgt[2] + radius * Math.cos(angle)],
+                [tgt[0], tgt[1], tgt[2]],
+                0
+              );
+              requestAnimationFrame(spin);
+            }
+            requestAnimationFrame(spin);
+          });
+        });
+      },
+      error: function() {},
+      autostart: 1,
+      preload: 1,
+      transparent: 1,
+      ui_infos: 0,
+      ui_controls: 0,
+      ui_watermark: 0,
+      ui_stop: 0,
+      ui_ar: 0,
+      ui_help: 0,
+      ui_settings: 0,
+      ui_annotations: 0,
+      dnt: 1,
+    });
+  </script>`
     : `<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;background:${CARD};">
          <img src="${make.logoUrl}" style="width:500px;height:500px;object-fit:contain;opacity:0.15;" alt=""/>
        </div>`

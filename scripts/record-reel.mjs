@@ -50,6 +50,9 @@ const browser = await chromium.launch({
     '--enable-unsafe-webgpu',
     '--disable-background-timer-throttling',
     '--disable-renderer-backgrounding',
+    // Keep rAF ticking even when the tab is in background
+    '--disable-background-timer-throttling',
+    '--disable-backgrounding-occluded-windows',
   ],
 });
 
@@ -64,24 +67,16 @@ const page = await context.newPage();
 await page.setViewportSize({ width: 1080, height: 1920 });
 
 console.log('   Loading page...');
-// Use 'load' not 'networkidle' — Sketchfab iframe streams 3D assets continuously
-// so networkidle is never reached. 'load' fires once the HTML + fonts are ready.
 await page.goto(reelUrl, { waitUntil: 'load', timeout: 60000 });
 
-// Wait for Sketchfab to load the 3D model.
-// 25s is generous; SwiftShader is slow but model is usually ready by 15-18s.
-console.log('   Waiting for 3D model + autospin to settle (25s)...');
-await page.waitForTimeout(25000);
+// Wait for Sketchfab to load + Viewer API to initialise + rotation to start.
+// The JS rotation loop starts as soon as viewerready fires (usually 15-20s on SwiftShader).
+// We wait 30s to be safe, then record 15s of clean spinning.
+console.log('   Waiting for 3D model + rotation to start (30s)...');
+await page.waitForTimeout(30000);
 
-// ⚠️  DO NOT click or scroll inside the iframe.
-//     Any mouse interaction pauses Sketchfab's autospin and requires ~4s to resume.
-//     The reel template already applies CSS scale(0.72) to zoom the car out visually,
-//     so no additional scroll-zoom is needed.
-//     autospin=0.07 (set in the embed URL) starts automatically via autostart=1.
-
-// Record autospin for 12s; ffmpeg will take the cleanest 10s slice.
-console.log('   Recording autospin (12s)...');
-await page.waitForTimeout(12000);
+console.log('   Recording rotation (15s)...');
+await page.waitForTimeout(15000);
 
 // Grab the path BEFORE closing (closing finalises the file)
 const videoPathRaw = await page.video()?.path();
@@ -106,16 +101,15 @@ console.log(`   Raw video: ${webmPath}`);
 
 // ── Convert WebM → MP4 (H.264) ────────────────────────────────────────────────
 console.log('   Converting to MP4...');
-// Timeline: 0–25s model load + autospin settle, 25–37s clean autospin recording.
-// -ss 26: skip load phase + 1s autospin ramp-up
-// -t 10:  capture 10s of clean autospin
+// Timeline: 0–30s model load + API rotation start, 30–45s clean rotation recording.
+// -ss 31: skip load phase + 1s rotation ramp-up
+// -t 12:  capture 12s of clean rotation (loopable — car completes ~86% of a turn)
 // minterpolate blend: smooth 30fps output from ~5fps SwiftShader frames.
-//   'blend' mode is fast and produces acceptable smoothing for slow rotation.
 execFileSync('ffmpeg', [
   '-y',
   '-i', webmPath,
-  '-ss', '26',
-  '-t', '10',
+  '-ss', '31',
+  '-t', '12',
   '-vf', "minterpolate='mi_mode=blend:fps=30'",
   '-c:v', 'libx264',
   '-preset', 'fast',
