@@ -2,10 +2,11 @@
  * Records a 10-second video of the spinning 3D car reel template.
  * Requires: MAKE_SLUG, MODEL_SLUG, NEXT_PUBLIC_SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY
  * Optional: POST_ID (updates social post metadata), SITE_URL (default: https://carissues.co.il)
+ *           BROWSERLESS_TOKEN (use Browserless cloud Chrome instead of local SwiftShader)
  *
- * Needs on the runner: playwright chromium + ffmpeg
+ * Without BROWSERLESS_TOKEN: needs playwright chromium + ffmpeg on the runner
  *   npx playwright install chromium --with-deps
- *   (ffmpeg is pre-installed on ubuntu-latest GitHub Actions runners)
+ * With BROWSERLESS_TOKEN: no local browser needed, just ffmpeg
  */
 import { createClient } from '@supabase/supabase-js';
 import { chromium } from 'playwright-core';
@@ -38,23 +39,33 @@ const mp4Path = join(tmpDir, `${makeSlug}_${modelSlug}.mp4`);
 console.log(`\n🎬 Recording reel: ${makeSlug}/${modelSlug}`);
 console.log(`   URL: ${reelUrl}`);
 
-// ── Launch browser with software WebGL (SwiftShader) ──────────────────────────
-const browser = await chromium.launch({
-  headless: true,
-  args: [
-    '--no-sandbox',
-    '--disable-setuid-sandbox',
-    '--disable-dev-shm-usage',
-    '--use-gl=swiftshader',
-    '--ignore-gpu-blocklist',
-    '--enable-unsafe-webgpu',
-    '--disable-background-timer-throttling',
-    '--disable-renderer-backgrounding',
-    // Keep rAF ticking even when the tab is in background
-    '--disable-background-timer-throttling',
-    '--disable-backgrounding-occluded-windows',
-  ],
-});
+// ── Launch browser ────────────────────────────────────────────────────────────
+const browserlessToken = process.env.BROWSERLESS_TOKEN;
+let browser;
+
+if (browserlessToken) {
+  // Browserless cloud Chrome — GPU-accelerated, no SwiftShader lag
+  console.log('   Using Browserless cloud browser...');
+  browser = await chromium.connectOverCDP(
+    `wss://chrome.browserless.io?token=${browserlessToken}&--disable-background-timer-throttling=true&--disable-backgrounding-occluded-windows=true`
+  );
+} else {
+  // Local SwiftShader fallback (slow but works without a token)
+  console.log('   Using local SwiftShader browser (set BROWSERLESS_TOKEN for better quality)...');
+  browser = await chromium.launch({
+    headless: true,
+    args: [
+      '--no-sandbox',
+      '--disable-setuid-sandbox',
+      '--disable-dev-shm-usage',
+      '--use-gl=swiftshader',
+      '--ignore-gpu-blocklist',
+      '--disable-background-timer-throttling',
+      '--disable-renderer-backgrounding',
+      '--disable-backgrounding-occluded-windows',
+    ],
+  });
+}
 
 const context = await browser.newContext({
   recordVideo: {
