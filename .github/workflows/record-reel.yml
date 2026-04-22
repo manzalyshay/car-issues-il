@@ -48,6 +48,7 @@ jobs:
           MODEL_SLUG: ${{ github.event.inputs.model_slug }}
           POST_ID: ${{ github.event.inputs.post_id }}
           SITE_URL: https://carissues.co.il
+          BROWSERLESS_TOKEN: ${{ secrets.BROWSERLESS_TOKEN }}
           GITHUB_RUN_ID: ${{ github.run_id }}
           GITHUB_REPO: ${{ github.repository }}
         run: node scripts/record-reel.mjs
