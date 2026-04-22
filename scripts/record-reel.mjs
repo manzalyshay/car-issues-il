@@ -88,7 +88,16 @@ await page.waitForTimeout(25000);
 // Debug: screenshot to verify what's actually on screen
 const debugPath = mp4Path.replace('.mp4', '_debug.png');
 await page.screenshot({ path: debugPath, fullPage: false });
-console.log(`   Debug screenshot: ${debugPath}`);
+const debugBuffer = readFileSync(debugPath);
+const { error: debugUploadError } = await sb.storage
+  .from('social-screenshots')
+  .upload(`reels/${makeSlug}_${modelSlug}_debug.png`, debugBuffer, { contentType: 'image/png', upsert: true });
+if (!debugUploadError) {
+  const { data: { publicUrl: debugUrl } } = sb.storage.from('social-screenshots').getPublicUrl(`reels/${makeSlug}_${modelSlug}_debug.png`);
+  console.log(`   Debug screenshot: ${debugUrl}`);
+} else {
+  console.log(`   Debug screenshot saved locally: ${debugPath}`);
+}
 
 // Sketchfab autospin requires user interaction to activate.
 // Simulate a click in the center of the 3D viewport to unlock it.
