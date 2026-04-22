@@ -147,57 +147,9 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ mak
 <div class="scene">
 
   ${sketchfabUid
-    ? `<iframe id="viewer-iframe" allow="autoplay; fullscreen; xr-spatial-tracking" allowfullscreen></iframe>
-  <script src="https://static.sketchfab.com/api/sketchfab-viewer-1.12.1.js"></script>
-  <script>
-    var uid = '${sketchfabUid}';
-    var iframe = document.getElementById('viewer-iframe');
-    var client = new Sketchfab(iframe);
-    client.init(uid, {
-      success: function(api) {
-        api.start();
-        api.addEventListener('viewerready', function() {
-          api.getCameraLookAt(function(err, camera) {
-            if (err) return;
-            var pos = camera.position;
-            var tgt = camera.target;
-            var dx = pos[0] - tgt[0];
-            var dz = pos[2] - tgt[2];
-            var radius = Math.sqrt(dx * dx + dz * dz);
-            var camY = pos[1];
-            var angle = Math.atan2(dx, dz);
-            // 1 full rotation every 14s (same as autospin=0.07)
-            var rotPerMs = (2 * Math.PI) / 14000;
-            var lastT = null;
-            function spin(t) {
-              if (lastT !== null) angle += rotPerMs * (t - lastT);
-              lastT = t;
-              api.setCameraLookAt(
-                [tgt[0] + radius * Math.sin(angle), camY, tgt[2] + radius * Math.cos(angle)],
-                [tgt[0], tgt[1], tgt[2]],
-                0
-              );
-              requestAnimationFrame(spin);
-            }
-            requestAnimationFrame(spin);
-          });
-        });
-      },
-      error: function() {},
-      autostart: 1,
-      preload: 1,
-      transparent: 1,
-      ui_infos: 0,
-      ui_controls: 0,
-      ui_watermark: 0,
-      ui_stop: 0,
-      ui_ar: 0,
-      ui_help: 0,
-      ui_settings: 0,
-      ui_annotations: 0,
-      dnt: 1,
-    });
-  </script>`
+    ? `<iframe id="viewer-iframe"
+        src="https://sketchfab.com/models/${sketchfabUid}/embed?autostart=1&preload=1&transparent=1&ui_infos=0&ui_controls=0&ui_watermark=0&ui_stop=0&ui_ar=0&ui_help=0&ui_settings=0&ui_annotations=0&dnt=1&autospin=0.07"
+        allow="autoplay; fullscreen; xr-spatial-tracking" allowfullscreen></iframe>`
     : `<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;background:${CARD};">
          <img src="${make.logoUrl}" style="width:500px;height:500px;object-fit:contain;opacity:0.15;" alt=""/>
        </div>`

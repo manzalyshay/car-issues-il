@@ -69,11 +69,11 @@ await page.setViewportSize({ width: 1080, height: 1920 });
 console.log('   Loading page...');
 await page.goto(reelUrl, { waitUntil: 'load', timeout: 60000 });
 
-// Wait for Sketchfab to load + Viewer API to initialise + rotation to start.
-// The JS rotation loop starts as soon as viewerready fires (usually 15-20s on SwiftShader).
-// We wait 30s to be safe, then record 15s of clean spinning.
-console.log('   Waiting for 3D model + rotation to start (30s)...');
-await page.waitForTimeout(30000);
+// Wait for Sketchfab iframe to load + autospin to start.
+// autospin kicks in as soon as the model renders (no JS API needed).
+// SwiftShader renders at ~5fps so allow 20s for the model to appear and begin spinning.
+console.log('   Waiting for 3D model to load and spin to start (20s)...');
+await page.waitForTimeout(20000);
 
 console.log('   Recording rotation (15s)...');
 await page.waitForTimeout(15000);
@@ -101,14 +101,14 @@ console.log(`   Raw video: ${webmPath}`);
 
 // ── Convert WebM → MP4 (H.264) ────────────────────────────────────────────────
 console.log('   Converting to MP4...');
-// Timeline: 0–30s model load + API rotation start, 30–45s clean rotation recording.
-// -ss 31: skip load phase + 1s rotation ramp-up
+// Timeline: 0–20s model load + autospin ramp-up, 20–35s clean spinning.
+// -ss 21: skip load phase
 // -t 12:  capture 12s of clean rotation (loopable — car completes ~86% of a turn)
 // minterpolate blend: smooth 30fps output from ~5fps SwiftShader frames.
 execFileSync('ffmpeg', [
   '-y',
   '-i', webmPath,
-  '-ss', '31',
+  '-ss', '21',
   '-t', '12',
   '-vf', "minterpolate='mi_mode=blend:fps=30'",
   '-c:v', 'libx264',
