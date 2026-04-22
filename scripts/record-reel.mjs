@@ -80,11 +80,22 @@ await page.setViewportSize({ width: 1080, height: 1920 });
 console.log('   Loading page...');
 await page.goto(reelUrl, { waitUntil: 'load', timeout: 60000 });
 
-// Wait for Sketchfab iframe to load + autospin to start.
-// autospin kicks in as soon as the model renders (no JS API needed).
-// SwiftShader renders at ~5fps so allow 20s for the model to appear and begin spinning.
-console.log('   Waiting for 3D model to load and spin to start (20s)...');
-await page.waitForTimeout(20000);
+// Wait for Sketchfab iframe to load.
+// SwiftShader renders at ~5fps so allow 25s for the model to appear.
+console.log('   Waiting for 3D model to load (25s)...');
+await page.waitForTimeout(25000);
+
+// Debug: screenshot to verify what's actually on screen
+const debugPath = mp4Path.replace('.mp4', '_debug.png');
+await page.screenshot({ path: debugPath, fullPage: false });
+console.log(`   Debug screenshot: ${debugPath}`);
+
+// Sketchfab autospin requires user interaction to activate.
+// Simulate a click in the center of the 3D viewport to unlock it.
+console.log('   Simulating user click to activate autospin...');
+await page.mouse.click(540, 600);
+await page.waitForTimeout(500);
+await page.mouse.click(540, 600);
 
 console.log('   Recording rotation (15s)...');
 await page.waitForTimeout(15000);
@@ -112,14 +123,14 @@ console.log(`   Raw video: ${webmPath}`);
 
 // ── Convert WebM → MP4 (H.264) ────────────────────────────────────────────────
 console.log('   Converting to MP4...');
-// Timeline: 0–20s model load + autospin ramp-up, 20–35s clean spinning.
-// -ss 21: skip load phase
-// -t 12:  capture 12s of clean rotation (loopable — car completes ~86% of a turn)
+// Timeline: 0–25s model load, ~26s click unlocks autospin, 26–41s clean rotation.
+// -ss 27: skip load phase + click moment
+// -t 12:  capture 12s of clean rotation
 // minterpolate blend: smooth 30fps output from ~5fps SwiftShader frames.
 execFileSync('ffmpeg', [
   '-y',
   '-i', webmPath,
-  '-ss', '21',
+  '-ss', '27',
   '-t', '12',
   '-vf', "minterpolate='mi_mode=blend:fps=30'",
   '-c:v', 'libx264',
