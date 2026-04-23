@@ -34,6 +34,9 @@ jobs:
         # Use playwright-core's own CLI so the installed browser matches the exact version
         run: node node_modules/playwright-core/cli.js install --with-deps chromium
 
+      - name: Install ffmpeg
+        run: sudo apt-get install -y --no-install-recommends ffmpeg
+
       - name: Record reel
         env:
           NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
