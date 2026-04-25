@@ -55,6 +55,12 @@ export async function POST(req: NextRequest) {
   const body = await req.json();
   const { action, makeSlug, modelSlug, localPosts = [], globalPosts = [], reviewId, ids, title, body: reviewBody, rating } = body;
 
+  if (action === 'revalidate_car_data') {
+    revalidateTag('car-data', 'default');
+    revalidateTag('car-data', 'max');
+    return NextResponse.json({ ok: true });
+  }
+
   if (action === 'delete') {
     const sb = getServiceClient();
     await sb.from('expert_reviews')
