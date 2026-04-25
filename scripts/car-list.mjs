@@ -184,4 +184,23 @@ export const CAR_LIST = [
   { make: 'tesla', model: 'model-y', years: range(2020) },
   { make: 'tesla', model: 'model-s', years: range(2015) },
   { make: 'tesla', model: 'model-x', years: range(2016) },
+  // Alfa Romeo
+  { make: 'alfa-romeo', model: 'giulia',     years: range(2016) },
+  { make: 'alfa-romeo', model: 'stelvio',    years: range(2017) },
+  { make: 'alfa-romeo', model: 'tonale',     years: range(2022) },
+  { make: 'alfa-romeo', model: 'giulietta',  years: range(2010, 2020) },
+  // Land Rover
+  { make: 'land-rover', model: 'defender',            years: range(2020) },
+  { make: 'land-rover', model: 'discovery',            years: range(2017) },
+  { make: 'land-rover', model: 'discovery-sport',      years: range(2015) },
+  { make: 'land-rover', model: 'range-rover',          years: range(2013) },
+  { make: 'land-rover', model: 'range-rover-sport',    years: range(2013) },
+  { make: 'land-rover', model: 'range-rover-evoque',   years: range(2012) },
+  { make: 'land-rover', model: 'range-rover-velar',    years: range(2017) },
+  // Porsche
+  { make: 'porsche', model: 'cayenne',   years: range(2013) },
+  { make: 'porsche', model: 'macan',     years: range(2014) },
+  { make: 'porsche', model: '911',       years: range(2013) },
+  { make: 'porsche', model: 'panamera',  years: range(2017) },
+  { make: 'porsche', model: 'taycan',    years: range(2020) },
 ];

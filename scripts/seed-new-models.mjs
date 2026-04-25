@@ -66,6 +66,9 @@ const CAR_DB = [
   { make:'fiat',      models:['fiat-500','fiat-500e','tipo','tipo-cross','fiat-500x','panda','ducato','doblo'] },
   { make:'chevrolet', models:['spark','cruze','captiva','equinox','trailblazer','malibu','tahoe','colorado','camaro'] },
   { make:'tesla',     models:['model-3','model-y','model-s','model-x'] },
+  { make:'alfa-romeo', models:['giulia','stelvio','tonale','giulietta'] },
+  { make:'land-rover', models:['defender','discovery','discovery-sport','range-rover','range-rover-sport','range-rover-evoque','range-rover-velar'] },
+  { make:'porsche',    models:['cayenne','macan','911','panamera','taycan'] },
 ];
 
 // ── Translation maps ─────────────────────────────────────────────────────────
@@ -76,6 +79,7 @@ const HE_MAKES = {
   jeep:"ג'יפ",mitsubishi:'מיצובישי',subaru:'סובארו',byd:'BYD',mg:'MG',chery:"צ'רי",geely:"ג'ילי",
   cupra:'קופרה',seat:'סיאט',opel:'אופל',lexus:'לקסוס',dacia:"דאצ'יה",
   fiat:'פיאט',chevrolet:'שברולט',tesla:'טסלה',
+  'alfa-romeo':'אלפא רומיאו','land-rover':'לנד רובר',porsche:'פורשה',
 };
 const HE_MODELS = {
   corolla:'קורולה','corolla-cross':'קורולה קרוס',camry:'קאמרי',yaris:'יאריס','yaris-cross':'יאריס קרוס',
@@ -97,6 +101,11 @@ const HE_MODELS = {
   'fiat-500':'500','fiat-500e':'500e','fiat-500x':'500X',tipo:'טיפו','tipo-cross':'טיפו קרוס',panda:'פנדה',ducato:'דוקאטו',doblo:'דובלו',
   spark:'ספארק',cruze:'קרוז',captiva:'קפטיבה',equinox:'אקוינוקס',trailblazer:'טרייל בלייזר',malibu:'מליבו',tahoe:'טאהו',colorado:'קולורדו',camaro:'קמרו',
   'model-3':'מודל 3','model-y':'מודל Y','model-s':'מודל S','model-x':'מודל X',
+  giulia:"ג'וליה",stelvio:'סטלביו',tonale:'טונאלה',giulietta:"ג'וליאטה",
+  defender:'דיפנדר',discovery:'דיסקברי','discovery-sport':'דיסקברי ספורט',
+  'range-rover':"ריינג'  רובר",'range-rover-sport':"ריינג' רובר ספורט",
+  'range-rover-evoque':"ריינג' רובר אבוק",'range-rover-velar':"ריינג' רובר ולאר",
+  cayenne:'קאיין',macan:'מאקן','911':'911',panamera:'פנמרה',taycan:'טייקן',
   a3:'A3',a4:'A4',a6:'A6',q3:'Q3',q5:'Q5',etron:'e-tron',
   fiesta:'פיאסטה',focus:'פוקוס',kuga:'קוגה',puma:'פומה',ranger:"ריינג'ר",
   qashqai:'קשקאי','x-trail':'X-Trail',juke:"ג'וק",kicks:'קיקס',note:'נוט',leaf:'ליף',navara:'נאוורה',
@@ -121,6 +130,7 @@ const EN_MAKES = {
   jeep:'Jeep',mitsubishi:'Mitsubishi',subaru:'Subaru',byd:'BYD',mg:'MG',chery:'Chery',geely:'Geely',
   cupra:'Cupra',seat:'Seat',opel:'Opel',lexus:'Lexus',dacia:'Dacia',
   fiat:'Fiat',chevrolet:'Chevrolet',tesla:'Tesla',
+  'alfa-romeo':'Alfa Romeo','land-rover':'Land Rover',porsche:'Porsche',
 };
 const EN_MODELS = {
   corolla:'Corolla','corolla-cross':'Corolla Cross',camry:'Camry',yaris:'Yaris','yaris-cross':'Yaris Cross',
@@ -142,6 +152,11 @@ const EN_MODELS = {
   'fiat-500':'500','fiat-500e':'500e','fiat-500x':'500X',tipo:'Tipo','tipo-cross':'Tipo Cross',panda:'Panda',ducato:'Ducato',doblo:'Doblò',
   spark:'Spark',cruze:'Cruze',captiva:'Captiva',equinox:'Equinox',trailblazer:'Trailblazer',malibu:'Malibu',tahoe:'Tahoe',colorado:'Colorado',camaro:'Camaro',
   'model-3':'Model 3','model-y':'Model Y','model-s':'Model S','model-x':'Model X',
+  giulia:'Giulia',stelvio:'Stelvio',tonale:'Tonale',giulietta:'Giulietta',
+  defender:'Defender',discovery:'Discovery','discovery-sport':'Discovery Sport',
+  'range-rover':'Range Rover','range-rover-sport':'Range Rover Sport',
+  'range-rover-evoque':'Range Rover Evoque','range-rover-velar':'Range Rover Velar',
+  cayenne:'Cayenne',macan:'Macan','911':'911',panamera:'Panamera',taycan:'Taycan',
   a3:'A3',a4:'A4',a6:'A6',q3:'Q3',q5:'Q5',etron:'e-tron',
   fiesta:'Fiesta',focus:'Focus',kuga:'Kuga',puma:'Puma',ranger:'Ranger',
   qashqai:'Qashqai','x-trail':'X-Trail',juke:'Juke',kicks:'Kicks',note:'Note',leaf:'Leaf',navara:'Navara',
