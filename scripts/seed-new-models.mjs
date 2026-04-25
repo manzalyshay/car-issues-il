@@ -46,7 +46,7 @@ const CAR_DB = [
   { make:'kia',    models:['sportage','seltos','stonic','ceed','cerato','sorento','carnival','picanto','ev6','ev9','niro'] },
   { make:'volkswagen', models:['golf','polo','passat','tiguan','taigo','troc','id3','id4'] },
   { make:'bmw',    models:['series1','series3','series5','x1','x3','x5','ix3'] },
-  { make:'mercedes', models:['a-class','b-class','cla','c-class','e-class','gla','glb','glc','eqb','eqc'] },
+  { make:'mercedes', models:['a180','a200','a220','a250','a35-amg','a45-amg','b-class','cla','c180','c200','c220d','c300','c300d','c43-amg','c63-amg','e-class','gla','glb','glc','eqb','eqc'] },
   { make:'audi',   models:['a3','a4','a6','q3','q5','etron'] },
   { make:'skoda',  models:['octavia','kodiaq','kamiq','superb','karoq','scala','enyaq','fabia','rapid'] },
   { make:'peugeot', models:['208','308','3008','5008','e208'] },
@@ -63,6 +63,9 @@ const CAR_DB = [
   { make:'mg',     models:['mg-zs','mg4','mg5','hs'] },
   { make:'chery',  models:['omoda5','tiggo7','tiggo8','arrizo6'] },
   { make:'geely',  models:['coolray','emgrand'] },
+  { make:'fiat',      models:['fiat-500','fiat-500e','tipo','tipo-cross','fiat-500x','panda','ducato','doblo'] },
+  { make:'chevrolet', models:['spark','cruze','captiva','equinox','trailblazer','malibu','tahoe','colorado','camaro'] },
+  { make:'tesla',     models:['model-3','model-y','model-s','model-x'] },
 ];
 
 // ── Translation maps ─────────────────────────────────────────────────────────
@@ -72,6 +75,7 @@ const HE_MAKES = {
   audi:'אאודי',ford:'פורד',nissan:'ניסאן',peugeot:"פיג'ו",renault:'רנו',volvo:'וולוו',
   jeep:"ג'יפ",mitsubishi:'מיצובישי',subaru:'סובארו',byd:'BYD',mg:'MG',chery:"צ'רי",geely:"ג'ילי",
   cupra:'קופרה',seat:'סיאט',opel:'אופל',lexus:'לקסוס',dacia:"דאצ'יה",
+  fiat:'פיאט',chevrolet:'שברולט',tesla:'טסלה',
 };
 const HE_MODELS = {
   corolla:'קורולה','corolla-cross':'קורולה קרוס',camry:'קאמרי',yaris:'יאריס','yaris-cross':'יאריס קרוס',
@@ -88,6 +92,11 @@ const HE_MODELS = {
   series1:'סדרה 1',series3:'סדרה 3',series5:'סדרה 5',x1:'X1',x3:'X3',x5:'X5',ix3:'iX3',
   'a-class':'A-Class','b-class':'B-Class',cla:'CLA','c-class':'C-Class','e-class':'E-Class',
   gla:'GLA',glb:'GLB',glc:'GLC',eqb:'EQB',eqc:'EQC',
+  a180:'A180',a200:'A200',a220:'A220',a250:'A250','a35-amg':'A35 AMG','a45-amg':'A45 AMG',
+  c180:'C180',c200:'C200',c220d:'C220d',c300:'C300',c300d:'C300d','c43-amg':'C43 AMG','c63-amg':'C63 AMG',
+  'fiat-500':'500','fiat-500e':'500e','fiat-500x':'500X',tipo:'טיפו','tipo-cross':'טיפו קרוס',panda:'פנדה',ducato:'דוקאטו',doblo:'דובלו',
+  spark:'ספארק',cruze:'קרוז',captiva:'קפטיבה',equinox:'אקוינוקס',trailblazer:'טרייל בלייזר',malibu:'מליבו',tahoe:'טאהו',colorado:'קולורדו',camaro:'קמרו',
+  'model-3':'מודל 3','model-y':'מודל Y','model-s':'מודל S','model-x':'מודל X',
   a3:'A3',a4:'A4',a6:'A6',q3:'Q3',q5:'Q5',etron:'e-tron',
   fiesta:'פיאסטה',focus:'פוקוס',kuga:'קוגה',puma:'פומה',ranger:"ריינג'ר",
   qashqai:'קשקאי','x-trail':'X-Trail',juke:"ג'וק",kicks:'קיקס',note:'נוט',leaf:'ליף',navara:'נאוורה',
@@ -111,6 +120,7 @@ const EN_MAKES = {
   audi:'Audi',ford:'Ford',nissan:'Nissan',peugeot:'Peugeot',renault:'Renault',volvo:'Volvo',
   jeep:'Jeep',mitsubishi:'Mitsubishi',subaru:'Subaru',byd:'BYD',mg:'MG',chery:'Chery',geely:'Geely',
   cupra:'Cupra',seat:'Seat',opel:'Opel',lexus:'Lexus',dacia:'Dacia',
+  fiat:'Fiat',chevrolet:'Chevrolet',tesla:'Tesla',
 };
 const EN_MODELS = {
   corolla:'Corolla','corolla-cross':'Corolla Cross',camry:'Camry',yaris:'Yaris','yaris-cross':'Yaris Cross',
@@ -127,6 +137,11 @@ const EN_MODELS = {
   series1:'Series 1',series3:'Series 3',series5:'Series 5',x1:'X1',x3:'X3',x5:'X5',ix3:'iX3',
   'a-class':'A-Class','b-class':'B-Class',cla:'CLA','c-class':'C-Class','e-class':'E-Class',
   gla:'GLA',glb:'GLB',glc:'GLC',eqb:'EQB',eqc:'EQC',
+  a180:'A180',a200:'A200',a220:'A220',a250:'A250','a35-amg':'A35 AMG','a45-amg':'A45 AMG',
+  c180:'C180',c200:'C200',c220d:'C220d',c300:'C300',c300d:'C300d','c43-amg':'C43 AMG','c63-amg':'C63 AMG',
+  'fiat-500':'500','fiat-500e':'500e','fiat-500x':'500X',tipo:'Tipo','tipo-cross':'Tipo Cross',panda:'Panda',ducato:'Ducato',doblo:'Doblò',
+  spark:'Spark',cruze:'Cruze',captiva:'Captiva',equinox:'Equinox',trailblazer:'Trailblazer',malibu:'Malibu',tahoe:'Tahoe',colorado:'Colorado',camaro:'Camaro',
+  'model-3':'Model 3','model-y':'Model Y','model-s':'Model S','model-x':'Model X',
   a3:'A3',a4:'A4',a6:'A6',q3:'Q3',q5:'Q5',etron:'e-tron',
   fiesta:'Fiesta',focus:'Focus',kuga:'Kuga',puma:'Puma',ranger:'Ranger',
   qashqai:'Qashqai','x-trail':'X-Trail',juke:'Juke',kicks:'Kicks',note:'Note',leaf:'Leaf',navara:'Navara',
@@ -238,6 +253,8 @@ for (const { make, model } of missing) {
       pros: (data.pros ?? []).slice(0, 4),
       cons: (data.cons ?? []).slice(0, 4),
       source_name: 'AI Knowledge',
+      source_url: '',
+      original_title: `${makeEn} ${modelEn} AI Summary`,
       scraped_at: new Date().toISOString(),
       next_scrape_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
     });

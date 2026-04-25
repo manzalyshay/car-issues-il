@@ -70,9 +70,22 @@ export const CAR_LIST = [
   { make: 'bmw', model: 'x3',      years: range(2014) },
   { make: 'bmw', model: 'x5',      years: range(2014) },
   { make: 'bmw', model: 'ix3',     years: range(2021) },
-  // Mercedes
-  { make: 'mercedes', model: 'a-class', years: range(2013) },
-  { make: 'mercedes', model: 'c-class', years: range(2014) },
+  // Mercedes (A-Class split)
+  { make: 'mercedes', model: 'a180',    years: range(2013) },
+  { make: 'mercedes', model: 'a200',    years: range(2015) },
+  { make: 'mercedes', model: 'a220',    years: range(2019) },
+  { make: 'mercedes', model: 'a250',    years: range(2014) },
+  { make: 'mercedes', model: 'a35-amg', years: range(2019) },
+  { make: 'mercedes', model: 'a45-amg', years: range(2013) },
+  // Mercedes (C-Class split)
+  { make: 'mercedes', model: 'c180',    years: range(2012, 2021) },
+  { make: 'mercedes', model: 'c200',    years: range(2014) },
+  { make: 'mercedes', model: 'c220d',   years: range(2014) },
+  { make: 'mercedes', model: 'c300',    years: range(2015) },
+  { make: 'mercedes', model: 'c300d',   years: range(2018) },
+  { make: 'mercedes', model: 'c43-amg', years: range(2015) },
+  { make: 'mercedes', model: 'c63-amg', years: range(2014) },
+  // Mercedes (other)
   { make: 'mercedes', model: 'e-class', years: range(2013) },
   { make: 'mercedes', model: 'gla',     years: range(2014) },
   { make: 'mercedes', model: 'glb',     years: range(2019) },
@@ -147,4 +160,28 @@ export const CAR_LIST = [
   // Geely
   { make: 'geely', model: 'coolray', years: range(2020) },
   { make: 'geely', model: 'emgrand', years: range(2019) },
+  // Fiat
+  { make: 'fiat', model: 'fiat-500',  years: range(2012) },
+  { make: 'fiat', model: 'fiat-500e', years: range(2021) },
+  { make: 'fiat', model: 'tipo',      years: range(2016) },
+  { make: 'fiat', model: 'tipo-cross', years: range(2021) },
+  { make: 'fiat', model: 'fiat-500x', years: range(2015) },
+  { make: 'fiat', model: 'panda',     years: range(2012) },
+  { make: 'fiat', model: 'ducato',    years: range(2015) },
+  { make: 'fiat', model: 'doblo',     years: range(2013) },
+  // Chevrolet
+  { make: 'chevrolet', model: 'spark',       years: range(2012, 2022) },
+  { make: 'chevrolet', model: 'cruze',       years: range(2010, 2020) },
+  { make: 'chevrolet', model: 'captiva',     years: range(2009, 2020) },
+  { make: 'chevrolet', model: 'equinox',     years: range(2015) },
+  { make: 'chevrolet', model: 'trailblazer', years: range(2020) },
+  { make: 'chevrolet', model: 'malibu',      years: range(2013, 2023) },
+  { make: 'chevrolet', model: 'tahoe',       years: range(2015) },
+  { make: 'chevrolet', model: 'colorado',    years: range(2015) },
+  { make: 'chevrolet', model: 'camaro',      years: range(2015, 2024) },
+  // Tesla
+  { make: 'tesla', model: 'model-3', years: range(2017) },
+  { make: 'tesla', model: 'model-y', years: range(2020) },
+  { make: 'tesla', model: 'model-s', years: range(2015) },
+  { make: 'tesla', model: 'model-x', years: range(2016) },
 ];
