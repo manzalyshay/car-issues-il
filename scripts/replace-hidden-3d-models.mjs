@@ -76,16 +76,21 @@ const MAKE_ALIASES = {
   'mg':            ['mg'],
 };
 
+function stripAccents(s) {
+  return s.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+}
+
 function nameMatchesCar(sketchfabName, makeEn, modelEn) {
-  const n = sketchfabName.toLowerCase();
+  // Normalize accents so "Doblò" matches "Doblo", etc.
+  const n = stripAccents(sketchfabName.toLowerCase());
   const makeLower = makeEn.toLowerCase();
   const aliases = MAKE_ALIASES[makeLower] ?? [makeLower];
   const makeMatch = aliases.some(a => n.includes(a));
   if (!makeMatch) return false;
   // Split model name on spaces/hyphens; keep words ≥2 chars OR single-digit numbers (e.g. "3" in "Series 3")
-  const modelWords = modelEn.toLowerCase().split(/[\s\-_\.]+/).filter(w => w.length >= 2 || /^\d$/.test(w));
-  // Must match at least one model word as a word boundary (to avoid "3" matching "305" etc.)
-  return modelWords.some(w => {
+  const rawWords = stripAccents(modelEn.toLowerCase()).split(/[\s\-_\.]+/).filter(w => w.length >= 2 || /^\d$/.test(w));
+  // Must match at least one model word
+  return rawWords.some(w => {
     if (/^\d+$/.test(w)) return new RegExp(`(?<![\\d])${w}(?![\\d])`).test(n);
     return n.includes(w);
   });
@@ -93,21 +98,54 @@ function nameMatchesCar(sketchfabName, makeEn, modelEn) {
 
 function delay(ms) { return new Promise(r => setTimeout(r, ms)); }
 
+// Fallback search queries for models that don't appear under their exact name on Sketchfab
+const SEARCH_FALLBACKS = {
+  'mercedes/c220d': ['Mercedes-Benz C220', 'Mercedes C-Class W205'],
+  'mercedes/c300d': ['Mercedes-Benz C300', 'Mercedes C-Class W206'],
+  'mercedes/a220':  ['Mercedes-Benz A220', 'Mercedes A-Class W177'],
+  'mercedes/a250':  ['Mercedes-Benz A250', 'Mercedes A-Class W177'],
+  'mercedes/a35-amg': ['Mercedes AMG A35', 'Mercedes A35'],
+  'mercedes/a45-amg': ['Mercedes AMG A45', 'Mercedes A45'],
+  'volkswagen/taigo': ['Volkswagen Taigo', 'VW Taigo'],
+  'renault/kadjar':   ['Renault Kadjar'],
+  'dacia/spring':     ['Dacia Spring Electric'],
+  'chery/arrizo6':    ['Chery Arrizo'],
+  'byd/tang':         ['BYD Tang EV'],
+  'byd/sealion6':     ['BYD Sealion'],
+  'mg/ehs':           ['MG EHS hybrid'],
+};
+
 async function findAndInsert(make_slug, model_slug, makeEn, modelEn, excludeUid = null, label = '') {
   process.stdout.write(`  ${label}[${make_slug}/${model_slug}] "${makeEn} ${modelEn}"... `);
-  let results;
-  try {
-    results = await searchSketchfab(`${makeEn} ${modelEn}`, excludeUid);
-  } catch (e) {
-    console.log(`✗ search error: ${e.message}`);
-    return false;
+
+  // Build list of search queries to try (primary + fallbacks)
+  const primaryQuery = `${makeEn} ${modelEn}`;
+  const fallbacks = SEARCH_FALLBACKS[`${make_slug}/${model_slug}`] ?? [];
+  const queriesToTry = [primaryQuery, ...fallbacks.filter(q => q !== primaryQuery)];
+
+  let matched = [];
+  let lastResultCount = 0;
+  for (const query of queriesToTry) {
+    let results;
+    try {
+      results = await searchSketchfab(query, excludeUid);
+    } catch (e) {
+      console.log(`✗ search error: ${e.message}`);
+      return false;
+    }
+    lastResultCount = results.length;
+    matched = results.filter(r => nameMatchesCar(r.name, makeEn, modelEn));
+    if (matched.length) break;
+    // Also try with relaxed matching: just make name in result
+    if (!matched.length && results.length > 0) {
+      const makeAliases = MAKE_ALIASES[makeEn.toLowerCase()] ?? [makeEn.toLowerCase()];
+      matched = results.filter(r => makeAliases.some(a => r.name.toLowerCase().includes(a)));
+      if (matched.length) break;
+    }
   }
 
-  const matched = results.filter(r => nameMatchesCar(r.name, makeEn, modelEn));
   if (!matched.length) {
-    // Debug: show first 5 result names + licenses to diagnose match failures
-    const preview = results.slice(0, 5).map(r => `"${r.name}" [${r.license?.label ?? 'no-lic'}]`).join(', ');
-    console.log(`✗ no match (${results.length} results: ${preview})`);
+    console.log(`✗ no match after ${queriesToTry.length} queries (last: ${lastResultCount} results)`);
     return false;
   }
 
