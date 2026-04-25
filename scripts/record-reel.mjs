@@ -140,11 +140,15 @@ console.log('   Converting to MP4...');
 // Timeline: 0–16s load, 16–17s click+zoom, 17–41s drag rotation.
 // -ss 22: skip load + zoom-out phase, start mid-drag where rotation is smooth.
 // -t 10:  capture 10s of clean rotating motion.
+// minterpolate blend: interpolates between ~5fps SwiftShader frames to produce
+// smooth 30fps output. 'blend' mode is fast and works well for slow rotation
+// where per-frame movement is small (~5px).
 execFileSync('ffmpeg', [
   '-y',
   '-i', webmPath,
   '-ss', '22',
   '-t', '10',
+  '-vf', "minterpolate='mi_mode=blend:fps=30'",
   '-c:v', 'libx264',
   '-preset', 'fast',
   '-crf', '22',
