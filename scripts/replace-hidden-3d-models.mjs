@@ -106,7 +106,9 @@ async function findAndInsert(make_slug, model_slug, makeEn, modelEn, excludeUid 
 
   const matched = results.filter(r => nameMatchesCar(r.name, makeEn, modelEn));
   if (!matched.length) {
-    console.log(`✗ no match (${results.length} results, none fit name)`);
+    // Debug: show first 5 result names + licenses to diagnose match failures
+    const preview = results.slice(0, 5).map(r => `"${r.name}" [${r.license?.label ?? 'no-lic'}]`).join(', ');
+    console.log(`✗ no match (${results.length} results: ${preview})`);
     return false;
   }
 
