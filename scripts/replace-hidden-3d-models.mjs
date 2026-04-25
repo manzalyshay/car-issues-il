@@ -47,7 +47,9 @@ if (!SKETCHFAB_TOKEN) {
 // ── Sketchfab search ──────────────────────────────────────────────────────────
 
 async function searchSketchfab(query, excludeUid = null) {
-  const url = `https://api.sketchfab.com/v3/models?q=${encodeURIComponent(query)}&license=by&count=24&sort_by=-likeCount`;
+  // No license filter in the URL — cast a wide net and filter client-side.
+  // &license=by returns only ~9 results total (too few), missing most car models.
+  const url = `https://api.sketchfab.com/v3/models?q=${encodeURIComponent(query)}&count=24&sort_by=-likeCount&type=models`;
   const res = await fetch(url, {
     headers: {
       'Accept': 'application/json',
@@ -58,18 +60,36 @@ async function searchSketchfab(query, excludeUid = null) {
   if (!res.ok) throw new Error(`Sketchfab API ${res.status}`);
   const data = await res.json();
   return (data.results ?? []).filter(m => {
-    if (excludeUid && m.uid === excludeUid) return false;  // never re-use the bad UID
+    if (excludeUid && m.uid === excludeUid) return false;
+    // Accept CC-Attribution without NonCommercial OR NoDerivatives restrictions.
+    // Also accept models with no license set (public domain / default permissive).
     const lic = m.license?.label ?? '';
-    return lic.includes('Attribution') && !lic.includes('NonCommercial') && !lic.includes('NoDerivatives');
+    if (lic && lic.includes('NonCommercial')) return false;
+    if (lic && lic.includes('NoDerivatives')) return false;
+    return true;
   });
 }
 
-// Model name must contain the make AND at least one keyword from the model name
+// Model name must contain the make AND at least one keyword from the model name.
+// Alternate make spellings are tried for brands with common short-forms.
+const MAKE_ALIASES = {
+  'mercedes-benz': ['mercedes', 'benz', 'mercedes-benz'],
+  'volkswagen':    ['volkswagen', 'vw'],
+  'bmw':           ['bmw'],
+  'byd':           ['byd'],
+  'mg':            ['mg'],
+};
+
 function nameMatchesCar(sketchfabName, makeEn, modelEn) {
   const n = sketchfabName.toLowerCase();
-  const make = makeEn.toLowerCase();
-  const modelWords = modelEn.toLowerCase().split(/[\s\-]+/).filter(w => w.length >= 2);
-  return n.includes(make) && modelWords.some(w => n.includes(w));
+  const makeLower = makeEn.toLowerCase();
+  const aliases = MAKE_ALIASES[makeLower] ?? [makeLower];
+  const makeMatch = aliases.some(a => n.includes(a));
+  if (!makeMatch) return false;
+  // Split model name on spaces/hyphens and keep words ≥2 chars
+  const modelWords = modelEn.toLowerCase().split(/[\s\-_\.]+/).filter(w => w.length >= 2);
+  // Must match at least one model word
+  return modelWords.some(w => n.includes(w));
 }
 
 function delay(ms) { return new Promise(r => setTimeout(r, ms)); }
@@ -86,7 +106,7 @@ async function findAndInsert(make_slug, model_slug, makeEn, modelEn, excludeUid 
 
   const matched = results.filter(r => nameMatchesCar(r.name, makeEn, modelEn));
   if (!matched.length) {
-    console.log(`✗ no match (${results.length} CC BY results, none fit name)`);
+    console.log(`✗ no match (${results.length} results, none fit name)`);
     return false;
   }
 
