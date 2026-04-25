@@ -47,22 +47,18 @@ if (!SKETCHFAB_TOKEN) {
 // ── Sketchfab search ──────────────────────────────────────────────────────────
 
 async function searchSketchfab(query, excludeUid = null) {
-  // No license filter in the URL — cast a wide net and filter client-side.
-  // &license=by returns only ~9 results total (too few), missing most car models.
-  const url = `https://api.sketchfab.com/v3/models?q=${encodeURIComponent(query)}&count=24&sort_by=-likeCount&type=models`;
-  const res = await fetch(url, {
-    headers: {
-      'Accept': 'application/json',
-      'Authorization': `Token ${SKETCHFAB_TOKEN}`,
-    },
-    signal: AbortSignal.timeout(15000),
-  });
+  // Use /v3/search?type=models — the /v3/models?q= endpoint ignores the q param
+  // and returns generic popular models regardless of search term.
+  const url = `https://api.sketchfab.com/v3/search?type=models&q=${encodeURIComponent(query)}&count=24&sort_by=-likeCount`;
+  const headers = { 'Accept': 'application/json' };
+  if (SKETCHFAB_TOKEN) headers['Authorization'] = `Token ${SKETCHFAB_TOKEN}`;
+  const res = await fetch(url, { headers, signal: AbortSignal.timeout(15000) });
   if (!res.ok) throw new Error(`Sketchfab API ${res.status}`);
   const data = await res.json();
   return (data.results ?? []).filter(m => {
     if (excludeUid && m.uid === excludeUid) return false;
-    // Accept CC-Attribution without NonCommercial OR NoDerivatives restrictions.
-    // Also accept models with no license set (public domain / default permissive).
+    // Accept CC-Attribution without NonCommercial or NoDerivatives restrictions.
+    // Also accept models with no license info (they're still publicly embeddable).
     const lic = m.license?.label ?? '';
     if (lic && lic.includes('NonCommercial')) return false;
     if (lic && lic.includes('NoDerivatives')) return false;
@@ -86,10 +82,13 @@ function nameMatchesCar(sketchfabName, makeEn, modelEn) {
   const aliases = MAKE_ALIASES[makeLower] ?? [makeLower];
   const makeMatch = aliases.some(a => n.includes(a));
   if (!makeMatch) return false;
-  // Split model name on spaces/hyphens and keep words ≥2 chars
-  const modelWords = modelEn.toLowerCase().split(/[\s\-_\.]+/).filter(w => w.length >= 2);
-  // Must match at least one model word
-  return modelWords.some(w => n.includes(w));
+  // Split model name on spaces/hyphens; keep words ≥2 chars OR single-digit numbers (e.g. "3" in "Series 3")
+  const modelWords = modelEn.toLowerCase().split(/[\s\-_\.]+/).filter(w => w.length >= 2 || /^\d$/.test(w));
+  // Must match at least one model word as a word boundary (to avoid "3" matching "305" etc.)
+  return modelWords.some(w => {
+    if (/^\d+$/.test(w)) return new RegExp(`(?<![\\d])${w}(?![\\d])`).test(n);
+    return n.includes(w);
+  });
 }
 
 function delay(ms) { return new Promise(r => setTimeout(r, ms)); }
