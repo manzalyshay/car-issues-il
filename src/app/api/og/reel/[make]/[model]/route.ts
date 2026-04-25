@@ -147,21 +147,9 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ mak
 <div class="scene">
 
   ${sketchfabUid
-    ? `<iframe id="viewer-iframe" allow="autoplay; fullscreen; xr-spatial-tracking" allowfullscreen></iframe>
-  <script src="https://static.sketchfab.com/api/sketchfab-viewer-1.12.1.js"></script>
-  <script>
-    var client = new Sketchfab(document.getElementById('viewer-iframe'));
-    client.init('${sketchfabUid}', {
-      autostart: 1,
-      preload: 1,
-      transparent: 1,
-      autospin: 0.07,
-      ui_infos: 0, ui_controls: 0, ui_watermark: 0, ui_stop: 0,
-      ui_ar: 0, ui_help: 0, ui_settings: 0, ui_annotations: 0, dnt: 1,
-      success: function(api) { api.start(); },
-      error: function() {},
-    });
-  </script>`
+    ? `<iframe id="viewer-iframe"
+        src="https://sketchfab.com/models/${sketchfabUid}/embed?autostart=1&preload=1&transparent=1&ui_infos=0&ui_controls=0&ui_watermark=0&ui_stop=0&ui_ar=0&ui_help=0&ui_settings=0&ui_annotations=0&dnt=1"
+        allow="autoplay; fullscreen; xr-spatial-tracking" allowfullscreen></iframe>`
     : `<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;background:${CARD};">
          <img src="${make.logoUrl}" style="width:500px;height:500px;object-fit:contain;opacity:0.15;" alt=""/>
        </div>`

@@ -80,34 +80,31 @@ await page.setViewportSize({ width: 1080, height: 1920 });
 console.log('   Loading page...');
 await page.goto(reelUrl, { waitUntil: 'load', timeout: 60000 });
 
-// Wait for Sketchfab iframe to load.
-// SwiftShader renders at ~5fps so allow 25s for the model to appear.
-console.log('   Waiting for 3D model to load (25s)...');
-await page.waitForTimeout(25000);
+// Wait for Sketchfab to initialise the 3D model
+console.log('   Waiting for 3D model to load (14s)...');
+await page.waitForTimeout(14000);
 
-// Debug: screenshot to verify what's actually on screen
-const debugPath = mp4Path.replace('.mp4', '_debug.png');
-await page.screenshot({ path: debugPath, fullPage: false });
-const debugBuffer = readFileSync(debugPath);
-const { error: debugUploadError } = await sb.storage
-  .from('social-screenshots')
-  .upload(`reels/${makeSlug}_${modelSlug}_debug.png`, debugBuffer, { contentType: 'image/png', upsert: true });
-if (!debugUploadError) {
-  const { data: { publicUrl: debugUrl } } = sb.storage.from('social-screenshots').getPublicUrl(`reels/${makeSlug}_${modelSlug}_debug.png`);
-  console.log(`   Debug screenshot: ${debugUrl}`);
-} else {
-  console.log(`   Debug screenshot saved locally: ${debugPath}`);
+// Zoom out so the whole car is visible
+console.log('   Zooming out...');
+await page.mouse.move(540, 800);
+for (let i = 0; i < 6; i++) {
+  await page.mouse.wheel(0, 150);
+  await page.waitForTimeout(200);
 }
-
-// Sketchfab autospin requires user interaction to activate.
-// Simulate a click in the center of the 3D viewport to unlock it.
-console.log('   Simulating user click to activate autospin...');
-await page.mouse.click(540, 600);
 await page.waitForTimeout(500);
-await page.mouse.click(540, 600);
 
-console.log('   Recording rotation (15s)...');
-await page.waitForTimeout(15000);
+// Rotate by simulating a slow mouse drag across the canvas.
+// Sketchfab treats drag as manual rotation — no autospin or Viewer API needed.
+// 5000px left over 10s = ~3-4 full rotations.
+console.log('   Recording 10s of rotation via mouse drag...');
+await page.mouse.move(800, 800);
+await page.mouse.down();
+const DRAG_PX = 5000, DRAG_MS = 10000, DRAG_STEPS = 300;
+for (let i = 1; i <= DRAG_STEPS; i++) {
+  await page.mouse.move(800 - (DRAG_PX * i / DRAG_STEPS), 800);
+  await new Promise(r => setTimeout(r, DRAG_MS / DRAG_STEPS));
+}
+await page.mouse.up();
 
 // Grab the path BEFORE closing (closing finalises the file)
 const videoPathRaw = await page.video()?.path();
@@ -132,22 +129,20 @@ console.log(`   Raw video: ${webmPath}`);
 
 // ── Convert WebM → MP4 (H.264) ────────────────────────────────────────────────
 console.log('   Converting to MP4...');
-// Timeline: 0–25s model load, ~26s click unlocks autospin, 26–41s clean rotation.
-// -ss 27: skip load phase + click moment
-// -t 12:  capture 12s of clean rotation
-// minterpolate blend: smooth 30fps output from ~5fps SwiftShader frames.
+// Timeline: 0–14s model load, 14–16s zoom, 16–26s drag rotation.
+// -ss 16: skip load + zoom phases, keep only spinning portion
+// -t 10:  10s of clean rotation
 execFileSync('ffmpeg', [
   '-y',
   '-i', webmPath,
-  '-ss', '27',
-  '-t', '12',
-  '-vf', "minterpolate='mi_mode=blend:fps=30'",
+  '-ss', '16',
+  '-t', '10',
   '-c:v', 'libx264',
   '-preset', 'fast',
   '-crf', '22',
   '-pix_fmt', 'yuv420p',
   '-movflags', '+faststart',
-  '-an',              // no audio
+  '-an',
   mp4Path,
 ], { stdio: 'inherit' });
 
