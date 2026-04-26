@@ -43,8 +43,9 @@ const browserlessToken = process.env.BROWSERLESS_TOKEN;
 let browser;
 if (browserlessToken) {
   console.log('   Using Browserless cloud browser...');
+  // timeout=120000 → 2-minute session limit (default is ~30s, too short for our 43s script)
   browser = await chromium.connectOverCDP(
-    `wss://chrome.browserless.io?token=${browserlessToken}`
+    `wss://chrome.browserless.io?token=${browserlessToken}&timeout=120000`
   );
 } else {
   console.log('   Using local SwiftShader browser (set BROWSERLESS_TOKEN for better quality)...');
@@ -110,7 +111,7 @@ for (let i = 0; i <= DRAG_STEPS; i++) {
     DRAG_START_X + (DRAG_END_X - DRAG_START_X) * (i / DRAG_STEPS),
     DRAG_Y,
   );
-  await new Promise(r => setTimeout(r, Math.round(24000 / DRAG_STEPS)));
+  await page.waitForTimeout(Math.round(24000 / DRAG_STEPS));
 }
 await page.mouse.up({ button: 'left' });
 
