@@ -39,30 +39,23 @@ console.log(`\n🎬 Recording reel: ${makeSlug}/${modelSlug}`);
 console.log(`   URL: ${reelUrl}`);
 
 // ── Launch browser ────────────────────────────────────────────────────────────
-const browserlessToken = process.env.BROWSERLESS_TOKEN;
-let browser;
-if (browserlessToken) {
-  console.log('   Using Browserless cloud browser...');
-  // timeout=120000 → 2-minute session limit (default is ~30s, too short for our 43s script)
-  browser = await chromium.connectOverCDP(
-    `wss://chrome.browserless.io?token=${browserlessToken}&timeout=120000`
-  );
-} else {
-  console.log('   Using local SwiftShader browser (set BROWSERLESS_TOKEN for better quality)...');
-  browser = await chromium.launch({
-    headless: true,
-    args: [
-      '--no-sandbox',
-      '--disable-setuid-sandbox',
-      '--disable-dev-shm-usage',
-      '--use-gl=swiftshader',
-      '--ignore-gpu-blocklist',
-      '--enable-unsafe-webgpu',
-      '--disable-background-timer-throttling',
-      '--disable-renderer-backgrounding',
-    ],
-  });
-}
+// Always use local SwiftShader — Browserless (connectOverCDP) drops the CDP
+// Screencast stream mid-recording, causing exit code 13 crashes. SwiftShader
+// renders at ~5fps which minterpolate then smooths to 30fps in the ffmpeg step.
+console.log('   Launching SwiftShader browser...');
+const browser = await chromium.launch({
+  headless: true,
+  args: [
+    '--no-sandbox',
+    '--disable-setuid-sandbox',
+    '--disable-dev-shm-usage',
+    '--use-gl=swiftshader',
+    '--ignore-gpu-blocklist',
+    '--enable-unsafe-webgpu',
+    '--disable-background-timer-throttling',
+    '--disable-renderer-backgrounding',
+  ],
+});
 
 const context = await browser.newContext({
   recordVideo: {
