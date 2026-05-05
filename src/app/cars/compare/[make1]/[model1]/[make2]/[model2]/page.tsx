@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
-import { notFound } from 'next/navigation';
+import { notFound, redirect } from 'next/navigation';
 import { getMakeBySlug, getModelBySlug, getAllMakes } from '@/lib/carsDb';
 import { getReviewsForModel } from '@/lib/reviewsDb';
 import { getExpertReviews } from '@/lib/expertReviews';
@@ -56,6 +56,12 @@ function Score({ label, value, best }: { label: string; value: number | null; be
 
 export default async function ComparePage({ params }: Props) {
   const { make1, model1, make2, model2 } = await params;
+
+  // Enforce canonical slug order (alphabetical) to avoid duplicate pages
+  const [c1, c2] = [`${make1}/${model1}`, `${make2}/${model2}`].sort();
+  if (`${make1}/${model1}` !== c1) {
+    redirect(`/cars/compare/${c1}/${c2}`);
+  }
 
   const [mA, mB] = await Promise.all([getMakeBySlug(make1), getMakeBySlug(make2)]);
   if (!mA || !mB) notFound();
