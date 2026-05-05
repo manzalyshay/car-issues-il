@@ -87,35 +87,50 @@ export async function POST(req: NextRequest) {
       let published: Record<string, unknown>;
 
       if (reelUrl) {
-        // Carousel: image (slide 1) + video/reel (slide 2)
-        results.ig_carousel = true;
+        // Try carousel (image + video). If video processing fails, fall back to image-only.
+        let carouselOk = false;
+        try {
+          results.ig_carousel = true;
 
-        // Create image carousel item
-        const imgItem = await gql(`${IG_ID()}/media`, 'POST', {
-          image_url: imageUrl,
-          is_carousel_item: true,
-        });
+          // Create image carousel item
+          const imgItem = await gql(`${IG_ID()}/media`, 'POST', {
+            image_url: imageUrl,
+            is_carousel_item: true,
+          });
 
-        // Create video carousel item
-        const vidItem = await gql(`${IG_ID()}/media`, 'POST', {
-          video_url: reelUrl,
-          media_type: 'VIDEO',
-          is_carousel_item: true,
-        });
+          // Create video carousel item
+          const vidItem = await gql(`${IG_ID()}/media`, 'POST', {
+            video_url: reelUrl,
+            media_type: 'VIDEO',
+            is_carousel_item: true,
+          });
 
-        // Wait for video to finish processing (required before creating carousel)
-        const videoReady = await waitForIgContainer(vidItem.id);
-        if (!videoReady) throw new Error('Video processing timed out or failed');
+          // Wait for video to finish processing
+          const videoReady = await waitForIgContainer(vidItem.id);
+          if (!videoReady) throw new Error('Video processing timed out or failed');
 
-        // Create carousel container
-        const carousel = await gql(`${IG_ID()}/media`, 'POST', {
-          media_type: 'CAROUSEL',
-          children: `${imgItem.id},${vidItem.id}`,
-          caption: captionNoHashtags,
-        });
+          // Create carousel container
+          const carousel = await gql(`${IG_ID()}/media`, 'POST', {
+            media_type: 'CAROUSEL',
+            children: `${imgItem.id},${vidItem.id}`,
+            caption: captionNoHashtags,
+          });
 
-        // Publish carousel
-        published = await gql(`${IG_ID()}/media_publish`, 'POST', { creation_id: carousel.id });
+          published = await gql(`${IG_ID()}/media_publish`, 'POST', { creation_id: carousel.id });
+          carouselOk = true;
+        } catch (carouselErr) {
+          // Log carousel failure and fall back to image-only post
+          await adminLog('warn', 'instagram/publish', `Carousel failed, falling back to image-only: ${String(carouselErr)}`, { postId, reelUrl });
+          results.ig_carousel_error = String(carouselErr);
+          results.ig_carousel = false;
+        }
+
+        if (!carouselOk) {
+          // Fallback: plain image post
+          const container = await gql(`${IG_ID()}/media`, 'POST', { image_url: imageUrl, caption: captionNoHashtags });
+          published = await gql(`${IG_ID()}/media_publish`, 'POST', { creation_id: container.id });
+          results.ig_fallback_image = true;
+        }
       } else {
         // Regular single-image post
         const container = await gql(`${IG_ID()}/media`, 'POST', { image_url: imageUrl, caption: captionNoHashtags });
@@ -144,30 +159,34 @@ export async function POST(req: NextRequest) {
 
     // ── Facebook ───────────────────────────────────────────────────────────────
     try {
+      let fbPosted = false;
       if (reelUrl) {
-        // Multi-media post: stage image + video unpublished, then post together
-        const [photoRes, videoRes] = await Promise.all([
-          gql(`${PAGE_ID()}/photos`, 'POST', { url: imageUrl, published: false }),
-          gql(`${PAGE_ID()}/videos`,  'POST', { file_url: reelUrl, published: false, description: fullCaption }),
-        ]);
-        const photoFbid = (photoRes as Record<string, string>).id;
-        const videoFbid = (videoRes as Record<string, string>).id;
+        // Try multi-media (image + video). Fall back to image-only on permission/processing errors.
+        try {
+          const [photoRes, videoRes] = await Promise.all([
+            gql(`${PAGE_ID()}/photos`, 'POST', { url: imageUrl, published: false }),
+            gql(`${PAGE_ID()}/videos`,  'POST', { file_url: reelUrl, published: false, description: fullCaption }),
+          ]);
+          const photoFbid = (photoRes as Record<string, string>).id;
+          const videoFbid = (videoRes as Record<string, string>).id;
+          await new Promise(r => setTimeout(r, 5000));
+          const fb = await gql(`${PAGE_ID()}/feed`, 'POST', {
+            message: fullCaption,
+            attached_media: [{ media_fbid: photoFbid }, { media_fbid: videoFbid }],
+          });
+          results.facebook = fb;
+          const fbId = (fb as Record<string, string>).id;
+          if (fbId) { results.fb_post_id = fbId; results.fb_post_url = `https://www.facebook.com/${fbId}`; }
+          results.fb_carousel = true;
+          fbPosted = true;
+        } catch (fbCarouselErr) {
+          await adminLog('warn', 'instagram/publish-facebook', `FB carousel failed, falling back to image-only: ${String(fbCarouselErr)}`, { postId });
+          results.fb_carousel_error = String(fbCarouselErr);
+        }
+      }
 
-        // Small wait for video to be processable
-        await new Promise(r => setTimeout(r, 5000));
-
-        const fb = await gql(`${PAGE_ID()}/feed`, 'POST', {
-          message: fullCaption,
-          attached_media: [
-            { media_fbid: photoFbid },
-            { media_fbid: videoFbid },
-          ],
-        });
-        results.facebook = fb;
-        const fbId = (fb as Record<string, string>).id;
-        if (fbId) { results.fb_post_id = fbId; results.fb_post_url = `https://www.facebook.com/${fbId}`; }
-        results.fb_carousel = true;
-      } else {
+      if (!fbPosted) {
+        // Plain image post (either no reel, or carousel failed)
         const fb = await gql(`${PAGE_ID()}/photos`, 'POST', { url: imageUrl, message: fullCaption });
         results.facebook = fb;
         const fbId = (fb as Record<string, string>).post_id ?? (fb as Record<string, string>).id;
