@@ -25,7 +25,16 @@ interface ModelRow {
 }
 
 type ScrapeState = 'idle' | 'loading' | 'ok' | 'error';
-type Tab = 'reviews_ai' | 'user_reviews' | 'reports' | 'metrics' | 'users' | 'social_posts' | 'contact';
+type Tab = 'reviews_ai' | 'user_reviews' | 'reports' | 'metrics' | 'users' | 'social_posts' | 'contact' | 'logs';
+
+interface AdminLogRow {
+  id: number;
+  created_at: string;
+  level: 'info' | 'warn' | 'error';
+  source: string;
+  message: string;
+  details: unknown;
+}
 
 interface ContactMessage {
   id: string;
@@ -100,7 +109,7 @@ function AdminPageInner() {
   const { user, isAdmin, loading, profileLoading } = useAuth();
   const router = useRouter();
   const searchParams = useSearchParams();
-  const VALID_TABS: Tab[] = ['reviews_ai', 'user_reviews', 'reports', 'metrics', 'users', 'social_posts', 'contact'];
+  const VALID_TABS: Tab[] = ['reviews_ai', 'user_reviews', 'reports', 'metrics', 'users', 'social_posts', 'contact', 'logs'];
   const tabFromUrl = searchParams.get('tab') as Tab | null;
   const [tab, setTabState] = useState<Tab>(VALID_TABS.includes(tabFromUrl as Tab) ? tabFromUrl! : 'user_reviews');
 
@@ -134,6 +143,13 @@ function AdminPageInner() {
   // ── Metrics tab state ─────────────────────────────────────────────────────────
   const [metrics, setMetrics] = useState<MetricsData | null>(null);
   const [metricsFetching, setMetricsFetching] = useState(false);
+
+  // ── Logs tab state ────────────────────────────────────────────────────────────
+  const [logs, setLogs] = useState<AdminLogRow[]>([]);
+  const [logsFetching, setLogsFetching] = useState(false);
+  const [logsLevelFilter, setLogsLevelFilter] = useState<'all' | 'info' | 'warn' | 'error'>('all');
+  const [expandedLogId, setExpandedLogId] = useState<number | null>(null);
+  const [copiedLogId, setCopiedLogId] = useState<number | null>(null);
 
   // ── Deployment status ─────────────────────────────────────────────────────────
   const [deployment, setDeployment] = useState<{ state: string; readyState: string; createdAt: number; meta: { commitMessage: string }; url: string } | null>(null);
@@ -276,6 +292,22 @@ function AdminPageInner() {
   useEffect(() => {
     if (isAdmin && tab === 'metrics') fetchMetrics();
   }, [isAdmin, tab, fetchMetrics]);
+
+  const fetchLogs = useCallback(async (levelFilter = logsLevelFilter) => {
+    setLogsFetching(true);
+    try {
+      const token = await getToken();
+      const qs = levelFilter !== 'all' ? `?level=${levelFilter}` : '';
+      const res = await fetch(`/api/admin/logs${qs}`, { headers: { Authorization: `Bearer ${token}` } });
+      if (res.ok) setLogs(await res.json());
+    } catch { /* ignore */ } finally {
+      setLogsFetching(false);
+    }
+  }, [getToken, logsLevelFilter]);
+
+  useEffect(() => {
+    if (isAdmin && tab === 'logs') fetchLogs();
+  }, [isAdmin, tab, fetchLogs]);
 
   const fetchUsers = useCallback(async () => {
     setUsersFetching(true);
@@ -839,6 +871,7 @@ function AdminPageInner() {
             ['users', 'משתמשים'],
             ['social_posts', 'רשתות חברתיות'],
             ['contact', `פניות${contactMessages.filter(m => m.status === 'unread').length ? ` (${contactMessages.filter(m => m.status === 'unread').length})` : ''}`],
+            ['logs', 'לוגים'],
             ['reviews_ai', 'סיכומי AI'],
           ] as [Tab, string][]).map(([t, label]) => (
             <button
@@ -1119,6 +1152,101 @@ function AdminPageInner() {
         {tab === 'metrics' && (
           <MetricsTab metrics={metrics} fetching={metricsFetching} onRefresh={fetchMetrics} />
         )}
+
+        {/* ── Logs Tab ─────────────────────────────────────────────────────────── */}
+        {tab === 'logs' && (() => {
+          const LEVEL_STYLE: Record<string, { background: string; color: string }> = {
+            info:  { background: 'rgba(59,130,246,0.12)',  color: '#3b82f6' },
+            warn:  { background: 'rgba(234,179,8,0.15)',   color: '#ca8a04' },
+            error: { background: 'rgba(230,57,70,0.12)',   color: 'var(--brand-red)' },
+          };
+          const fmtTime = (iso: string) => {
+            const d = new Date(iso);
+            return d.toLocaleDateString('he-IL') + ' ' + d.toLocaleTimeString('he-IL', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+          };
+          return (
+            <div>
+              {/* Header */}
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20, flexWrap: 'wrap', gap: 12 }}>
+                <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                  {(['all', 'error', 'warn', 'info'] as const).map(l => (
+                    <button key={l} onClick={() => { setLogsLevelFilter(l); fetchLogs(l); }} style={{
+                      padding: '6px 14px', borderRadius: 9999, border: 'none', cursor: 'pointer', fontWeight: 600, fontSize: '0.8rem',
+                      background: logsLevelFilter === l ? (l === 'all' ? 'var(--brand-red)' : LEVEL_STYLE[l]?.background ?? 'var(--bg-muted)') : 'var(--bg-muted)',
+                      color: logsLevelFilter === l ? (l === 'all' ? '#fff' : LEVEL_STYLE[l]?.color ?? 'var(--text-primary)') : 'var(--text-secondary)',
+                    }}>
+                      {l === 'all' ? 'הכל' : l === 'error' ? 'שגיאות' : l === 'warn' ? 'אזהרות' : 'מידע'}
+                    </button>
+                  ))}
+                </div>
+                <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                  <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>{logs.length} רשומות</span>
+                  <button onClick={() => fetchLogs()} disabled={logsFetching} style={{ padding: '6px 14px', borderRadius: 8, border: '1px solid var(--border)', background: 'transparent', cursor: 'pointer', fontWeight: 600, fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
+                    {logsFetching ? 'טוען...' : 'רענן'}
+                  </button>
+                </div>
+              </div>
+
+              {/* Log list */}
+              {logsFetching && logs.length === 0 ? (
+                <div style={{ textAlign: 'center', padding: 64, color: 'var(--text-muted)' }}>טוען לוגים...</div>
+              ) : logs.length === 0 ? (
+                <div style={{ textAlign: 'center', padding: 64, color: 'var(--text-muted)' }}>אין לוגים</div>
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                  {logs.map(log => {
+                    const isExpanded = expandedLogId === log.id;
+                    const isCopied = copiedLogId === log.id;
+                    const style = LEVEL_STYLE[log.level] ?? LEVEL_STYLE.info;
+                    return (
+                      <div key={log.id} className="card" style={{ padding: '12px 16px', borderLeft: `3px solid ${style.color}` }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+                          {/* Level badge */}
+                          <span style={{ ...style, padding: '2px 8px', borderRadius: 9999, fontSize: '0.7rem', fontWeight: 700, textTransform: 'uppercase' as const }}>
+                            {log.level}
+                          </span>
+                          {/* Source */}
+                          <code style={{ fontSize: '0.75rem', background: 'var(--bg-muted)', padding: '2px 6px', borderRadius: 4, color: 'var(--text-secondary)' }}>
+                            {log.source}
+                          </code>
+                          {/* Time */}
+                          <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginRight: 'auto' }}>
+                            {fmtTime(log.created_at)}
+                          </span>
+                          {/* Copy button */}
+                          <button onClick={() => {
+                            navigator.clipboard.writeText(JSON.stringify(log, null, 2));
+                            setCopiedLogId(log.id);
+                            setTimeout(() => setCopiedLogId(null), 1500);
+                          }} style={{ padding: '3px 10px', borderRadius: 6, border: '1px solid var(--border)', background: 'transparent', cursor: 'pointer', fontSize: '0.75rem', color: isCopied ? '#16a34a' : 'var(--text-secondary)', fontWeight: 600 }}>
+                            {isCopied ? '✓ הועתק' : 'העתק'}
+                          </button>
+                        </div>
+                        {/* Message */}
+                        <div style={{ marginTop: 8, fontSize: '0.875rem', color: 'var(--text-primary)', fontWeight: 500 }}>
+                          {log.message}
+                        </div>
+                        {/* Details toggle */}
+                        {log.details != null && (
+                          <div style={{ marginTop: 6 }}>
+                            <button onClick={() => setExpandedLogId(isExpanded ? null : log.id)} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '0.75rem', color: 'var(--text-muted)', padding: 0, fontWeight: 600 }}>
+                              {isExpanded ? '▲ הסתר פרטים' : '▼ פרטים'}
+                            </button>
+                            {isExpanded && (
+                              <pre style={{ marginTop: 8, padding: '10px 12px', background: 'var(--bg-muted)', borderRadius: 6, fontSize: '0.75rem', overflowX: 'auto', whiteSpace: 'pre-wrap', wordBreak: 'break-all', color: 'var(--text-primary)', maxHeight: 400 }}>
+                                {JSON.stringify(log.details, null, 2)}
+                              </pre>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          );
+        })()}
 
         {/* ── Users Tab ───────────────────────────────────────────────────────── */}
         {tab === 'users' && (

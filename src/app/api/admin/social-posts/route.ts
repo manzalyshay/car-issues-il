@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { isAdmin, getServiceClient } from '@/lib/adminAuth';
 import { generateDailyPost } from '@/lib/socialPost';
+import { adminLog } from '@/lib/logger';
 
 function screenshotFilename(imageUrl: string): string | null {
   // URL format: .../storage/v1/object/public/social-screenshots/FILENAME.jpg
@@ -111,12 +112,16 @@ Return ONLY a raw JSON object (no markdown, no code blocks) with these fields:
     }
 
     const raw = (await tryGemini()) ?? (await tryGroq());
-    if (!raw) return NextResponse.json({ error: 'All AI providers failed' }, { status: 500 });
+    if (!raw) {
+      await adminLog('error', 'social-posts/generate', 'All AI providers failed', { prompt });
+      return NextResponse.json({ error: 'All AI providers failed' }, { status: 500 });
+    }
 
     let parsed: { content_he: string; hashtags: string; screenshot_path: string };
     try {
       parsed = JSON.parse(raw.replace(/```json\n?|\n?```/g, '').trim());
     } catch {
+      await adminLog('error', 'social-posts/generate', 'AI response parse error', { raw: raw?.slice(0, 500) });
       return NextResponse.json({ error: 'AI parse error', raw }, { status: 500 });
     }
 

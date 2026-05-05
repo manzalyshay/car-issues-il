@@ -39,3 +39,7 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# Google Search Console OAuth secrets
+scripts/gsc-oauth-client.json
+scripts/gsc-token.json

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { isAdmin, getServiceClient } from '@/lib/adminAuth';
+import { adminLog } from '@/lib/logger';
 
 const API = 'https://graph.facebook.com/v19.0';
 const IG_ID = () => process.env.INSTAGRAM_BUSINESS_ACCOUNT_ID!;
@@ -138,6 +139,7 @@ export async function POST(req: NextRequest) {
       }
     } catch (e) {
       results.instagram_error = String(e);
+      await adminLog('error', 'instagram/publish', String(e), { postId, imageUrl, reelUrl });
     }
 
     // ── Facebook ───────────────────────────────────────────────────────────────
@@ -173,18 +175,20 @@ export async function POST(req: NextRequest) {
       }
     } catch (e) {
       results.facebook_error = String(e);
+      await adminLog('error', 'instagram/publish-facebook', String(e), { postId });
     }
 
     // Stories are handled manually via the story helper modal
 
-    // Log everything for debugging
-    console.error('[publish] results:', JSON.stringify(results));
-
-    // Only mark as posted if we actually got a post ID back (not just absence of errors)
     const igOk = !!results.ig_post_id;
     const fbOk = !!results.fb_post_id;
     const anySuccess = igOk || fbOk;
-    console.error('[publish] igOk:', igOk, 'fbOk:', fbOk, 'anySuccess:', anySuccess);
+    await adminLog(
+      anySuccess ? 'info' : 'error',
+      'instagram/publish',
+      anySuccess ? `Published ok — ig:${igOk} fb:${fbOk}` : 'Publish failed — no post ID returned',
+      { postId, igOk, fbOk, results },
+    );
 
     if (postId) {
       const { getServiceClient } = await import('@/lib/adminAuth');

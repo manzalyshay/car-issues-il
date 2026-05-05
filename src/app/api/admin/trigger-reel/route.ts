@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { isAdmin, getServiceClient } from '@/lib/adminAuth';
+import { adminLog } from '@/lib/logger';
 
 export const dynamic = 'force-dynamic';
 
@@ -65,6 +66,7 @@ export async function POST(req: NextRequest) {
 
   if (!res.ok) {
     const text = await res.text();
+    await adminLog('error', 'trigger-reel', `GitHub API error ${res.status}`, { makeSlug, modelSlug, postId, body: text });
     return NextResponse.json({ error: `GitHub API error ${res.status}: ${text}` }, { status: res.status });
   }
 
