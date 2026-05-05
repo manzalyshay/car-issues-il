@@ -4,7 +4,7 @@ import { adminLog } from '@/lib/logger';
 
 const API = 'https://graph.facebook.com/v19.0';
 const IG_ID = () => process.env.INSTAGRAM_BUSINESS_ACCOUNT_ID!;
-const PAGE_ID = () => process.env.FACEBOOK_PAGE_ID!;
+const PAGE_ID = () => (process.env.FACEBOOK_PAGE_ID ?? '').replace(/"/g, '').trim();
 const SETTINGS_FILE = 'fb-settings.json';
 
 async function getStoredToken(): Promise<{ token: string; expiresAt: string | null }> {
