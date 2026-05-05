@@ -30,15 +30,16 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     )
   );
 
-  // Top compare pairs (same-make comparisons + most popular cross-make, cap at 300)
+  // All valid compare pairs (alphabetical slug order to match canonical)
   const flat = makes.flatMap((m) => m.models.map((mo) => ({ make: m.slug, model: mo.slug })));
   const compareUrls: MetadataRoute.Sitemap = [];
-  for (let i = 0; i < flat.length && compareUrls.length < 300; i++) {
-    for (let j = i + 1; j < flat.length && compareUrls.length < 300; j++) {
+  for (let i = 0; i < flat.length; i++) {
+    for (let j = i + 1; j < flat.length; j++) {
+      const [c1, c2] = [`${flat[i].make}/${flat[i].model}`, `${flat[j].make}/${flat[j].model}`].sort();
       compareUrls.push({
-        url: `${BASE}/cars/compare/${flat[i].make}/${flat[i].model}/${flat[j].make}/${flat[j].model}`,
+        url: `${BASE}/cars/compare/${c1}/${c2}`,
         changeFrequency: 'weekly' as const,
-        priority: 0.6,
+        priority: 0.65,
       });
     }
   }

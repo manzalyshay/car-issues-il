@@ -14,6 +14,8 @@ export const CAR_LIST = [
   { make: 'toyota', model: 'rav4',         years: range(2013) },
   { make: 'toyota', model: 'hilux',        years: range(2015) },
   { make: 'toyota', model: 'chr',          years: range(2017) },
+  { make: 'toyota', model: 'yaris-cross', years: range(2021) },
+  { make: 'toyota', model: 'corolla-cross', years: range(2022) },
   { make: 'toyota', model: 'prius',        years: range(2016) },
   { make: 'toyota', model: 'land-cruiser', years: range(2016) },
   // Hyundai

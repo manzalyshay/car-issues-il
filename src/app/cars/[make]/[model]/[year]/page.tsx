@@ -30,13 +30,14 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   ]);
 
   const url = `https://carissues.co.il/cars/${make.slug}/${model.slug}/${year}`;
+  const ratingStr = avgRating ? ` · ${avgRating.toFixed(1)}★` : '';
   return {
-    title: `${make.nameHe} ${model.nameHe} ${year} — בעיות וביקורות`,
-    description: `בעיות נפוצות ב${make.nameHe} ${model.nameHe} ${year} (${make.nameEn} ${model.nameEn}). ${reviews.length > 0 ? `${reviews.length} ביקורות מבעלי רכב בישראל.` : 'ביקורות מבעלי רכב בישראל.'}${avgRating ? ` דירוג ממוצע: ${avgRating.toFixed(1)}/5.` : ''}`,
+    title: `${make.nameHe} ${model.nameHe} ${year}: חוות דעת ובעיות${reviews.length > 0 ? ` (${reviews.length} ביקורות${ratingStr})` : ratingStr}`,
+    description: `${reviews.length > 0 ? `${reviews.length} חוות דעת על` : 'חוות דעת על'} ${make.nameHe} ${model.nameHe} ${year} (${make.nameEn} ${model.nameEn})${avgRating ? ` — דירוג ממוצע ${avgRating.toFixed(1)}/5` : ''}. בעיות נפוצות, יתרונות וחסרונות מבעלי רכב בישראל.`,
     alternates: { canonical: url },
     openGraph: {
-      title: `${make.nameHe} ${model.nameHe} ${year} | CarIssues IL`,
-      description: `ביקורות ובעיות נפוצות — ${make.nameHe} ${model.nameHe} ${year}`,
+      title: `${make.nameHe} ${model.nameHe} ${year}${ratingStr} | CarIssues IL`,
+      description: `${reviews.length > 0 ? `${reviews.length} ביקורות` : 'ביקורות'} ובעיות נפוצות — ${make.nameHe} ${model.nameHe} ${year}`,
       url,
       images: [{ url: '/og-default.svg', width: 1200, height: 630 }],
     },

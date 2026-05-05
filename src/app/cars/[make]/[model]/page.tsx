@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { getMakeBySlug, getModelBySlug, getCategoryLabel } from '@/lib/carsDb';
-import { getReviewsForModel } from '@/lib/reviewsDb';
+import { getReviewsForModel, getAverageRating } from '@/lib/reviewsDb';
 import { findCarModel } from '@/lib/sketchfab';
 import { getExpertReviews } from '@/lib/expertReviews';
 import StarRating from '@/components/StarRating';
@@ -27,11 +27,25 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const model = await getModelBySlug(makeSlug, modelSlug);
   if (!model) return {};
   const url = `https://carissues.co.il/cars/${make.slug}/${model.slug}`;
+  const [avgRating, reviews] = await Promise.all([
+    getAverageRating(makeSlug, modelSlug),
+    getReviewsForModel(makeSlug, modelSlug),
+  ]);
+  const yearRange = model.years.length > 1
+    ? `${model.years[model.years.length - 1]}–${model.years[0]}`
+    : `${model.years[0]}`;
+  const ratingStr = avgRating ? ` · ${avgRating.toFixed(1)}★` : '';
+  const countStr = reviews.length > 0 ? ` · ${reviews.length} ביקורות` : '';
   return {
-    title: `${make.nameHe} ${model.nameHe} — בעיות וביקורות`,
-    description: `בעיות נפוצות ב${make.nameHe} ${model.nameHe} (${make.nameEn} ${model.nameEn}). ביקורות אמיתיות מבעלי רכב בישראל, דירוגים, יתרונות וחסרונות.`,
+    title: `${make.nameHe} ${model.nameHe}: חוות דעת ובעיות נפוצות${ratingStr}`,
+    description: `${reviews.length > 0 ? `${reviews.length} ביקורות אמיתיות` : 'ביקורות אמיתיות'} על ${make.nameHe} ${model.nameHe} (${make.nameEn} ${model.nameEn}) שנים ${yearRange}${avgRating ? `. דירוג ממוצע ${avgRating.toFixed(1)}/5` : ''}. בעיות נפוצות, יתרונות וחסרונות מבעלי רכב בישראל.`,
     alternates: { canonical: url },
-    openGraph: { title: `${make.nameHe} ${model.nameHe} | CarIssues IL`, description: `ביקורות ובעיות נפוצות — ${make.nameHe} ${model.nameHe}`, url, images: [{ url: '/og-default.svg', width: 1200, height: 630 }] },
+    openGraph: {
+      title: `${make.nameHe} ${model.nameHe}${ratingStr}${countStr} | CarIssues IL`,
+      description: `ביקורות ובעיות נפוצות — ${make.nameHe} ${model.nameHe} ${yearRange}`,
+      url,
+      images: [{ url: '/og-default.svg', width: 1200, height: 630 }],
+    },
   };
 }
 

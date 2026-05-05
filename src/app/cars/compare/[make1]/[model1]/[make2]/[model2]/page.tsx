@@ -17,15 +17,15 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   if (!mA || !mB) return {};
   const [modA, modB] = await Promise.all([getModelBySlug(make1, model1), getModelBySlug(make2, model2)]);
   if (!modA || !modB) return {};
-  const title = `${mA.nameHe} ${modA.nameHe} מול ${mB.nameHe} ${modB.nameHe} — השוואה מלאה`;
+  const title = `${mA.nameHe} ${modA.nameHe} מול ${mB.nameHe} ${modB.nameHe} — איזה עדיף?`;
   // Canonical always uses alphabetical slug order to avoid A/B vs B/A duplicates
   const [c1, c2] = [`${make1}/${model1}`, `${make2}/${model2}`].sort();
   const canonical = `https://carissues.co.il/cars/compare/${c1}/${c2}`;
   return {
     title,
-    description: `השוואה בין ${mA.nameHe} ${modA.nameHe} ל${mB.nameHe} ${modB.nameHe}: ציונים, ביקורות בעלי רכב, יתרונות וחסרונות — CarIssues IL`,
+    description: `${mA.nameHe} ${modA.nameHe} או ${mB.nameHe} ${modB.nameHe}? השוואה מלאה: ציונים, ביקורות בעלי רכב בישראל, יתרונות וחסרונות של כל דגם — CarIssues IL`,
     alternates: { canonical },
-    openGraph: { title, url: canonical },
+    openGraph: { title, description: `השוואה: ${mA.nameEn} ${modA.nameEn} vs ${mB.nameEn} ${modB.nameEn}`, url: canonical, images: [{ url: '/og-default.svg', width: 1200, height: 630 }] },
   };
 }
 
