@@ -84,7 +84,7 @@ export async function POST(req: NextRequest) {
 
     // ── Instagram ──────────────────────────────────────────────────────────────
     try {
-      let published: Record<string, unknown>;
+      let published: Record<string, unknown> | undefined;
 
       if (reelUrl) {
         // Try carousel (image + video). If video processing fails, fall back to image-only.
@@ -137,20 +137,24 @@ export async function POST(req: NextRequest) {
         published = await gql(`${IG_ID()}/media_publish`, 'POST', { creation_id: container.id });
       }
 
-      results.instagram = published;
-      results.ig_post_id = published.id;
+      if (published) {
+        results.instagram = published;
+        results.ig_post_id = published.id;
+      }
 
       // Fetch permalink + media_url
-      try {
-        const t = await getToken();
-        const details = await fetch(`${API}/${published.id}?fields=permalink,media_url&access_token=${t}`).then(r => r.json());
-        if (details.permalink) results.ig_permalink = details.permalink;
-        if (details.media_url) results.ig_media_url = details.media_url;
-      } catch { /* non-fatal */ }
+      if (published?.id) {
+        try {
+          const t = await getToken();
+          const details = await fetch(`${API}/${published.id}?fields=permalink,media_url&access_token=${t}`).then(r => r.json());
+          if (details.permalink) results.ig_permalink = details.permalink;
+          if (details.media_url) results.ig_media_url = details.media_url;
+        } catch { /* non-fatal */ }
 
-      // Post hashtags as first comment
-      if (hashtags && published.id) {
-        try { await gql(`${published.id}/comments`, 'POST', { message: hashtags }); } catch { /* non-fatal */ }
+        // Post hashtags as first comment
+        if (hashtags) {
+          try { await gql(`${published.id}/comments`, 'POST', { message: hashtags }); } catch { /* non-fatal */ }
+        }
       }
     } catch (e) {
       results.instagram_error = String(e);
