@@ -5,6 +5,7 @@ import type { CarVideo } from '@/lib/youtubeVideos';
 import type { CarImage } from '@/lib/carImages';
 import CarVideosTab from '@/components/CarVideosTab';
 import CarImagesTab from '@/components/CarImagesTab';
+import TrimSpecsTab from '@/components/TrimSpecsTab';
 
 interface Props {
   makeSlug: string;
@@ -15,13 +16,13 @@ interface Props {
 }
 
 export default function CarPageTabs({ makeSlug, modelSlug, makeNameHe, modelNameHe, children }: Props) {
-  const [tab, setTab] = useState<'reviews' | 'videos' | 'images'>('reviews');
+  const [tab, setTab] = useState<'reviews' | 'specs' | 'videos' | 'images'>('reviews');
   const [videos, setVideos] = useState<CarVideo[] | null>(null);
   const [images, setImages] = useState<CarImage[] | null>(null);
   const [videosLoading, setVideosLoading] = useState(false);
   const [imagesLoading, setImagesLoading] = useState(false);
 
-  const handleTabClick = async (next: 'reviews' | 'videos' | 'images') => {
+  const handleTabClick = async (next: 'reviews' | 'specs' | 'videos' | 'images') => {
     setTab(next);
     if (next === 'videos' && videos === null && !videosLoading) {
       setVideosLoading(true);
@@ -70,6 +71,9 @@ export default function CarPageTabs({ makeSlug, modelSlug, makeNameHe, modelName
         <button style={tabStyle(tab === 'reviews')} onClick={() => handleTabClick('reviews')}>
           ⭐ ביקורות
         </button>
+        <button style={tabStyle(tab === 'specs')} onClick={() => handleTabClick('specs')}>
+          📋 מפרט גימור
+        </button>
         <button style={tabStyle(tab === 'videos')} onClick={() => handleTabClick('videos')}>
           🎬 סרטוני ביקורת
           {videos && videos.length > 0 && (
@@ -98,6 +102,14 @@ export default function CarPageTabs({ makeSlug, modelSlug, makeNameHe, modelName
 
       {/* Content */}
       {tab === 'reviews' && children}
+      {tab === 'specs' && (
+        <TrimSpecsTab
+          makeSlug={makeSlug}
+          modelSlug={modelSlug}
+          makeNameHe={makeNameHe}
+          modelNameHe={modelNameHe}
+        />
+      )}
       {tab === 'videos' && (
         videosLoading ? loadingPlaceholder :
         <CarVideosTab

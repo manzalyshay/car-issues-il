@@ -1,8 +1,13 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import Link from 'next/link';
 import type { TrimSpec } from '@/data/cars';
 import { TRIM_FEATURES } from '@/data/cars';
+
+function toTrimSlug(name: string) {
+  return name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+}
 
 interface Props {
   makeSlug: string;
@@ -271,7 +276,13 @@ export default function TrimSpecsTab({ makeSlug, modelSlug, makeNameHe, modelNam
                   minWidth: 110,
                   whiteSpace: 'nowrap',
                 }}>
-                  {t.name}
+                  <Link
+                    href={`/cars/${makeSlug}/${modelSlug}/trim/${toTrimSlug(t.name)}`}
+                    style={{ color: 'inherit', textDecoration: 'none' }}
+                    title={`פרטים על גימור ${t.name}`}
+                  >
+                    {t.name}
+                  </Link>
                   {t.priceIls && (
                     <div style={{ fontSize: '0.72rem', fontWeight: 500, opacity: 0.8, marginTop: 2 }}>
                       ₪{t.priceIls.toLocaleString('he-IL')}

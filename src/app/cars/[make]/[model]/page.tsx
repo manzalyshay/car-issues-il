@@ -5,6 +5,7 @@ import { getMakeBySlug, getModelBySlug, getCategoryLabel } from '@/lib/carsDb';
 import { getReviewsForModel, getAverageRating } from '@/lib/reviewsDb';
 import { findCarModel } from '@/lib/sketchfab';
 import { getExpertReviews } from '@/lib/expertReviews';
+import { getTrimSpecs } from '@/lib/trimSpecsDb';
 import StarRating from '@/components/StarRating';
 import MakeLogo from '@/components/MakeLogo';
 import Car3DViewer from '@/components/Car3DViewer';
@@ -15,6 +16,10 @@ import SharePopup from '@/components/SharePopup';
 import RecallsSection from '@/components/RecallsSection';
 import RecallsBadge from '@/components/RecallsBadge';
 import CarPageTabs from './CarPageTabs';
+
+function toTrimSlug(name: string) {
+  return name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+}
 
 export const dynamic = 'force-dynamic';
 
@@ -27,18 +32,21 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const model = await getModelBySlug(makeSlug, modelSlug);
   if (!model) return {};
   const url = `https://carissues.co.il/cars/${make.slug}/${model.slug}`;
-  const [avgRating, reviews] = await Promise.all([
+  const [avgRating, reviews, trims] = await Promise.all([
     getAverageRating(makeSlug, modelSlug),
     getReviewsForModel(makeSlug, modelSlug),
+    getTrimSpecs(makeSlug, modelSlug),
   ]);
   const yearRange = model.years.length > 1
     ? `${model.years[model.years.length - 1]}–${model.years[0]}`
     : `${model.years[0]}`;
   const ratingStr = avgRating ? ` · ${avgRating.toFixed(1)}★` : '';
   const countStr = reviews.length > 0 ? ` · ${reviews.length} ביקורות` : '';
+  const trimNames = trims.map(t => t.name).join(', ');
+  const trimDesc = trimNames ? ` גימורים: ${trimNames}.` : '';
   return {
     title: `${make.nameHe} ${model.nameHe}: חוות דעת ובעיות נפוצות${ratingStr}`,
-    description: `${reviews.length > 0 ? `${reviews.length} ביקורות אמיתיות` : 'ביקורות אמיתיות'} על ${make.nameHe} ${model.nameHe} (${make.nameEn} ${model.nameEn}) שנים ${yearRange}${avgRating ? `. דירוג ממוצע ${avgRating.toFixed(1)}/5` : ''}. בעיות נפוצות, יתרונות וחסרונות מבעלי רכב בישראל.`,
+    description: `${reviews.length > 0 ? `${reviews.length} ביקורות אמיתיות` : 'ביקורות אמיתיות'} על ${make.nameHe} ${model.nameHe} (${make.nameEn} ${model.nameEn}) שנים ${yearRange}${avgRating ? `. דירוג ממוצע ${avgRating.toFixed(1)}/5` : ''}.${trimDesc} בעיות נפוצות, יתרונות וחסרונות מבעלי רכב בישראל.`,
     alternates: { canonical: url },
     openGraph: {
       title: `${make.nameHe} ${model.nameHe}${ratingStr}${countStr} | CarIssues IL`,

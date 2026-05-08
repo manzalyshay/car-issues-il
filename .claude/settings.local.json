@@ -11,7 +11,9 @@
       "Bash(git push:*)",
       "Bash(gh run:*)",
       "Bash(npx tsc:*)",
-      "Bash(git commit -m 'Fix syntax error in fb-cover route \\(extra closing brace\\):*)"
+      "Bash(git commit -m 'Fix syntax error in fb-cover route \\(extra closing brace\\):*)",
+      "Bash(grep -E \"\\\\.\\(ts|tsx\\)$\")",
+      "Bash(ls -la /workspace/car-issues-il/src/app/cars/[make]/[model]/)"
     ]
   }
 }
