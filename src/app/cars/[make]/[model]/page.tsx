@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
-import { getMakeBySlug, getModelBySlug, getCategoryLabel } from '@/lib/carsDb';
+import { getMakeBySlug, getModelBySlug, getCategoryLabel, getSimilarModels } from '@/lib/carsDb';
 import { getReviewsForModel, getAverageRating } from '@/lib/reviewsDb';
 import { findCarModel } from '@/lib/sketchfab';
 import { getExpertReviews } from '@/lib/expertReviews';
@@ -64,10 +64,11 @@ export default async function ModelPage({ params }: Props) {
   const model = await getModelBySlug(makeSlug, modelSlug);
   if (!model) notFound();
 
-  const [allReviews, expertReviewsList, sketchfabModel] = await Promise.all([
+  const [allReviews, expertReviewsList, sketchfabModel, similarModels] = await Promise.all([
     getReviewsForModel(makeSlug, modelSlug),
     getExpertReviews(makeSlug, modelSlug),
     findCarModel(makeSlug, modelSlug),
+    getSimilarModels(makeSlug, modelSlug, model.category, 8),
   ]);
   const expertReview = expertReviewsList[0] ?? null;
   const avgRating = allReviews.length
@@ -204,6 +205,39 @@ export default async function ModelPage({ params }: Props) {
             </div>
           </div>
         </CarPageTabs>
+
+        {/* Compare with similar models */}
+        {similarModels.length > 0 && (
+          <section style={{ marginTop: 40, paddingTop: 28, borderTop: '1px solid var(--border)' }}>
+            <h2 style={{ fontSize: '1.05rem', fontWeight: 700, marginBottom: 14 }}>
+              ⚖️ השוו {make.nameHe} {model.nameHe} לדגמים דומים
+            </h2>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+              {similarModels.map(({ makeSlug: ms, makeNameHe, model: m }) => {
+                const [s1, s2] = [`${makeSlug}/${modelSlug}`, `${ms}/${m.slug}`].sort();
+                const href = `/cars/compare/${s1}/${s2}`;
+                return (
+                  <Link
+                    key={`${ms}/${m.slug}`}
+                    href={href}
+                    style={{
+                      padding: '7px 14px',
+                      borderRadius: 20,
+                      fontSize: '0.85rem',
+                      background: 'var(--bg-secondary)',
+                      color: 'var(--text-primary)',
+                      textDecoration: 'none',
+                      border: '1px solid var(--border)',
+                      whiteSpace: 'nowrap',
+                    }}
+                  >
+                    {makeNameHe} {m.nameHe}
+                  </Link>
+                );
+              })}
+            </div>
+          </section>
+        )}
 
         {/* JSON-LD */}
         <script

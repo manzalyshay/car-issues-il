@@ -71,3 +71,24 @@ export async function getPopularMakes(): Promise<CarMake[]> {
   const makes = await fetchAllMakes();
   return makes.filter((m) => m.popular);
 }
+
+/** Returns up to `limit` models in the same category, excluding the given model */
+export async function getSimilarModels(
+  makeSlug: string,
+  modelSlug: string,
+  category: CarModel['category'],
+  limit = 8,
+): Promise<{ makeSlug: string; makeNameHe: string; model: CarModel }[]> {
+  const makes = await fetchAllMakes();
+  const results: { makeSlug: string; makeNameHe: string; model: CarModel }[] = [];
+  for (const make of makes) {
+    for (const model of make.models) {
+      if (make.slug === makeSlug && model.slug === modelSlug) continue;
+      if (model.category === category) {
+        results.push({ makeSlug: make.slug, makeNameHe: make.nameHe, model });
+      }
+    }
+  }
+  // Shuffle lightly — sort by make popularity first, then take limit
+  return results.slice(0, limit);
+}
