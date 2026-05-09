@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { revalidateTag } from 'next/cache';
+import { revalidatePath } from 'next/cache';
 import { addReview, getReviewsForModel } from '@/lib/reviewsDb';
 import type { Review } from '@/data/reviews';
 
@@ -59,7 +59,8 @@ export async function POST(req: NextRequest) {
       images: Array.isArray(images) ? images.slice(0, 4) : [],
     } as Omit<Review, 'id' | 'createdAt' | 'helpful'>);
 
-    revalidateTag('reviews', 'max');
+    revalidatePath(`/cars/${makeSlug}/${modelSlug}`);
+    revalidatePath(`/cars/${makeSlug}/${modelSlug}/issues`);
     return NextResponse.json({ review }, { status: 201 });
   } catch (err) {
     console.error('[Reviews API]', err);
