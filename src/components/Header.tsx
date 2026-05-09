@@ -185,4 +185,5 @@ const NAV_LINKS = [
   { href: '/cars/compare', label: 'השוואה' },
   { href: '/rankings', label: 'דירוגים' },
   { href: '/repairs', label: 'עלויות תיקון' },
+  { href: '/tco', label: 'עלות בעלות' },
 ];
