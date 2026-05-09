@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound, redirect } from 'next/navigation';
-import { getMakeBySlug, getModelBySlug, getAllMakes } from '@/lib/carsDb';
+import { getMakeBySlug, getModelBySlug, getAllMakes, getSimilarModels } from '@/lib/carsDb';
 import { getReviewsForModel } from '@/lib/reviewsDb';
 import { getExpertReviews } from '@/lib/expertReviews';
 import { findCarModel } from '@/lib/sketchfab';
@@ -68,13 +68,15 @@ export default async function ComparePage({ params }: Props) {
   const [modA, modB] = await Promise.all([getModelBySlug(make1, model1), getModelBySlug(make2, model2)]);
   if (!modA || !modB) notFound();
 
-  const [reviewsA, reviewsB, expertA, expertB, carModelA, carModelB] = await Promise.all([
+  const [reviewsA, reviewsB, expertA, expertB, carModelA, carModelB, similarA, similarB] = await Promise.all([
     getReviewsForModel(make1, model1),
     getReviewsForModel(make2, model2),
     getExpertReviews(make1, model1),
     getExpertReviews(make2, model2),
     findCarModel(make1, model1),
     findCarModel(make2, model2),
+    getSimilarModels(make1, model1, modA.category, 10),
+    getSimilarModels(make2, model2, modB.category, 10),
   ]);
 
   const avgA = reviewsA.length ? reviewsA.reduce((s, r) => s + r.rating, 0) / reviewsA.length : null;
@@ -250,8 +252,32 @@ export default async function ComparePage({ params }: Props) {
           </div>
         )}
 
+        {/* Verdict */}
+        {(scoreA !== null || scoreB !== null || avgA !== null || avgB !== null) && (() => {
+          const rw = better(avgA, avgB);
+          const sw = better(scoreA, scoreB);
+          const winner = sw ?? rw;
+          const winnerName = winner === 'a' ? `${mA.nameHe} ${modA.nameHe}` : winner === 'b' ? `${mB.nameHe} ${modB.nameHe}` : null;
+          const loserName  = winner === 'a' ? `${mB.nameHe} ${modB.nameHe}` : winner === 'b' ? `${mA.nameHe} ${modA.nameHe}` : null;
+          return (
+            <div className="card" style={{ padding: '24px 28px', marginBottom: 28, borderRight: '4px solid var(--brand-red)' }}>
+              <h2 style={{ fontWeight: 800, fontSize: '1rem', marginBottom: 12 }}>מי עדיף?</h2>
+              {winner && winner !== 'tie' ? (
+                <p style={{ margin: 0, fontSize: '0.9375rem', lineHeight: 1.7, color: 'var(--text-secondary)' }}>
+                  על בסיס ביקורות בעלי רכב ודירוגי מומחים, <strong>{winnerName}</strong> מקבל ציון כולל גבוה יותר מ{loserName}.
+                  {prosA.length > 0 || prosB.length > 0 ? ` עם זאת, לכל אחד מהדגמים יש יתרונות ייחודיים — מומלץ לבחון את היתרונות והחסרונות לפי צרכיך האישיים.` : ''}
+                </p>
+              ) : (
+                <p style={{ margin: 0, fontSize: '0.9375rem', lineHeight: 1.7, color: 'var(--text-secondary)' }}>
+                  שני הדגמים מקבלים ציונים דומים מאוד. הבחירה תלויה בצרכיך האישיים — מומלץ לעיין בביקורות בעלי הרכב ולנסוע בשניהם לפני ההחלטה.
+                </p>
+              )}
+            </div>
+          );
+        })()}
+
         {/* CTA to interactive compare */}
-        <div className="card" style={{ padding: '20px 24px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12 }}>
+        <div className="card" style={{ padding: '20px 24px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12, marginBottom: 28 }}>
           <div>
             <div style={{ fontWeight: 700 }}>רוצה להשוות רכבים אחרים?</div>
             <div style={{ fontSize: '0.875rem', color: 'var(--text-muted)' }}>כלי ההשוואה האינטראקטיבי שלנו</div>
@@ -260,6 +286,51 @@ export default async function ComparePage({ params }: Props) {
             ⚖️ כלי ההשוואה
           </Link>
         </div>
+
+        {/* Related comparisons — helps Google discover more compare pairs */}
+        {(similarA.length > 0 || similarB.length > 0) && (
+          <div style={{ marginTop: 8 }}>
+            <h2 style={{ fontWeight: 800, fontSize: '1rem', marginBottom: 16 }}>השוואות קשורות</h2>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20, flexWrap: 'wrap' }}>
+              {/* Similar to Car A */}
+              <div>
+                <div style={{ fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-muted)', marginBottom: 10, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                  {mA.nameHe} {modA.nameHe} מול...
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                  {similarA.filter(s => !(s.makeSlug === make2 && s.model.slug === model2)).slice(0, 6).map(s => {
+                    const [s1, s2] = [`${make1}/${model1}`, `${s.makeSlug}/${s.model.slug}`].sort();
+                    return (
+                      <Link key={`${s.makeSlug}/${s.model.slug}`} href={`/cars/compare/${s1}/${s2}`}
+                        style={{ fontSize: '0.875rem', color: 'var(--accent)', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 6 }}>
+                        <span style={{ color: 'var(--text-muted)', fontSize: '0.75rem' }}>⚖️</span>
+                        {mA.nameHe} {modA.nameHe} vs {s.makeNameHe} {s.model.nameHe}
+                      </Link>
+                    );
+                  })}
+                </div>
+              </div>
+              {/* Similar to Car B */}
+              <div>
+                <div style={{ fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-muted)', marginBottom: 10, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                  {mB.nameHe} {modB.nameHe} מול...
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                  {similarB.filter(s => !(s.makeSlug === make1 && s.model.slug === model1)).slice(0, 6).map(s => {
+                    const [s1, s2] = [`${make2}/${model2}`, `${s.makeSlug}/${s.model.slug}`].sort();
+                    return (
+                      <Link key={`${s.makeSlug}/${s.model.slug}`} href={`/cars/compare/${s1}/${s2}`}
+                        style={{ fontSize: '0.875rem', color: 'var(--accent)', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 6 }}>
+                        <span style={{ color: 'var(--text-muted)', fontSize: '0.75rem' }}>⚖️</span>
+                        {mB.nameHe} {modB.nameHe} vs {s.makeNameHe} {s.model.nameHe}
+                      </Link>
+                    );
+                  })}
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* JSON-LD */}
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify({

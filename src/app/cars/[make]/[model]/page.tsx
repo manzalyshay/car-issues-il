@@ -212,28 +212,52 @@ export default async function ModelPage({ params }: Props) {
           </div>
         </CarPageTabs>
 
-        {/* Compare with similar models */}
+        {/* Similar models — browse + compare */}
         {similarModels.length > 0 && (
           <section style={{ marginTop: 40, paddingTop: 28, borderTop: '1px solid var(--border)' }}>
-            <h2 style={{ fontSize: '1.05rem', fontWeight: 700, marginBottom: 14 }}>
-              ⚖️ השוו {make.nameHe} {model.nameHe} לדגמים דומים
+            <h2 style={{ fontSize: '1.05rem', fontWeight: 700, marginBottom: 18 }}>
+              דגמים דומים בקטגוריה
             </h2>
+            {/* Browse links */}
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 16 }}>
+              {similarModels.map(({ makeSlug: ms, makeNameHe, model: m }) => (
+                <Link
+                  key={`browse-${ms}/${m.slug}`}
+                  href={`/cars/${ms}/${m.slug}`}
+                  style={{
+                    padding: '7px 14px',
+                    borderRadius: 20,
+                    fontSize: '0.85rem',
+                    background: 'var(--bg-secondary)',
+                    color: 'var(--text-primary)',
+                    textDecoration: 'none',
+                    border: '1px solid var(--border)',
+                    whiteSpace: 'nowrap',
+                  }}
+                >
+                  {makeNameHe} {m.nameHe}
+                </Link>
+              ))}
+            </div>
+            {/* Compare links */}
+            <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: 8, fontWeight: 600 }}>
+              ⚖️ השוו {make.nameHe} {model.nameHe} מול:
+            </div>
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
-              {similarModels.map(({ makeSlug: ms, makeNameHe, model: m }) => {
+              {similarModels.slice(0, 6).map(({ makeSlug: ms, makeNameHe, model: m }) => {
                 const [s1, s2] = [`${makeSlug}/${modelSlug}`, `${ms}/${m.slug}`].sort();
-                const href = `/cars/compare/${s1}/${s2}`;
                 return (
                   <Link
-                    key={`${ms}/${m.slug}`}
-                    href={href}
+                    key={`cmp-${ms}/${m.slug}`}
+                    href={`/cars/compare/${s1}/${s2}`}
                     style={{
-                      padding: '7px 14px',
+                      padding: '6px 12px',
                       borderRadius: 20,
-                      fontSize: '0.85rem',
-                      background: 'var(--bg-secondary)',
-                      color: 'var(--text-primary)',
+                      fontSize: '0.8rem',
+                      background: 'transparent',
+                      color: 'var(--accent)',
                       textDecoration: 'none',
-                      border: '1px solid var(--border)',
+                      border: '1px solid var(--accent)',
                       whiteSpace: 'nowrap',
                     }}
                   >
