@@ -5,6 +5,7 @@ import { getMakeBySlug, getModelBySlug, getCategoryLabel } from '@/lib/carsDb';
 import { getReviewsForCar, getAverageRating } from '@/lib/reviewsDb';
 import { getExpertReviewsForYear, getExpertReviews } from '@/lib/expertReviews';
 import { getTrimSpecs } from '@/lib/trimSpecsDb';
+import { getRepairCosts } from '@/lib/repairCostsDb';
 import StarRating from '@/components/StarRating';
 import ExpertReviewsSection from '@/components/ExpertReviewsSection';
 import CarYearClient from './CarYearClient';
@@ -13,6 +14,7 @@ import ShareButtons from '@/components/ShareButtons';
 import RecallsSection from '@/components/RecallsSection';
 import RecallsBadge from '@/components/RecallsBadge';
 import YearHero from './YearHero';
+import RepairCostsSection from '@/components/RepairCostsSection';
 
 export const dynamic = 'force-dynamic';
 
@@ -64,10 +66,11 @@ export default async function CarYearPage({ params }: Props) {
   const yearNum = parseInt(year);
   if (!model.years.includes(yearNum)) notFound();
 
-  const [reviews, { review: yearReview, isYearSpecific }, generalReviewsList] = await Promise.all([
+  const [reviews, { review: yearReview, isYearSpecific }, generalReviewsList, repairCosts] = await Promise.all([
     getReviewsForCar(makeSlug, modelSlug, yearNum),
     getExpertReviewsForYear(makeSlug, modelSlug, yearNum),
     getExpertReviews(makeSlug, modelSlug),
+    getRepairCosts(model.category),
   ]);
   const generalReview = generalReviewsList[0] ?? null;
 
@@ -116,31 +119,41 @@ export default async function CarYearPage({ params }: Props) {
           { '@type': 'ListItem', position: 5, name: String(year), item: `https://carissues.co.il/cars/${make.slug}/${model.slug}/${year}` },
         ],
       },
-      ...(yearReview && (yearReview.pros.length > 0 || yearReview.cons.length > 0) ? [{
+      {
         '@type': 'FAQPage',
         mainEntity: [
-          yearReview.pros.length > 0 && {
+          ...(yearReview && yearReview.pros.length > 0 ? [{
             '@type': 'Question',
             name: `מה היתרונות של ${make.nameHe} ${model.nameHe} ${year}?`,
             acceptedAnswer: { '@type': 'Answer', text: yearReview.pros.join('. ') },
-          },
-          yearReview.cons.length > 0 && {
+          }] : []),
+          ...(yearReview && yearReview.cons.length > 0 ? [{
             '@type': 'Question',
             name: `מה החסרונות של ${make.nameHe} ${model.nameHe} ${year}?`,
             acceptedAnswer: { '@type': 'Answer', text: yearReview.cons.join('. ') },
-          },
-          yearReview.localSummaryHe && {
+          }] : []),
+          ...(yearReview?.localSummaryHe ? [{
             '@type': 'Question',
             name: `מה אומרים בעלי ${make.nameHe} ${model.nameHe} ${year} בישראל?`,
             acceptedAnswer: { '@type': 'Answer', text: yearReview.localSummaryHe },
-          },
-          avgRating !== null && reviews.length > 0 && {
+          }] : []),
+          ...(avgRating !== null && reviews.length > 0 ? [{
             '@type': 'Question',
             name: `מה הדירוג של ${make.nameHe} ${model.nameHe} ${year}?`,
             acceptedAnswer: { '@type': 'Answer', text: `${make.nameHe} ${model.nameHe} ${year} מקבל דירוג ממוצע של ${avgRating.toFixed(1)} מתוך 5 על בסיס ${reviews.length} ביקורות של בעלי רכב.` },
-          },
+          }] : []),
+          // Repair cost FAQ entries — great for AI search engines
+          ...(repairCosts.length > 0 ? [{
+            '@type': 'Question',
+            name: `כמה עולה טיפול תקופתי ל${make.nameHe} ${model.nameHe}?`,
+            acceptedAnswer: { '@type': 'Answer', text: `טיפול 10,000 ק"מ ל${make.nameHe} ${model.nameHe} עולה בממוצע ₪${repairCosts.find(r => r.repair_key === 'service_10k')?.min_ils ?? 450}–₪${repairCosts.find(r => r.repair_key === 'service_10k')?.max_ils ?? 1400}. טיפול 15,000 ק"מ: ₪${repairCosts.find(r => r.repair_key === 'service_15k')?.min_ils ?? 600}–₪${repairCosts.find(r => r.repair_key === 'service_15k')?.max_ils ?? 2000}. המחירים תלויים ביבואן מורשה לעומת מוסך עצמאי.` },
+          }, {
+            '@type': 'Question',
+            name: `כמה עולה החלפת בלמים ל${make.nameHe} ${model.nameHe}?`,
+            acceptedAnswer: { '@type': 'Answer', text: `החלפת בלמים קדמיים (רפידות + צלחות) ל${make.nameHe} ${model.nameHe} עולה ₪${repairCosts.find(r => r.repair_key === 'brake_pads_front')?.min_ils ?? 500}–₪${repairCosts.find(r => r.repair_key === 'brake_pads_front')?.max_ils ?? 1200}. בלמים אחוריים: ₪${repairCosts.find(r => r.repair_key === 'brake_pads_rear')?.min_ils ?? 500}–₪${repairCosts.find(r => r.repair_key === 'brake_pads_rear')?.max_ils ?? 900}.` },
+          }] : []),
         ].filter(Boolean),
-      }] : []),
+      },
     ],
   };
 
@@ -299,6 +312,15 @@ export default async function CarYearPage({ params }: Props) {
           isYearSpecific={isYearSpecific}
           makeNameHe={make.nameHe}
           modelNameHe={model.nameHe}
+        />
+
+        {/* Repair costs */}
+        <RepairCostsSection
+          makeSlug={makeSlug}
+          modelSlug={modelSlug}
+          makeNameHe={make.nameHe}
+          modelNameHe={model.nameHe}
+          category={model.category}
         />
 
         {/* Recalls for this year */}

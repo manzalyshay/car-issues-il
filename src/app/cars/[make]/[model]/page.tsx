@@ -16,6 +16,7 @@ import SharePopup from '@/components/SharePopup';
 import RecallsSection from '@/components/RecallsSection';
 import RecallsBadge from '@/components/RecallsBadge';
 import CarPageTabs from './CarPageTabs';
+import RepairCostsSection from '@/components/RepairCostsSection';
 
 function toTrimSlug(name: string) {
   return name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
@@ -211,6 +212,15 @@ export default async function ModelPage({ params }: Props) {
             </div>
           </div>
         </CarPageTabs>
+
+        {/* Repair costs */}
+        <RepairCostsSection
+          makeSlug={makeSlug}
+          modelSlug={modelSlug}
+          makeNameHe={make.nameHe}
+          modelNameHe={model.nameHe}
+          category={model.category}
+        />
 
         {/* Similar models — browse + compare */}
         {similarModels.length > 0 && (
