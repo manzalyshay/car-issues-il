@@ -118,7 +118,7 @@ export default async function ModelPage({ params }: Props) {
         </div>
 
         {/* Actions */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap', marginBottom: 24 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap', marginBottom: 16 }}>
           <SharePopup title={`${make.nameHe} ${model.nameHe} — ביקורות ובעיות נפוצות | CarIssues IL`} url={`https://carissues.co.il/cars/${make.slug}/${model.slug}`} />
           <Link href={`/cars/${make.slug}/${model.slug}/issues`} className="btn btn-outline" style={{ height: 36, padding: '0 16px', fontSize: '0.875rem', textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: 6 }}>
             ⚠️ בעיות נפוצות
@@ -128,76 +128,69 @@ export default async function ModelPage({ params }: Props) {
           </Link>
         </div>
 
-        {/* Unified panel — AI summary + 3D viewer, equal height */}
-        {sketchfabModel ? (
-          <div className="model-unified-panel">
-            {/* Left: AI insights (inline — no nested card) */}
-            <div className="model-unified-panel-ai">
-              <ExpertReviewsSection
-                review={expertReview}
-                makeNameHe={make.nameHe}
-                modelNameHe={model.nameHe}
-                userAvgRating={avgRating}
-                userReviewCount={allReviews.length}
-                inline
-              />
-            </div>
-            {/* Right: 3D viewer fills full height */}
-            <div className="model-unified-panel-viewer">
-              <div className="model-unified-panel-viewer-inner">
-                <Car3DViewer uid={sketchfabModel.uid} modelName={`${make.nameHe} ${model.nameHe}`} makeSlug={makeSlug} modelSlug={modelSlug} />
-                {/* Mobile-only: car name overlay (magazine-cover style) */}
-                <div className="viewer-hero-overlay" aria-hidden="true">
-                  <div>
-                    <div className="viewer-hero-make">{make.nameHe}</div>
-                    <div className="viewer-hero-model">{model.nameHe}</div>
-                  </div>
-                </div>
-              </div>
-              <p style={{ fontSize: '0.65rem', color: 'var(--text-muted)', margin: 0, padding: '5px 10px', textAlign: 'center', borderTop: '1px solid var(--border)' }}>
-                <a href={sketchfabModel.viewerUrl} target="_blank" rel="noopener noreferrer" style={{ color: 'var(--text-muted)' }}>
-                  &ldquo;{sketchfabModel.name}&rdquo; by {sketchfabModel.author} · CC BY 4.0
-                </a>
-              </p>
-            </div>
-          </div>
-        ) : (
-          <div style={{ marginBottom: 32 }}>
-            <ExpertReviewsSection
-              review={expertReview}
-              makeNameHe={make.nameHe}
-              modelNameHe={model.nameHe}
-              userAvgRating={avgRating}
-              userReviewCount={allReviews.length}
-            />
-          </div>
-        )}
-
-        {/* Year selector */}
-        <div style={{ marginBottom: 28, display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'nowrap', overflow: 'hidden' }}>
-          <span style={{
-            fontSize: '0.65rem', fontWeight: 800, letterSpacing: '0.08em',
-            color: 'var(--text-muted)', textTransform: 'uppercase',
-            whiteSpace: 'nowrap', flexShrink: 0,
-          }}>
-            שנה ›
-          </span>
-          <div style={{ display: 'flex', overflowX: 'auto', gap: 6, paddingBottom: 2, flex: 1 }}>
-            {model.years.map((y) => (
-              <Link key={y} href={`/cars/${make.slug}/${model.slug}/${y}`} className="year-pill" style={{ flexShrink: 0 }}>{y}</Link>
-            ))}
-          </div>
-        </div>
-
-        {/* Tabbed: Reviews | Videos */}
+        {/* Tabs — right after header so they're visible without scrolling */}
         <CarPageTabs
           makeSlug={makeSlug}
           modelSlug={modelSlug}
           makeNameHe={make.nameHe}
           modelNameHe={model.nameHe}
         >
-          {/* Reviews tab content */}
+          {/* Reviews tab content: AI panel + year selector + reviews + repair costs + recalls */}
           <div>
+            {/* Unified panel — AI summary + 3D viewer */}
+            {sketchfabModel ? (
+              <div className="model-unified-panel">
+                <div className="model-unified-panel-ai">
+                  <ExpertReviewsSection
+                    review={expertReview}
+                    makeNameHe={make.nameHe}
+                    modelNameHe={model.nameHe}
+                    userAvgRating={avgRating}
+                    userReviewCount={allReviews.length}
+                    inline
+                  />
+                </div>
+                <div className="model-unified-panel-viewer">
+                  <div className="model-unified-panel-viewer-inner">
+                    <Car3DViewer uid={sketchfabModel.uid} modelName={`${make.nameHe} ${model.nameHe}`} makeSlug={makeSlug} modelSlug={modelSlug} />
+                    <div className="viewer-hero-overlay" aria-hidden="true">
+                      <div>
+                        <div className="viewer-hero-make">{make.nameHe}</div>
+                        <div className="viewer-hero-model">{model.nameHe}</div>
+                      </div>
+                    </div>
+                  </div>
+                  <p style={{ fontSize: '0.65rem', color: 'var(--text-muted)', margin: 0, padding: '5px 10px', textAlign: 'center', borderTop: '1px solid var(--border)' }}>
+                    <a href={sketchfabModel.viewerUrl} target="_blank" rel="noopener noreferrer" style={{ color: 'var(--text-muted)' }}>
+                      &ldquo;{sketchfabModel.name}&rdquo; by {sketchfabModel.author} · CC BY 4.0
+                    </a>
+                  </p>
+                </div>
+              </div>
+            ) : (
+              <div style={{ marginBottom: 32 }}>
+                <ExpertReviewsSection
+                  review={expertReview}
+                  makeNameHe={make.nameHe}
+                  modelNameHe={model.nameHe}
+                  userAvgRating={avgRating}
+                  userReviewCount={allReviews.length}
+                />
+              </div>
+            )}
+
+            {/* Year selector */}
+            <div style={{ marginBottom: 28, marginTop: 8, display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'nowrap', overflow: 'hidden' }}>
+              <span style={{ fontSize: '0.65rem', fontWeight: 800, letterSpacing: '0.08em', color: 'var(--text-muted)', textTransform: 'uppercase', whiteSpace: 'nowrap', flexShrink: 0 }}>
+                שנה ›
+              </span>
+              <div style={{ display: 'flex', overflowX: 'auto', gap: 6, paddingBottom: 2, flex: 1 }}>
+                {model.years.map((y) => (
+                  <Link key={y} href={`/cars/${make.slug}/${model.slug}/${y}`} className="year-pill" style={{ flexShrink: 0 }}>{y}</Link>
+                ))}
+              </div>
+            </div>
+
             {allReviews.length === 0 && (
               <FirstReviewCta makeNameHe={make.nameHe} modelNameHe={model.nameHe} />
             )}
@@ -210,20 +203,20 @@ export default async function ModelPage({ params }: Props) {
                 initialReviews={allReviews}
               />
             </div>
+
+            <RepairCostsSection
+              makeSlug={makeSlug}
+              modelSlug={modelSlug}
+              makeNameHe={make.nameHe}
+              modelNameHe={model.nameHe}
+              category={model.category}
+            />
+
             <div style={{ marginTop: 48 }}>
               <RecallsSection makeEn={make.nameEn} modelEn={model.nameEn} years={model.years} />
             </div>
           </div>
         </CarPageTabs>
-
-        {/* Repair costs */}
-        <RepairCostsSection
-          makeSlug={makeSlug}
-          modelSlug={modelSlug}
-          makeNameHe={make.nameHe}
-          modelNameHe={model.nameHe}
-          category={model.category}
-        />
 
         {/* Similar models — browse + compare */}
         {similarModels.length > 0 && (
