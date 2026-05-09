@@ -69,9 +69,6 @@ export default async function RepairCostsSection({ makeSlug, modelSlug, makeName
                 <div style={{ fontSize: '1.05rem', fontWeight: 800, color: 'var(--brand-red)', marginBottom: 4 }}>
                   ₪{item.min_ils.toLocaleString('he-IL')}–₪{item.max_ils.toLocaleString('he-IL')}
                 </div>
-                {item.notes_he && (
-                  <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', lineHeight: 1.45 }}>{item.notes_he}</div>
-                )}
               </div>
             ))}
           </div>
