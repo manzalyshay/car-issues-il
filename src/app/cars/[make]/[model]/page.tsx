@@ -134,6 +134,7 @@ export default async function ModelPage({ params }: Props) {
           modelSlug={modelSlug}
           makeNameHe={make.nameHe}
           modelNameHe={model.nameHe}
+          defaultYear={model.years[0]}
         >
           {/* Reviews tab content: AI panel + year selector + reviews + repair costs + recalls */}
           <div>

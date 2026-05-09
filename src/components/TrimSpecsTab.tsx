@@ -9,388 +9,204 @@ function toTrimSlug(name: string) {
   return name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
 }
 
+interface TrimWithYear extends TrimSpec {
+  modelYear: number | null;
+  isIsrael: boolean;
+}
+
 interface Props {
   makeSlug: string;
   modelSlug: string;
   makeNameHe: string;
   modelNameHe: string;
+  defaultYear?: number; // year page passes this
 }
-
-// ── Labels ────────────────────────────────────────────────────────────────────
 
 const ENGINE_TYPE_HE: Record<string, string> = {
-  petrol: 'בנזין',
-  hybrid: 'היברידי',
-  phev: 'PHEV (תקע)',
-  electric: 'חשמלי',
-  diesel: 'דיזל',
+  petrol: 'בנזין', hybrid: 'היברידי', phev: 'PHEV', electric: 'חשמלי', diesel: 'דיזל',
 };
-
 const TRANSMISSION_HE: Record<string, string> = {
-  manual: 'ידני',
-  automatic: 'אוטומטי',
-  cvt: 'CVT',
-  dct: 'DCT (דו-מצמד)',
+  manual: 'ידני', automatic: 'אוטומטי', cvt: 'CVT', dct: 'DCT',
 };
-
 const DRIVE_HE: Record<string, string> = {
-  fwd: 'קדמית',
-  rwd: 'אחורית',
-  awd: '4×4 / AWD',
+  fwd: 'קדמי', rwd: 'אחורי', awd: 'AWD / 4×4',
 };
-
 const SEATS_HE: Record<string, string> = {
-  fabric: 'בד',
-  leatherette: 'דמוי-עור',
-  leather: 'עור אמיתי',
+  fabric: 'בד', leatherette: 'דמוי-עור', leather: 'עור',
 };
-
-// ── Feature groups shown in order ─────────────────────────────────────────────
 
 const FEATURE_GROUPS: { label: string; icon: string; keys: (keyof typeof TRIM_FEATURES)[] }[] = [
-  {
-    label: 'טכנולוגיה',
-    icon: '📱',
-    keys: ['apple_carplay', 'wireless_carplay', 'wireless_charging', 'digital_cluster', 'hud', 'premium_audio'],
-  },
-  {
-    label: 'בטיחות',
-    icon: '🛡️',
-    keys: ['aeb', 'adaptive_cruise', 'lane_keep', 'blind_spot', 'traffic_sign', 'rear_camera', 'camera_360', 'parking_sensors'],
-  },
-  {
-    label: 'נוחות',
-    icon: '✨',
-    keys: ['heated_seats_front', 'heated_seats_rear', 'ventilated_seats', 'electric_seats', 'memory_seats',
-           'heated_steering', 'sunroof', 'panoramic_roof', 'keyless_entry', 'push_start',
-           'ambient_lighting', 'led_lights', 'auto_lights'],
-  },
+  { label: 'טכנולוגיה', icon: '📱', keys: ['apple_carplay', 'wireless_carplay', 'wireless_charging', 'digital_cluster', 'hud', 'premium_audio'] },
+  { label: 'בטיחות', icon: '🛡️', keys: ['aeb', 'adaptive_cruise', 'lane_keep', 'blind_spot', 'traffic_sign', 'rear_camera', 'camera_360', 'parking_sensors'] },
+  { label: 'נוחות', icon: '✨', keys: ['heated_seats_front', 'heated_seats_rear', 'ventilated_seats', 'electric_seats', 'memory_seats', 'heated_steering', 'sunroof', 'panoramic_roof', 'keyless_entry', 'push_start', 'ambient_lighting', 'led_lights', 'auto_lights'] },
 ];
 
-// ── Helpers ───────────────────────────────────────────────────────────────────
-
-function hasFeature(trim: TrimSpec, key: string) {
-  return trim.features.includes(key);
-}
-
-/** Returns true if at least one trim in the list has this feature — so we hide irrelevant rows */
-function anyHas(trims: TrimSpec[], key: string) {
+function anyHas(trims: TrimWithYear[], key: string) {
   return trims.some(t => t.features.includes(key));
 }
 
-// ── Sub-components ────────────────────────────────────────────────────────────
-
-function Check({ yes }: { yes: boolean }) {
-  return (
-    <span style={{
-      fontSize: '1rem',
-      color: yes ? '#16a34a' : 'var(--border-strong)',
-      fontWeight: yes ? 700 : 400,
-    }}>
-      {yes ? '✓' : '–'}
-    </span>
-  );
-}
-
-function SectionHeader({ label, icon, colCount }: { label: string; icon: string; colCount: number }) {
-  return (
-    <tr>
-      <td
-        colSpan={colCount + 1}
-        style={{
-          padding: '10px 14px 6px',
-          background: 'var(--bg-muted)',
-          fontSize: '0.72rem',
-          fontWeight: 800,
-          letterSpacing: '0.08em',
-          textTransform: 'uppercase',
-          color: 'var(--text-muted)',
-          borderTop: '1px solid var(--border)',
-        }}
-      >
-        {icon} {label}
-      </td>
-    </tr>
-  );
-}
-
-function SpecRow({ label, values }: { label: string; values: React.ReactNode[] }) {
-  return (
-    <tr style={{ borderTop: '1px solid var(--border)' }}>
-      <td style={{
-        padding: '9px 14px',
-        fontSize: '0.82rem',
-        color: 'var(--text-secondary)',
-        whiteSpace: 'nowrap',
-        background: 'var(--bg-card)',
-        position: 'sticky',
-        right: 0,
-        zIndex: 1,
-        borderLeft: '1px solid var(--border)',
-      }}>
-        {label}
-      </td>
-      {values.map((v, i) => (
-        <td key={i} style={{ padding: '9px 14px', textAlign: 'center', fontSize: '0.875rem', minWidth: 110 }}>
-          {v}
-        </td>
-      ))}
-    </tr>
-  );
-}
-
-// ── Empty state ───────────────────────────────────────────────────────────────
-
-function NoSpecs({ makeNameHe, modelNameHe }: { makeNameHe: string; modelNameHe: string }) {
-  return (
-    <div style={{
-      textAlign: 'center',
-      padding: '56px 24px',
-      color: 'var(--text-muted)',
-    }}>
-      <div style={{ fontSize: '2.5rem', marginBottom: 12 }}>🔧</div>
-      <p style={{ fontWeight: 600, fontSize: '1rem', marginBottom: 6, color: 'var(--text-secondary)' }}>
-        אין עדיין מפרט גימור ל{makeNameHe} {modelNameHe}
-      </p>
-      <p style={{ fontSize: '0.875rem' }}>
-        נעדכן בהמשך. בינתיים תוכלו לבדוק באתר היבואן הרשמי.
-      </p>
-    </div>
-  );
-}
-
-// ── Main component ────────────────────────────────────────────────────────────
-
-export default function TrimSpecsTab({ makeSlug, modelSlug, makeNameHe, modelNameHe }: Props) {
-  const [trims, setTrims] = useState<TrimSpec[] | null>(null);
+export default function TrimSpecsTab({ makeSlug, modelSlug, makeNameHe, modelNameHe, defaultYear }: Props) {
+  const [allTrims, setAllTrims] = useState<TrimWithYear[] | null>(null);
   const [loading, setLoading] = useState(true);
-  const [selected, setSelected] = useState<string[]>([]);
+  const [selected, setSelected] = useState<string>('');
 
   useEffect(() => {
-    fetch(`/api/trim-specs?make=${makeSlug}&model=${modelSlug}`)
+    const yearParam = defaultYear ? `&year=${defaultYear}` : '';
+    fetch(`/api/trim-specs?make=${makeSlug}&model=${modelSlug}${yearParam}`)
       .then(r => r.json())
-      .then((data: TrimSpec[]) => {
-        setTrims(data);
-        // Select all by default (up to first 4 to avoid overcrowding on mobile)
-        setSelected(data.slice(0, 4).map(t => t.name));
+      .then((data: TrimWithYear[]) => {
+        setAllTrims(data);
+        setSelected(data[0]?.name ?? '');
       })
-      .catch(() => setTrims([]))
+      .catch(() => setAllTrims([]))
       .finally(() => setLoading(false));
-  }, [makeSlug, modelSlug]);
+  }, [makeSlug, modelSlug, defaultYear]);
 
-  if (loading) {
-    return (
-      <div style={{ textAlign: 'center', padding: '56px 0', color: 'var(--text-muted)', fontSize: '0.9rem' }}>
-        טוען מפרטים...
-      </div>
-    );
-  }
+  if (loading) return (
+    <div style={{ textAlign: 'center', padding: '56px 0', color: 'var(--text-muted)', fontSize: '0.9rem' }}>טוען מפרטים...</div>
+  );
 
-  if (!trims || trims.length === 0) {
-    return <NoSpecs makeNameHe={makeNameHe} modelNameHe={modelNameHe} />;
-  }
+  if (!allTrims || allTrims.length === 0) return (
+    <div style={{ textAlign: 'center', padding: '56px 24px', color: 'var(--text-muted)' }}>
+      <div style={{ fontSize: '2.5rem', marginBottom: 12 }}>🔧</div>
+      <p style={{ fontWeight: 600, color: 'var(--text-secondary)', marginBottom: 6 }}>אין עדיין מפרט גימור ל{makeNameHe} {modelNameHe}</p>
+      <p style={{ fontSize: '0.875rem' }}>נעדכן בהמשך. בינתיים ניתן לבדוק באתר היבואן.</p>
+    </div>
+  );
 
-  const visible = trims.filter(t => selected.includes(t.name));
+  const trim = allTrims.find(t => t.name === selected) ?? allTrims[0];
 
-  // Which spec rows actually have data across visible trims?
-  const hasEngine = visible.some(t => t.engineType || t.engineCc || t.engineHp || t.transmission || t.drive);
-  const hasInterior = visible.some(t => t.seats || t.screenSize || (t.seatCount && t.seatCount !== 5));
+  const hasEngine = !!(trim.engineType || trim.engineCc || trim.engineHp || trim.transmission || trim.drive);
+  const hasInterior = !!(trim.seats || trim.screenSize || (trim.seatCount && trim.seatCount !== 5));
+
+  const row = (label: string, value: React.ReactNode) => (
+    <div key={label} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 0', borderBottom: '1px solid var(--border)' }}>
+      <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)', fontWeight: 500 }}>{label}</span>
+      <span style={{ fontSize: '0.9rem', fontWeight: 600, color: 'var(--text-primary)' }}>{value}</span>
+    </div>
+  );
+
+  const featureRow = (labelHe: string, key: string) => (
+    <div key={key} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 0', borderBottom: '1px solid var(--border)' }}>
+      <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>{labelHe}</span>
+      <span style={{
+        fontSize: '0.8rem', fontWeight: 700,
+        color: trim.features.includes(key) ? '#16a34a' : 'var(--border-strong)',
+      }}>
+        {trim.features.includes(key) ? '✓ כלול' : '–'}
+      </span>
+    </div>
+  );
 
   return (
     <div>
-      {/* Trim selector pills */}
-      {trims.length > 1 && (
-        <div style={{ marginBottom: 20 }}>
-          <p style={{ fontSize: '0.78rem', color: 'var(--text-muted)', marginBottom: 8, fontWeight: 600 }}>
-            בחר גימורים להשוואה:
-          </p>
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
-            {trims.map(t => {
-              const on = selected.includes(t.name);
-              return (
-                <button
-                  key={t.name}
-                  onClick={() => {
-                    if (on && selected.length === 1) return; // keep at least one
-                    setSelected(prev =>
-                      on ? prev.filter(n => n !== t.name) : [...prev, t.name],
-                    );
-                  }}
-                  style={{
-                    padding: '5px 14px',
-                    borderRadius: 999,
-                    border: on ? '1.5px solid var(--brand-red)' : '1.5px solid var(--border)',
-                    background: on ? 'rgba(230,57,70,.08)' : 'var(--bg-card)',
-                    color: on ? 'var(--brand-red)' : 'var(--text-secondary)',
-                    fontWeight: on ? 700 : 500,
-                    fontSize: '0.82rem',
-                    cursor: 'pointer',
-                    transition: 'all 0.15s',
-                  }}
-                >
-                  {t.name}
-                </button>
-              );
-            })}
-          </div>
+      {/* Trim selector */}
+      <div style={{ marginBottom: 20 }}>
+        <p style={{ fontSize: '0.78rem', color: 'var(--text-muted)', marginBottom: 10, fontWeight: 600 }}>
+          בחר גימור:
+        </p>
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+          {allTrims.map(t => {
+            const on = selected === t.name;
+            return (
+              <button
+                key={t.name}
+                onClick={() => setSelected(t.name)}
+                style={{
+                  padding: '6px 16px', borderRadius: 999,
+                  border: on ? '2px solid var(--brand-red)' : '1.5px solid var(--border)',
+                  background: on ? 'var(--brand-red)' : 'var(--bg-card)',
+                  color: on ? '#fff' : 'var(--text-secondary)',
+                  fontWeight: on ? 700 : 500,
+                  fontSize: '0.83rem', cursor: 'pointer', transition: 'all 0.15s',
+                  display: 'flex', alignItems: 'center', gap: 6,
+                }}
+              >
+                {t.name}
+                {t.priceIls && (
+                  <span style={{ fontSize: '0.72rem', opacity: on ? 0.85 : 0.6 }}>
+                    ₪{Math.round(t.priceIls / 1000)}K
+                  </span>
+                )}
+              </button>
+            );
+          })}
         </div>
-      )}
-
-      {/* Comparison table */}
-      <div style={{
-        overflowX: 'auto',
-        borderRadius: 12,
-        border: '1px solid var(--border)',
-        boxShadow: 'var(--shadow-sm)',
-      }}>
-        <table style={{
-          width: '100%',
-          borderCollapse: 'collapse',
-          direction: 'rtl',
-          background: 'var(--bg-card)',
-          fontSize: '0.875rem',
-        }}>
-          <thead>
-            <tr style={{ background: 'var(--text-primary)' }}>
-              <th style={{
-                padding: '12px 14px',
-                textAlign: 'right',
-                fontWeight: 700,
-                fontSize: '0.78rem',
-                color: 'rgba(255,255,255,0.7)',
-                position: 'sticky',
-                right: 0,
-                background: 'var(--text-primary)',
-                zIndex: 2,
-                whiteSpace: 'nowrap',
-              }}>
-                מפרט
-              </th>
-              {visible.map((t, i) => (
-                <th key={t.name} style={{
-                  padding: '12px 14px',
-                  textAlign: 'center',
-                  fontWeight: 800,
-                  fontSize: '0.9rem',
-                  color: i === visible.length - 1 ? '#fbbf24' : '#fff',
-                  minWidth: 110,
-                  whiteSpace: 'nowrap',
-                }}>
-                  <Link
-                    href={`/cars/${makeSlug}/${modelSlug}/trim/${toTrimSlug(t.name)}`}
-                    style={{ color: 'inherit', textDecoration: 'none' }}
-                    title={`פרטים על גימור ${t.name}`}
-                  >
-                    {t.name}
-                  </Link>
-                  {t.priceIls && (
-                    <div style={{ fontSize: '0.72rem', fontWeight: 500, opacity: 0.8, marginTop: 2 }}>
-                      ₪{t.priceIls.toLocaleString('he-IL')}
-                    </div>
-                  )}
-                </th>
-              ))}
-            </tr>
-          </thead>
-
-          <tbody>
-            {/* ── Engine ── */}
-            {hasEngine && (
-              <>
-                <SectionHeader label="מנוע ותיבת הילוכים" icon="🔧" colCount={visible.length} />
-                {visible.some(t => t.engineType) && (
-                  <SpecRow
-                    label="סוג מנוע"
-                    values={visible.map(t => t.engineType ? ENGINE_TYPE_HE[t.engineType] ?? t.engineType : '–')}
-                  />
-                )}
-                {visible.some(t => t.engineCc) && (
-                  <SpecRow
-                    label={'נפח (סמ"ק)'}
-                    values={visible.map(t => t.engineCc ? t.engineCc.toLocaleString('he-IL') : '–')}
-                  />
-                )}
-                {visible.some(t => t.engineHp) && (
-                  <SpecRow
-                    label={'כוח סוס (כ"ס)'}
-                    values={visible.map(t => t.engineHp ? (
-                      <span style={{ fontWeight: 700 }}>{t.engineHp}</span>
-                    ) : '–')}
-                  />
-                )}
-                {visible.some(t => t.transmission) && (
-                  <SpecRow
-                    label="תיבת הילוכים"
-                    values={visible.map(t => t.transmission ? TRANSMISSION_HE[t.transmission] ?? t.transmission : '–')}
-                  />
-                )}
-                {visible.some(t => t.drive) && (
-                  <SpecRow
-                    label="הנעה"
-                    values={visible.map(t => t.drive ? DRIVE_HE[t.drive] ?? t.drive : '–')}
-                  />
-                )}
-              </>
-            )}
-
-            {/* ── Interior ── */}
-            {hasInterior && (
-              <>
-                <SectionHeader label="פנים הרכב" icon="🪑" colCount={visible.length} />
-                {visible.some(t => t.seats) && (
-                  <SpecRow
-                    label="ריפוד"
-                    values={visible.map(t => t.seats ? (
-                      <span style={{
-                        fontWeight: t.seats === 'leather' ? 700 : 400,
-                        color: t.seats === 'leather' ? 'var(--text-primary)' : undefined,
-                      }}>
-                        {SEATS_HE[t.seats]}
-                      </span>
-                    ) : '–')}
-                  />
-                )}
-                {visible.some(t => t.seatCount && t.seatCount !== 5) && (
-                  <SpecRow
-                    label="מספר מושבים"
-                    values={visible.map(t => t.seatCount ? `${t.seatCount}` : '5')}
-                  />
-                )}
-                {visible.some(t => t.screenSize) && (
-                  <SpecRow
-                    label="מסך מולטימדיה"
-                    values={visible.map(t => t.screenSize ? (
-                      <span style={{ fontWeight: 600 }}>{t.screenSize}&quot;</span>
-                    ) : '–')}
-                  />
-                )}
-              </>
-            )}
-
-            {/* ── Feature groups ── */}
-            {FEATURE_GROUPS.map(group => {
-              // Only show rows where at least one visible trim has the feature
-              const relevantKeys = group.keys.filter(k => anyHas(visible, k));
-              if (relevantKeys.length === 0) return null;
-              return (
-                <>
-                  <SectionHeader key={`hdr-${group.label}`} label={group.label} icon={group.icon} colCount={visible.length} />
-                  {relevantKeys.map(key => (
-                    <SpecRow
-                      key={key}
-                      label={TRIM_FEATURES[key].labelHe}
-                      values={visible.map(t => <Check key={t.name} yes={hasFeature(t, key)} />)}
-                    />
-                  ))}
-                </>
-              );
-            })}
-          </tbody>
-        </table>
       </div>
 
-      <p style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginTop: 12, textAlign: 'center' }}>
-        המפרט מבוסס על נתוני שוק ישראל. ייתכנו שינויים בין שנות ייצור שונות. מומלץ לאמת מול היבואן.
+      {/* Detail card for selected trim */}
+      <div style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 14, overflow: 'hidden' }}>
+        {/* Card header */}
+        <div style={{ background: 'var(--brand-red)', padding: '16px 20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <div>
+            <div style={{ fontSize: '1.1rem', fontWeight: 800, color: '#fff' }}>{trim.name}</div>
+            <div style={{ fontSize: '0.8rem', color: 'rgba(255,255,255,0.75)', marginTop: 2 }}>
+              {makeNameHe} {modelNameHe}
+            </div>
+          </div>
+          {trim.priceIls && (
+            <div style={{ textAlign: 'left' }}>
+              <div style={{ fontSize: '1.25rem', fontWeight: 900, color: '#fff' }}>₪{trim.priceIls.toLocaleString('he-IL')}</div>
+              <div style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.7)' }}>מחיר מומלץ</div>
+            </div>
+          )}
+        </div>
+
+        <div style={{ padding: '4px 20px 16px' }}>
+          {/* Engine */}
+          {hasEngine && (
+            <div style={{ marginBottom: 8 }}>
+              <div style={{ fontSize: '0.72rem', fontWeight: 800, color: 'var(--text-muted)', letterSpacing: '0.08em', textTransform: 'uppercase', padding: '14px 0 4px' }}>
+                🔧 מנוע ותיבת הילוכים
+              </div>
+              {trim.engineType && row('סוג מנוע', ENGINE_TYPE_HE[trim.engineType] ?? trim.engineType)}
+              {trim.engineCc && row('נפח מנוע', `${trim.engineCc.toLocaleString()} סמ"ק`)}
+              {trim.engineHp && row('הספק', <span style={{ color: 'var(--brand-red)' }}>{trim.engineHp} כ"ס</span>)}
+              {trim.transmission && row('תיבת הילוכים', TRANSMISSION_HE[trim.transmission] ?? trim.transmission)}
+              {trim.drive && row('הנעה', DRIVE_HE[trim.drive] ?? trim.drive)}
+            </div>
+          )}
+
+          {/* Interior */}
+          {hasInterior && (
+            <div style={{ marginBottom: 8 }}>
+              <div style={{ fontSize: '0.72rem', fontWeight: 800, color: 'var(--text-muted)', letterSpacing: '0.08em', textTransform: 'uppercase', padding: '14px 0 4px' }}>
+                🪑 פנים הרכב
+              </div>
+              {trim.seats && row('ריפוד', SEATS_HE[trim.seats])}
+              {trim.seatCount && trim.seatCount !== 5 && row('מושבים', trim.seatCount)}
+              {trim.screenSize && row('מסך מולטימדיה', `${trim.screenSize}"`)}
+            </div>
+          )}
+
+          {/* Feature groups */}
+          {FEATURE_GROUPS.map(group => {
+            const relevantKeys = group.keys.filter(k => anyHas(allTrims, k));
+            if (relevantKeys.length === 0) return null;
+            return (
+              <div key={group.label} style={{ marginBottom: 8 }}>
+                <div style={{ fontSize: '0.72rem', fontWeight: 800, color: 'var(--text-muted)', letterSpacing: '0.08em', textTransform: 'uppercase', padding: '14px 0 4px' }}>
+                  {group.icon} {group.label}
+                </div>
+                {relevantKeys.map(k => featureRow(TRIM_FEATURES[k].labelHe, k))}
+              </div>
+            );
+          })}
+        </div>
+
+        {/* Footer link */}
+        <div style={{ borderTop: '1px solid var(--border)', padding: '12px 20px', background: 'var(--bg-secondary)' }}>
+          <Link
+            href={`/cars/${makeSlug}/${modelSlug}/trim/${toTrimSlug(trim.name)}`}
+            style={{ fontSize: '0.83rem', color: 'var(--brand-red)', fontWeight: 600, textDecoration: 'none' }}
+          >
+            פרטים מלאים על גימור {trim.name} ←
+          </Link>
+        </div>
+      </div>
+
+      <p style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginTop: 10, textAlign: 'center' }}>
+        מפרט לשוק ישראל · ייתכנו שינויים בין שנות ייצור · מומלץ לאמת מול היבואן
       </p>
     </div>
   );

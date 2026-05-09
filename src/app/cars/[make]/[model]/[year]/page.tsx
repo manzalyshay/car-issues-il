@@ -30,7 +30,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const [avgRating, reviews, trims] = await Promise.all([
     getAverageRating(makeSlug, modelSlug),
     getReviewsForCar(makeSlug, modelSlug, yearNum),
-    getTrimSpecs(makeSlug, modelSlug),
+    getTrimSpecs(makeSlug, modelSlug, yearNum),
   ]);
 
   const trimsWithPrice = trims.filter(t => t.priceIls);

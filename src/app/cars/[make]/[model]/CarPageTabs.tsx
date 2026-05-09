@@ -12,10 +12,11 @@ interface Props {
   modelSlug: string;
   makeNameHe: string;
   modelNameHe: string;
+  defaultYear?: number;
   children: React.ReactNode;
 }
 
-export default function CarPageTabs({ makeSlug, modelSlug, makeNameHe, modelNameHe, children }: Props) {
+export default function CarPageTabs({ makeSlug, modelSlug, makeNameHe, modelNameHe, defaultYear, children }: Props) {
   const [tab, setTab] = useState<'reviews' | 'specs' | 'videos' | 'images'>('reviews');
   const [videos, setVideos] = useState<CarVideo[] | null>(null);
   const [images, setImages] = useState<CarImage[] | null>(null);
@@ -112,6 +113,7 @@ export default function CarPageTabs({ makeSlug, modelSlug, makeNameHe, modelName
           modelSlug={modelSlug}
           makeNameHe={makeNameHe}
           modelNameHe={modelNameHe}
+          defaultYear={defaultYear}
         />
       )}
       {tab === 'videos' && (
