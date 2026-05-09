@@ -304,51 +304,6 @@ export default async function CarYearPage({ params }: Props) {
         {/* Recalls for this year */}
         <RecallsSection makeEn={make.nameEn} modelEn={model.nameEn} year={yearNum} />
 
-        {/* Used car prices — only for models 3+ years old */}
-        {yearNum <= new Date().getFullYear() - 3 && (
-          <div style={{
-            marginTop: 32,
-            padding: '18px 22px',
-            background: 'var(--bg-secondary)',
-            borderRadius: 12,
-            border: '1px solid var(--border)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            gap: 16,
-            flexWrap: 'wrap',
-          }}>
-            <div>
-              <div style={{ fontSize: '0.85rem', fontWeight: 700, marginBottom: 4 }}>
-                מחיר יד שנייה
-              </div>
-              <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
-                בדוק מה המחיר הנוכחי של {make.nameHe} {model.nameHe} {yearNum} בשוק המשומשים
-              </div>
-            </div>
-            <a
-              href={`https://www.yad2.co.il/vehicles/cars?manufacturer=${encodeURIComponent(make.nameEn)}&freeText=${encodeURIComponent(`${make.nameHe} ${model.nameHe} ${yearNum}`)}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              style={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: 6,
-                padding: '8px 18px',
-                borderRadius: 8,
-                background: 'var(--accent)',
-                color: '#fff',
-                fontWeight: 700,
-                fontSize: '0.85rem',
-                textDecoration: 'none',
-                whiteSpace: 'nowrap',
-              }}
-            >
-              חפש ביד2 ↗
-            </a>
-          </div>
-        )}
-
         {/* JSON-LD */}
         <script
           type="application/ld+json"
