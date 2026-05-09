@@ -12,6 +12,8 @@ export interface RepairCost {
   min_ils: number;
   max_ils: number;
   category: string;
+  applies_to: string;
+  source_url?: string;
   notes_he?: string;
 }
 
@@ -20,7 +22,7 @@ export async function getRepairCosts(category: string): Promise<RepairCost[]> {
   const db = getServiceClient();
   const { data } = await db
     .from('repair_costs')
-    .select('repair_key, repair_name_he, min_ils, max_ils, category, notes_he')
+    .select('repair_key, repair_name_he, min_ils, max_ils, category, applies_to, source_url, notes_he')
     .in('applies_to', ['all', tier])
     .order('category')
     .order('repair_key');

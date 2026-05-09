@@ -47,6 +47,7 @@ export default function Footer() {
             <ul style={{ listStyle: 'none', padding: 0, display: 'flex', flexDirection: 'column', gap: 10 }}>
               {[
                 { href: '/cars', label: 'כל היצרנים' },
+                { href: '/repairs', label: 'עלויות תיקון' },
                 { href: '/terms', label: 'תנאי שימוש' },
                 { href: '/privacy', label: 'מדיניות פרטיות' },
                 { href: '/contact', label: 'צור קשר' },

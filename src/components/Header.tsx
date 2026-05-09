@@ -184,4 +184,5 @@ const NAV_LINKS = [
   { href: '/cars#popular', label: 'דגמים פופולריים' },
   { href: '/cars/compare', label: 'השוואה' },
   { href: '/rankings', label: 'דירוגים' },
+  { href: '/repairs', label: 'עלויות תיקון' },
 ];
