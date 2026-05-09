@@ -26,6 +26,14 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     }))
   );
 
+  const issuesUrls = makes.flatMap((make) =>
+    make.models.map((model) => ({
+      url: `${BASE}/cars/${make.slug}/${model.slug}/issues`,
+      changeFrequency: 'weekly' as const,
+      priority: 0.8,
+    }))
+  );
+
   const yearUrls = makes.flatMap((make) =>
     make.models.flatMap((model) =>
       (model.years ?? []).map((year) => ({
@@ -73,6 +81,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: `${BASE}/privacy`, changeFrequency: 'monthly', priority: 0.2 },
     ...makeUrls,
     ...modelUrls,
+    ...issuesUrls,
     ...yearUrls,
     ...trimUrls,
     ...compareUrls,

@@ -120,6 +120,9 @@ export default async function ModelPage({ params }: Props) {
         {/* Actions */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap', marginBottom: 24 }}>
           <SharePopup title={`${make.nameHe} ${model.nameHe} — ביקורות ובעיות נפוצות | CarIssues IL`} url={`https://carissues.co.il/cars/${make.slug}/${model.slug}`} />
+          <Link href={`/cars/${make.slug}/${model.slug}/issues`} className="btn btn-outline" style={{ height: 36, padding: '0 16px', fontSize: '0.875rem', textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+            ⚠️ בעיות נפוצות
+          </Link>
           <Link href={`/cars/compare?car1=${make.slug}/${model.slug}`} className="btn btn-outline" style={{ height: 36, padding: '0 16px', fontSize: '0.875rem', textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: 6 }}>
             ⚖️ השווה לרכב אחר
           </Link>
