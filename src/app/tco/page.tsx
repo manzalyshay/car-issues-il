@@ -3,10 +3,10 @@ import TcoCalculator from './TcoCalculator';
 
 export const metadata: Metadata = {
   title: 'מחשבון עלות בעלות על רכב | CarIssues IL',
-  description: 'כמה עולה להחזיק רכב בישראל לשנה? חשב דלק, ביטוח, טיפולים, פחת ורישוי — TCO מלא לכל דגם.',
+  description: 'כמה עולה להחזיק רכב בישראל לשנה? חשב דלק, ביטוח, טיפולים, פחת ורישוי — עלות החזקה מלאה לכל דגם.',
   alternates: { canonical: 'https://carissues.co.il/tco' },
   openGraph: {
-    title: 'מחשבון עלות בעלות על רכב — TCO ישראל',
+    title: 'מחשבון עלות בעלות על רכב — כמה עולה לי הרכב לשנה?',
     description: 'חשב כמה עולה לך הרכב שלך באמת: דלק, ביטוח, טיפולים, פחת ורישוי.',
     url: 'https://carissues.co.il/tco',
   },
@@ -55,7 +55,7 @@ export default function TcoPage() {
             🚗 מחשבון עלות בעלות על רכב
           </h1>
           <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', margin: 0 }}>
-            כמה עולה לך הרכב באמת? חשב TCO שנתי — דלק, ביטוח, טיפולים, פחת ורישוי.
+            כמה עולה לך הרכב באמת? חשב עלות החזקה שנתית — דלק, ביטוח, טיפולים, פחת ורישוי.
           </p>
         </div>
         <TcoCalculator />

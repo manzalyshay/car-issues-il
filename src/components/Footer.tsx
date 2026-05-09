@@ -48,7 +48,7 @@ export default function Footer() {
               {[
                 { href: '/cars', label: 'כל היצרנים' },
                 { href: '/repairs', label: 'עלויות תיקון' },
-                { href: '/tco', label: 'עלות בעלות' },
+                { href: '/tco', label: 'עלות החזקה' },
                 { href: '/terms', label: 'תנאי שימוש' },
                 { href: '/privacy', label: 'מדיניות פרטיות' },
                 { href: '/contact', label: 'צור קשר' },
