@@ -4,6 +4,7 @@ import { notFound } from 'next/navigation';
 import { getMakeBySlug, getModelBySlug, getCategoryLabel } from '@/lib/carsDb';
 import { getReviewsForCar, getAverageRating } from '@/lib/reviewsDb';
 import { getExpertReviewsForYear, getExpertReviews } from '@/lib/expertReviews';
+import { getTrimSpecs } from '@/lib/trimSpecsDb';
 import StarRating from '@/components/StarRating';
 import ExpertReviewsSection from '@/components/ExpertReviewsSection';
 import CarYearClient from './CarYearClient';
@@ -24,16 +25,26 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const model = await getModelBySlug(makeSlug, modelSlug);
   if (!model) return {};
   const yearNum = parseInt(year);
-  const [avgRating, reviews] = await Promise.all([
+  const [avgRating, reviews, trims] = await Promise.all([
     getAverageRating(makeSlug, modelSlug),
     getReviewsForCar(makeSlug, modelSlug, yearNum),
+    getTrimSpecs(makeSlug, modelSlug),
   ]);
+
+  const trimsWithPrice = trims.filter(t => t.priceIls);
+  const minPrice = trimsWithPrice.length > 0 ? Math.min(...trimsWithPrice.map(t => t.priceIls!)) : null;
+  const maxPrice = trimsWithPrice.length > 0 ? Math.max(...trimsWithPrice.map(t => t.priceIls!)) : null;
+  const priceDesc = minPrice && maxPrice && minPrice !== maxPrice
+    ? ` מחיר: ₪${Math.round(minPrice / 1000)}K–₪${Math.round(maxPrice / 1000)}K.`
+    : minPrice ? ` מחיר מומלץ: ₪${minPrice.toLocaleString('he-IL')}.` : '';
+  const trimNames = trims.slice(0, 4).map(t => t.name).join(', ');
+  const trimDesc = trimNames ? ` גימורים: ${trimNames}${trims.length > 4 ? ' ועוד' : ''}.` : '';
 
   const url = `https://carissues.co.il/cars/${make.slug}/${model.slug}/${year}`;
   const ratingStr = avgRating ? ` · ${avgRating.toFixed(1)}★` : '';
   return {
     title: `${make.nameHe} ${model.nameHe} ${year}: חוות דעת ובעיות${reviews.length > 0 ? ` (${reviews.length} ביקורות${ratingStr})` : ratingStr}`,
-    description: `${reviews.length > 0 ? `${reviews.length} חוות דעת על` : 'חוות דעת על'} ${make.nameHe} ${model.nameHe} ${year} (${make.nameEn} ${model.nameEn})${avgRating ? ` — דירוג ממוצע ${avgRating.toFixed(1)}/5` : ''}. בעיות נפוצות, יתרונות וחסרונות מבעלי רכב בישראל.`,
+    description: `${reviews.length > 0 ? `${reviews.length} חוות דעת על` : 'חוות דעת על'} ${make.nameHe} ${model.nameHe} ${year} (${make.nameEn} ${model.nameEn})${avgRating ? ` — דירוג ממוצע ${avgRating.toFixed(1)}/5` : ''}.${priceDesc}${trimDesc} בעיות נפוצות, יתרונות וחסרונות מבעלי רכב בישראל.`,
     alternates: { canonical: url },
     openGraph: {
       title: `${make.nameHe} ${model.nameHe} ${year}${ratingStr} | CarIssues IL`,

@@ -81,6 +81,26 @@ export default async function TrimPage({ params }: Props) {
   const prevTrim = trimIndex > 0 ? trims[trimIndex - 1] : null;
   const nextTrim = trimIndex < trims.length - 1 ? trims[trimIndex + 1] : null;
 
+  const pageUrl = `https://carissues.co.il/cars/${makeSlug}/${modelSlug}/trim/${trimSlug}`;
+  const jsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'Product',
+    name: `${make.nameEn} ${model.nameEn} ${trim.name} ${year}`,
+    brand: { '@type': 'Brand', name: make.nameEn },
+    url: pageUrl,
+    description: `${make.nameHe} ${model.nameHe} גימור ${trim.name} ${year} — מפרט ציוד ומחיר`,
+    ...(trim.priceIls && {
+      offers: {
+        '@type': 'Offer',
+        priceCurrency: 'ILS',
+        price: trim.priceIls,
+        priceValidUntil: `${year + 1}-12-31`,
+        availability: 'https://schema.org/InStock',
+        url: pageUrl,
+      },
+    }),
+  };
+
   const specs: { label: string; value: string }[] = [];
   if (trim.engineType) specs.push({ label: 'סוג מנוע', value: ENGINE_TYPE_HE[trim.engineType] ?? trim.engineType });
   if (trim.engineCc) specs.push({ label: 'נפח מנוע', value: `${trim.engineCc} סמ"ק` });
@@ -93,6 +113,10 @@ export default async function TrimPage({ params }: Props) {
 
   return (
     <div dir="rtl" className="page-section">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
       <div className="container" style={{ maxWidth: 800 }}>
 
         {/* Breadcrumb */}

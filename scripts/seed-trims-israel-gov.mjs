@@ -250,7 +250,7 @@ async function fetchGovRecords(q, attempt = 0) {
   const url = new URL(GOV_API);
   url.searchParams.set('resource_id', RESOURCE);
   url.searchParams.set('q', q);
-  url.searchParams.set('limit', '100');
+  url.searchParams.set('limit', '500');
 
   try {
     const res = await fetch(url.toString());

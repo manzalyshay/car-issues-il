@@ -1,10 +1,16 @@
 import type { MetadataRoute } from 'next';
 import { getAllMakes } from '@/lib/carsDb';
+import { getServiceClient } from '@/lib/adminAuth';
 
 const BASE = 'https://carissues.co.il';
 
+function toTrimSlug(name: string) {
+  return name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+}
+
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const makes = await getAllMakes();
+  const db = getServiceClient();
 
   const makeUrls = makes.map((make) => ({
     url: `${BASE}/cars/${make.slug}`,
@@ -30,11 +36,24 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     )
   );
 
-  // All valid compare pairs (alphabetical slug order to match canonical)
-  const flat = makes.flatMap((m) => m.models.map((mo) => ({ make: m.slug, model: mo.slug })));
+  // Trim pages
+  const { data: trims } = await db
+    .from('car_trims')
+    .select('make_slug, model_slug, name');
+  const trimUrls: MetadataRoute.Sitemap = (trims ?? []).map((t) => ({
+    url: `${BASE}/cars/${t.make_slug}/${t.model_slug}/trim/${toTrimSlug(t.name)}`,
+    changeFrequency: 'weekly' as const,
+    priority: 0.75,
+  }));
+
+  // Same-category compare pairs only (reduces 24k → ~7k URLs)
+  const flat = makes.flatMap((m) =>
+    m.models.map((mo) => ({ make: m.slug, model: mo.slug, category: mo.category }))
+  );
   const compareUrls: MetadataRoute.Sitemap = [];
   for (let i = 0; i < flat.length; i++) {
     for (let j = i + 1; j < flat.length; j++) {
+      if (flat[i].category !== flat[j].category) continue;
       const [c1, c2] = [`${flat[i].make}/${flat[i].model}`, `${flat[j].make}/${flat[j].model}`].sort();
       compareUrls.push({
         url: `${BASE}/cars/compare/${c1}/${c2}`,
@@ -48,13 +67,13 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: BASE, changeFrequency: 'daily', priority: 1.0 },
     { url: `${BASE}/cars`, changeFrequency: 'weekly', priority: 0.8 },
     { url: `${BASE}/rankings`, changeFrequency: 'daily', priority: 0.7 },
-
     { url: `${BASE}/contact`, changeFrequency: 'monthly', priority: 0.3 },
     { url: `${BASE}/terms`, changeFrequency: 'monthly', priority: 0.2 },
     { url: `${BASE}/privacy`, changeFrequency: 'monthly', priority: 0.2 },
     ...makeUrls,
     ...modelUrls,
     ...yearUrls,
+    ...trimUrls,
     ...compareUrls,
   ];
 }

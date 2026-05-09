@@ -42,11 +42,17 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     : `${model.years[0]}`;
   const ratingStr = avgRating ? ` · ${avgRating.toFixed(1)}★` : '';
   const countStr = reviews.length > 0 ? ` · ${reviews.length} ביקורות` : '';
-  const trimNames = trims.map(t => t.name).join(', ');
-  const trimDesc = trimNames ? ` גימורים: ${trimNames}.` : '';
+  const trimsWithPrice = trims.filter(t => t.priceIls);
+  const minPrice = trimsWithPrice.length > 0 ? Math.min(...trimsWithPrice.map(t => t.priceIls!)) : null;
+  const maxPrice = trimsWithPrice.length > 0 ? Math.max(...trimsWithPrice.map(t => t.priceIls!)) : null;
+  const priceDesc = minPrice && maxPrice && minPrice !== maxPrice
+    ? ` מחיר: ₪${Math.round(minPrice / 1000)}K–₪${Math.round(maxPrice / 1000)}K.`
+    : minPrice ? ` מחיר מומלץ: ₪${minPrice.toLocaleString('he-IL')}.` : '';
+  const trimNames = trims.slice(0, 6).map(t => t.name).join(', ');
+  const trimDesc = trimNames ? ` גימורים: ${trimNames}${trims.length > 6 ? ' ועוד' : ''}.` : '';
   return {
     title: `${make.nameHe} ${model.nameHe}: חוות דעת ובעיות נפוצות${ratingStr}`,
-    description: `${reviews.length > 0 ? `${reviews.length} ביקורות אמיתיות` : 'ביקורות אמיתיות'} על ${make.nameHe} ${model.nameHe} (${make.nameEn} ${model.nameEn}) שנים ${yearRange}${avgRating ? `. דירוג ממוצע ${avgRating.toFixed(1)}/5` : ''}.${trimDesc} בעיות נפוצות, יתרונות וחסרונות מבעלי רכב בישראל.`,
+    description: `${reviews.length > 0 ? `${reviews.length} ביקורות אמיתיות` : 'ביקורות אמיתיות'} על ${make.nameHe} ${model.nameHe} (${make.nameEn} ${model.nameEn}) שנים ${yearRange}${avgRating ? `. דירוג ממוצע ${avgRating.toFixed(1)}/5` : ''}.${priceDesc}${trimDesc} בעיות נפוצות, יתרונות וחסרונות מבעלי רכב בישראל.`,
     alternates: { canonical: url },
     openGraph: {
       title: `${make.nameHe} ${model.nameHe}${ratingStr}${countStr} | CarIssues IL`,
