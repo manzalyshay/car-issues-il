@@ -66,8 +66,12 @@ export default function CarPageTabs({ makeSlug, modelSlug, makeNameHe, modelName
 
   return (
     <div>
-      {/* Tab bar */}
-      <div style={{ display: 'flex', borderBottom: '1px solid var(--border)', marginBottom: 28, overflowX: 'auto' }}>
+      {/* Tab bar — sticky so it's always visible while scrolling */}
+      <div style={{
+        display: 'flex', borderBottom: '1px solid var(--border)', marginBottom: 28, overflowX: 'auto',
+        position: 'sticky', top: 82, zIndex: 90,
+        background: 'var(--bg-base)', backdropFilter: 'blur(8px)',
+      }}>
         <button style={tabStyle(tab === 'reviews')} onClick={() => handleTabClick('reviews')}>
           ⭐ ביקורות
         </button>
