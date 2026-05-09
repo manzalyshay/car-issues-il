@@ -7,7 +7,7 @@ import { getReviewsForModel } from '@/lib/reviewsDb';
 import { getRepairCosts } from '@/lib/repairCostsDb';
 import MakeLogo from '@/components/MakeLogo';
 
-export const dynamic = 'force-dynamic';
+export const revalidate = 3600;
 
 interface Props { params: Promise<{ make: string; model: string }> }
 

@@ -1060,7 +1060,7 @@ export async function getExpertReviews(makeSlug: string, modelSlug: string): Pro
     const sb = getSupabase();
     const { data } = await sb
       .from('expert_reviews')
-      .select('*')
+      .select('id,make_slug,model_slug,year,source_name,source_url,original_title,summary_he,local_summary_he,global_summary_he,local_score,global_score,top_score,pros,cons,local_post_count,global_post_count,sources_breakdown,scraped_at')
       .eq('make_slug', makeSlug)
       .eq('model_slug', modelSlug)
       .is('year', null)
@@ -1088,7 +1088,7 @@ export async function getExpertReviewsForYear(
     // Try year-specific first
     const { data: yearData } = await sb
       .from('expert_reviews')
-      .select('*')
+      .select('id,make_slug,model_slug,year,source_name,source_url,original_title,summary_he,local_summary_he,global_summary_he,local_score,global_score,top_score,pros,cons,local_post_count,global_post_count,sources_breakdown,scraped_at')
       .eq('make_slug', makeSlug)
       .eq('model_slug', modelSlug)
       .eq('year', year)
@@ -1105,7 +1105,7 @@ export async function getExpertReviewsForYear(
     // No DB row — fall back to general model summary (no inline LLM generation)
     const { data: generalData } = await getSupabase()
       .from('expert_reviews')
-      .select('*')
+      .select('id,make_slug,model_slug,year,source_name,source_url,original_title,summary_he,local_summary_he,global_summary_he,local_score,global_score,top_score,pros,cons,local_post_count,global_post_count,sources_breakdown,scraped_at')
       .eq('make_slug', makeSlug)
       .eq('model_slug', modelSlug)
       .is('year', null)
