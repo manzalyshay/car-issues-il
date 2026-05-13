@@ -95,7 +95,7 @@ const POPULAR_PAIRS = [
 
 export default async function ComparePage() {
   // Fetch makes to resolve Hebrew names for popular pairs
-  const makes = await getAllMakes();
+  const makes = await getAllMakes().catch(() => []);
   const nameMap: Record<string, { makeHe: string; modelHe: string; makeEn: string; modelEn: string }> = {};
   for (const make of makes) {
     for (const model of make.models) {

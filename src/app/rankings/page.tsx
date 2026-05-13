@@ -43,7 +43,7 @@ export default async function RankingsPage({ searchParams }: { searchParams: Pro
   const { cat = 'all' } = await searchParams;
 
   const sb = getServiceClient();
-  const makes = await getAllMakes();
+  const makes = await getAllMakes().catch(() => []);
 
   // Build make/model lookup
   const lookup = new Map<string, { makeHe: string; modelHe: string; makeEn: string; modelEn: string; logoUrl: string; category: string }>();
