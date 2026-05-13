@@ -30,16 +30,19 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 }
 
 export async function generateStaticParams() {
-  const makes = await getAllMakes();
-  const pairs: { make1: string; model1: string; make2: string; model2: string }[] = [];
-  const flat = makes.flatMap(m => m.models.map(mo => ({ make: m.slug, model: mo.slug })));
-  // Generate top pairs (same-category models up to 400 pairs to keep build fast)
-  for (let i = 0; i < flat.length && pairs.length < 400; i++) {
-    for (let j = i + 1; j < flat.length && pairs.length < 400; j++) {
-      pairs.push({ make1: flat[i].make, model1: flat[i].model, make2: flat[j].make, model2: flat[j].model });
+  try {
+    const makes = await getAllMakes();
+    const pairs: { make1: string; model1: string; make2: string; model2: string }[] = [];
+    const flat = makes.flatMap(m => m.models.map(mo => ({ make: m.slug, model: mo.slug })));
+    for (let i = 0; i < flat.length && pairs.length < 400; i++) {
+      for (let j = i + 1; j < flat.length && pairs.length < 400; j++) {
+        pairs.push({ make1: flat[i].make, model1: flat[i].model, make2: flat[j].make, model2: flat[j].model });
+      }
     }
+    return pairs;
+  } catch {
+    return [];
   }
-  return pairs;
 }
 
 function Score({ label, value, best }: { label: string; value: number | null; best: 'a' | 'b' | 'tie' | null }) {

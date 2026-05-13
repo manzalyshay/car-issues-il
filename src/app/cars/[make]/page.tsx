@@ -6,9 +6,15 @@ import MakeLogo from '@/components/MakeLogo';
 
 interface Props { params: Promise<{ make: string }> }
 
+export const dynamicParams = true;
+
 export async function generateStaticParams() {
-  const makes = await getAllMakes();
-  return makes.map((m) => ({ make: m.slug }));
+  try {
+    const makes = await getAllMakes();
+    return makes.map((m) => ({ make: m.slug }));
+  } catch {
+    return [];
+  }
 }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
