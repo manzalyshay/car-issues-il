@@ -1,6 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { revalidatePath } from 'next/cache';
 import { addReview, getReviewsForModel } from '@/lib/reviewsDb';
+
+function purgeCloudflarePaths(urls: string[]) {
+  const zone = process.env.CLOUDFLARE_ZONE_ID;
+  const token = process.env.CLOUDFLARE_CACHE_TOKEN;
+  if (!zone || !token) return;
+  fetch(`https://api.cloudflare.com/client/v4/zones/${zone}/purge_cache`, {
+    method: 'POST',
+    headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ files: urls }),
+  }).catch(() => {}); // fire-and-forget, never block the response
+}
 import type { Review } from '@/data/reviews';
 
 export async function GET(req: NextRequest) {
@@ -61,6 +72,10 @@ export async function POST(req: NextRequest) {
 
     revalidatePath(`/cars/${makeSlug}/${modelSlug}`);
     revalidatePath(`/cars/${makeSlug}/${modelSlug}/issues`);
+    purgeCloudflarePaths([
+      `https://carissues.co.il/cars/${makeSlug}/${modelSlug}`,
+      `https://carissues.co.il/cars/${makeSlug}/${modelSlug}/issues`,
+    ]);
     return NextResponse.json({ review }, { status: 201 });
   } catch (err) {
     console.error('[Reviews API]', err);
