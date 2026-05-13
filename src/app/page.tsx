@@ -5,7 +5,7 @@ import MakeLogo from '@/components/MakeLogo';
 import StarRating from '@/components/StarRating';
 import HeroSearch from '@/components/HeroSearch';
 
-export const dynamic = 'force-dynamic';
+export const revalidate = 300; // 5 min — home shows recent reviews so keep fresh
 
 async function getTopRanked(limit = 3) {
   const sb = getServiceClient();
@@ -68,7 +68,10 @@ async function getRecentReviews(limit = 3) {
 
 export default async function HomePage() {
   const [popularMakes, allMakes, topRanked, recentReviews] = await Promise.all([
-    getPopularMakes(), getAllMakes(), getTopRanked(3), getRecentReviews(3),
+    getPopularMakes().catch(() => []),
+    getAllMakes().catch(() => []),
+    getTopRanked(3).catch(() => []),
+    getRecentReviews(3).catch(() => []),
   ]);
 
   const widgetCard: React.CSSProperties = {
