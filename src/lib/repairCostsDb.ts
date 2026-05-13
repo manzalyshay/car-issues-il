@@ -28,3 +28,23 @@ export async function getRepairCosts(category: string): Promise<RepairCost[]> {
     .order('repair_key');
   return data ?? [];
 }
+
+export interface ModelRepairCost {
+  repair_key: string;
+  repair_name_he: string;
+  cost_ils: number;
+  workshop_type: string | null;
+  notes: string | null;
+  year: number | null;
+}
+
+export async function getModelRepairCosts(makeSlug: string, modelSlug: string): Promise<ModelRepairCost[]> {
+  const db = getServiceClient();
+  const { data } = await db
+    .from('user_repair_costs')
+    .select('repair_key, repair_name_he, cost_ils, workshop_type, notes, year')
+    .eq('make_slug', makeSlug)
+    .eq('model_slug', modelSlug)
+    .order('repair_key');
+  return data ?? [];
+}
