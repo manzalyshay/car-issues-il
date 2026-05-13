@@ -9,7 +9,7 @@ function toTrimSlug(name: string) {
 }
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const makes = await getAllMakes();
+  const makes = await getAllMakes().catch(() => []);
   const db = getServiceClient();
 
   const makeUrls = makes.map((make) => ({
@@ -45,10 +45,12 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   );
 
   // Trim pages
-  const { data: trims } = await db
-    .from('car_trims')
-    .select('make_slug, model_slug, name');
-  const trimUrls: MetadataRoute.Sitemap = (trims ?? []).map((t) => ({
+  let trims: { make_slug: string; model_slug: string; name: string }[] = [];
+  try {
+    const { data } = await db.from('car_trims').select('make_slug, model_slug, name');
+    trims = data ?? [];
+  } catch { /* skip trims in sitemap if DB unavailable */ }
+  const trimUrls: MetadataRoute.Sitemap = trims.map((t) => ({
     url: `${BASE}/cars/${t.make_slug}/${t.model_slug}/trim/${toTrimSlug(t.name)}`,
     changeFrequency: 'weekly' as const,
     priority: 0.75,
