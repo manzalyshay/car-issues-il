@@ -1,12 +1,26 @@
 {
   "crons": [
+    { "path": "/api/cron/refresh-recalls", "schedule": "0 3 * * *" },
+    { "path": "/api/cron/social-post", "schedule": "0 9 * * *" }
+  ],
+  "headers": [
     {
-      "path": "/api/cron/refresh-recalls",
-      "schedule": "0 3 * * *"
+      "source": "/cars/(.*)",
+      "headers": [
+        { "key": "Cache-Control", "value": "public, s-maxage=3600, stale-while-revalidate=86400" }
+      ]
     },
     {
-      "path": "/api/cron/social-post",
-      "schedule": "0 9 * * *"
+      "source": "/rankings",
+      "headers": [
+        { "key": "Cache-Control", "value": "public, s-maxage=3600, stale-while-revalidate=86400" }
+      ]
+    },
+    {
+      "source": "/",
+      "headers": [
+        { "key": "Cache-Control", "value": "public, s-maxage=300, stale-while-revalidate=3600" }
+      ]
     }
   ]
 }
