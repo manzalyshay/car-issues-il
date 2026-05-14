@@ -72,9 +72,11 @@ export async function POST(req: NextRequest) {
 
     revalidatePath(`/cars/${makeSlug}/${modelSlug}`);
     revalidatePath(`/cars/${makeSlug}/${modelSlug}/issues`);
+    revalidatePath('/');
     purgeCloudflarePaths([
       `https://carissues.co.il/cars/${makeSlug}/${modelSlug}`,
       `https://carissues.co.il/cars/${makeSlug}/${modelSlug}/issues`,
+      'https://carissues.co.il/',
     ]);
     return NextResponse.json({ review }, { status: 201 });
   } catch (err) {
