@@ -2,7 +2,7 @@ import Link from 'next/link';
 import { getAllMakes } from '@/lib/carsDb';
 import { CompareClient } from './CompareClient';
 
-export const revalidate = 3600;
+export const revalidate = 86400;
 
 // Top popular comparison pairs — curated from GSC traffic + Israeli market demand
 const POPULAR_PAIRS = [

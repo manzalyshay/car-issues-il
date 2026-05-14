@@ -16,7 +16,7 @@ import RecallsBadge from '@/components/RecallsBadge';
 import YearHero from './YearHero';
 import RepairCostsSection from '@/components/RepairCostsSection';
 
-export const revalidate = 3600;
+export const revalidate = 86400;
 
 interface Props { params: Promise<{ make: string; model: string; year: string }> }
 

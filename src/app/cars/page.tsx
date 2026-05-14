@@ -11,7 +11,7 @@ export const metadata: Metadata = {
 
 const COUNTRY_GROUPS = ['יפן', "קוריאה", 'גרמניה', "צרפת", 'שוודיה', 'ארה"ב', "צ'כיה", 'איטליה'];
 
-export const revalidate = 3600;
+export const revalidate = 86400;
 
 export default async function CarsPage() {
   const carDatabase = await getAllMakes().catch(() => []);

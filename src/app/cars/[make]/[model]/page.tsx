@@ -22,7 +22,7 @@ function toTrimSlug(name: string) {
   return name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
 }
 
-export const revalidate = 3600;
+export const revalidate = 86400;
 
 interface Props { params: Promise<{ make: string; model: string }> }
 

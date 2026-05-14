@@ -3,7 +3,7 @@ import Link from 'next/link';
 import { getServiceClient } from '@/lib/adminAuth';
 import { getAllMakes } from '@/lib/carsDb';
 
-export const dynamic = 'force-dynamic';
+export const revalidate = 86400;
 
 export const metadata: Metadata = {
   title: 'עלויות תיקון ותחזוקה לרכב בישראל — מדריך מחירים',

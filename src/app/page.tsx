@@ -5,7 +5,7 @@ import MakeLogo from '@/components/MakeLogo';
 import StarRating from '@/components/StarRating';
 import HeroSearch from '@/components/HeroSearch';
 
-export const revalidate = 300; // 5 min — home shows recent reviews so keep fresh
+export const revalidate = 3600;
 
 async function getTopRanked(limit = 3) {
   const sb = getServiceClient();

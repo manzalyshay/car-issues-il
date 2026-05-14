@@ -5,7 +5,7 @@ import { getAllMakes } from '@/lib/carsDb';
 import StarRating from '@/components/StarRating';
 import MakeLogo from '@/components/MakeLogo';
 
-export const revalidate = 3600;
+export const revalidate = 86400;
 
 export const metadata: Metadata = {
   title: 'דירוג אמינות רכבים בישראל | CarIssues IL',
