@@ -44,8 +44,11 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
   const url = `https://carissues.co.il/cars/${make.slug}/${model.slug}/${year}`;
   const ratingStr = avgRating ? ` · ${avgRating.toFixed(1)}★` : '';
+  const titleReviewPart = reviews.length > 0
+    ? `${reviews.length} חוות דעת${avgRating ? ` ⭐ ${avgRating.toFixed(1)}` : ''} | `
+    : '';
   return {
-    title: `${make.nameHe} ${model.nameHe} ${year}: חוות דעת ובעיות${reviews.length > 0 ? ` (${reviews.length} ביקורות${ratingStr})` : ratingStr}`,
+    title: `${make.nameHe} ${model.nameHe} ${year} | ${titleReviewPart}בעיות ומחיר`,
     description: `${reviews.length > 0 ? `${reviews.length} חוות דעת על` : 'חוות דעת על'} ${make.nameHe} ${model.nameHe} ${year} (${make.nameEn} ${model.nameEn})${avgRating ? ` — דירוג ממוצע ${avgRating.toFixed(1)}/5` : ''}.${priceDesc}${trimDesc} בעיות נפוצות, יתרונות וחסרונות מבעלי רכב בישראל.`,
     alternates: { canonical: url },
     openGraph: {
