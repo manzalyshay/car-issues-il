@@ -1,10 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 
-const sb = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!,
-);
+let _sb: ReturnType<typeof createClient> | null = null;
+function getSb() {
+  if (!_sb) _sb = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!);
+  return _sb;
+}
 
 const REASONS = ['spam', 'fake', 'offensive', 'wrong_car', 'other'] as const;
 
@@ -16,7 +17,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
 
     const ip = req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ?? 'unknown';
 
-    const { error } = await sb.from('review_reports').insert({
+    const { error } = await getSb().from('review_reports').insert({
       review_id: id,
       reason,
       ip,
