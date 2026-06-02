@@ -1,10 +1,13 @@
 'use client';
 
-import { useEffect, useRef } from 'react';
+import { useEffect } from 'react';
 import { usePathname } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 
-// Generate or retrieve a persistent visitor ID (localStorage persists across tabs/sessions)
+// Module-level set — survives component remounts (auth re-renders, error boundaries, StrictMode).
+// Tracks every path already recorded in this browser session so we never double-insert.
+const tracked = new Set<string>();
+
 function getSessionId(): string {
   try {
     let id = localStorage.getItem('_sid');
@@ -18,22 +21,19 @@ function getSessionId(): string {
   }
 }
 
-// Paths we don't want to track
 function shouldSkip(path: string) {
   return path.startsWith('/admin') || path.startsWith('/api') || path.startsWith('/_next');
 }
 
 export default function PageViewTracker() {
   const pathname = usePathname();
-  const lastTracked = useRef<string>('');
 
   useEffect(() => {
     if (!pathname || shouldSkip(pathname)) return;
-    if (pathname === lastTracked.current) return;
-    lastTracked.current = pathname;
+    if (tracked.has(pathname)) return;
+    tracked.add(pathname);
 
     const sessionId = getSessionId();
-    // Fire and forget — don't block rendering
     supabase.from('page_views').insert({ path: pathname, session_id: sessionId }).then(() => {});
   }, [pathname]);
 
