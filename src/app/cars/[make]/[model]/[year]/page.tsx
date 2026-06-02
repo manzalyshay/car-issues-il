@@ -44,12 +44,12 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
   const url = `https://carissues.co.il/cars/${make.slug}/${model.slug}/${year}`;
   const ratingStr = avgRating ? ` · ${avgRating.toFixed(1)}★` : '';
-  const titleReviewPart = reviews.length > 0
-    ? `${reviews.length} חוות דעת${avgRating ? ` ⭐ ${avgRating.toFixed(1)}` : ''} | `
-    : '';
+  const reviewPart = reviews.length > 0
+    ? `${reviews.length} ביקורות אמיתיות${avgRating ? ` ⭐ ${avgRating.toFixed(1)}` : ''}`
+    : 'ביקורות ובעיות נפוצות';
   return {
-    title: `${make.nameHe} ${model.nameHe} ${year} | ${titleReviewPart}בעיות ומחיר`,
-    description: `${reviews.length > 0 ? `${reviews.length} חוות דעת על` : 'חוות דעת על'} ${make.nameHe} ${model.nameHe} ${year} (${make.nameEn} ${model.nameEn})${avgRating ? ` — דירוג ממוצע ${avgRating.toFixed(1)}/5` : ''}.${priceDesc}${trimDesc} בעיות נפוצות, יתרונות וחסרונות מבעלי רכב בישראל.`,
+    title: `${make.nameHe} ${model.nameHe} ${year} — ${reviewPart} | יתרונות וחסרונות`,
+    description: `${reviews.length > 0 ? `${reviews.length} ביקורות אמיתיות על` : 'ביקורות אמיתיות על'} ${make.nameHe} ${model.nameHe} ${year} (${make.nameEn} ${model.nameEn})${avgRating ? ` — דירוג ממוצע ${avgRating.toFixed(1)}/5` : ''}.${priceDesc}${trimDesc} יתרונות, חסרונות ובעיות נפוצות מבעלי רכב בישראל.`,
     alternates: { canonical: url },
     openGraph: {
       title: `${make.nameHe} ${model.nameHe} ${year}${ratingStr} | CarIssues IL`,
