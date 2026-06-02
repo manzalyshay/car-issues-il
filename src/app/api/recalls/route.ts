@@ -229,7 +229,9 @@ export async function GET(req: NextRequest) {
         };
       });
 
-    return NextResponse.json({ recalls });
+    return NextResponse.json({ recalls }, {
+      headers: { 'Cache-Control': 'public, s-maxage=86400, stale-while-revalidate=604800' },
+    });
   } catch (err) {
     console.error('[Recalls API]', err);
     return NextResponse.json({ recalls: [] });

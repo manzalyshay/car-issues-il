@@ -25,7 +25,7 @@ export const getReviewsForModel = unstable_cache(
     return (data ?? []).map(dbToReview);
   },
   ['reviews-model'],
-  { revalidate: 300, tags: ['reviews'] }, // 5m fallback; invalidated on new review
+  { revalidate: 3600, tags: ['reviews'] }, // 1h fallback; invalidated on new review
 );
 
 export const getReviewsForCar = unstable_cache(
@@ -42,7 +42,7 @@ export const getReviewsForCar = unstable_cache(
     return (data ?? []).map(dbToReview);
   },
   ['reviews-car'],
-  { revalidate: 300, tags: ['reviews'] },
+  { revalidate: 3600, tags: ['reviews'] },
 );
 
 export const getAverageRating = unstable_cache(
@@ -56,7 +56,7 @@ export const getAverageRating = unstable_cache(
     return data.reduce((s: number, r: { rating: number }) => s + r.rating, 0) / data.length;
   },
   ['reviews-avg'],
-  { revalidate: 300, tags: ['reviews'] },
+  { revalidate: 3600, tags: ['reviews'] },
 );
 
 // ── Write ─────────────────────────────────────────────────────────────────────

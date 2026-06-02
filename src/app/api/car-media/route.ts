@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getVideosForCar } from '@/lib/youtubeVideos';
 import { getImagesForCar, getImagesForYear } from '@/lib/carImages';
 
-export const dynamic = 'force-dynamic';
+export const revalidate = 3600;
 
 export async function GET(req: NextRequest) {
   const { searchParams } = req.nextUrl;

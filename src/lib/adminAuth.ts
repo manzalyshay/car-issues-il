@@ -1,11 +1,18 @@
 import { NextRequest } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
+import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 
-export function getServiceClient() {
-  return createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!,
-  );
+// Singleton — reused across warm Lambda invocations to avoid exhausting the
+// Supabase connection pool (each createClient() opens a new DB connection).
+let _serviceClient: SupabaseClient | null = null;
+
+export function getServiceClient(): SupabaseClient {
+  if (!_serviceClient) {
+    _serviceClient = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.SUPABASE_SERVICE_ROLE_KEY!,
+    );
+  }
+  return _serviceClient;
 }
 
 export async function isAdmin(req: NextRequest): Promise<boolean> {

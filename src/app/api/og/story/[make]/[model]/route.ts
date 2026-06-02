@@ -115,6 +115,6 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ mak
 </html>`;
 
   return new NextResponse(html, {
-    headers: { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'no-store' },
+    headers: { 'Content-Type': 'text/html; charset=utf-8' },
   });
 }

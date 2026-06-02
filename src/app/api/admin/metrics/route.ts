@@ -23,20 +23,32 @@ export async function GET(req: NextRequest) {
     sb.from('page_views').select('*', { count: 'exact', head: true }).gte('created_at', d1),
   ]);
 
-  // Fetch recent rows DESCENDING so the 1000-row Supabase cap always gives us the
-  // most recent data (not the oldest). We then reverse for the chart.
-  const { data: raw } = await sb
+  // 14-day chart data — descending so the row cap always captures the most recent days.
+  // We only need session_id + created_at here; path is not needed for the chart.
+  const { data: rawChart } = await sb
     .from('page_views')
-    .select('path, session_id, created_at')
+    .select('session_id, created_at')
     .gte('created_at', d15)
     .order('created_at', { ascending: false })
     .limit(5000);
 
-  const rows = (raw ?? []).reverse(); // oldest→newest for chart building
+  const chartRows = (rawChart ?? []).reverse(); // oldest→newest for chart building
 
-  // Unique session counts — filter from the already-fetched rows
-  const sessions1 = new Set(rows.filter((r) => r.created_at >= d1).map((r) => r.session_id)).size;
-  const sessions7 = new Set(rows.filter((r) => r.created_at >= d7).map((r) => r.session_id)).size;
+  // 30-day data — used for topPages AND all session-unique counts.
+  // Higher limit so fast-growing sites don't get truncated session counts.
+  const { data: raw30 } = await sb
+    .from('page_views')
+    .select('path, session_id, created_at')
+    .gte('created_at', d30)
+    .order('created_at', { ascending: false })
+    .limit(20000);
+
+  const rows30 = raw30 ?? [];
+
+  // Unique session counts from the 30-day data set
+  const sessions30 = new Set(rows30.map((r) => r.session_id)).size;
+  const sessions7  = new Set(rows30.filter((r) => r.created_at >= d7).map((r) => r.session_id)).size;
+  const sessions1  = new Set(rows30.filter((r) => r.created_at >= d1).map((r) => r.session_id)).size;
 
   // Daily chart (14 days)
   const daily: Record<string, { views: number; sessions: Set<string> }> = {};
@@ -45,7 +57,7 @@ export async function GET(req: NextRequest) {
     d.setDate(d.getDate() - i);
     daily[d.toISOString().slice(0, 10)] = { views: 0, sessions: new Set() };
   }
-  for (const r of rows) {
+  for (const r of chartRows) {
     const key = r.created_at.slice(0, 10);
     if (daily[key]) { daily[key].views++; daily[key].sessions.add(r.session_id); }
   }
@@ -53,9 +65,9 @@ export async function GET(req: NextRequest) {
     date, views: d.views, sessions: d.sessions.size,
   }));
 
-  // Top pages (14 days)
+  // Top pages (30 days) — built from the same 30-day rows, matches the KPI cards
   const pageCounts: Record<string, { views: number; sessions: Set<string> }> = {};
-  for (const r of rows) {
+  for (const r of rows30) {
     if (!pageCounts[r.path]) pageCounts[r.path] = { views: 0, sessions: new Set() };
     pageCounts[r.path].views++;
     pageCounts[r.path].sessions.add(r.session_id);
@@ -64,15 +76,6 @@ export async function GET(req: NextRequest) {
     .map(([path, d]) => ({ path, views: d.views, sessions: d.sessions.size }))
     .sort((a, b) => b.views - a.views)
     .slice(0, 15);
-
-  // 30-day unique sessions — targeted query
-  const { data: s30Data } = await sb
-    .from('page_views')
-    .select('session_id')
-    .gte('created_at', d30)
-    .order('created_at', { ascending: false })
-    .limit(5000);
-  const sessions30 = new Set((s30Data ?? []).map((r) => r.session_id)).size;
 
   return NextResponse.json({
     totals: {
