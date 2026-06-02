@@ -1,6 +1,18 @@
 import type { NextConfig } from 'next';
 
+// When building for Cloudflare Pages, stub out playwright-core so esbuild
+// doesn't try to bundle the real package (which requires Node.js binaries).
+const isCfBuild = process.env.CF_BUILD === '1';
+
 const nextConfig: NextConfig = {
+  ...(isCfBuild ? {
+    turbopack: {
+      resolveAlias: {
+        'playwright-core': './src/lib/_playwright-cf-stub.js',
+        '@sparticuz/chromium-min': './src/lib/_playwright-cf-stub.js',
+      },
+    },
+  } : {}),
   // Allow external images from news sources
   images: {
     remotePatterns: [

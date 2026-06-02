@@ -44,3 +44,7 @@ next-env.d.ts
 scripts/gsc-oauth-client.json
 scripts/gsc-token.json
 .env*.local
+
+# Cloudflare / OpenNext build output
+.open-next/
+.wrangler/
