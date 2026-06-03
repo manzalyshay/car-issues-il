@@ -5,7 +5,7 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
-    "build:cf": "CF_BUILD=1 opennextjs-cloudflare build && rm -rf .pages-output && mkdir -p .pages-output && cp -r .open-next/assets/. .pages-output/ && cp .open-next/worker.js .pages-output/_worker.js",
+    "build:cf": "CF_BUILD=1 opennextjs-cloudflare build && rm -rf .pages-output && mkdir -p .pages-output && cp -r .open-next/assets/. .pages-output/ && cp .open-next/worker.js .pages-output/_worker.js && (test -d .open-next/.build && cp -r .open-next/.build .pages-output/.build || true) && (test -d .open-next/server-functions && cp -r .open-next/server-functions .pages-output/server-functions || true)",
     "preview:cf": "opennextjs-cloudflare preview",
     "start": "next start",
     "lint": "eslint",
