@@ -5,7 +5,7 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
-    "build:cf": "CF_BUILD=1 opennextjs-cloudflare build",
+    "build:cf": "CF_BUILD=1 opennextjs-cloudflare build && rm -rf .pages-output && mkdir -p .pages-output && cp -r .open-next/assets/. .pages-output/ && cp .open-next/worker.js .pages-output/_worker.js",
     "preview:cf": "opennextjs-cloudflare preview",
     "start": "next start",
     "lint": "eslint",

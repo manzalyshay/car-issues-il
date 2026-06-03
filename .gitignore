@@ -47,4 +47,5 @@ scripts/gsc-token.json
 
 # Cloudflare / OpenNext build output
 .open-next/
+.pages-output/
 .wrangler/

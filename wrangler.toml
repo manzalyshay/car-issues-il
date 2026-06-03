@@ -3,7 +3,7 @@ compatibility_date = "2025-04-01"
 compatibility_flags = ["nodejs_compat"]
 
 # Used by Cloudflare Pages CI to locate the build output after `npm run build:cf`
-pages_build_output_dir = ".open-next/cloudflare"
+pages_build_output_dir = ".pages-output"
 
 # Public env vars (non-sensitive — secrets go in Cloudflare dashboard)
 [vars]
