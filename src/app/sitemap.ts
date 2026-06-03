@@ -2,6 +2,8 @@ import type { MetadataRoute } from 'next';
 import { getAllMakes } from '@/lib/carsDb';
 import { getServiceClient } from '@/lib/adminAuth';
 
+export const dynamic = 'force-dynamic';
+
 const BASE = 'https://carissues.co.il';
 
 function toTrimSlug(name: string) {

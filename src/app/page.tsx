@@ -5,7 +5,7 @@ import MakeLogo from '@/components/MakeLogo';
 import StarRating from '@/components/StarRating';
 import HeroSearch from '@/components/HeroSearch';
 
-export const revalidate = 3600;
+export const dynamic = 'force-dynamic';
 
 async function getTopRanked(limit = 3) {
   const sb = getServiceClient();

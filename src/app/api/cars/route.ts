@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getAllMakes } from '@/lib/carsDb';
 
-export const revalidate = 3600;
+export const dynamic = 'force-dynamic';
 
 export async function GET() {
   try {
