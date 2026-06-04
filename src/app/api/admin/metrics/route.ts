@@ -1,18 +1,24 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { isAdmin, getServiceClient } from '@/lib/adminAuth';
 
+export const dynamic = 'force-dynamic';
+
 export async function GET(req: NextRequest) {
   if (!await isAdmin(req)) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
   const sb = getServiceClient();
   const now = new Date();
-  const d30 = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000).toISOString();
-  const d7  = new Date(now.getTime() -  7 * 24 * 60 * 60 * 1000).toISOString();
-  const d1  = new Date(now.getTime() -      24 * 60 * 60 * 1000).toISOString();
-  // 14-day window for chart — go back one extra day so "today" is always fully included
-  const d15 = new Date(now.getTime() - 15 * 24 * 60 * 60 * 1000).toISOString();
 
-  // Server-side COUNT — unaffected by the 1000-row PostgREST default
+  // UTC day boundaries so chart bars align with calendar days
+  const todayStart = new Date(now);
+  todayStart.setUTCHours(0, 0, 0, 0);
+
+  const msDay = 24 * 60 * 60 * 1000;
+  const d30 = new Date(todayStart.getTime() - 29 * msDay).toISOString();
+  const d7  = new Date(todayStart.getTime() -  6 * msDay).toISOString();
+  const d1  = todayStart.toISOString();
+
+  // ── Accurate view counts via server-side COUNT (no row limit) ─────────────
   const [
     { count: views30 },
     { count: views7 },
@@ -23,51 +29,51 @@ export async function GET(req: NextRequest) {
     sb.from('page_views').select('*', { count: 'exact', head: true }).gte('created_at', d1),
   ]);
 
-  // 14-day chart data — descending so the row cap always captures the most recent days.
-  // We only need session_id + created_at here; path is not needed for the chart.
-  const { data: rawChart } = await sb
-    .from('page_views')
-    .select('session_id, created_at')
-    .gte('created_at', d15)
-    .order('created_at', { ascending: false })
-    .limit(5000);
+  // ── Session counts: fetch only session_id per window (small payload) ──────
+  // Each window is queried independently so we don't cap a 30-day fetch at the
+  // same row limit used for the 1-day window.
+  const [
+    { data: sid1 },
+    { data: sid7 },
+    { data: sid30 },
+  ] = await Promise.all([
+    sb.from('page_views').select('session_id').gte('created_at', d1).limit(200000),
+    sb.from('page_views').select('session_id').gte('created_at', d7).limit(200000),
+    sb.from('page_views').select('session_id').gte('created_at', d30).limit(200000),
+  ]);
 
-  const chartRows = (rawChart ?? []).reverse(); // oldest→newest for chart building
+  const sessions1  = new Set((sid1  ?? []).map(r => r.session_id)).size;
+  const sessions7  = new Set((sid7  ?? []).map(r => r.session_id)).size;
+  const sessions30 = new Set((sid30 ?? []).map(r => r.session_id)).size;
 
-  // 30-day data — used for topPages AND all session-unique counts.
-  // Higher limit so fast-growing sites don't get truncated session counts.
-  const { data: raw30 } = await sb
-    .from('page_views')
-    .select('path, session_id, created_at')
-    .gte('created_at', d30)
-    .order('created_at', { ascending: false })
-    .limit(20000);
+  // ── 14-day chart: per-day COUNT queries (accurate regardless of row volume) ─
+  const chartDays = Array.from({ length: 14 }, (_, i) => {
+    const start = new Date(todayStart.getTime() - (13 - i) * msDay);
+    const end   = new Date(start.getTime() + msDay);
+    return { date: start.toISOString().slice(0, 10), start: start.toISOString(), end: end.toISOString() };
+  });
 
-  const rows30 = raw30 ?? [];
-
-  // Unique session counts from the 30-day data set
-  const sessions30 = new Set(rows30.map((r) => r.session_id)).size;
-  const sessions7  = new Set(rows30.filter((r) => r.created_at >= d7).map((r) => r.session_id)).size;
-  const sessions1  = new Set(rows30.filter((r) => r.created_at >= d1).map((r) => r.session_id)).size;
-
-  // Daily chart (14 days)
-  const daily: Record<string, { views: number; sessions: Set<string> }> = {};
-  for (let i = 13; i >= 0; i--) {
-    const d = new Date(now);
-    d.setDate(d.getDate() - i);
-    daily[d.toISOString().slice(0, 10)] = { views: 0, sessions: new Set() };
-  }
-  for (const r of chartRows) {
-    const key = r.created_at.slice(0, 10);
-    if (daily[key]) { daily[key].views++; daily[key].sessions.add(r.session_id); }
-  }
-  const dailyChart = Object.entries(daily).map(([date, d]) => ({
-    date, views: d.views, sessions: d.sessions.size,
+  const dailyChart = await Promise.all(chartDays.map(async ({ date, start, end }) => {
+    const [{ count: dayViews }, { data: daySids }] = await Promise.all([
+      sb.from('page_views').select('*', { count: 'exact', head: true }).gte('created_at', start).lt('created_at', end),
+      sb.from('page_views').select('session_id').gte('created_at', start).lt('created_at', end).limit(50000),
+    ]);
+    return {
+      date,
+      views: dayViews ?? 0,
+      sessions: new Set((daySids ?? []).map(r => r.session_id)).size,
+    };
   }));
 
-  // Top pages (30 days) — built from the same 30-day rows, matches the KPI cards
+  // ── Top pages (30 days) ───────────────────────────────────────────────────
+  const { data: pageRows } = await sb
+    .from('page_views')
+    .select('path, session_id')
+    .gte('created_at', d30)
+    .limit(200000);
+
   const pageCounts: Record<string, { views: number; sessions: Set<string> }> = {};
-  for (const r of rows30) {
+  for (const r of pageRows ?? []) {
     if (!pageCounts[r.path]) pageCounts[r.path] = { views: 0, sessions: new Set() };
     pageCounts[r.path].views++;
     pageCounts[r.path].sessions.add(r.session_id);
