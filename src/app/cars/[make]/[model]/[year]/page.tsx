@@ -27,10 +27,11 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const model = await getModelBySlug(makeSlug, modelSlug);
   if (!model) return {};
   const yearNum = parseInt(year);
-  const [avgRating, reviews, trims] = await Promise.all([
+  const [avgRating, reviews, trims, { review: metaExpertReview }] = await Promise.all([
     getAverageRating(makeSlug, modelSlug),
     getReviewsForCar(makeSlug, modelSlug, yearNum),
     getTrimSpecs(makeSlug, modelSlug, yearNum),
+    getExpertReviewsForYear(makeSlug, modelSlug, yearNum),
   ]);
 
   const trimsWithPrice = trims.filter(t => t.priceIls);
@@ -47,9 +48,20 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const reviewPart = reviews.length > 0
     ? `${reviews.length} ביקורות אמיתיות${avgRating ? ` ⭐ ${avgRating.toFixed(1)}` : ''}`
     : 'ביקורות ובעיות נפוצות';
+
+  // When no user reviews but expert review exists — build a richer description from expert content
+  const expertDesc = reviews.length === 0 && metaExpertReview
+    ? (() => {
+        const topPro = metaExpertReview.pros[0] ?? '';
+        const topCon = metaExpertReview.cons[0] ?? '';
+        const parts = [topPro, topCon].filter(Boolean).join(' · ');
+        return parts ? ` ${parts}.` : '';
+      })()
+    : '';
+
   return {
     title: `${make.nameHe} ${model.nameHe} ${year} — ${reviewPart} | יתרונות וחסרונות`,
-    description: `${reviews.length > 0 ? `${reviews.length} ביקורות אמיתיות על` : 'ביקורות אמיתיות על'} ${make.nameHe} ${model.nameHe} ${year} (${make.nameEn} ${model.nameEn})${avgRating ? ` — דירוג ממוצע ${avgRating.toFixed(1)}/5` : ''}.${priceDesc}${trimDesc} יתרונות, חסרונות ובעיות נפוצות מבעלי רכב בישראל.`,
+    description: `${reviews.length > 0 ? `${reviews.length} ביקורות אמיתיות על` : 'חוות דעת על'} ${make.nameHe} ${model.nameHe} ${year} (${make.nameEn} ${model.nameEn})${avgRating ? ` — דירוג ממוצע ${avgRating.toFixed(1)}/5` : ''}.${expertDesc}${priceDesc}${trimDesc} יתרונות, חסרונות ובעיות נפוצות מבעלי רכב בישראל.`,
     alternates: { canonical: url },
     openGraph: {
       title: `${make.nameHe} ${model.nameHe} ${year}${ratingStr} | CarIssues IL`,
