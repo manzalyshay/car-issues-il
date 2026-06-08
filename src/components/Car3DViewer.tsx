@@ -49,6 +49,9 @@ export default function Car3DViewer({ uid, modelName, author, makeSlug, modelSlu
       client.init(uid, {
         success: (api: any) => { // eslint-disable-line @typescript-eslint/no-explicit-any
           api.start();
+          api.addEventListener('viewerready', () => {
+            api.setBackground({ color: [0, 0, 0] });
+          });
         },
         error: () => { /* silently fall back to default view */ },
         autostart: 1,
@@ -104,7 +107,7 @@ export default function Car3DViewer({ uid, modelName, author, makeSlug, modelSlu
   if (hidden) return null;
 
   return (
-    <div style={{ position: 'relative', width: '100%', height: '100%', minHeight: 300, borderRadius: 12, overflow: 'hidden', border: '1px solid var(--border)', background: '#111' }}>
+    <div style={{ position: 'relative', width: '100%', height: '100%', minHeight: 300, borderRadius: 12, overflow: 'hidden', border: '1px solid var(--border)', background: '#000' }}>
       {loaded ? (
         // No src — Sketchfab API initialises the iframe and controls the camera
         <iframe
