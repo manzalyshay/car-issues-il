@@ -7,6 +7,7 @@ import type { Review } from '@/data/reviews';
 import { CATEGORY_LABELS } from '@/data/reviews';
 import { useAuth } from '@/lib/authContext';
 import { supabase } from '@/lib/supabase';
+import { useLocale } from '@/lib/localeContext';
 
 interface Props {
   reviews: Review[];
@@ -312,6 +313,7 @@ function ReportButton({ reviewId }: { reviewId: string }) {
 
 export default function ReviewList({ reviews, onHelpful, onDislike }: Props) {
   const { user } = useAuth();
+  const { locale } = useLocale();
   const [filter, setFilter]     = useState<string>('all');
   const [yearFilter, setYearFilter] = useState<number | 'all'>('all');
   const [subModelFilter, setSubModelFilter] = useState<string | 'all'>('all');
@@ -545,12 +547,15 @@ export default function ReviewList({ reviews, onHelpful, onDislike }: Props) {
           <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
             {sorted.map((review) => {
               const isLiked = liked.has(review.id);
+              const showEn = locale === 'en' && Boolean(review.bodyEn);
+              const displayTitle = showEn ? (review.titleEn || review.title) : review.title;
+              const displayBody  = showEn ? (review.bodyEn  || review.body)  : review.body;
               return (
                 <article key={review.id} id={`review-${review.id}`} className="card" style={{ padding: 24 }}>
                   {/* Header */}
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12, flexWrap: 'wrap', gap: 8 }}>
                     <div>
-                      {review.title && <h3 style={{ fontWeight: 700, fontSize: '1rem', marginBottom: 6 }}>{review.title}</h3>}
+                      {displayTitle && <h3 style={{ fontWeight: 700, fontSize: '1rem', marginBottom: 6 }}>{displayTitle}</h3>}
                       <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
                         <StarRating rating={review.rating} size={15} />
                         <span className="badge badge-blue">{review.year}</span>
@@ -561,19 +566,24 @@ export default function ReviewList({ reviews, onHelpful, onDislike }: Props) {
                             📍 {review.mileage.toLocaleString('he-IL')} ק״מ
                           </span>
                         )}
+                        {showEn && (
+                          <span title="This review was originally written in Hebrew and machine-translated to English" style={{ display: 'inline-flex', alignItems: 'center', gap: 3, padding: '2px 8px', borderRadius: 4, background: 'rgba(129,140,248,0.08)', border: '1px solid rgba(129,140,248,0.2)', fontSize: '0.68rem', fontWeight: 700, letterSpacing: '0.06em', color: '#818cf8', cursor: 'default', whiteSpace: 'nowrap' }}>
+                            🌐 Translated
+                          </span>
+                        )}
                       </div>
                     </div>
                     <div style={{ textAlign: 'left', flexShrink: 0 }}>
                       <div style={{ fontWeight: 700, fontSize: '0.875rem', color: 'var(--text-primary)' }}>{review.authorName}</div>
                       <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
-                        {new Date(review.createdAt).toLocaleDateString('he-IL', { year: 'numeric', month: 'long', day: 'numeric' })}
+                        {new Date(review.createdAt).toLocaleDateString(locale === 'en' ? 'en-US' : 'he-IL', { year: 'numeric', month: 'long', day: 'numeric' })}
                       </div>
                     </div>
                   </div>
 
                   {/* Body */}
-                  <p style={{ color: 'var(--text-secondary)', lineHeight: 1.7, fontSize: '0.9375rem', marginBottom: review.images?.length ? 12 : 16 }}>
-                    {review.body}
+                  <p style={{ color: 'var(--text-secondary)', lineHeight: 1.7, fontSize: '0.9375rem', marginBottom: review.images?.length ? 12 : 16, direction: showEn ? 'ltr' : 'rtl', textAlign: showEn ? 'left' : 'right' }}>
+                    {displayBody}
                   </p>
 
                   {/* Images */}

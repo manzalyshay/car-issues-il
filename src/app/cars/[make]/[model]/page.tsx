@@ -86,50 +86,74 @@ export default async function ModelPage({ params }: Props) {
     : null;
 
   return (
-    <div className="page-section">
-      <div className="container">
-        {/* Breadcrumb */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: 'var(--text-muted)', fontSize: '0.875rem', marginBottom: 24, flexWrap: 'wrap' }}>
-          <Link href="/" style={{ color: 'var(--text-muted)', textDecoration: 'none' }}>בית</Link>
-          <span>›</span>
-          <Link href="/cars" style={{ color: 'var(--text-muted)', textDecoration: 'none' }}>יצרנים</Link>
-          <span>›</span>
-          <Link href={`/cars/${make.slug}`} style={{ color: 'var(--text-muted)', textDecoration: 'none' }}>{make.nameHe}</Link>
-          <span>›</span>
-          <span style={{ color: 'var(--text-primary)' }}>{model.nameHe}</span>
-        </div>
+    <div style={{ background: 'var(--bg-base)', minHeight: '100vh' }}>
 
-        {/* Header row */}
-        <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12, marginBottom: 16, flexWrap: 'wrap' }}>
-          <MakeLogo logoUrl={make.logoUrl} nameEn={make.nameEn} size={44} />
-          <div style={{ flex: 1, minWidth: 0 }}>
-            <h1 style={{ fontSize: 'clamp(1.5rem,5vw,2rem)', fontWeight: 900, margin: 0, lineHeight: 1.2 }}>{make.nameHe} {model.nameHe}</h1>
-            <p style={{ color: 'var(--text-muted)', fontSize: '0.875rem', margin: '2px 0 8px' }}>{make.nameEn} {model.nameEn}</p>
-            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
-              <span className="badge badge-gray">{getCategoryLabel(model.category)}</span>
-              <span className="badge badge-blue">{model.years[model.years.length - 1]}–{model.years[0]}</span>
-              <RecallsBadge makeEn={make.nameEn} modelEn={model.nameEn} years={model.years} />
-              {avgRating !== null && (
-                <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
-                  <StarRating rating={avgRating} size={15} />
-                  <span style={{ fontSize: '0.875rem', fontWeight: 700 }}>{avgRating.toFixed(1)}</span>
-                  <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>({allReviews.length})</span>
-                </div>
-              )}
+      {/* ── MODEL HERO ─────────────────────────────────────── */}
+      <div className="model-page-hero">
+        <div className="model-ghost-name" aria-hidden>{make.nameEn.toUpperCase()} {model.nameEn.toUpperCase()}</div>
+        <div className="container" style={{ position: 'relative' }}>
+
+          {/* Breadcrumb */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: '0.68rem', fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.2)', marginBottom: 24, flexWrap: 'wrap' }}>
+            <Link href="/" style={{ color: 'rgba(255,255,255,0.2)', textDecoration: 'none' }}>בית</Link>
+            <span style={{ color: 'var(--brand-red)', opacity: 0.5 }}>›</span>
+            <Link href="/cars" style={{ color: 'rgba(255,255,255,0.2)', textDecoration: 'none' }}>יצרנים</Link>
+            <span style={{ color: 'var(--brand-red)', opacity: 0.5 }}>›</span>
+            <Link href={`/cars/${make.slug}`} style={{ color: 'rgba(255,255,255,0.2)', textDecoration: 'none' }}>{make.nameHe}</Link>
+            <span style={{ color: 'var(--brand-red)', opacity: 0.5 }}>›</span>
+            <span style={{ color: 'rgba(255,255,255,0.5)' }}>{model.nameHe}</span>
+          </div>
+
+          <div style={{ display: 'flex', alignItems: 'center', gap: 'clamp(16px,3vw,36px)', flexWrap: 'wrap' }}>
+            {/* Make logo */}
+            <div style={{ width: 'clamp(52px,8vw,72px)', height: 'clamp(52px,8vw,72px)', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 6, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+              <MakeLogo logoUrl={make.logoUrl} nameEn={make.nameEn} size={48} />
+            </div>
+
+            {/* Identity */}
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <p style={{ fontSize: '0.68rem', fontWeight: 700, letterSpacing: '0.2em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.3)', marginBottom: 6 }}>
+                {make.nameEn} · {make.nameHe}
+              </p>
+              <h1 style={{ fontFamily: "'Bebas Neue', var(--font-display)", fontSize: 'clamp(2.5rem,7vw,6rem)', fontWeight: 400, lineHeight: 0.92, letterSpacing: '0.01em', color: '#fff', marginBottom: 12 }}>
+                {model.nameHe}
+                <span style={{ color: 'var(--brand-red)', marginInlineStart: 12 }}>{model.nameEn}</span>
+              </h1>
+
+              {/* Meta row */}
+              <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center', marginBottom: 16 }}>
+                <span style={{ padding: '4px 12px', border: '1px solid rgba(255,255,255,0.1)', fontSize: '0.68rem', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.4)', background: 'rgba(255,255,255,0.04)' }}>
+                  {getCategoryLabel(model.category)}
+                </span>
+                <span style={{ padding: '4px 12px', border: '1px solid rgba(129,140,248,0.2)', fontSize: '0.68rem', fontWeight: 700, letterSpacing: '0.1em', color: '#818cf8', background: 'rgba(129,140,248,0.06)' }}>
+                  {model.years[model.years.length - 1]}–{model.years[0]}
+                </span>
+                <RecallsBadge makeEn={make.nameEn} modelEn={model.nameEn} years={model.years} />
+                {avgRating !== null && (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                    <StarRating rating={avgRating} size={14} />
+                    <span style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: '1.25rem', fontWeight: 400, color: 'var(--brand-red)', lineHeight: 1 }}>{avgRating.toFixed(1)}</span>
+                    <span style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.3)', fontWeight: 500 }}>({allReviews.length})</span>
+                  </div>
+                )}
+              </div>
+
+              {/* Actions */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                <SharePopup title={`${make.nameHe} ${model.nameHe} — ביקורות ובעיות נפוצות | CarIssues IL`} url={`https://carissues.co.il/cars/${make.slug}/${model.slug}`} />
+                <Link href={`/cars/${make.slug}/${model.slug}/issues`} className="btn btn-outline" style={{ height: 34, padding: '0 14px', fontSize: '0.8rem', textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: 5 }}>
+                  ⚠️ בעיות נפוצות
+                </Link>
+                <Link href={`/cars/compare?car1=${make.slug}/${model.slug}`} className="btn btn-outline" style={{ height: 34, padding: '0 14px', fontSize: '0.8rem', textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: 5 }}>
+                  ⚖️ השווה לרכב אחר
+                </Link>
+              </div>
             </div>
           </div>
         </div>
+      </div>
 
-        {/* Actions */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap', marginBottom: 16 }}>
-          <SharePopup title={`${make.nameHe} ${model.nameHe} — ביקורות ובעיות נפוצות | CarIssues IL`} url={`https://carissues.co.il/cars/${make.slug}/${model.slug}`} />
-          <Link href={`/cars/${make.slug}/${model.slug}/issues`} className="btn btn-outline" style={{ height: 36, padding: '0 16px', fontSize: '0.875rem', textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: 6 }}>
-            ⚠️ בעיות נפוצות
-          </Link>
-          <Link href={`/cars/compare?car1=${make.slug}/${model.slug}`} className="btn btn-outline" style={{ height: 36, padding: '0 16px', fontSize: '0.875rem', textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: 6 }}>
-            ⚖️ השווה לרכב אחר
-          </Link>
-        </div>
+      <div className="container" style={{ paddingTop: 32, paddingBottom: 80 }}>
 
         {/* Tabs — right after header so they're visible without scrolling */}
         <CarPageTabs

@@ -1,6 +1,15 @@
 import { unstable_cache } from 'next/cache';
+import { createClient } from '@supabase/supabase-js';
 import { supabase } from './supabase';
 import type { Review } from '@/data/reviews';
+import { translateReview } from './translateReview';
+
+function getAdminClient() {
+  return createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!,
+  );
+}
 
 // ── Read ──────────────────────────────────────────────────────────────────────
 
@@ -139,6 +148,8 @@ function dbToReview(row: Record<string, unknown>): Review {
     rating:     Number(row.rating),
     title:      String(row.title),
     body:       String(row.body),
+    titleEn:    row.title_en ? String(row.title_en) : null,
+    bodyEn:     row.body_en  ? String(row.body_en)  : null,
     category:   row.category as Review['category'],
     subModel:   row.sub_model ? String(row.sub_model) : undefined,
     mileage:    row.mileage != null ? Number(row.mileage) : undefined,
@@ -149,4 +160,16 @@ function dbToReview(row: Record<string, unknown>): Review {
     createdAt:  String(row.created_at),
     images:     Array.isArray(row.images) ? (row.images as string[]) : [],
   };
+}
+
+/** Translate a review and save the English fields back to the DB. Fire-and-forget. */
+export async function translateAndSaveReview(reviewId: string, title: string, body: string): Promise<void> {
+  try {
+    const { titleEn, bodyEn } = await translateReview(title, body);
+    if (!titleEn && !bodyEn) return;
+    const admin = getAdminClient();
+    await admin.from('reviews').update({ title_en: titleEn, body_en: bodyEn }).eq('id', reviewId);
+  } catch {
+    // non-blocking — never throw
+  }
 }

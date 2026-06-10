@@ -10,6 +10,10 @@ export interface Review {
   rating: number; // 1-5
   title: string;
   body: string;
+  /** Machine-translated English title (null = not yet translated) */
+  titleEn?: string | null;
+  /** Machine-translated English body (null = not yet translated) */
+  bodyEn?: string | null;
   category: 'mechanical' | 'electrical' | 'comfort' | 'safety' | 'general';
   subModel?: string;
   mileage?: number;

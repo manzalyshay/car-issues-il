@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { revalidatePath } from 'next/cache';
-import { addReview, getReviewsForModel } from '@/lib/reviewsDb';
+import { addReview, getReviewsForModel, translateAndSaveReview } from '@/lib/reviewsDb';
 
 function purgeCloudflarePaths(urls: string[]) {
   const zone = process.env.CLOUDFLARE_ZONE_ID;
@@ -69,6 +69,9 @@ export async function POST(req: NextRequest) {
       mileage: mileage ? parseInt(mileage) : undefined,
       images: Array.isArray(images) ? images.slice(0, 4) : [],
     } as Omit<Review, 'id' | 'createdAt' | 'helpful'>);
+
+    // Fire-and-forget translation (doesn't block the response)
+    translateAndSaveReview(review.id, review.title, review.body).catch(() => {});
 
     revalidatePath(`/cars/${makeSlug}/${modelSlug}`);
     revalidatePath(`/cars/${makeSlug}/${modelSlug}/issues`);

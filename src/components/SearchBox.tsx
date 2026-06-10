@@ -11,13 +11,13 @@ interface SearchResult {
 }
 
 export default function SearchBox({ fullWidth = false, compact = false }: { fullWidth?: boolean; compact?: boolean }) {
-  const [query, setQuery] = useState('');
-  const [results, setResults] = useState<SearchResult[]>([]);
-  const [open, setOpen] = useState(false);
-  const [expanded, setExpanded] = useState(false);
+  const [query, setQuery]         = useState('');
+  const [results, setResults]     = useState<SearchResult[]>([]);
+  const [open, setOpen]           = useState(false);
+  const [expanded, setExpanded]   = useState(false);
   const [carDatabase, setCarDatabase] = useState<CarMake[]>([]);
   const inputRef = useRef<HTMLInputElement>(null);
-  const router = useRouter();
+  const router   = useRouter();
 
   useEffect(() => {
     fetch('/api/cars').then(r => r.json()).then(setCarDatabase);
@@ -25,10 +25,8 @@ export default function SearchBox({ fullWidth = false, compact = false }: { full
 
   useEffect(() => {
     if (!query.trim()) { setResults([]); setOpen(false); return; }
-
     const q = query.toLowerCase().trim();
     const found: SearchResult[] = [];
-
     for (const make of carDatabase) {
       if (
         make.nameHe.toLowerCase().includes(q) ||
@@ -41,18 +39,13 @@ export default function SearchBox({ fullWidth = false, compact = false }: { full
           model.nameHe.toLowerCase().includes(q) ||
           model.nameEn.toLowerCase().includes(q)
         ) {
-          found.push({
-            label: `${make.nameHe} ${model.nameHe}`,
-            href: `/cars/${make.slug}/${model.slug}`,
-            type: 'model',
-          });
+          found.push({ label: `${make.nameHe} ${model.nameHe}`, href: `/cars/${make.slug}/${model.slug}`, type: 'model' });
         }
       }
     }
-
     setResults(found.slice(0, 8));
     setOpen(found.length > 0);
-  }, [query]);
+  }, [query, carDatabase]);
 
   const choose = (href: string) => {
     setQuery('');
@@ -64,7 +57,17 @@ export default function SearchBox({ fullWidth = false, compact = false }: { full
     return (
       <button
         onClick={() => { setExpanded(true); setTimeout(() => inputRef.current?.focus(), 50); }}
-        style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 8, fontSize: '1.2rem', color: 'var(--text-secondary)', display: 'flex', alignItems: 'center' }}
+        style={{
+          background: 'rgba(255,255,255,.07)',
+          border: '1px solid rgba(255,255,255,.1)',
+          borderRadius: 8,
+          cursor: 'pointer',
+          padding: '6px 10px',
+          fontSize: '1rem',
+          color: 'var(--text-secondary)',
+          display: 'flex',
+          alignItems: 'center',
+        }}
         aria-label="חיפוש"
       >
         🔍
@@ -73,22 +76,20 @@ export default function SearchBox({ fullWidth = false, compact = false }: { full
   }
 
   return (
-    <div style={{ position: 'relative', width: fullWidth || compact ? '100%' : 220 }}>
-      <div
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: 8,
-          height: 38,
-          border: '1.5px solid var(--border)',
-          borderRadius: 9999,
-          padding: '0 14px',
-          background: 'var(--bg-muted)',
-          transition: 'border-color 0.2s',
-          width: '100%',
-        }}
-      >
-        <span style={{ color: 'var(--text-muted)', flexShrink: 0 }}>🔍</span>
+    <div style={{ position: 'relative', width: fullWidth || compact ? '100%' : 210 }}>
+      <div style={{
+        display: 'flex',
+        alignItems: 'center',
+        gap: 8,
+        height: 36,
+        border: '1px solid rgba(255,255,255,.1)',
+        borderRadius: 9,
+        padding: '0 12px',
+        background: 'rgba(255,255,255,.05)',
+        transition: 'border-color 0.2s, box-shadow 0.2s',
+        width: '100%',
+      }}>
+        <span style={{ color: 'var(--text-muted)', flexShrink: 0, fontSize: '0.875rem' }}>🔍</span>
         <input
           ref={inputRef}
           value={query}
@@ -99,7 +100,7 @@ export default function SearchBox({ fullWidth = false, compact = false }: { full
             border: 'none',
             background: 'transparent',
             outline: 'none',
-            fontSize: '0.875rem',
+            fontSize: '0.8375rem',
             color: 'var(--text-primary)',
             fontFamily: 'inherit',
             direction: 'rtl',
@@ -111,31 +112,28 @@ export default function SearchBox({ fullWidth = false, compact = false }: { full
       </div>
 
       {open && results.length > 0 && (
-        <div
-          style={{
-            position: 'absolute',
-            top: 'calc(100% + 6px)',
-            right: 0,
-            left: 0,
-            background: 'var(--bg-card)',
-            border: '1px solid var(--border)',
-            borderRadius: 12,
-            boxShadow: 'var(--shadow-lg)',
-            zIndex: 200,
-            overflow: 'hidden',
-          }}
-        >
+        <div style={{
+          position: 'absolute',
+          top: 'calc(100% + 6px)',
+          right: 0,
+          left: 0,
+          background: '#0f0f0f',
+          border: '1px solid rgba(255,255,255,.1)',
+          borderRadius: 12,
+          boxShadow: '0 20px 60px rgba(0,0,0,.9)',
+          zIndex: 200,
+          overflow: 'hidden',
+        }}>
           {results.map((r, i) => (
             <button
               key={i}
               onMouseDown={() => choose(r.href)}
               style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: 10,
+                display: 'flex', alignItems: 'center', gap: 10,
                 width: '100%',
-                padding: '10px 16px',
+                padding: '10px 14px',
                 border: 'none',
+                borderTop: i === 0 ? 'none' : '1px solid rgba(255,255,255,.05)',
                 background: 'transparent',
                 cursor: 'pointer',
                 textAlign: 'right',
@@ -144,7 +142,7 @@ export default function SearchBox({ fullWidth = false, compact = false }: { full
                 fontFamily: 'inherit',
                 transition: 'background 0.1s',
               }}
-              onMouseEnter={(e) => ((e.currentTarget as HTMLElement).style.background = 'var(--bg-muted)')}
+              onMouseEnter={(e) => ((e.currentTarget as HTMLElement).style.background = 'rgba(230,57,70,.07)')}
               onMouseLeave={(e) => ((e.currentTarget as HTMLElement).style.background = 'transparent')}
             >
               <span style={{ color: 'var(--text-muted)', fontSize: '0.8rem' }}>

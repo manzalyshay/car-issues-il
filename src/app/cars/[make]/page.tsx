@@ -35,103 +35,128 @@ export default async function MakePage({ params }: Props) {
   const make = await getMakeBySlug(makeSlug);
   if (!make) notFound();
 
-  // Group models by category
   const categories = [...new Set(make.models.map((m) => m.category))];
 
   return (
-    <div className="page-section">
-      <div className="container">
-        {/* Breadcrumb */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: 'var(--text-muted)', fontSize: '0.875rem', marginBottom: 24, flexWrap: 'wrap' }}>
-          <Link href="/" style={{ color: 'var(--text-muted)', textDecoration: 'none' }}>בית</Link>
-          <span>›</span>
-          <Link href="/cars" style={{ color: 'var(--text-muted)', textDecoration: 'none' }}>יצרנים</Link>
-          <span>›</span>
-          <span style={{ color: 'var(--text-primary)' }}>{make.nameHe}</span>
-        </div>
+    <div style={{ background: 'var(--bg-base)', minHeight: '100vh' }}>
 
-        {/* Make header */}
-        <div
-          className="card card-hero"
-          style={{
-            marginBottom: 40,
-            background: 'linear-gradient(135deg, var(--bg-card) 0%, rgba(230,57,70,.03) 100%)',
-            display: 'flex',
-            alignItems: 'center',
-            gap: 24,
-            flexWrap: 'wrap',
-          }}
-        >
-          <MakeLogo logoUrl={make.logoUrl} nameEn={make.nameEn} size={72} />
-          <div style={{ flex: 1, minWidth: 0 }}>
-            <h1 className="make-header-title" style={{ fontSize: '2rem', fontWeight: 900, marginBottom: 4 }}>{make.nameHe}</h1>
-            <p style={{ color: 'var(--text-muted)', fontSize: '1rem', marginBottom: 12 }}>{make.nameEn} · {make.country}</p>
-            <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
-              <span className="badge badge-red">{make.models.length} דגמים</span>
-              {categories.map((c) => (
-                <span key={c} className="badge badge-gray">{getCategoryLabel(c)}</span>
-              ))}
+      {/* ── MAKE HERO ──────────────────────────────────────── */}
+      <div className="make-page-hero">
+        {/* Ghost name behind */}
+        <div className="make-ghost-name" aria-hidden>{make.nameEn.toUpperCase()}</div>
+
+        <div className="container" style={{ position: 'relative' }}>
+          {/* Breadcrumb */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: '0.72rem', fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.25)', marginBottom: 28 }}>
+            <Link href="/" style={{ color: 'rgba(255,255,255,0.25)', textDecoration: 'none', transition: 'color 0.15s' }}>בית</Link>
+            <span style={{ color: 'var(--brand-red)', opacity: 0.5 }}>›</span>
+            <Link href="/cars" style={{ color: 'rgba(255,255,255,0.25)', textDecoration: 'none', transition: 'color 0.15s' }}>יצרנים</Link>
+            <span style={{ color: 'var(--brand-red)', opacity: 0.5 }}>›</span>
+            <span style={{ color: 'rgba(255,255,255,0.55)' }}>{make.nameHe}</span>
+          </div>
+
+          <div style={{ display: 'flex', alignItems: 'center', gap: 'clamp(20px,4vw,48px)', flexWrap: 'wrap' }}>
+            {/* Logo */}
+            <div style={{ width: 'clamp(64px,10vw,96px)', height: 'clamp(64px,10vw,96px)', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+              <MakeLogo logoUrl={make.logoUrl} nameEn={make.nameEn} size={60} />
+            </div>
+
+            {/* Name + stats */}
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <p style={{ fontSize: '0.68rem', fontWeight: 700, letterSpacing: '0.2em', textTransform: 'uppercase', color: 'var(--brand-red)', marginBottom: 8, display: 'flex', alignItems: 'center', gap: 8 }}>
+                <span style={{ display: 'inline-block', width: 16, height: 2, background: 'var(--brand-red)' }} />
+                {make.country}
+              </p>
+              <h1 style={{ fontFamily: "'Bebas Neue', var(--font-display)", fontSize: 'clamp(3rem,8vw,7rem)', fontWeight: 400, lineHeight: 0.9, letterSpacing: '0.02em', color: '#fff', marginBottom: 16 }}>
+                {make.nameHe}
+              </h1>
+              <p style={{ fontSize: '0.9rem', color: 'rgba(255,255,255,0.35)', marginBottom: 20, fontWeight: 500 }}>{make.nameEn}</p>
+
+              {/* Stat pills */}
+              <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
+                <span style={{ padding: '5px 14px', border: '1px solid rgba(220,26,44,0.35)', fontSize: '0.72rem', fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--brand-red)', background: 'rgba(220,26,44,0.08)' }}>
+                  {make.models.length} דגמים
+                </span>
+                {categories.map((c) => (
+                  <span key={c} style={{ padding: '5px 14px', border: '1px solid rgba(255,255,255,0.1)', fontSize: '0.68rem', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.4)', background: 'rgba(255,255,255,0.04)' }}>
+                    {getCategoryLabel(c)}
+                  </span>
+                ))}
+              </div>
             </div>
           </div>
         </div>
+      </div>
 
-        {/* Models grid */}
-        <h2 style={{ fontSize: '1.375rem', fontWeight: 700, marginBottom: 24 }}>בחר דגם</h2>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: 16 }}>
-          {make.models.map((model) => (
-            <Link
-              key={model.slug}
-              href={`/cars/${make.slug}/${model.slug}`}
-              className="card"
-              style={{ padding: '20px 24px', textDecoration: 'none', display: 'block' }}
-            >
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 10 }}>
-                <h3 style={{ fontWeight: 700, fontSize: '1.0625rem', color: 'var(--text-primary)' }}>
+      {/* ── MODELS LIST ───────────────────────────────────── */}
+      <div className="container" style={{ padding: '40px 1.5rem 80px' }}>
+
+        <div style={{ display: 'flex', alignItems: 'baseline', gap: 16, marginBottom: 24 }}>
+          <h2 style={{ fontFamily: "'Bebas Neue', var(--font-display)", fontSize: 'clamp(2rem,4vw,3rem)', fontWeight: 400, letterSpacing: '0.03em', lineHeight: 0.9, color: '#fff', flexShrink: 0 }}>
+            בחר דגם
+          </h2>
+          <div style={{ flex: 1, height: 1, background: 'rgba(255,255,255,0.07)', alignSelf: 'center' }} />
+          <span style={{ fontSize: '0.68rem', fontWeight: 700, color: 'rgba(255,255,255,0.25)', letterSpacing: '0.12em', textTransform: 'uppercase', whiteSpace: 'nowrap' }}>{make.models.length} דגמים</span>
+        </div>
+
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 2 }}>
+          {make.models.map((model, i) => (
+            <Link key={model.slug} href={`/cars/${make.slug}/${model.slug}`} className="model-list-row">
+              {/* Index number */}
+              <span style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: '1.5rem', color: 'rgba(255,255,255,0.08)', lineHeight: 1, flexShrink: 0, width: 32, letterSpacing: '0.01em' }}>
+                {String(i + 1).padStart(2, '0')}
+              </span>
+
+              {/* Name block */}
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontWeight: 800, fontSize: '1rem', color: '#fff', marginBottom: 2, lineHeight: 1.2 }}>
                   {model.nameHe}
-                </h3>
-                <span className="badge badge-gray" style={{ fontSize: '0.7rem' }}>
+                </div>
+                <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', fontWeight: 500 }}>{model.nameEn}</div>
+              </div>
+
+              {/* Meta */}
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 5, flexShrink: 0 }}>
+                <span style={{ fontSize: '0.68rem', fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.25)', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.07)', padding: '2px 8px' }}>
                   {getCategoryLabel(model.category)}
                 </span>
-              </div>
-              <p style={{ color: 'var(--text-muted)', fontSize: '0.8125rem' }}>{model.nameEn}</p>
-              <div style={{ marginTop: 12, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
+                <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)', fontWeight: 500 }}>
                   {model.years[model.years.length - 1]}–{model.years[0]}
                 </span>
-                <span style={{ color: 'var(--brand-red)', fontSize: '0.875rem', fontWeight: 700 }}>
-                  {model.years.length} שנות ייצור →
-                </span>
               </div>
+
+              {/* Arrow */}
+              <span style={{ color: 'var(--brand-red)', fontSize: '1rem', opacity: 0.5, flexShrink: 0, marginInlineStart: 4 }}>›</span>
             </Link>
           ))}
         </div>
-
-        {/* JSON-LD */}
-        <script
-          type="application/ld+json"
-          dangerouslySetInnerHTML={{
-            __html: JSON.stringify({
-              '@context': 'https://schema.org',
-              '@graph': [
-                {
-                  '@type': 'Brand',
-                  name: make.nameEn,
-                  url: `https://carissues.co.il/cars/${make.slug}`,
-                  description: `Car reviews and issues for ${make.nameEn} vehicles in Israel`,
-                },
-                {
-                  '@type': 'BreadcrumbList',
-                  itemListElement: [
-                    { '@type': 'ListItem', position: 1, name: 'בית', item: 'https://carissues.co.il' },
-                    { '@type': 'ListItem', position: 2, name: 'יצרנים', item: 'https://carissues.co.il/cars' },
-                    { '@type': 'ListItem', position: 3, name: make.nameHe, item: `https://carissues.co.il/cars/${make.slug}` },
-                  ],
-                },
-              ],
-            }),
-          }}
-        />
       </div>
+
+      {/* JSON-LD */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify({
+            '@context': 'https://schema.org',
+            '@graph': [
+              {
+                '@type': 'Brand',
+                name: make.nameEn,
+                url: `https://carissues.co.il/cars/${make.slug}`,
+                description: `Car reviews and issues for ${make.nameEn} vehicles in Israel`,
+              },
+              {
+                '@type': 'BreadcrumbList',
+                itemListElement: [
+                  { '@type': 'ListItem', position: 1, name: 'בית', item: 'https://carissues.co.il' },
+                  { '@type': 'ListItem', position: 2, name: 'יצרנים', item: 'https://carissues.co.il/cars' },
+                  { '@type': 'ListItem', position: 3, name: make.nameHe, item: `https://carissues.co.il/cars/${make.slug}` },
+                ],
+              },
+            ],
+          }),
+        }}
+      />
     </div>
   );
 }

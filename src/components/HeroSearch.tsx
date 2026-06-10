@@ -4,210 +4,114 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import type { CarMake } from '@/lib/carsDb';
 import MakeLogo from './MakeLogo';
+import { useLocale } from '@/lib/localeContext';
 
-interface Result {
-  label: string;
-  sublabel?: string;
-  href: string;
-  type: 'make' | 'model';
-  logoUrl: string;
-  nameEn: string;
-}
+interface Result { label: string; sublabel?: string; href: string; type: 'make' | 'model'; logoUrl: string; nameEn: string; }
 
 export default function HeroSearch() {
-  const [query, setQuery]           = useState('');
-  const [results, setResults]       = useState<Result[]>([]);
-  const [open, setOpen]             = useState(false);
-  const [active, setActive]         = useState(-1);
-  const [db, setDb]                 = useState<CarMake[]>([]);
-  const inputRef                    = useRef<HTMLInputElement>(null);
-  const listRef                     = useRef<HTMLDivElement>(null);
-  const router                      = useRouter();
+  const [query, setQuery]     = useState('');
+  const [results, setResults] = useState<Result[]>([]);
+  const [open, setOpen]       = useState(false);
+  const [active, setActive]   = useState(-1);
+  const [focused, setFocused] = useState(false);
+  const [db, setDb]           = useState<CarMake[]>([]);
+  const inputRef              = useRef<HTMLInputElement>(null);
+  const router                = useRouter();
+  const { locale, t }         = useLocale();
 
-  useEffect(() => {
-    fetch('/api/cars').then((r) => r.json()).then(setDb);
-  }, []);
+  useEffect(() => { fetch('/api/cars').then(r => r.json()).then(setDb); }, []);
 
   useEffect(() => {
     const q = query.trim().toLowerCase();
     if (!q) { setResults([]); setOpen(false); setActive(-1); return; }
-
-    const makes: Result[]  = [];
+    const makes: Result[] = [];
     const models: Result[] = [];
-
     for (const make of db) {
-      const matchMake =
-        make.nameHe.toLowerCase().includes(q) ||
-        make.nameEn.toLowerCase().includes(q);
-
-      if (matchMake) {
-        makes.push({
-          label:    make.nameHe,
-          sublabel: `${make.models.length} דגמים`,
-          href:     `/cars/${make.slug}`,
-          type:     'make',
-          logoUrl:  make.logoUrl,
-          nameEn:   make.nameEn,
-        });
+      if (make.nameHe.toLowerCase().includes(q) || make.nameEn.toLowerCase().includes(q)) {
+        makes.push({ label: locale==='en' ? make.nameEn : make.nameHe, sublabel: `${make.models.length} ${t.search.model}s`, href: `/cars/${make.slug}`, type: 'make', logoUrl: make.logoUrl, nameEn: make.nameEn });
       }
-
       for (const model of make.models) {
-        if (
-          model.nameHe.toLowerCase().includes(q) ||
-          model.nameEn.toLowerCase().includes(q) ||
-          (`${make.nameHe} ${model.nameHe}`).toLowerCase().includes(q) ||
-          (`${make.nameEn} ${model.nameEn}`).toLowerCase().includes(q)
-        ) {
-          models.push({
-            label:    `${make.nameHe} ${model.nameHe}`,
-            sublabel: model.nameEn,
-            href:     `/cars/${make.slug}/${model.slug}`,
-            type:     'model',
-            logoUrl:  make.logoUrl,
-            nameEn:   make.nameEn,
-          });
+        if (model.nameHe.toLowerCase().includes(q) || model.nameEn.toLowerCase().includes(q) || (`${make.nameHe} ${model.nameHe}`).toLowerCase().includes(q) || (`${make.nameEn} ${model.nameEn}`).toLowerCase().includes(q)) {
+          models.push({ label: locale==='en' ? `${make.nameEn} ${model.nameEn}` : `${make.nameHe} ${model.nameHe}`, sublabel: locale==='en' ? model.nameHe : model.nameEn, href: `/cars/${make.slug}/${model.slug}`, type: 'model', logoUrl: make.logoUrl, nameEn: make.nameEn });
         }
       }
     }
-
-    // Makes first, then models; cap total at 8
     const combined = [...makes.slice(0, 3), ...models].slice(0, 8);
-    setResults(combined);
-    setOpen(combined.length > 0);
-    setActive(-1);
-  }, [query, db]);
+    setResults(combined); setOpen(combined.length > 0); setActive(-1);
+  }, [query, db, locale, t.search.model]);
 
-  const choose = useCallback((href: string) => {
-    setQuery('');
-    setOpen(false);
-    router.push(href);
-  }, [router]);
+  const choose = useCallback((href: string) => { setQuery(''); setOpen(false); router.push(href); }, [router]);
 
   const onKeyDown = (e: React.KeyboardEvent) => {
     if (!open) return;
-    if (e.key === 'ArrowDown') {
-      e.preventDefault();
-      setActive((p) => Math.min(p + 1, results.length - 1));
-    } else if (e.key === 'ArrowUp') {
-      e.preventDefault();
-      setActive((p) => Math.max(p - 1, -1));
-    } else if (e.key === 'Enter' && active >= 0) {
-      e.preventDefault();
-      choose(results[active].href);
-    } else if (e.key === 'Escape') {
-      setOpen(false);
-    }
+    if (e.key === 'ArrowDown')              { e.preventDefault(); setActive(p => Math.min(p+1, results.length-1)); }
+    else if (e.key === 'ArrowUp')           { e.preventDefault(); setActive(p => Math.max(p-1, -1)); }
+    else if (e.key==='Enter' && active>=0)  { e.preventDefault(); choose(results[active].href); }
+    else if (e.key === 'Escape')            { setOpen(false); }
   };
 
   return (
-    <div style={{ position: 'relative', width: '100%', maxWidth: 580, margin: '0 auto' }}>
-      {/* Input */}
+    <div style={{ position:'relative', width:'100%', maxWidth:560 }}>
+      {/* Glass search pill */}
       <div style={{
-        display: 'flex',
-        alignItems: 'center',
-        gap: 12,
-        height: 60,
-        borderRadius: 9999,
-        background: 'rgba(255,255,255,0.97)',
+        display: 'flex', alignItems: 'center', gap: 12,
+        height: 56, borderRadius: 14,
+        background: 'rgba(255,255,255,0.06)',
+        border: `1px solid ${focused ? 'rgba(220,26,44,.6)' : 'rgba(255,255,255,0.1)'}`,
+        boxShadow: focused
+          ? '0 0 0 3px rgba(220,26,44,.12), 0 8px 40px rgba(0,0,0,.6)'
+          : '0 8px 40px rgba(0,0,0,.4)',
+        padding: '0 18px',
         backdropFilter: 'blur(12px)',
-        boxShadow: '0 8px 40px rgba(0,0,0,0.35), 0 2px 8px rgba(230,57,70,0.15)',
-        padding: '0 20px',
-        border: '2px solid rgba(255,255,255,0.2)',
-        transition: 'box-shadow 0.2s',
+        transition: 'border-color 0.22s, box-shadow 0.22s',
       }}>
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#888" strokeWidth="2.5" strokeLinecap="round" style={{ flexShrink: 0 }}>
-          <circle cx="11" cy="11" r="8" /><path d="m21 21-4.35-4.35" />
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none"
+          stroke={focused ? 'var(--brand-red)' : 'rgba(255,255,255,0.3)'}
+          strokeWidth="2.5" strokeLinecap="round"
+          style={{ flexShrink:0, transition:'stroke 0.2s' }}
+        >
+          <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
         </svg>
         <input
-          ref={inputRef}
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
+          ref={inputRef} value={query}
+          onChange={e => setQuery(e.target.value)}
           onKeyDown={onKeyDown}
-          onFocus={() => results.length > 0 && setOpen(true)}
-          onBlur={() => setTimeout(() => setOpen(false), 160)}
-          placeholder="חפש יצרן או דגם... (למשל: יונדאי, טוסון, מאזדה CX-5)"
-          style={{
-            flex: 1,
-            border: 'none',
-            outline: 'none',
-            background: 'transparent',
-            fontSize: '1rem',
-            color: '#111',
-            fontFamily: 'inherit',
-            direction: 'rtl',
-            minWidth: 0,
-          }}
-          autoComplete="off"
-          spellCheck={false}
+          onFocus={() => { setFocused(true); results.length>0 && setOpen(true); }}
+          onBlur={() => { setFocused(false); setTimeout(() => setOpen(false), 160); }}
+          placeholder={t.search.placeholder}
+          style={{ flex:1, border:'none', outline:'none', background:'transparent', fontSize:'0.9375rem', color:'#fff', fontFamily:'inherit', direction:locale==='he'?'rtl':'ltr', minWidth:0 }}
+          autoComplete="off" spellCheck={false}
         />
         {query && (
-          <button
-            onMouseDown={() => { setQuery(''); inputRef.current?.focus(); }}
-            style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 4, color: '#aaa', flexShrink: 0, lineHeight: 1 }}
-            tabIndex={-1}
-          >
-            ✕
-          </button>
+          <button onMouseDown={() => { setQuery(''); inputRef.current?.focus(); }}
+            style={{ background:'rgba(255,255,255,.08)', border:'none', borderRadius:6, cursor:'pointer', padding:'2px 7px', color:'rgba(255,255,255,.4)', flexShrink:0, lineHeight:1, fontSize:'0.8rem', transition:'background 0.15s' }}
+            tabIndex={-1}>✕</button>
         )}
       </div>
 
       {/* Dropdown */}
       {open && results.length > 0 && (
-        <div
-          ref={listRef}
-          style={{
-            position: 'absolute',
-            top: 'calc(100% + 8px)',
-            right: 0,
-            left: 0,
-            background: 'var(--bg-card)',
-            border: '1px solid var(--border)',
-            borderRadius: 16,
-            boxShadow: '0 20px 60px rgba(0,0,0,0.4)',
-            zIndex: 300,
-            overflow: 'hidden',
-          }}
-        >
+        <div style={{
+          position:'absolute', top:'calc(100% + 8px)', right:0, left:0,
+          background:'rgba(16,16,22,0.97)',
+          border:'1px solid rgba(255,255,255,.08)',
+          borderRadius:14,
+          boxShadow:'0 24px 72px rgba(0,0,0,.95)',
+          backdropFilter:'blur(20px)',
+          zIndex:300, overflow:'hidden',
+        }}>
           {results.map((r, i) => (
-            <button
-              key={r.href}
-              onMouseDown={() => choose(r.href)}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: 12,
-                width: '100%',
-                padding: '11px 16px',
-                border: 'none',
-                borderTop: i === 0 ? 'none' : '1px solid var(--border)',
-                background: active === i ? 'var(--bg-muted)' : 'transparent',
-                cursor: 'pointer',
-                textAlign: 'right',
-                color: 'var(--text-primary)',
-                fontFamily: 'inherit',
-                transition: 'background 0.1s',
-              }}
-              onMouseEnter={() => setActive(i)}
-              onMouseLeave={() => setActive(-1)}
+            <button key={r.href} onMouseDown={() => choose(r.href)}
+              style={{ display:'flex', alignItems:'center', gap:12, width:'100%', padding:'12px 16px', border:'none', borderTop:i===0?'none':'1px solid rgba(255,255,255,.04)', background:active===i?'rgba(220,26,44,.08)':'transparent', cursor:'pointer', textAlign:'right', color:'#fff', fontFamily:'inherit', transition:'background 0.1s' }}
+              onMouseEnter={() => setActive(i)} onMouseLeave={() => setActive(-1)}
             >
-              <MakeLogo logoUrl={r.logoUrl} nameEn={r.nameEn} size={28} />
-              <div style={{ flex: 1, minWidth: 0, textAlign: 'right' }}>
-                <div style={{ fontSize: '0.9375rem', fontWeight: 600, lineHeight: 1.3 }}>{r.label}</div>
-                {r.sublabel && (
-                  <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: 1 }}>{r.sublabel}</div>
-                )}
+              <MakeLogo logoUrl={r.logoUrl} nameEn={r.nameEn} size={26} />
+              <div style={{ flex:1, minWidth:0, textAlign:locale==='he'?'right':'left' }}>
+                <div style={{ fontSize:'0.9rem', fontWeight:600, lineHeight:1.3 }}>{r.label}</div>
+                {r.sublabel && <div style={{ fontSize:'0.7rem', color:'var(--text-muted)', marginTop:1 }}>{r.sublabel}</div>}
               </div>
-              <span style={{
-                fontSize: '0.7rem',
-                fontWeight: 700,
-                letterSpacing: '0.05em',
-                padding: '2px 8px',
-                borderRadius: 9999,
-                background: r.type === 'make' ? 'rgba(230,57,70,0.1)' : 'rgba(99,102,241,0.1)',
-                color: r.type === 'make' ? 'var(--brand-red)' : '#818cf8',
-                flexShrink: 0,
-              }}>
-                {r.type === 'make' ? 'יצרן' : 'דגם'}
+              <span style={{ fontSize:'0.62rem', fontWeight:700, letterSpacing:'0.07em', padding:'2px 8px', borderRadius:6, background:r.type==='make'?'rgba(220,26,44,.12)':'rgba(129,140,248,.1)', color:r.type==='make'?'var(--brand-red)':'#818cf8', border:`1px solid ${r.type==='make'?'rgba(220,26,44,.2)':'rgba(129,140,248,.15)'}`, flexShrink:0, textTransform:'uppercase' }}>
+                {r.type==='make' ? t.search.make : t.search.model}
               </span>
             </button>
           ))}

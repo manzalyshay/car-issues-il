@@ -3,6 +3,7 @@ import './globals.css';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import { AuthProvider } from '@/lib/authContext';
+import { LocaleProvider } from '@/lib/localeContext';
 import NavigationProgress from '@/components/NavigationProgress';
 import PageViewTracker from '@/components/PageViewTracker';
 import { Analytics } from '@vercel/analytics/next';
@@ -70,19 +71,21 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link
-          href="https://fonts.googleapis.com/css2?family=Rubik:wght@300;400;500;600;700;800;900&family=Assistant:wght@400;600;700&display=swap"
+          href="https://fonts.googleapis.com/css2?family=Rubik:wght@300;400;500;600;700;800;900&family=Assistant:wght@400;600;700&family=Syne:wght@400;500;600;700;800&family=Bebas+Neue&display=swap"
           rel="stylesheet"
         />
       </head>
-      <body className="flex flex-col min-h-screen" style={{ background: 'var(--bg-base)', color: 'var(--text-primary)' }}>
+      <body className="flex flex-col min-h-screen">
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(orgJsonLd) }} />
-        <AuthProvider>
-          <NavigationProgress />
-          <PageViewTracker />
-          <Header />
-          <main className="flex-1">{children}</main>
-          <Footer />
-        </AuthProvider>
+        <LocaleProvider>
+          <AuthProvider>
+            <NavigationProgress />
+            <PageViewTracker />
+            <Header />
+            <main className="flex-1">{children}</main>
+            <Footer />
+          </AuthProvider>
+        </LocaleProvider>
         <Analytics />
         <SpeedInsights />
       </body>
