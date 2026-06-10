@@ -1,3 +1,4 @@
+import { randomUUID as _uuid } from 'crypto';
 /**
  * User Review Aggregator
  *
@@ -16,7 +17,7 @@
  *  - Full source attribution with link is always shown
  */
 
-import { createClient } from '@supabase/supabase-js';
+import { dbAll, dbFirst, dbRun } from './db';
 import { getMakeBySlug, getModelBySlug } from '@/lib/carsDb';
 
 const MISTRAL_URL = 'https://api.mistral.ai/v1/chat/completions';
@@ -60,14 +61,6 @@ export interface UserPost {
   reviewYear?: number; // Year the review/complaint was written
 }
 
-// ── Supabase ──────────────────────────────────────────────────────────────────
-function getSupabase(serviceRole = false) {
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-  const key = serviceRole
-    ? process.env.SUPABASE_SERVICE_ROLE_KEY!
-    : process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
-  return createClient(url, key);
-}
 
 
 // ── Tapuz.co.il — XenForo cars forum (node 451, forum "מכוניות") ──────────────
@@ -1057,17 +1050,11 @@ function mapRow(r: any): ExpertReview {
 /** General model summary (year = null). Auto-generates from LLM if DB is empty. */
 export async function getExpertReviews(makeSlug: string, modelSlug: string): Promise<ExpertReview[]> {
   try {
-    const sb = getSupabase();
-    const { data } = await sb
-      .from('expert_reviews')
-      .select('id,make_slug,model_slug,year,source_name,source_url,original_title,summary_he,local_summary_he,global_summary_he,local_score,global_score,top_score,pros,cons,local_post_count,global_post_count,sources_breakdown,scraped_at')
-      .eq('make_slug', makeSlug)
-      .eq('model_slug', modelSlug)
-      .is('year', null)
-      .order('scraped_at', { ascending: false })
-      .limit(1);
-
-    if (data && data.length > 0) return data.map(mapRow);
+    const data = await dbAll(
+      'SELECT * FROM expert_reviews WHERE make_slug = ? AND model_slug = ? AND year IS NULL ORDER BY scraped_at DESC LIMIT 1',
+      makeSlug, modelSlug,
+    );
+    if (data.length > 0) return data.map(mapRow);
 
     // No DB row — return empty (admin scrape populates this)
     return [];
@@ -1083,36 +1070,22 @@ export async function getExpertReviewsForYear(
   year: number,
 ): Promise<{ review: ExpertReview | null; isYearSpecific: boolean }> {
   try {
-    const sb = getSupabase();
-
     // Try year-specific first
-    const { data: yearData } = await sb
-      .from('expert_reviews')
-      .select('id,make_slug,model_slug,year,source_name,source_url,original_title,summary_he,local_summary_he,global_summary_he,local_score,global_score,top_score,pros,cons,local_post_count,global_post_count,sources_breakdown,scraped_at')
-      .eq('make_slug', makeSlug)
-      .eq('model_slug', modelSlug)
-      .eq('year', year)
-      .order('scraped_at', { ascending: false })
-      .limit(1);
+    const yearData = await dbAll(
+      'SELECT * FROM expert_reviews WHERE make_slug = ? AND model_slug = ? AND year = ? ORDER BY scraped_at DESC LIMIT 1',
+      makeSlug, modelSlug, year,
+    );
 
-    if (yearData && yearData.length > 0) {
-      const row = yearData[0];
-      // Show year-specific whenever a row exists — even AI-knowledge-only
-      // (local_post_count/global_post_count = 0 means AI knowledge, still year-specific)
-      return { review: mapRow(row), isYearSpecific: true };
+    if (yearData.length > 0) {
+      return { review: mapRow(yearData[0]), isYearSpecific: true };
     }
 
-    // No DB row — fall back to general model summary (no inline LLM generation)
-    const { data: generalData } = await getSupabase()
-      .from('expert_reviews')
-      .select('id,make_slug,model_slug,year,source_name,source_url,original_title,summary_he,local_summary_he,global_summary_he,local_score,global_score,top_score,pros,cons,local_post_count,global_post_count,sources_breakdown,scraped_at')
-      .eq('make_slug', makeSlug)
-      .eq('model_slug', modelSlug)
-      .is('year', null)
-      .order('scraped_at', { ascending: false })
-      .limit(1);
-
-    if (generalData && generalData.length > 0) {
+    // No DB row — fall back to general model summary
+    const generalData = await dbAll(
+      'SELECT * FROM expert_reviews WHERE make_slug = ? AND model_slug = ? AND year IS NULL ORDER BY scraped_at DESC LIMIT 1',
+      makeSlug, modelSlug,
+    );
+    if (generalData.length > 0) {
       return { review: mapRow(generalData[0]), isYearSpecific: false };
     }
 
@@ -1164,31 +1137,24 @@ async function saveKnowledgeReview(
   localOut?: SummarizeOutput,
 ): Promise<void> {
   try {
-    const sb = getSupabase(true);
-    const del = sb.from('expert_reviews').delete()
-      .eq('make_slug', makeSlug).eq('model_slug', modelSlug);
-    if (year) await del.eq('year', year);
-    else await del.is('year', null);
-
-    const topScore = localOut?.score != null
-      ? (localOut.score + out.score) / 2
-      : out.score;
-
-    await sb.from('expert_reviews').insert({
-      make_slug: makeSlug, model_slug: modelSlug, year: year ?? null,
-      source_name: 'AI Knowledge', source_url: '', original_title: '',
-      summary_he: localOut?.summary_he ?? out.summary_he,
-      local_summary_he: localOut?.summary_he ?? null,
-      global_summary_he: out.summary_he,
-      local_score: localOut?.score ?? null,
-      global_score: out.score,
-      top_score: topScore,
-      pros: [...(localOut?.pros ?? []), ...(out.pros ?? [])].slice(0, 4),
-      cons: [...(localOut?.cons ?? []), ...(out.cons ?? [])].slice(0, 4),
-      local_post_count: 0, global_post_count: 0,
-      scraped_at: new Date().toISOString(),
-      next_scrape_at: computeNextScrapeAt(year, true),
-    });
+    if (year) {
+      await dbRun('DELETE FROM expert_reviews WHERE make_slug = ? AND model_slug = ? AND year = ?', makeSlug, modelSlug, year);
+    } else {
+      await dbRun('DELETE FROM expert_reviews WHERE make_slug = ? AND model_slug = ? AND year IS NULL', makeSlug, modelSlug);
+    }
+    const topScore = localOut?.score != null ? (localOut.score + out.score) / 2 : out.score;
+    const pros = JSON.stringify([...(localOut?.pros ?? []), ...(out.pros ?? [])].slice(0, 4));
+    const cons = JSON.stringify([...(localOut?.cons ?? []), ...(out.cons ?? [])].slice(0, 4));
+    const id = _uuid();
+    await dbRun(
+      `INSERT INTO expert_reviews (id,make_slug,model_slug,year,source_name,source_url,original_title,summary_he,local_summary_he,global_summary_he,local_score,global_score,top_score,pros,cons,local_post_count,global_post_count,sources_breakdown,scraped_at)
+       VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
+      id, makeSlug, modelSlug, year ?? null, 'AI Knowledge', '', '',
+      localOut?.summary_he ?? out.summary_he,
+      localOut?.summary_he ?? null, out.summary_he,
+      localOut?.score ?? null, out.score, topScore,
+      pros, cons, 0, 0, '[]', new Date().toISOString(),
+    );
   } catch { /* non-critical */ }
 }
 
@@ -1330,27 +1296,28 @@ export async function summarizeFromPosts(
     sourcesBreakdown = await generateKnowledgeSourcesBreakdown(makeNameHe, modelNameHe, makeNameEn, modelNameEn);
   }
 
-  const sb = getSupabase(true);
-  await sb.from('expert_reviews').delete().eq('make_slug', makeSlug).eq('model_slug', modelSlug).is('year', null);
-  const { error } = await sb.from('expert_reviews').insert({
-    make_slug:        makeSlug, model_slug:       modelSlug, year: null,
-    source_name:      localPosts[0]?.sourceName ?? globalPosts[0]?.sourceName ?? '',
-    source_url:       localPosts[0]?.url ?? globalPosts[0]?.url ?? '',
-    original_title:   localPosts[0]?.title ?? globalPosts[0]?.title ?? '',
-    summary_he:       localOut?.summary_he ?? globalOut?.summary_he ?? '',
-    local_summary_he: localOut?.summary_he  ?? null,
-    global_summary_he: globalOut?.summary_he ?? null,
-    local_score:      localOut?.score  ?? null,
-    global_score:     globalOut?.score ?? null,
-    top_score:        topScore,
-    pros:             allPros,
-    cons:             allCons,
-    local_post_count:  localPosts.length,
-    global_post_count: globalPosts.length,
-    sources_breakdown: sourcesBreakdown,
-    scraped_at:       new Date().toISOString(),
-  });
-  return error ? 0 : 1;
+  await dbRun('DELETE FROM expert_reviews WHERE make_slug = ? AND model_slug = ? AND year IS NULL', makeSlug, modelSlug);
+  const _id1 = _uuid();
+  const { error: _e1 } = await (async () => {
+    try {
+      await dbRun(
+        `INSERT INTO expert_reviews (id,make_slug,model_slug,year,source_name,source_url,original_title,summary_he,local_summary_he,global_summary_he,local_score,global_score,top_score,pros,cons,local_post_count,global_post_count,sources_breakdown,scraped_at)
+         VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
+        _id1, makeSlug, modelSlug, null,
+        localPosts[0]?.sourceName ?? globalPosts[0]?.sourceName ?? '',
+        localPosts[0]?.url ?? globalPosts[0]?.url ?? '',
+        localPosts[0]?.title ?? globalPosts[0]?.title ?? '',
+        localOut?.summary_he ?? globalOut?.summary_he ?? '',
+        localOut?.summary_he ?? null, globalOut?.summary_he ?? null,
+        localOut?.score ?? null, globalOut?.score ?? null, topScore,
+        JSON.stringify(allPros), JSON.stringify(allCons),
+        localPosts.length, globalPosts.length,
+        JSON.stringify(sourcesBreakdown), new Date().toISOString(),
+      );
+      return { error: null };
+    } catch (e) { return { error: e }; }
+  })();
+  return _e1 ? 0 : 1;
 }
 
 const IL_KEYWORDS = ['ישראל', 'טפוז', 'carzone', 'drive.co.il', 'icar', 'פייסבוק'];
@@ -1527,42 +1494,28 @@ export async function scrapeExpertReviews(
     sourcesBreakdown = await generateKnowledgeSourcesBreakdown(makeNameHe, modelNameHe, makeNameEn, modelNameEn);
   }
 
-  const sb = getSupabase(true);
-
-  // Always delete then insert — avoids the upsert conflict ambiguity between
-  // general rows (year=null) and year-specific rows sharing the same make_slug/model_slug.
-  const deleteQ = sb.from('expert_reviews')
-    .delete()
-    .eq('make_slug', makeSlug)
-    .eq('model_slug', modelSlug);
-
   if (year) {
-    await deleteQ.eq('year', year);
+    await dbRun('DELETE FROM expert_reviews WHERE make_slug = ? AND model_slug = ? AND year = ?', makeSlug, modelSlug, year);
   } else {
-    await deleteQ.is('year', null);
+    await dbRun('DELETE FROM expert_reviews WHERE make_slug = ? AND model_slug = ? AND year IS NULL', makeSlug, modelSlug);
   }
-
-  const { error } = await sb.from('expert_reviews').insert({
-    make_slug:           makeSlug,
-    model_slug:          modelSlug,
-    year:                year ?? null,
-    source_name:         primary?.sourceName ?? '',
-    source_url:          primary?.url ?? '',
-    original_title:      primary?.title ?? '',
-    summary_he:          localOut?.summary_he ?? globalOut?.summary_he ?? '',
-    local_summary_he:    localOut?.summary_he  ?? null,
-    global_summary_he:   globalOut?.summary_he ?? null,
-    local_score:         localOut?.score  ?? null,
-    global_score:        globalOut?.score ?? null,
-    top_score:           topScore,
-    pros:                allPros,
-    cons:                allCons,
-    local_post_count:    localPosts.length,
-    global_post_count:   globalPosts.length,
-    sources_breakdown:   sourcesBreakdown,
-    scraped_at:          new Date().toISOString(),
-    next_scrape_at: computeNextScrapeAt(year, false),
-  });
-
-  return error ? 0 : 1;
+  const _id2 = _uuid();
+  const { error: _e2 } = await (async () => {
+    try {
+      await dbRun(
+        `INSERT INTO expert_reviews (id,make_slug,model_slug,year,source_name,source_url,original_title,summary_he,local_summary_he,global_summary_he,local_score,global_score,top_score,pros,cons,local_post_count,global_post_count,sources_breakdown,scraped_at)
+         VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
+        _id2, makeSlug, modelSlug, year ?? null,
+        primary?.sourceName ?? '', primary?.url ?? '', primary?.title ?? '',
+        localOut?.summary_he ?? globalOut?.summary_he ?? '',
+        localOut?.summary_he ?? null, globalOut?.summary_he ?? null,
+        localOut?.score ?? null, globalOut?.score ?? null, topScore,
+        JSON.stringify(allPros), JSON.stringify(allCons),
+        localPosts.length, globalPosts.length,
+        JSON.stringify(sourcesBreakdown), new Date().toISOString(),
+      );
+      return { error: null };
+    } catch (e) { return { error: e }; }
+  })();
+  return _e2 ? 0 : 1;
 }

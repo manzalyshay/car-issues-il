@@ -6,7 +6,6 @@ import SharePopup from './SharePopup';
 import type { Review } from '@/data/reviews';
 import { CATEGORY_LABELS } from '@/data/reviews';
 import { useAuth } from '@/lib/authContext';
-import { supabase } from '@/lib/supabase';
 import { useLocale } from '@/lib/localeContext';
 
 interface Props {
@@ -333,20 +332,13 @@ export default function ReviewList({ reviews, onHelpful, onDislike }: Props) {
 
   useEffect(() => {
     if (!user) return;
-    supabase
-      .from('review_likes')
-      .select('review_id')
-      .eq('user_id', user.id)
-      .then(({ data }) => {
-        if (data) setLiked((prev) => new Set([...prev, ...data.map((r: { review_id: string }) => r.review_id)]));
-      });
-    supabase
-      .from('review_dislikes')
-      .select('review_id')
-      .eq('user_id', user.id)
-      .then(({ data }) => {
-        if (data) setDisliked((prev) => new Set([...prev, ...data.map((r: { review_id: string }) => r.review_id)]));
-      });
+    fetch(`/api/reviews/likes?userId=${user.id}`)
+      .then(r => r.json())
+      .then(d => {
+        if (d.liked) setLiked(prev => new Set([...prev, ...d.liked]));
+        if (d.disliked) setDisliked(prev => new Set([...prev, ...d.disliked]));
+      })
+      .catch(() => {});
   }, [user]);
 
   const handleLike = (review: Review) => {
@@ -379,20 +371,11 @@ export default function ReviewList({ reviews, onHelpful, onDislike }: Props) {
     const run = async () => {
       try {
         if (hadDislike) {
-          const [r1] = await Promise.all([
-            fetch(`/api/reviews/${review.id}/dislike`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ delta: -1 }) }),
-            user ? supabase.from('review_dislikes').delete().eq('review_id', review.id).eq('user_id', user.id) : Promise.resolve(),
-          ]);
+          const r1 = await fetch(`/api/reviews/${review.id}/dislike`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ delta: -1, userId: user?.id }) });
           if (!r1.ok) { revert(); return; }
         }
         const delta = alreadyLiked ? -1 : 1;
-        const [r2] = await Promise.all([
-          fetch(`/api/reviews/${review.id}/helpful`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ delta }) }),
-          user ? (alreadyLiked
-            ? supabase.from('review_likes').delete().eq('review_id', review.id).eq('user_id', user.id)
-            : supabase.from('review_likes').insert({ review_id: review.id, user_id: user.id })
-          ) : Promise.resolve(),
-        ]);
+        const r2 = await fetch(`/api/reviews/${review.id}/helpful`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ delta, userId: user?.id }) });
         if (!r2.ok) revert();
       } catch { revert(); }
     };
@@ -428,20 +411,11 @@ export default function ReviewList({ reviews, onHelpful, onDislike }: Props) {
     const run = async () => {
       try {
         if (hadLike) {
-          const [r1] = await Promise.all([
-            fetch(`/api/reviews/${review.id}/helpful`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ delta: -1 }) }),
-            user ? supabase.from('review_likes').delete().eq('review_id', review.id).eq('user_id', user.id) : Promise.resolve(),
-          ]);
+          const r1 = await fetch(`/api/reviews/${review.id}/helpful`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ delta: -1, userId: user?.id }) });
           if (!r1.ok) { revert(); return; }
         }
         const delta = alreadyDisliked ? -1 : 1;
-        const [r2] = await Promise.all([
-          fetch(`/api/reviews/${review.id}/dislike`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ delta }) }),
-          user ? (alreadyDisliked
-            ? supabase.from('review_dislikes').delete().eq('review_id', review.id).eq('user_id', user.id)
-            : supabase.from('review_dislikes').insert({ review_id: review.id, user_id: user.id })
-          ) : Promise.resolve(),
-        ]);
+        const r2 = await fetch(`/api/reviews/${review.id}/dislike`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ delta, userId: user?.id }) });
         if (!r2.ok) revert();
       } catch { revert(); }
     };
@@ -567,8 +541,8 @@ export default function ReviewList({ reviews, onHelpful, onDislike }: Props) {
                           </span>
                         )}
                         {showEn && (
-                          <span title="This review was originally written in Hebrew and machine-translated to English" style={{ display: 'inline-flex', alignItems: 'center', gap: 3, padding: '2px 8px', borderRadius: 4, background: 'rgba(129,140,248,0.08)', border: '1px solid rgba(129,140,248,0.2)', fontSize: '0.68rem', fontWeight: 700, letterSpacing: '0.06em', color: '#818cf8', cursor: 'default', whiteSpace: 'nowrap' }}>
-                            🌐 Translated
+                          <span title="Originally written in Hebrew — translated by AI" style={{ display: 'inline-flex', alignItems: 'center', gap: 4, padding: '3px 8px', borderRadius: 4, background: 'rgba(251,191,36,0.1)', border: '1px solid rgba(251,191,36,0.35)', fontSize: '0.7rem', fontWeight: 700, letterSpacing: '0.05em', color: '#d97706', cursor: 'default', whiteSpace: 'nowrap' }}>
+                            🇮🇱→🇬🇧 Translated from Hebrew
                           </span>
                         )}
                       </div>

@@ -10,26 +10,34 @@ import { Analytics } from '@vercel/analytics/next';
 import { SpeedInsights } from '@vercel/speed-insights/next';
 
 const BASE_URL = 'https://carissues.co.il';
+const BASE_URL_EN = 'https://en.carissues.co.il';
 
 export const metadata: Metadata = {
   title: {
-    default: 'CarIssues IL — בעיות רכב בישראל',
+    default: 'CarIssues IL — Israel Car Issues & Reviews',
     template: '%s | CarIssues IL',
   },
   metadataBase: new URL(BASE_URL),
   icons: { icon: '/icon.svg', apple: '/icon.svg' },
-  description: 'המאגר הגדול ביותר בישראל לבעיות רכב, ביקורות, וחוות דעת. מצאו בעיות נפוצות לפי יצרן, דגם ושנה.',
-  keywords: ['בעיות רכב', 'ריקול', 'ביקורות רכב', 'ישראל', 'car issues', 'israel', 'חוות דעת רכב', 'בעיות טכניות'],
+  description: 'Israel\'s largest database of car issues, recalls, and user reviews. Find common problems by make, model and year.',
+  keywords: ['car issues israel', 'israel car reviews', 'car problems', 'recall israel', 'בעיות רכב', 'ביקורות רכב', 'ישראל'],
   authors: [{ name: 'CarIssues IL' }],
   openGraph: {
     type: 'website',
     locale: 'he_IL',
+    alternateLocale: 'en_US',
     siteName: 'CarIssues IL',
     url: BASE_URL,
     images: [{ url: '/og-default.svg', width: 1200, height: 630, alt: 'CarIssues IL' }],
   },
   twitter: { card: 'summary_large_image' },
-  alternates: { canonical: BASE_URL },
+  alternates: {
+    canonical: BASE_URL,
+    languages: {
+      'he': BASE_URL,
+      'en': BASE_URL_EN,
+    },
+  },
   robots: {
     index: true,
     follow: true,
@@ -68,6 +76,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="he" dir="rtl">
       <head>
+        <link rel="alternate" hrefLang="he" href={BASE_URL} />
+        <link rel="alternate" hrefLang="en" href={BASE_URL_EN} />
+        <link rel="alternate" hrefLang="x-default" href={BASE_URL} />
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link

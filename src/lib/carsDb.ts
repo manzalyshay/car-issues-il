@@ -1,45 +1,45 @@
 /**
- * DB-backed replacement for src/data/cars.ts
- * All car data now lives in Supabase (car_makes + car_models tables).
- * Same function signatures as the old static file for easy migration.
+ * Car data backed by Cloudflare D1.
  */
 import { unstable_cache } from 'next/cache';
-import { getServiceClient } from './adminAuth';
+import { dbAll } from './db';
 import type { CarMake, CarModel } from '@/data/cars';
 
 export type { CarMake, CarModel };
 export { getCategoryLabel } from '@/data/cars';
 
-// Cache the full database for 1 hour; revalidate via tag 'car-data'
 const fetchAllMakes = unstable_cache(
   async (): Promise<CarMake[]> => {
-    const db = getServiceClient();
+    const [makesData, modelsData] = await Promise.all([
+      dbAll<{
+        slug: string; name_he: string; name_en: string; country: string;
+        logo_url: string; is_popular: number; sort_order: number;
+      }>('SELECT * FROM car_makes ORDER BY sort_order'),
+      dbAll<{
+        slug: string; make_slug: string; name_he: string; name_en: string;
+        years: string; category: string; trims: string; sort_order: number;
+      }>('SELECT * FROM car_models ORDER BY make_slug, sort_order'),
+    ]);
 
-    const [{ data: makesData, error: makesErr }, { data: modelsData, error: modelsErr }] =
-      await Promise.all([
-        db.from('car_makes').select('*').order('sort_order'),
-        db.from('car_models').select('*').order('make_slug').order('sort_order'),
-      ]);
-
-    if (makesErr) throw new Error(`car_makes: ${makesErr.message}`);
-    if (modelsErr) throw new Error(`car_models: ${modelsErr.message}`);
-
-    return (makesData ?? []).map((m) => ({
-      slug: m.slug as string,
-      nameHe: m.name_he as string,
-      nameEn: m.name_en as string,
-      country: m.country as string,
-      logoUrl: m.logo_url as string,
-      popular: m.is_popular as boolean,
-      models: (modelsData ?? [])
+    return makesData.map((m) => ({
+      slug: m.slug,
+      nameHe: m.name_he,
+      nameEn: m.name_en,
+      country: m.country,
+      logoUrl: m.logo_url,
+      popular: m.is_popular === 1,
+      models: modelsData
         .filter((mo) => mo.make_slug === m.slug)
         .map((mo) => ({
-          slug: mo.slug as string,
-          nameHe: mo.name_he as string,
-          nameEn: mo.name_en as string,
-          years: (mo.years ?? []) as number[],
+          slug: mo.slug,
+          nameHe: mo.name_he,
+          nameEn: mo.name_en,
+          years: JSON.parse(mo.years || '[]') as number[],
           category: mo.category as CarModel['category'],
-          trims: Array.isArray(mo.trims) && mo.trims.length > 0 ? (mo.trims as string[]) : undefined,
+          trims: (() => {
+            const t = JSON.parse(mo.trims || '[]');
+            return Array.isArray(t) && t.length > 0 ? (t as string[]) : undefined;
+          })(),
         })),
     }));
   },
@@ -56,7 +56,6 @@ export async function getMakeBySlug(slug: string): Promise<CarMake | undefined> 
   return makes.find((m) => m.slug === slug);
 }
 
-/** Accepts either (makeSlug, modelSlug) or (make, modelSlug) for backwards compat */
 export async function getModelBySlug(
   makeOrSlug: CarMake | string,
   modelSlug: string,
@@ -72,7 +71,6 @@ export async function getPopularMakes(): Promise<CarMake[]> {
   return makes.filter((m) => m.popular);
 }
 
-/** Returns up to `limit` models in the same category, excluding the given model */
 export async function getSimilarModels(
   makeSlug: string,
   modelSlug: string,
@@ -89,6 +87,5 @@ export async function getSimilarModels(
       }
     }
   }
-  // Shuffle lightly — sort by make popularity first, then take limit
   return results.slice(0, limit);
 }

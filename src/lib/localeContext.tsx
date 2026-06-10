@@ -22,6 +22,9 @@ export function LocaleProvider({ children }: { children: React.ReactNode }) {
   const [locale, setLocaleState] = useState<Locale>('he');
 
   useEffect(() => {
+    // Auto-detect English from hostname (en.carissues.co.il)
+    const isEnDomain = typeof window !== 'undefined' && window.location.hostname.startsWith('en.');
+    if (isEnDomain) { setLocaleState('en'); return; }
     try {
       const stored = localStorage.getItem('locale') as Locale | null;
       if (stored === 'en' || stored === 'he') setLocaleState(stored);

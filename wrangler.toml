@@ -8,6 +8,18 @@ compatibility_flags = ["nodejs_compat"]
 directory = ".open-next/assets"
 binding = "ASSETS"
 
+# D1 database binding — replace REPLACE_WITH_D1_DATABASE_ID with the actual ID from CF dashboard
+[[d1_databases]]
+binding = "DB"
+database_name = "car-issues-db"
+database_id = "REPLACE_WITH_D1_DATABASE_ID"
+
+# Custom routes — en.carissues.co.il serves the same Worker with EN locale hint
+routes = [
+  { pattern = "carissues.co.il/*", zone_name = "carissues.co.il" },
+  { pattern = "en.carissues.co.il/*", zone_name = "carissues.co.il", custom_domain = true },
+]
+
 # Public env vars (non-sensitive — secrets go in Cloudflare dashboard or GitHub secrets)
 [vars]
 NEXT_PUBLIC_SUPABASE_URL = "https://smzqfyqhiqwisvbsvchx.supabase.co"

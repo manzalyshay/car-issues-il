@@ -1,54 +1,35 @@
 import { unstable_cache } from 'next/cache';
-import { createClient } from '@supabase/supabase-js';
-import { supabase } from './supabase';
+import { dbAll, dbFirst, dbRun } from './db';
 import type { Review } from '@/data/reviews';
 import { translateReview } from './translateReview';
-
-function getAdminClient() {
-  return createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!,
-  );
-}
+import { randomUUID } from 'crypto';
 
 // ── Read ──────────────────────────────────────────────────────────────────────
 
 export async function getAllReviews(): Promise<Review[]> {
-  const { data, error } = await supabase
-    .from('reviews')
-    .select('*')
-    .order('created_at', { ascending: false });
-  if (error) { console.error('getAllReviews:', error.message); return []; }
-  return (data ?? []).map(dbToReview);
+  const rows = await dbAll('SELECT * FROM reviews ORDER BY created_at DESC');
+  return rows.map(dbToReview);
 }
 
 export const getReviewsForModel = unstable_cache(
   async (makeSlug: string, modelSlug: string): Promise<Review[]> => {
-    const { data, error } = await supabase
-      .from('reviews')
-      .select('*')
-      .eq('make_slug', makeSlug)
-      .eq('model_slug', modelSlug)
-      .order('created_at', { ascending: false });
-    if (error) { console.error('getReviewsForModel:', error.message); return []; }
-    return (data ?? []).map(dbToReview);
+    const rows = await dbAll(
+      'SELECT * FROM reviews WHERE make_slug = ? AND model_slug = ? ORDER BY created_at DESC',
+      makeSlug, modelSlug,
+    );
+    return rows.map(dbToReview);
   },
   ['reviews-model'],
-  { revalidate: 3600, tags: ['reviews'] }, // 1h fallback; invalidated on new review
+  { revalidate: 3600, tags: ['reviews'] },
 );
 
 export const getReviewsForCar = unstable_cache(
   async (makeSlug: string, modelSlug: string, year: number): Promise<Review[]> => {
-    const { data, error } = await supabase
-      .from('reviews')
-      .select('*')
-      .eq('make_slug', makeSlug)
-      .eq('model_slug', modelSlug)
-      .eq('year', year)
-      .order('helpful', { ascending: false })
-      .order('created_at', { ascending: false });
-    if (error) { console.error('getReviewsForCar:', error.message); return []; }
-    return (data ?? []).map(dbToReview);
+    const rows = await dbAll(
+      'SELECT * FROM reviews WHERE make_slug = ? AND model_slug = ? AND year = ? ORDER BY helpful DESC, created_at DESC',
+      makeSlug, modelSlug, year,
+    );
+    return rows.map(dbToReview);
   },
   ['reviews-car'],
   { revalidate: 3600, tags: ['reviews'] },
@@ -56,13 +37,11 @@ export const getReviewsForCar = unstable_cache(
 
 export const getAverageRating = unstable_cache(
   async (makeSlug: string, modelSlug: string): Promise<number | null> => {
-    const { data, error } = await supabase
-      .from('reviews')
-      .select('rating')
-      .eq('make_slug', makeSlug)
-      .eq('model_slug', modelSlug);
-    if (error || !data?.length) return null;
-    return data.reduce((s: number, r: { rating: number }) => s + r.rating, 0) / data.length;
+    const row = await dbFirst<{ avg: number | null }>(
+      'SELECT AVG(rating) as avg FROM reviews WHERE make_slug = ? AND model_slug = ?',
+      makeSlug, modelSlug,
+    );
+    return row?.avg ?? null;
   },
   ['reviews-avg'],
   { revalidate: 3600, tags: ['reviews'] },
@@ -71,69 +50,88 @@ export const getAverageRating = unstable_cache(
 // ── Write ─────────────────────────────────────────────────────────────────────
 
 export async function addReview(
-  review: Omit<Review, 'id' | 'helpful' | 'createdAt'>
+  review: Omit<Review, 'id' | 'helpful' | 'createdAt'>,
 ): Promise<Review> {
-  const { data, error } = await supabase
-    .from('reviews')
-    .insert({
-      make_slug:  review.makeSlug,
-      model_slug: review.modelSlug,
-      year:       review.year,
-      rating:     review.rating,
-      title:      review.title,
-      body:       review.body,
-      category:   review.category,
-      sub_model:  review.subModel?.trim().slice(0, 60) ?? null,
-      mileage:    review.mileage ?? null,
-      author:     review.authorName,
-      user_id:    review.userId ?? null,
-      images:     review.images ?? [],
-    })
-    .select()
-    .single();
-  if (error) throw new Error(error.message);
-  return dbToReview(data);
+  const id = randomUUID();
+  const now = new Date().toISOString();
+  await dbRun(
+    `INSERT INTO reviews
+      (id, make_slug, model_slug, year, rating, title, body, category,
+       sub_model, mileage, author, user_id, images, created_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    id,
+    review.makeSlug,
+    review.modelSlug,
+    review.year,
+    review.rating,
+    review.title,
+    review.body,
+    review.category ?? 'general',
+    review.subModel ?? null,
+    review.mileage ?? null,
+    review.authorName,
+    review.userId ?? null,
+    JSON.stringify(review.images ?? []),
+    now,
+  );
+  return {
+    ...review,
+    id,
+    helpful: 0,
+    dislikes: 0,
+    createdAt: now,
+    images: review.images ?? [],
+  } as Review;
 }
 
 export async function getReviewsByUser(userId: string): Promise<Review[]> {
-  const { data, error } = await supabase
-    .from('reviews')
-    .select('*')
-    .eq('user_id', userId)
-    .order('created_at', { ascending: false });
-  if (error) { console.error('getReviewsByUser:', error.message); return []; }
-  return (data ?? []).map(dbToReview);
+  const rows = await dbAll(
+    'SELECT * FROM reviews WHERE user_id = ? ORDER BY created_at DESC',
+    userId,
+  );
+  return rows.map(dbToReview);
 }
 
-// ── Likes (per-user) ──────────────────────────────────────────────────────────
+// ── Likes ─────────────────────────────────────────────────────────────────────
 
 export async function getUserLikedReviews(userId: string): Promise<string[]> {
-  const { data } = await supabase
-    .from('review_likes')
-    .select('review_id')
-    .eq('user_id', userId);
-  return (data ?? []).map((r: { review_id: string }) => r.review_id);
+  const rows = await dbAll<{ review_id: string }>(
+    'SELECT review_id FROM review_likes WHERE user_id = ?',
+    userId,
+  );
+  return rows.map((r) => r.review_id);
 }
 
 export async function toggleLike(reviewId: string, userId: string): Promise<'liked' | 'unliked'> {
-  // Check if already liked
-  const { data: existing } = await supabase
-    .from('review_likes')
-    .select('review_id')
-    .eq('review_id', reviewId)
-    .eq('user_id', userId)
-    .maybeSingle();
-
+  const existing = await dbFirst(
+    'SELECT review_id FROM review_likes WHERE review_id = ? AND user_id = ?',
+    reviewId, userId,
+  );
   if (existing) {
-    // Unlike
-    await supabase.from('review_likes').delete().eq('review_id', reviewId).eq('user_id', userId);
-    await supabase.rpc('decrement_helpful', { review_id: reviewId });
+    await dbRun('DELETE FROM review_likes WHERE review_id = ? AND user_id = ?', reviewId, userId);
+    await dbRun('UPDATE reviews SET helpful = MAX(0, helpful - 1) WHERE id = ?', reviewId);
     return 'unliked';
   } else {
-    // Like
-    await supabase.from('review_likes').insert({ review_id: reviewId, user_id: userId });
-    await supabase.rpc('increment_helpful', { review_id: reviewId });
+    await dbRun('INSERT INTO review_likes (review_id, user_id) VALUES (?, ?)', reviewId, userId);
+    await dbRun('UPDATE reviews SET helpful = helpful + 1 WHERE id = ?', reviewId);
     return 'liked';
+  }
+}
+
+// ── Translation ───────────────────────────────────────────────────────────────
+
+export async function translateAndSaveReview(
+  reviewId: string, title: string, body: string,
+): Promise<void> {
+  try {
+    const { titleEn, bodyEn } = await translateReview(title, body);
+    if (!titleEn && !bodyEn) return;
+    await dbRun(
+      'UPDATE reviews SET title_en = ?, body_en = ? WHERE id = ?',
+      titleEn ?? null, bodyEn ?? null, reviewId,
+    );
+  } catch {
+    // fire-and-forget — never throw
   }
 }
 
@@ -146,30 +144,20 @@ function dbToReview(row: Record<string, unknown>): Review {
     modelSlug:  String(row.model_slug),
     year:       Number(row.year),
     rating:     Number(row.rating),
-    title:      String(row.title),
-    body:       String(row.body),
+    title:      String(row.title ?? ''),
+    body:       String(row.body ?? ''),
     titleEn:    row.title_en ? String(row.title_en) : null,
     bodyEn:     row.body_en  ? String(row.body_en)  : null,
-    category:   row.category as Review['category'],
+    category:   (row.category as Review['category']) ?? 'general',
     subModel:   row.sub_model ? String(row.sub_model) : undefined,
     mileage:    row.mileage != null ? Number(row.mileage) : undefined,
-    authorName: String(row.author),
+    authorName: String(row.author ?? ''),
     userId:     row.user_id ? String(row.user_id) : undefined,
     helpful:    Number(row.helpful ?? 0),
     dislikes:   Number(row.dislikes ?? 0),
     createdAt:  String(row.created_at),
-    images:     Array.isArray(row.images) ? (row.images as string[]) : [],
+    images:     (() => {
+      try { return JSON.parse(String(row.images || '[]')); } catch { return []; }
+    })(),
   };
-}
-
-/** Translate a review and save the English fields back to the DB. Fire-and-forget. */
-export async function translateAndSaveReview(reviewId: string, title: string, body: string): Promise<void> {
-  try {
-    const { titleEn, bodyEn } = await translateReview(title, body);
-    if (!titleEn && !bodyEn) return;
-    const admin = getAdminClient();
-    await admin.from('reviews').update({ title_en: titleEn, body_en: bodyEn }).eq('id', reviewId);
-  } catch {
-    // non-blocking — never throw
-  }
 }
