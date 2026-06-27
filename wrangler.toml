@@ -16,11 +16,13 @@ routes = [
   { pattern = "www.carissues.net/*", zone_name = "carissues.net" },
 ]
 
-# Public env vars (non-sensitive — secrets go in Cloudflare dashboard or GitHub secrets)
+# Public env vars (non-sensitive — secrets go in Cloudflare dashboard or wrangler secret put)
 [vars]
 NEXT_PUBLIC_SUPABASE_URL = "https://smzqfyqhiqwisvbsvchx.supabase.co"
 NEXT_PUBLIC_SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNtenFmeXFoaXF3aXN2YnN2Y2h4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQxNzM0NDUsImV4cCI6MjA4OTc0OTQ0NX0.LttBMWlaunURkzQBx4k0xZk-oOINO67AUCvNExcRZcY"
-GEMINI_API_KEY = "AIzaSyCrxWqVq_90b-JOnomrSb26YhlUEeQk8d0"
+# GEMINI_API_KEY and MISTRAL_API_KEY are set as Worker secrets via:
+#   wrangler secret put GEMINI_API_KEY
+#   wrangler secret put MISTRAL_API_KEY
 
 # D1 database binding — replace REPLACE_WITH_D1_DATABASE_ID with the actual ID from CF dashboard
 [[d1_databases]]
