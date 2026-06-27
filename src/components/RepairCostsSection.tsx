@@ -24,12 +24,23 @@ export default async function RepairCostsSection({ makeSlug, modelSlug, makeName
     getRepairCosts(category).catch(() => []),
   ]);
 
+  const isEn = locale === 'en';
+
   const repairOptions = [...new Map(genericCosts.map(c => [c.repair_key, { repair_key: c.repair_key, repair_name_he: c.repair_name_he }])).values()];
 
+  // Build a lookup for EN repair names from the generic costs table
+  const enNameMap = new Map<string, string>(
+    genericCosts.map(c => [c.repair_key, c.repair_name_en ?? c.repair_name_he])
+  );
+
   // Group model-specific costs by repair type and compute median
-  const grouped = new Map<string, { name: string; costs: number[]; notes: string[] }>();
+  const grouped = new Map<string, { nameHe: string; nameEn: string; costs: number[]; notes: string[] }>();
   for (const c of modelCosts) {
-    if (!grouped.has(c.repair_key)) grouped.set(c.repair_key, { name: c.repair_name_he, costs: [], notes: [] });
+    if (!grouped.has(c.repair_key)) grouped.set(c.repair_key, {
+      nameHe: c.repair_name_he,
+      nameEn: enNameMap.get(c.repair_key) ?? c.repair_name_he,
+      costs: [], notes: [],
+    });
     const g = grouped.get(c.repair_key)!;
     g.costs.push(c.cost_ils);
     if (c.notes) g.notes.push(c.notes);
@@ -53,23 +64,26 @@ export default async function RepairCostsSection({ makeSlug, modelSlug, makeName
       {hasModelData ? (
         <>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: 8, marginBottom: 20 }}>
-            {[...grouped.entries()].map(([key, { name, costs }]) => {
+            {[...grouped.entries()].map(([key, { nameHe, nameEn, costs }]) => {
               const sorted = [...costs].sort((a, b) => a - b);
               const min = sorted[0];
               const max = sorted[sorted.length - 1];
               const median = sorted[Math.floor(sorted.length / 2)];
+              const fmt = (ils: number) => isEn
+                ? `$${Math.round(ils / 3.65).toLocaleString()}`
+                : `₪${ils.toLocaleString('he-IL')}`;
               return (
                 <div key={key} style={{
                   background: 'var(--surface-2)', border: '1px solid var(--border)',
                   borderRadius: 10, padding: '12px 14px',
                 }}>
-                  <div style={{ fontWeight: 600, fontSize: '0.875rem', marginBottom: 6 }}>{name}</div>
+                  <div style={{ fontWeight: 600, fontSize: '0.875rem', marginBottom: 6 }}>{isEn ? nameEn : nameHe}</div>
                   <div style={{ fontSize: '1.1rem', fontWeight: 800, color: 'var(--accent)' }}>
-                    ₪{min.toLocaleString('he-IL')}{min !== max ? `–₪${max.toLocaleString('he-IL')}` : ''}
+                    {fmt(min)}{min !== max ? `–${fmt(max)}` : ''}
                   </div>
                   {costs.length > 1 && (
                     <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginTop: 3 }}>
-                      {rp.median}: ₪{median.toLocaleString('he-IL')} · {costs.length} {rp.reports}
+                      {rp.median}: {fmt(median)} · {costs.length} {rp.reports}
                     </div>
                   )}
                 </div>

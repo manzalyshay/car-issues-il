@@ -25,16 +25,16 @@ const CATEGORY_ORDER = ['service', 'brakes', 'engine', 'suspension', 'electrical
 
 // Common issues per category — known Israeli market pain points
 const COMMON_ISSUES = [
-  { issue: 'ממיר קטליטי (קטליזטור)', issueEn: 'Catalytic Converter', cost: '₪1,400–₪7,000', category: 'engine', note: 'שחזור: ₪1,400–1,800. מקורי: ₪4,000–7,000', noteEn: 'Rebuilt: ₪1,400–1,800. OEM: ₪4,000–7,000' },
-  { issue: 'רצועת תזמון', issueEn: 'Timing Belt', cost: '₪1,100–₪2,800', category: 'engine', note: 'חובה להחליף כל 60-80K ק"מ. כולל פומפת מים', noteEn: 'Replace every 60–80K km. Includes water pump' },
-  { issue: 'בלמים קדמיים', issueEn: 'Front Brakes', cost: '₪500–₪1,400', category: 'brakes', note: 'רפידות + צלחות. SUV יקר יותר', noteEn: 'Pads + rotors. SUV costs more' },
-  { issue: 'טיפול 10,000 ק"מ', issueEn: '10,000 km Service', cost: '₪450–₪1,400', category: 'service', note: 'שמן + פילטרים. יבואן מורשה יקר יותר', noteEn: 'Oil + filters. Authorized dealer costs more' },
-  { issue: 'מצבר', issueEn: 'Battery', cost: '₪500–₪1,900', category: 'electrical', note: 'רגיל: ₪500–1,000. Start-Stop: ₪1,000–1,900', noteEn: 'Standard: ₪500–1,000. Start-Stop: ₪1,000–1,900' },
-  { issue: 'כיוון פרונט', issueEn: 'Wheel Alignment', cost: '₪150–₪600', category: 'suspension', note: '2 גלגלים. 4 גלגלים: ₪350–800', noteEn: '2 wheels. 4 wheels: ₪350–800' },
-  { issue: 'מסרק הגה', issueEn: 'Steering Rack', cost: '₪800–₪3,000', category: 'suspension', note: 'יד שנייה: ₪800–1,200. חדש: ₪2,200–3,000', noteEn: 'Used: ₪800–1,200. New: ₪2,200–3,000' },
-  { issue: 'מזרקי דלק', issueEn: 'Fuel Injectors', cost: '₪1,500–₪2,500', category: 'engine', note: 'חלקים + עבודה. ניקוי בלבד: ₪250–400', noteEn: 'Parts + labor. Cleaning only: ₪250–400' },
-  { issue: 'החלפת שמן', issueEn: 'Oil Change', cost: '₪180–₪700', category: 'engine', note: 'כולל פילטר. SUV: יותר נפח שמן', noteEn: 'Includes filter. SUV: larger oil capacity' },
-  { issue: 'מצתים', issueEn: 'Spark Plugs', cost: '₪200–₪1,200', category: 'engine', note: 'רגיל: ₪200–300. אירידיום (100K): ₪500–1,200', noteEn: 'Standard: ₪200–300. Iridium (100K km): ₪500–1,200' },
+  { issue: 'ממיר קטליטי (קטליזטור)', issueEn: 'Catalytic Converter', minIls: 1400, maxIls: 7000, category: 'engine', note: 'שחזור: ₪1,400–1,800. מקורי: ₪4,000–7,000', noteEn: 'Rebuilt: $380–$490. OEM: $1,100–$1,920' },
+  { issue: 'רצועת תזמון', issueEn: 'Timing Belt', minIls: 1100, maxIls: 2800, category: 'engine', note: 'חובה להחליף כל 60-80K ק"מ. כולל פומפת מים', noteEn: 'Replace every 60–80K km. Includes water pump' },
+  { issue: 'בלמים קדמיים', issueEn: 'Front Brakes', minIls: 500, maxIls: 1400, category: 'brakes', note: 'רפידות + צלחות. SUV יקר יותר', noteEn: 'Pads + rotors. SUV costs more' },
+  { issue: 'טיפול 10,000 ק"מ', issueEn: '10,000 km Service', minIls: 450, maxIls: 1400, category: 'service', note: 'שמן + פילטרים. יבואן מורשה יקר יותר', noteEn: 'Oil + filters. Authorized dealer costs more' },
+  { issue: 'מצבר', issueEn: 'Battery', minIls: 500, maxIls: 1900, category: 'electrical', note: 'רגיל: ₪500–1,000. Start-Stop: ₪1,000–1,900', noteEn: 'Standard: $140–$275. Start-Stop: $275–$520' },
+  { issue: 'כיוון פרונט', issueEn: 'Wheel Alignment', minIls: 150, maxIls: 600, category: 'suspension', note: '2 גלגלים. 4 גלגלים: ₪350–800', noteEn: '2 wheels. 4 wheels: $95–$220' },
+  { issue: 'מסרק הגה', issueEn: 'Steering Rack', minIls: 800, maxIls: 3000, category: 'suspension', note: 'יד שנייה: ₪800–1,200. חדש: ₪2,200–3,000', noteEn: 'Used: $220–$330. New: $600–$820' },
+  { issue: 'מזרקי דלק', issueEn: 'Fuel Injectors', minIls: 1500, maxIls: 2500, category: 'engine', note: 'חלקים + עבודה. ניקוי בלבד: ₪250–400', noteEn: 'Parts + labor. Cleaning only: $70–$110' },
+  { issue: 'החלפת שמן', issueEn: 'Oil Change', minIls: 180, maxIls: 700, category: 'engine', note: 'כולל פילטר. SUV: יותר נפח שמן', noteEn: 'Includes filter. SUV: larger oil capacity' },
+  { issue: 'מצתים', issueEn: 'Spark Plugs', minIls: 200, maxIls: 1200, category: 'engine', note: 'רגיל: ₪200–300. אירידיום (100K): ₪500–1,200', noteEn: 'Standard: $55–$82. Iridium (100K km): $140–$330' },
 ];
 
 export default async function RepairsPage() {
@@ -122,7 +122,9 @@ export default async function RepairsPage() {
               }}>
                 <div style={{ fontWeight: 700, fontSize: '0.9rem', marginBottom: 4 }}>{isEn ? item.issueEn : item.issue}</div>
                 <div style={{ fontSize: '1.15rem', fontWeight: 800, color: 'var(--accent)', marginBottom: 4 }}>
-                  {item.cost}
+                  {isEn
+                    ? `$${Math.round(item.minIls / 3.65).toLocaleString()}–$${Math.round(item.maxIls / 3.65).toLocaleString()}`
+                    : `₪${item.minIls.toLocaleString()}–₪${item.maxIls.toLocaleString()}`}
                 </div>
                 <div style={{ fontSize: '0.73rem', color: 'var(--text-muted)', lineHeight: 1.4 }}>{isEn ? item.noteEn : item.note}</div>
               </div>

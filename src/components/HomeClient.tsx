@@ -106,18 +106,18 @@ export default function HomeClient({ popularMakes, allMakes, topRanked, recentRe
 
   const cats = isHe
     ? [
-        { label: 'רכבי פנאי', href: '/cars?type=suv' },
-        { label: 'היברידי',   href: '/cars?type=hybrid' },
-        { label: 'חשמלי',    href: '/cars?type=electric' },
-        { label: 'סדאן',     href: '/cars?type=sedan' },
-        { label: 'האצ\'בק',  href: '/cars?type=hatchback' },
+        { label: 'רכבי פנאי', href: '/cars/category/suv' },
+        { label: 'היברידי',   href: '/cars/category/hybrid' },
+        { label: 'חשמלי',    href: '/cars/category/electric' },
+        { label: 'סדאן',     href: '/cars/category/sedan' },
+        { label: "האצ'בק",   href: '/cars/category/hatchback' },
       ]
     : [
-        { label: 'SUV',      href: '/cars?type=suv' },
-        { label: 'Hybrid',   href: '/cars?type=hybrid' },
-        { label: 'Electric', href: '/cars?type=electric' },
-        { label: 'Sedan',    href: '/cars?type=sedan' },
-        { label: 'Hatchback',href: '/cars?type=hatchback' },
+        { label: 'SUV',      href: '/cars/category/suv' },
+        { label: 'Hybrid',   href: '/cars/category/hybrid' },
+        { label: 'Electric', href: '/cars/category/electric' },
+        { label: 'Sedan',    href: '/cars/category/sedan' },
+        { label: 'Hatchback',href: '/cars/category/hatchback' },
       ];
 
   return (
@@ -321,20 +321,22 @@ function VideosFeed({ locale, isHe }: { locale: string; isHe: boolean }) {
     fetch('/api/videos').then(r => r.json()).then((d: Video[]) => setVideos(d.slice(0, 6))).catch(() => setVideos([]));
   }, []);
 
-  if (!videos || videos.length === 0) {
+  if (videos === null) {
     return (
       <div className="videos-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 10 }}>
         {[0,1,2].map(i => <div key={i} style={{ aspectRatio:'16/9', background:'var(--surface-2)', borderRadius:8 }} className="skeleton" />)}
       </div>
     );
   }
+  if (videos.length === 0) return null;
   return (
     <div className="videos-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 10 }}>
       {videos.map((v, i) => (
         <a key={i} href={`https://www.youtube.com/watch?v=${v.youtube_id}`} target="_blank" rel="noopener noreferrer"
-          style={{ display:'block', position:'relative', borderRadius:8, overflow:'hidden', aspectRatio:'16/9', textDecoration:'none' }}
+          style={{ display:'block', position:'relative', borderRadius:8, overflow:'hidden', aspectRatio:'16/9', textDecoration:'none', background:'var(--surface-2)' }}
         >
-          <img src={v.thumbnail_url} alt={v.title} style={{ width:'100%', height:'100%', objectFit:'cover' }} />
+          <img src={v.thumbnail_url} alt={v.title} style={{ width:'100%', height:'100%', objectFit:'cover' }}
+            onError={e => { (e.target as HTMLImageElement).src = `https://i.ytimg.com/vi/${v.youtube_id}/mqdefault.jpg`; }} />
           <div style={{ position:'absolute', inset:0, background:'linear-gradient(transparent 40%, rgba(0,0,0,.6))', display:'flex', alignItems:'center', justifyContent:'center' }}>
             <div style={{ width:32, height:32, background:'rgba(27,79,138,.9)', borderRadius:'50%', display:'flex', alignItems:'center', justifyContent:'center', color:'#fff', fontSize:'0.8rem' }}>▶</div>
           </div>
@@ -353,7 +355,7 @@ function RecallsWidget({ isHe }: { isHe: boolean }) {
   const [recalls, setRecalls] = useState<Recall[] | null>(null);
   useEffect(() => {
     fetch('/api/recalls?make=Toyota&model=RAV4&years=2019,2020,2021,2022,2023')
-      .then(r => r.json()).then((d: Recall[]) => setRecalls(d.slice(0, 4))).catch(() => setRecalls([]));
+      .then(r => r.json()).then((d: { recalls?: Recall[] }) => setRecalls((d.recalls ?? []).slice(0, 4))).catch(() => setRecalls([]));
   }, []);
   return (
     <div style={{ background:'var(--surface)', border:'1px solid var(--border)', borderRadius:'var(--r)', overflow:'hidden', boxShadow:'var(--shadow)' }}>

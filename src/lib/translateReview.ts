@@ -1,20 +1,29 @@
 /**
- * Hebrew → English review translation via Google Gemini.
+ * Hebrew → English review translation.
+ * Tries providers in order: Gemini 2.0 Flash → Mistral → null
  * Used for both on-write translation (new reviews) and batch backfill.
  */
 
-const GEMINI_KEY = process.env.GEMINI_API_KEY;
-const GEMINI_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_KEY}`;
+const GEMINI_KEY   = process.env.GEMINI_API_KEY;
+const MISTRAL_KEY  = process.env.MISTRAL_API_KEY;
 
 interface TranslationResult {
   titleEn: string | null;
   bodyEn: string | null;
 }
 
-async function gemini(prompt: string): Promise<string | null> {
+function parseJson(raw: string): { title?: string; body?: string } | null {
+  try {
+    const cleaned = raw.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/,'').trim();
+    return JSON.parse(cleaned);
+  } catch { return null; }
+}
+
+async function tryGemini(prompt: string): Promise<string | null> {
   if (!GEMINI_KEY) return null;
   try {
-    const res = await fetch(GEMINI_URL, {
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${GEMINI_KEY}`;
+    const res = await fetch(url, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -23,16 +32,35 @@ async function gemini(prompt: string): Promise<string | null> {
       }),
       signal: AbortSignal.timeout(25000),
     });
+    if (!res.ok) return null;
     const json = await res.json() as { candidates?: { content?: { parts?: { text?: string }[] } }[] };
     return json?.candidates?.[0]?.content?.parts?.[0]?.text?.trim() ?? null;
-  } catch {
-    return null;
-  }
+  } catch { return null; }
+}
+
+async function tryMistral(prompt: string): Promise<string | null> {
+  if (!MISTRAL_KEY) return null;
+  try {
+    const res = await fetch('https://api.mistral.ai/v1/chat/completions', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${MISTRAL_KEY}` },
+      body: JSON.stringify({
+        model: 'mistral-small-latest',
+        temperature: 0.1,
+        max_tokens: 1200,
+        messages: [{ role: 'user', content: prompt }],
+      }),
+      signal: AbortSignal.timeout(25000),
+    });
+    if (!res.ok) return null;
+    const json = await res.json() as { choices?: { message?: { content?: string } }[] };
+    return json?.choices?.[0]?.message?.content?.trim() ?? null;
+  } catch { return null; }
 }
 
 /**
  * Translates a Hebrew car review title and body to English.
- * Returns null fields if translation fails or content is already English.
+ * Tries Gemini first, falls back to Mistral. Returns null fields if all fail.
  */
 export async function translateReview(
   title: string,
@@ -46,18 +74,12 @@ Return ONLY a JSON object with this exact structure:
 Hebrew title: ${title || '(no title)'}
 Hebrew body: ${body}`;
 
-  const raw = await gemini(prompt);
+  const raw = await tryGemini(prompt) ?? await tryMistral(prompt);
   if (!raw) return { titleEn: null, bodyEn: null };
 
-  try {
-    // Strip markdown code fences if Gemini wrapped in ```json
-    const cleaned = raw.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/, '').trim();
-    const parsed = JSON.parse(cleaned) as { title?: string; body?: string };
-    return {
-      titleEn: parsed.title?.trim() || null,
-      bodyEn:  parsed.body?.trim()  || null,
-    };
-  } catch {
-    return { titleEn: null, bodyEn: null };
-  }
+  const parsed = parseJson(raw);
+  return {
+    titleEn: parsed?.title?.trim() || null,
+    bodyEn:  parsed?.body?.trim()  || null,
+  };
 }

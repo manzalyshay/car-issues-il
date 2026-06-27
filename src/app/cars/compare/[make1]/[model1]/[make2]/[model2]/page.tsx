@@ -79,14 +79,14 @@ export default async function ComparePage({ params }: Props) {
   if (!modA || !modB) notFound();
 
   const [reviewsA, reviewsB, expertA, expertB, carModelA, carModelB, similarA, similarB] = await Promise.all([
-    getReviewsForModel(make1, model1),
-    getReviewsForModel(make2, model2),
-    getExpertReviews(make1, model1),
-    getExpertReviews(make2, model2),
-    findCarModel(make1, model1),
-    findCarModel(make2, model2),
-    getSimilarModels(make1, model1, modA.category, 10),
-    getSimilarModels(make2, model2, modB.category, 10),
+    getReviewsForModel(make1, model1).catch(() => []),
+    getReviewsForModel(make2, model2).catch(() => []),
+    getExpertReviews(make1, model1).catch(() => []),
+    getExpertReviews(make2, model2).catch(() => []),
+    findCarModel(make1, model1).catch(() => null),
+    findCarModel(make2, model2).catch(() => null),
+    getSimilarModels(make1, model1, modA?.category ?? 'sedan', 10).catch(() => []),
+    getSimilarModels(make2, model2, modB?.category ?? 'sedan', 10).catch(() => []),
   ]);
 
   const isEn = locale === 'en';

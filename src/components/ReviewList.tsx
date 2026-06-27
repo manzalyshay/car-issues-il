@@ -516,6 +516,8 @@ export default function ReviewList({ reviews, onHelpful, onDislike }: Props) {
           <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
             {sorted.map((review) => {
               const isLiked = liked.has(review.id);
+              // On EN site: skip reviews with no English translation
+              if (locale === 'en' && !review.bodyEn) return null;
               const showEn = locale === 'en' && Boolean(review.bodyEn);
               const displayTitle = showEn ? (review.titleEn || review.title) : review.title;
               const displayBody  = showEn ? (review.bodyEn  || review.body)  : review.body;
@@ -535,12 +537,12 @@ export default function ReviewList({ reviews, onHelpful, onDislike }: Props) {
                             📍 {review.mileage.toLocaleString(locale === 'en' ? 'en-US' : 'he-IL')} {rl.km}
                           </span>
                         )}
-                        {locale === 'en' ? (
+                        {showEn ? (
                           <span
-                            title={showEn ? "AI-translated from Hebrew" : "Originally written in Hebrew — translation pending"}
-                            style={{ display: 'inline-flex', alignItems: 'center', gap: 4, padding: '3px 8px', borderRadius: 4, background: showEn ? 'rgba(251,191,36,0.1)' : 'rgba(59,130,246,0.08)', border: `1px solid ${showEn ? 'rgba(251,191,36,0.35)' : 'rgba(59,130,246,0.25)'}`, fontSize: '0.7rem', fontWeight: 700, letterSpacing: '0.05em', color: showEn ? '#d97706' : '#2563eb', cursor: 'default', whiteSpace: 'nowrap' }}
+                            title="AI-translated from Hebrew"
+                            style={{ display: 'inline-flex', alignItems: 'center', gap: 4, padding: '3px 8px', borderRadius: 4, background: 'rgba(251,191,36,0.1)', border: '1px solid rgba(251,191,36,0.35)', fontSize: '0.7rem', fontWeight: 700, letterSpacing: '0.05em', color: '#d97706', cursor: 'default', whiteSpace: 'nowrap' }}
                           >
-                            {showEn ? '🌐 Translated' : '🇮🇱 Hebrew'}
+                            🌐 Translated
                           </span>
                         ) : null}
                       </div>

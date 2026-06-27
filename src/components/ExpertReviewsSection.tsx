@@ -77,8 +77,7 @@ const HEBREW_SOURCE_EN: Record<string, string> = {
 function cleanSourceName(name: string): string {
   if (HEBREW_SOURCE_EN[name]) return HEBREW_SOURCE_EN[name];
   const stripped = name.replace(/[\u0590-\u05FF]+/g, '').replace(/\(\s*\)/g, '').replace(/\s+/g, ' ').trim();
-  // If stripping Hebrew leaves nothing, the name is fully Hebrew with no known mapping — hide it gracefully
-  return stripped || '—';
+  return stripped || '';
 }
 
 function hasHebrew(s: string | null | undefined): boolean {
@@ -92,6 +91,9 @@ function SourceCard({ item, accent, translatedSummary }: { item: SourceBreakdown
   const er = t.expertReview;
   const flag = resolveFlag(item);
   const score = item.score;
+  const enName = cleanSourceName(item.source);
+  // On EN site, skip cards where we have no usable English source name
+  if (locale === 'en' && !enName) return null;
   const translatedOk = translatedSummary !== undefined && !hasHebrew(translatedSummary);
   const summaryText = locale === 'en'
     ? (translatedOk ? (translatedSummary ?? '') : '')
@@ -120,7 +122,7 @@ function SourceCard({ item, accent, translatedSummary }: { item: SourceBreakdown
           flex: 1, fontSize: '0.78rem', fontWeight: 800, color: accent,
           whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', letterSpacing: '0.01em',
         }}>
-          {locale === 'en' ? cleanSourceName(item.source) : item.source}
+          {locale === 'en' ? enName : item.source}
         </span>
         {item.postCount > 0 && (
           <span style={{
