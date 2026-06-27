@@ -6,7 +6,7 @@
  * Protected by CRON_SECRET.
  */
 import { NextRequest, NextResponse } from 'next/server';
-import { getServiceClient } from '@/lib/adminAuth';
+import { dbAll, dbRun } from '@/lib/db';
 
 function formatDate(raw: string): string {
   if (!raw) return '';
@@ -80,23 +80,22 @@ export async function GET(req: NextRequest) {
   }
 
   const apiKey = process.env.GROQ_API_KEY ?? '';
-  const sb = getServiceClient();
 
-  const [{ data: makes }, { data: models }] = await Promise.all([
-    sb.from('car_makes').select('slug, name_en'),
-    sb.from('car_models').select('make_slug, name_en, years'),
+  const [makes, models, existing] = await Promise.all([
+    dbAll<{ slug: string; name_en: string }>('SELECT slug, name_en FROM car_makes'),
+    dbAll<{ make_slug: string; name_en: string; years: string }>('SELECT make_slug, name_en, years FROM car_models'),
+    dbAll<{ id: string }>('SELECT id FROM recalls_cache'),
   ]);
 
-  const makeNameMap = Object.fromEntries((makes ?? []).map((m: any) => [m.slug, m.name_en]));
-  const { data: existing } = await sb.from('recalls_cache').select('id');
-  const cachedIds = new Set((existing ?? []).map((r: any) => r.id));
+  const makeNameMap = Object.fromEntries(makes.map((m) => [m.slug, m.name_en]));
+  const cachedIds = new Set(existing.map((r) => r.id));
 
   let totalNew = 0;
 
-  for (const model of (models ?? []) as any[]) {
+  for (const model of models) {
     const makeEn  = makeNameMap[model.make_slug] || model.make_slug;
     const modelEn = model.name_en;
-    const years   = model.years || [];
+    const years: number[] = (() => { try { return JSON.parse(model.years || '[]'); } catch { return []; } })();
 
     const batches = await Promise.all(
       years.map(async (y: number) => {
@@ -146,7 +145,18 @@ export async function GET(req: NextRequest) {
     }
 
     if (rows.length > 0) {
-      await sb.from('recalls_cache').upsert(rows, { onConflict: 'id' });
+      for (const row of rows) {
+        await dbRun(
+          `INSERT INTO recalls_cache (id, make, model, date, component_he, summary_he, consequence_he, remedy_he, manufacturer, recall_year)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+           ON CONFLICT(id) DO UPDATE SET
+             component_he = excluded.component_he, summary_he = excluded.summary_he,
+             consequence_he = excluded.consequence_he, remedy_he = excluded.remedy_he`,
+          row.id, row.make, row.model, row.date,
+          row.component_he, row.summary_he, row.consequence_he, row.remedy_he,
+          row.manufacturer, row.recall_year ?? null,
+        );
+      }
       totalNew += rows.length;
     }
   }

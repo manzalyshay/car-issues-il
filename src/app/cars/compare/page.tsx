@@ -1,5 +1,7 @@
 import Link from 'next/link';
 import { getAllMakes } from '@/lib/carsDb';
+import { getHostLocale } from '@/lib/hostLocale';
+import { translations } from '@/lib/translations';
 import { CompareClient } from './CompareClient';
 
 export const revalidate = 86400;
@@ -94,8 +96,13 @@ const POPULAR_PAIRS = [
 ] as const;
 
 export default async function ComparePage() {
-  // Fetch makes to resolve Hebrew names for popular pairs
-  const makes = await getAllMakes().catch(() => []);
+  const [locale, makes] = await Promise.all([
+    getHostLocale(),
+    getAllMakes().catch(() => []),
+  ]);
+  const isEn = locale === 'en';
+  const cmp = translations[locale].comparePage;
+
   const nameMap: Record<string, { makeHe: string; modelHe: string; makeEn: string; modelEn: string }> = {};
   for (const make of makes) {
     for (const model of make.models) {
@@ -112,7 +119,9 @@ export default async function ComparePage() {
     const nB = nameMap[b];
     if (!nA || !nB) return [];
     const [s1, s2] = [a, b].sort();
-    return [{ href: `/cars/compare/${s1}/${s2}`, labelA: `${nA.makeHe} ${nA.modelHe}`, labelB: `${nB.makeHe} ${nB.modelHe}` }];
+    const labelA = isEn ? `${nA.makeEn} ${nA.modelEn}` : `${nA.makeHe} ${nA.modelHe}`;
+    const labelB = isEn ? `${nB.makeEn} ${nB.modelEn}` : `${nB.makeHe} ${nB.modelHe}`;
+    return [{ href: `/cars/compare/${s1}/${s2}`, labelA, labelB }];
   });
 
   return (
@@ -122,7 +131,7 @@ export default async function ComparePage() {
       {/* Server-rendered popular pairs — indexed by Google */}
       {resolvedPairs.length > 0 && (
         <div className="container" style={{ paddingBottom: 64 }}>
-          <h2 style={{ fontSize: '1.15rem', fontWeight: 800, marginBottom: 20 }}>השוואות פופולריות</h2>
+          <h2 style={{ fontSize: '1.15rem', fontWeight: 800, marginBottom: 20 }}>{cmp.popularPairs}</h2>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: 10 }}>
             {resolvedPairs.map(({ href, labelA, labelB }) => (
               <Link
@@ -131,12 +140,12 @@ export default async function ComparePage() {
                 style={{
                   display: 'flex', alignItems: 'center', gap: 8,
                   padding: '12px 16px',
-                  background: 'var(--bg-secondary)',
+                  background: 'var(--surface-2)',
                   border: '1px solid var(--border)',
                   borderRadius: 10,
                   textDecoration: 'none',
                   fontSize: '0.875rem',
-                  color: 'var(--text-primary)',
+                  color: 'var(--text)',
                   transition: 'border-color 0.15s',
                 }}
               >

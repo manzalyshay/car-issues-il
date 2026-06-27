@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import ReviewList from '@/components/ReviewList';
 import ReviewForm from '@/components/ReviewForm';
+import { useLocale } from '@/lib/localeContext';
 import type { Review } from '@/data/reviews';
 
 const PAGE_SIZE = 6;
@@ -16,6 +17,8 @@ interface Props {
 }
 
 export default function ModelReviewsSection({ makeSlug, modelSlug, years, trims, initialReviews }: Props) {
+  const { t, locale } = useLocale();
+  const cp = t.carPage;
   const [reviews, setReviews] = useState<Review[]>(initialReviews);
   const [selectedYear, setSelectedYear] = useState<number | null>(null);
   const [showForm, setShowForm] = useState(false);
@@ -51,9 +54,9 @@ export default function ModelReviewsSection({ makeSlug, modelSlug, years, trims,
       {/* Section header */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12, flexWrap: 'wrap', marginBottom: 20 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          <div style={{ width: 4, height: 24, borderRadius: 2, background: 'var(--brand-red)', flexShrink: 0 }} />
+          <div style={{ width: 4, height: 24, borderRadius: 2, background: 'var(--accent)', flexShrink: 0 }} />
           <h2 style={{ fontSize: '1.25rem', fontWeight: 800, margin: 0 }}>
-            ביקורות בעלי רכב
+            {cp.ownerReviewsTitle}
           </h2>
           {reviews.length > 0 && (
             <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', background: 'var(--bg-muted)', padding: '2px 10px', borderRadius: 999 }}>
@@ -67,7 +70,7 @@ export default function ModelReviewsSection({ makeSlug, modelSlug, years, trims,
           onClick={() => setShowForm((v) => !v)}
           style={{ height: 38, padding: '0 20px', fontSize: '0.875rem' }}
         >
-          {showForm ? '✕ סגור' : '✏️ כתוב ביקורת'}
+          {showForm ? cp.closeForm : cp.writeReview}
         </button>
       </div>
 
@@ -91,12 +94,12 @@ export default function ModelReviewsSection({ makeSlug, modelSlug, years, trims,
             onClick={() => { setSelectedYear(null); setPage(1); }}
             style={{
               height: 32, padding: '0 14px', borderRadius: 9999, fontSize: '0.8125rem', fontWeight: 600, cursor: 'pointer',
-              background: selectedYear === null ? 'var(--brand-red)' : 'var(--bg-muted)',
-              color: selectedYear === null ? '#fff' : 'var(--text-secondary)',
+              background: selectedYear === null ? 'var(--accent)' : 'var(--bg-muted)',
+              color: selectedYear === null ? '#fff' : 'var(--text-muted)',
               border: 'none',
             }}
           >
-            כל השנים
+            {cp.allYears}
           </button>
           {yearsWithReviews.map((y) => (
             <button
@@ -104,8 +107,8 @@ export default function ModelReviewsSection({ makeSlug, modelSlug, years, trims,
               onClick={() => { setSelectedYear(y); setPage(1); }}
               style={{
                 height: 32, padding: '0 14px', borderRadius: 9999, fontSize: '0.8125rem', fontWeight: 600, cursor: 'pointer',
-                background: selectedYear === y ? 'var(--brand-red)' : 'var(--bg-muted)',
-                color: selectedYear === y ? '#fff' : 'var(--text-secondary)',
+                background: selectedYear === y ? 'var(--accent)' : 'var(--bg-muted)',
+                color: selectedYear === y ? '#fff' : 'var(--text-muted)',
                 border: 'none',
               }}
             >
@@ -124,11 +127,11 @@ export default function ModelReviewsSection({ makeSlug, modelSlug, years, trims,
           <div style={{ fontSize: 48, marginBottom: 16 }}>🚗</div>
           <p style={{ marginBottom: 20 }}>
             {selectedYear
-              ? `אין ביקורות עדיין לשנת ${selectedYear}.`
-              : 'היה הראשון לכתוב ביקורת על הדגם הזה!'}
+              ? `${cp.noReviewsForYearPrefix} ${selectedYear}.`
+              : cp.noReviewsBeFirstModel}
           </p>
           <button className="btn btn-primary" onClick={() => setShowForm(true)}>
-            כתוב ביקורת
+            {cp.writeReview}
           </button>
         </div>
       ) : (
@@ -141,7 +144,7 @@ export default function ModelReviewsSection({ makeSlug, modelSlug, years, trims,
                 onClick={() => setPage((p) => p + 1)}
                 style={{ height: 40, padding: '0 28px' }}
               >
-                טען עוד ({filtered.length - visible.length} נוספות)
+                {cp.loadMore} ({filtered.length - visible.length})
               </button>
             </div>
           )}

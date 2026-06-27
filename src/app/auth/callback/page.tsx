@@ -46,7 +46,7 @@ export default function AuthCallbackPage() {
         <p style={{ color: 'var(--text-muted)', fontSize: '0.875rem', maxWidth: 400 }}>
           {error}
         </p>
-        <a href="/" style={{ marginTop: 8, color: 'var(--brand-red)', fontWeight: 600, fontSize: '0.9375rem' }}>
+        <a href="/" style={{ marginTop: 8, color: 'var(--accent)', fontWeight: 600, fontSize: '0.9375rem' }}>
           חזרה לדף הבית
         </a>
       </div>
@@ -55,7 +55,7 @@ export default function AuthCallbackPage() {
 
   return (
     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '60vh', flexDirection: 'column', gap: 16 }}>
-      <div style={{ width: 40, height: 40, borderRadius: '50%', border: '3px solid var(--border)', borderTopColor: 'var(--brand-red)', animation: 'spin 0.8s linear infinite' }} />
+      <div style={{ width: 40, height: 40, borderRadius: '50%', border: '3px solid var(--border)', borderTopColor: 'var(--accent)', animation: 'spin 0.8s linear infinite' }} />
       <p style={{ color: 'var(--text-muted)', fontSize: '0.9375rem' }}>מתחבר...</p>
       <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
     </div>

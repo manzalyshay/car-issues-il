@@ -4,6 +4,7 @@ import { useState, useRef, useEffect } from 'react';
 import StarRating from './StarRating';
 import type { Review } from '@/data/reviews';
 import { useAuth, displayName } from '@/lib/authContext';
+import { useLocale } from '@/lib/localeContext';
 
 const TURNSTILE_SITE_KEY = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY ?? '';
 
@@ -26,13 +27,7 @@ interface Props {
   onSuccess: (review: Review) => void;
 }
 
-const CATEGORY_OPTIONS: { value: Review['category']; label: string }[] = [
-  { value: 'mechanical', label: 'מכאני' },
-  { value: 'electrical', label: 'חשמל ואלקטרוניקה' },
-  { value: 'comfort',    label: 'נוחות וגמר' },
-  { value: 'safety',     label: 'בטיחות' },
-  { value: 'general',    label: 'כללי' },
-];
+const CATEGORY_KEYS: Review['category'][] = ['mechanical', 'electrical', 'comfort', 'safety', 'general'];
 
 const CLOUDINARY_CLOUD  = 'leash';
 const CLOUDINARY_PRESET = 'leash_upload';
@@ -43,13 +38,15 @@ async function uploadToCloudinary(file: File): Promise<string> {
   formData.append('file', file);
   formData.append('upload_preset', CLOUDINARY_PRESET);
   const res = await fetch(CLOUDINARY_URL, { method: 'POST', body: formData });
-  if (!res.ok) throw new Error('שגיאה בהעלאת תמונה');
+  if (!res.ok) throw new Error('upload_error');
   const data = await res.json();
   return data.secure_url as string;
 }
 
 export default function ReviewForm({ makeSlug, modelSlug, year: yearProp, years, trims, onSuccess }: Props) {
   const { user } = useAuth();
+  const { t, locale } = useLocale();
+  const rf = t.reviewForm;
 
   const [authorName, setAuthorName] = useState('');
   const [selectedYear, setSelectedYear] = useState<number | ''>(yearProp ?? '');
@@ -110,7 +107,7 @@ export default function ReviewForm({ makeSlug, modelSlug, year: yearProp, years,
     const files = Array.from(e.target.files ?? []);
     if (!files.length) return;
     if (images.length + files.length > 4) {
-      setError('ניתן להעלות עד 4 תמונות');
+      setError(rf.errUploadLimit);
       return;
     }
     setUploading(true);
@@ -119,7 +116,7 @@ export default function ReviewForm({ makeSlug, modelSlug, year: yearProp, years,
       const urls = await Promise.all(files.map(uploadToCloudinary));
       setImages((prev) => [...prev, ...urls]);
     } catch {
-      setError('שגיאה בהעלאת תמונה — נסה שוב');
+      setError(rf.errUpload);
     } finally {
       setUploading(false);
       if (fileInputRef.current) fileInputRef.current.value = '';
@@ -128,14 +125,13 @@ export default function ReviewForm({ makeSlug, modelSlug, year: yearProp, years,
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!effectiveName.trim()) { setError('אנא הזן שם.'); return; }
-    if (!body.trim()) { setError('אנא כתוב את תוכן הביקורת.'); return; }
-
-    if (!year) { setError('אנא בחר שנת ייצור.'); return; }
+    if (!effectiveName.trim()) { setError(rf.errName); return; }
+    if (!body.trim()) { setError(rf.errBody); return; }
+    if (!year) { setError(rf.errYear); return; }
 
     // CAPTCHA check for guests only
     if (!user && TURNSTILE_SITE_KEY && !captchaToken.current) {
-      setError('אנא אמת שאינך רובוט.');
+      setError(rf.errCaptcha);
       return;
     }
 
@@ -161,7 +157,7 @@ export default function ReviewForm({ makeSlug, modelSlug, year: yearProp, years,
         }),
       });
 
-      if (!resp.ok) throw new Error('שגיאה בשמירת הביקורת');
+      if (!resp.ok) throw new Error(locale === 'en' ? 'Error saving review' : 'שגיאה בשמירת הביקורת');
       const data = await resp.json();
       setSuccess(true);
       onSuccess(data.review);
@@ -169,7 +165,7 @@ export default function ReviewForm({ makeSlug, modelSlug, year: yearProp, years,
       setRating(5); setCategory('general'); setImages([]);
       if (!yearProp) setSelectedYear('');
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : 'שגיאה לא ידועה');
+      setError(err instanceof Error ? err.message : (locale === 'en' ? 'Unknown error' : 'שגיאה לא ידועה'));
     } finally {
       setLoading(false);
     }
@@ -179,28 +175,28 @@ export default function ReviewForm({ makeSlug, modelSlug, year: yearProp, years,
     return (
       <div className="card" style={{ padding: 24, textAlign: 'center', background: 'rgba(34,197,94,.05)', borderColor: 'rgba(34,197,94,.2)' }}>
         <div style={{ fontSize: 40, marginBottom: 12 }}>✅</div>
-        <h3 style={{ fontWeight: 700, marginBottom: 8, color: '#16a34a' }}>תודה על הביקורת!</h3>
-        <p style={{ color: 'var(--text-secondary)', fontSize: '0.9375rem' }}>הביקורת שלך עזרה למשתמשים אחרים לדעת על הרכב.</p>
-        <button onClick={() => setSuccess(false)} className="btn btn-outline" style={{ marginTop: 16 }}>הוסף ביקורת נוספת</button>
+        <h3 style={{ fontWeight: 700, marginBottom: 8, color: '#16a34a' }}>{rf.successTitle}</h3>
+        <p style={{ color: 'var(--text-muted)', fontSize: '0.9375rem' }}>{rf.successBody}</p>
+        <button onClick={() => setSuccess(false)} className="btn btn-outline" style={{ marginTop: 16 }}>{rf.addAnother}</button>
       </div>
     );
   }
 
   return (
     <form onSubmit={handleSubmit} className="card" style={{ padding: 28 }}>
-      <h3 style={{ fontWeight: 700, fontSize: '1.1rem', marginBottom: 20 }}>✏️ כתוב ביקורת</h3>
+      <h3 style={{ fontWeight: 700, fontSize: '1.1rem', marginBottom: 20 }}>{rf.title}</h3>
 
       {/* Year selector — only when year not fixed by page */}
       {!yearProp && years && years.length > 0 && (
         <div style={{ marginBottom: 16 }}>
-          <label style={labelStyle}>שנת ייצור <span style={{ color: 'var(--brand-red)' }}>*</span></label>
+          <label style={labelStyle}>{rf.yearLabel} <span style={{ color: 'var(--accent)' }}>{rf.required}</span></label>
           <select
             value={selectedYear}
             onChange={(e) => setSelectedYear(e.target.value ? Number(e.target.value) : '')}
             style={{ ...inputStyle, cursor: 'pointer' }}
             required
           >
-            <option value="">— בחר שנה —</option>
+            <option value="">{rf.selectYear}</option>
             {years.map((y) => <option key={y} value={y}>{y}</option>)}
           </select>
         </div>
@@ -209,14 +205,14 @@ export default function ReviewForm({ makeSlug, modelSlug, year: yearProp, years,
       {/* Sub-model / trim */}
       {trims && trims.length > 0 && (
         <div style={{ marginBottom: 16 }}>
-          <label style={labelStyle}>גרסה / טרים <span style={{ color: 'var(--text-muted)', fontWeight: 400 }}>(אופציונלי)</span></label>
+          <label style={labelStyle}>{rf.trimLabel} <span style={{ color: 'var(--text-muted)', fontWeight: 400 }}>{rf.trimOptional}</span></label>
           <select
             value={subModel}
             onChange={(e) => setSubModel(e.target.value)}
             style={{ ...inputStyle, cursor: 'pointer' }}
           >
-            <option value="">— בחר גרסה —</option>
-            {trims.map((t) => <option key={t} value={t}>{t}</option>)}
+            <option value="">{rf.selectTrim}</option>
+            {trims.map((trim) => <option key={trim} value={trim}>{trim}</option>)}
           </select>
         </div>
       )}
@@ -225,11 +221,11 @@ export default function ReviewForm({ makeSlug, modelSlug, year: yearProp, years,
         {/* Author — shown only for guests */}
         {!user && (
           <div>
-            <label style={labelStyle}>שם <span style={{ color: 'var(--brand-red)' }}>*</span></label>
+            <label style={labelStyle}>{rf.nameLabel} <span style={{ color: 'var(--accent)' }}>{rf.required}</span></label>
             <input
               value={authorName}
               onChange={(e) => setAuthorName(e.target.value)}
-              placeholder="שמך"
+              placeholder={rf.namePlaceholder}
               maxLength={50}
               style={inputStyle}
               required
@@ -239,20 +235,20 @@ export default function ReviewForm({ makeSlug, modelSlug, year: yearProp, years,
 
         {/* Category */}
         <div>
-          <label style={labelStyle}>קטגוריה</label>
+          <label style={labelStyle}>{rf.categoryLabel}</label>
           <select value={category} onChange={(e) => setCategory(e.target.value as Review['category'])} style={{ ...inputStyle, cursor: 'pointer' }}>
-            {CATEGORY_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
+            {CATEGORY_KEYS.map((key) => <option key={key} value={key}>{rf.categories[key]}</option>)}
           </select>
         </div>
 
         {/* Mileage */}
         <div>
-          <label style={labelStyle}>קילומטרז׳ (אופציונלי)</label>
+          <label style={labelStyle}>{rf.mileageLabel}</label>
           <input
             type="number"
             value={mileage}
             onChange={(e) => setMileage(e.target.value)}
-            placeholder="ק״מ"
+            placeholder={rf.mileagePlaceholder}
             min={0}
             max={500000}
             style={inputStyle}
@@ -262,20 +258,20 @@ export default function ReviewForm({ makeSlug, modelSlug, year: yearProp, years,
 
       {/* Rating */}
       <div style={{ marginBottom: 16 }}>
-        <label style={labelStyle}>דירוג <span style={{ color: 'var(--brand-red)' }}>*</span></label>
+        <label style={labelStyle}>{rf.ratingLabel} <span style={{ color: 'var(--accent)' }}>{rf.required}</span></label>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
           <StarRating rating={rating} size={28} interactive onChange={setRating} />
-          <span style={{ color: 'var(--text-muted)', fontSize: '0.875rem' }}>{RATING_LABELS[rating]}</span>
+          <span style={{ color: 'var(--text-muted)', fontSize: '0.875rem' }}>{rf.ratingLabels[rating as keyof typeof rf.ratingLabels]}</span>
         </div>
       </div>
 
       {/* Title */}
       <div style={{ marginBottom: 16 }}>
-        <label style={labelStyle}>כותרת <span style={{ color: 'var(--text-muted)', fontWeight: 400 }}>(אופציונלי)</span></label>
+        <label style={labelStyle}>{rf.titleLabel} <span style={{ color: 'var(--text-muted)', fontWeight: 400 }}>{rf.titleOptional}</span></label>
         <input
           value={title}
           onChange={(e) => setTitle(e.target.value)}
-          placeholder="סכם את הבעיה / החוויה בקצרה"
+          placeholder={rf.titlePlaceholder}
           maxLength={100}
           style={inputStyle}
         />
@@ -284,13 +280,13 @@ export default function ReviewForm({ makeSlug, modelSlug, year: yearProp, years,
       {/* Body */}
       <div style={{ marginBottom: 16 }}>
         <label style={labelStyle}>
-          ביקורת מפורטת <span style={{ color: 'var(--brand-red)' }}>*</span>
+          {rf.bodyLabel} <span style={{ color: 'var(--accent)' }}>{rf.required}</span>
           <span style={{ color: 'var(--text-muted)', fontWeight: 400, marginRight: 8 }}>({body.length}/2000)</span>
         </label>
         <textarea
           value={body}
           onChange={(e) => setBody(e.target.value)}
-          placeholder="תאר את הבעיה, מתי הופיעה, מה נמצא בבדיקה, האם תוקנה..."
+          placeholder={rf.bodyPlaceholder}
           maxLength={2000}
           rows={5}
           style={{ ...inputStyle, resize: 'vertical', height: 'auto', paddingTop: 10, paddingBottom: 10 }}
@@ -300,7 +296,7 @@ export default function ReviewForm({ makeSlug, modelSlug, year: yearProp, years,
 
       {/* Images */}
       <div style={{ marginBottom: 20 }}>
-        <label style={labelStyle}>תמונות (אופציונלי, עד 4)</label>
+        <label style={labelStyle}>{rf.photosLabel}</label>
         <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: images.length ? 8 : 0 }}>
           {images.map((url, i) => (
             <div key={i} style={{ position: 'relative', width: 80, height: 80 }}>
@@ -312,7 +308,7 @@ export default function ReviewForm({ makeSlug, modelSlug, year: yearProp, years,
                 style={{
                   position: 'absolute', top: -6, right: -6,
                   width: 20, height: 20, borderRadius: '50%',
-                  background: 'var(--brand-red)', color: '#fff',
+                  background: 'var(--accent)', color: '#fff',
                   border: 'none', cursor: 'pointer', fontSize: 12,
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
                 }}
@@ -329,13 +325,13 @@ export default function ReviewForm({ makeSlug, modelSlug, year: yearProp, years,
               style={{
                 width: 80, height: 80, borderRadius: 8,
                 border: '1.5px dashed var(--border)',
-                background: 'var(--bg-base)', cursor: 'pointer',
+                background: 'var(--bg)', cursor: 'pointer',
                 display: 'flex', flexDirection: 'column',
                 alignItems: 'center', justifyContent: 'center',
                 gap: 4, color: 'var(--text-muted)', fontSize: '0.75rem',
               }}
             >
-              {uploading ? '...' : <><span style={{ fontSize: 22 }}>📷</span>הוסף</>}
+              {uploading ? '...' : <><span style={{ fontSize: 22 }}>📷</span>{rf.addPhoto}</>}
             </button>
           )}
         </div>
@@ -356,7 +352,7 @@ export default function ReviewForm({ makeSlug, modelSlug, year: yearProp, years,
         </div>
       )}
 
-      {error && <p style={{ color: 'var(--brand-red)', fontSize: '0.875rem', marginBottom: 12 }}>⚠️ {error}</p>}
+      {error && <p style={{ color: 'var(--accent)', fontSize: '0.875rem', marginBottom: 12 }}>⚠️ {error}</p>}
 
       <button
         type="submit"
@@ -364,7 +360,7 @@ export default function ReviewForm({ makeSlug, modelSlug, year: yearProp, years,
         disabled={loading || uploading}
         style={{ width: '100%', height: 48, fontSize: '1rem' }}
       >
-        {loading ? '...שומר' : 'פרסם ביקורת'}
+        {loading ? rf.saving : rf.submitLabel}
       </button>
     </form>
   );
@@ -372,17 +368,14 @@ export default function ReviewForm({ makeSlug, modelSlug, year: yearProp, years,
 
 const labelStyle: React.CSSProperties = {
   display: 'block', fontSize: '0.8125rem', fontWeight: 600,
-  color: 'var(--text-secondary)', marginBottom: 6,
+  color: 'var(--text-muted)', marginBottom: 6,
 };
 
 const inputStyle: React.CSSProperties = {
   width: '100%', height: 42, padding: '0 12px',
   border: '1.5px solid var(--border)', borderRadius: 10,
-  background: 'var(--bg-base)', color: 'var(--text-primary)',
+  background: 'var(--bg)', color: 'var(--text)',
   fontSize: '0.9375rem', fontFamily: 'inherit', outline: 'none',
   transition: 'border-color 0.2s', direction: 'rtl',
 };
 
-const RATING_LABELS: Record<number, string> = {
-  1: 'גרוע מאוד', 2: 'גרוע', 3: 'בינוני', 4: 'טוב', 5: 'מצוין',
-};

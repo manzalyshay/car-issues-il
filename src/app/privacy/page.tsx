@@ -7,9 +7,9 @@ export const metadata: Metadata = {
 };
 
 const SECTION_STYLE = { marginBottom: 40 };
-const H2_STYLE = { fontSize: '1.2rem', fontWeight: 800, marginBottom: 12, color: 'var(--text-primary)' };
-const P_STYLE = { color: 'var(--text-secondary)', lineHeight: 1.8, marginBottom: 12, fontSize: '0.9375rem' };
-const UL_STYLE = { color: 'var(--text-secondary)', lineHeight: 1.8, paddingRight: 20, fontSize: '0.9375rem' };
+const H2_STYLE = { fontSize: '1.2rem', fontWeight: 800, marginBottom: 12, color: 'var(--text)' };
+const P_STYLE = { color: 'var(--text-muted)', lineHeight: 1.8, marginBottom: 12, fontSize: '0.9375rem' };
+const UL_STYLE = { color: 'var(--text-muted)', lineHeight: 1.8, paddingRight: 20, fontSize: '0.9375rem' };
 
 export default function PrivacyPage() {
   return (
@@ -119,7 +119,7 @@ export default function PrivacyPage() {
               <li><strong>ניוד:</strong> לבקש עותק של הנתונים שלך בפורמט קריא.</li>
             </ul>
             <p style={{ ...P_STYLE, marginTop: 12 }}>
-              לממש את זכויותיך, אנא פנה אלינו דרך <Link href="/contact" style={{ color: 'var(--brand-red)' }}>עמוד יצירת קשר</Link>.
+              לממש את זכויותיך, אנא פנה אלינו דרך <Link href="/contact" style={{ color: 'var(--accent)' }}>עמוד יצירת קשר</Link>.
             </p>
           </div>
 
@@ -143,7 +143,7 @@ export default function PrivacyPage() {
             <h2 style={H2_STYLE}>11. יצירת קשר</h2>
             <p style={P_STYLE}>
               לשאלות או בקשות בנושא פרטיות, ניתן לפנות אלינו דרך{' '}
-              <Link href="/contact" style={{ color: 'var(--brand-red)' }}>עמוד יצירת קשר</Link>.
+              <Link href="/contact" style={{ color: 'var(--accent)' }}>עמוד יצירת קשר</Link>.
             </p>
           </div>
         </div>

@@ -1,5 +1,5 @@
-import { unstable_cache } from 'next/cache';
-import { getServiceClient } from './adminAuth';
+import { dbAll, dbRun } from './db';
+import { randomUUID } from 'crypto';
 
 export interface CarVideo {
   id: string;
@@ -44,24 +44,12 @@ function isLikelyReview(title: string): boolean {
   return hasReviewSignal || true; // pass through if no explicit spam signal
 }
 
-export const getVideosForCar = unstable_cache(
-  async (makeSlug: string, modelSlug: string): Promise<CarVideo[]> => {
-    const sb = getServiceClient();
-    const { data } = await sb
-      .from('car_videos')
-      .select('*')
-      .eq('make_slug', makeSlug)
-      .eq('model_slug', modelSlug)
-      .order('published_at', { ascending: false })
-      .limit(12);
-    return (data ?? []) as CarVideo[];
-  },
-  ['car-videos'],
-  {
-    revalidate: 86400, // 24h fallback
-    tags: ['car-media'],
-  },
-);
+export async function getVideosForCar(makeSlug: string, modelSlug: string): Promise<CarVideo[]> {
+  return dbAll<CarVideo>(
+    'SELECT * FROM car_videos WHERE make_slug = ? AND model_slug = ? ORDER BY published_at DESC LIMIT 12',
+    makeSlug, modelSlug,
+  );
+}
 
 export async function fetchAndStoreVideos(
   makeSlug: string,
@@ -132,11 +120,12 @@ export async function fetchAndStoreVideos(
 
   if (!videos.length) return { inserted: 0, skipped };
 
-  const sb = getServiceClient();
-  const { error } = await sb
-    .from('car_videos')
-    .upsert(videos, { onConflict: 'youtube_id' });
-
-  if (error) return { inserted: 0, skipped, error: error.message };
+  for (const v of videos) {
+    await dbRun(
+      `INSERT OR REPLACE INTO car_videos (id, make_slug, model_slug, youtube_id, title, channel, published_at, thumbnail_url)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+      randomUUID(), v.make_slug, v.model_slug, v.youtube_id, v.title, v.channel, v.published_at, v.thumbnail_url,
+    ).catch(() => {});
+  }
   return { inserted: videos.length, skipped };
 }

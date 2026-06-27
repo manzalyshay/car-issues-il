@@ -6,6 +6,7 @@ import type { CarImage } from '@/lib/carImages';
 import CarVideosTab from '@/components/CarVideosTab';
 import CarImagesTab from '@/components/CarImagesTab';
 import TrimSpecsTab from '@/components/TrimSpecsTab';
+import { useLocale } from '@/lib/localeContext';
 
 interface Props {
   makeSlug: string;
@@ -17,6 +18,8 @@ interface Props {
 }
 
 export default function CarPageTabs({ makeSlug, modelSlug, makeNameHe, modelNameHe, defaultYear, children }: Props) {
+  const { t } = useLocale();
+  const ct = t.carTabs;
   const [tab, setTab] = useState<'reviews' | 'specs' | 'videos' | 'images'>('reviews');
   const [videos, setVideos] = useState<CarVideo[] | null>(null);
   const [images, setImages] = useState<CarImage[] | null>(null);
@@ -46,9 +49,9 @@ export default function CarPageTabs({ makeSlug, modelSlug, makeNameHe, modelName
   const tabStyle = (active: boolean): React.CSSProperties => ({
     padding: '10px 20px',
     border: 'none',
-    borderBottom: active ? '2px solid var(--brand-red)' : '2px solid transparent',
+    borderBottom: active ? '2px solid var(--accent)' : '2px solid transparent',
     background: 'none',
-    color: active ? 'var(--brand-red)' : 'var(--text-muted)',
+    color: active ? 'var(--accent)' : 'var(--text-muted)',
     fontWeight: active ? 700 : 500,
     fontSize: '0.9375rem',
     cursor: 'pointer',
@@ -61,7 +64,7 @@ export default function CarPageTabs({ makeSlug, modelSlug, makeNameHe, modelName
 
   const loadingPlaceholder = (
     <div style={{ textAlign: 'center', padding: '48px 0', color: 'var(--text-muted)', fontSize: '0.9rem' }}>
-      טוען...
+      {ct.loading}
     </div>
   );
 
@@ -71,19 +74,19 @@ export default function CarPageTabs({ makeSlug, modelSlug, makeNameHe, modelName
       <div style={{
         display: 'flex', borderBottom: '1px solid var(--border)', marginBottom: 28, overflowX: 'auto',
         position: 'sticky', top: 82, zIndex: 90,
-        background: 'var(--bg-base)', backdropFilter: 'blur(8px)',
+        background: 'var(--bg)', backdropFilter: 'blur(8px)',
       }}>
         <button style={tabStyle(tab === 'reviews')} onClick={() => handleTabClick('reviews')}>
-          ⭐ ביקורות
+          {ct.reviews}
         </button>
         <button style={tabStyle(tab === 'specs')} onClick={() => handleTabClick('specs')}>
-          📋 מפרט גימור
+          {ct.specs}
         </button>
         <button style={tabStyle(tab === 'videos')} onClick={() => handleTabClick('videos')}>
-          🎬 סרטוני ביקורת
+          {ct.videos}
           {videos && videos.length > 0 && (
             <span style={{
-              background: tab === 'videos' ? 'var(--brand-red)' : 'var(--bg-muted)',
+              background: tab === 'videos' ? 'var(--accent)' : 'var(--bg-muted)',
               color: tab === 'videos' ? '#fff' : 'var(--text-muted)',
               borderRadius: 10, padding: '1px 7px', fontSize: '0.72rem', fontWeight: 700,
             }}>
@@ -92,10 +95,10 @@ export default function CarPageTabs({ makeSlug, modelSlug, makeNameHe, modelName
           )}
         </button>
         <button style={tabStyle(tab === 'images')} onClick={() => handleTabClick('images')}>
-          📷 תמונות
+          {ct.images}
           {images && images.length > 0 && (
             <span style={{
-              background: tab === 'images' ? 'var(--brand-red)' : 'var(--bg-muted)',
+              background: tab === 'images' ? 'var(--accent)' : 'var(--bg-muted)',
               color: tab === 'images' ? '#fff' : 'var(--text-muted)',
               borderRadius: 10, padding: '1px 7px', fontSize: '0.72rem', fontWeight: 700,
             }}>

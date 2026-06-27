@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { revalidateTag } from 'next/cache';
 import { getAllMakes, getMakeBySlug, getModelBySlug } from '@/lib/carsDb';
 import { scrapeExpertReviews } from '@/lib/expertReviews';
-import { isAdmin, getServiceClient } from '@/lib/adminAuth';
+import { isAdmin } from '@/lib/adminAuth';
+import { dbAll, dbRun } from '@/lib/db';
 
 async function validateCar(makeSlug: string, modelSlug: string) {
   const make  = await getMakeBySlug(makeSlug);
@@ -14,13 +14,14 @@ async function validateCar(makeSlug: string, modelSlug: string) {
 export async function GET(req: NextRequest) {
   if (!await isAdmin(req)) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
-  const sb = getServiceClient();
-  const { data: rows } = await sb
-    .from('expert_reviews')
-    .select('make_slug,model_slug,local_score,global_score,top_score,local_post_count,global_post_count,scraped_at,local_summary_he,global_summary_he')
-    .order('make_slug').order('model_slug');
+  const rows = await dbAll<{
+    make_slug: string; model_slug: string; local_score: number | null;
+    global_score: number | null; top_score: number | null;
+    local_post_count: number; global_post_count: number;
+    scraped_at: string | null; local_summary_he: string | null; global_summary_he: string | null;
+  }>('SELECT make_slug, model_slug, local_score, global_score, top_score, local_post_count, global_post_count, scraped_at, local_summary_he, global_summary_he FROM expert_reviews ORDER BY make_slug, model_slug');
 
-  const scraped = new Map((rows ?? []).map((r: any) => [`${r.make_slug}/${r.model_slug}`, r]));
+  const scraped = new Map(rows.map((r) => [`${r.make_slug}/${r.model_slug}`, r]));
 
   const carDatabase = await getAllMakes();
   const allModels = carDatabase.flatMap((make) =>
@@ -56,23 +57,23 @@ export async function POST(req: NextRequest) {
   const { action, makeSlug, modelSlug, localPosts = [], globalPosts = [], reviewId, ids, title, body: reviewBody, rating } = body;
 
   if (action === 'revalidate_car_data') {
-    revalidateTag('car-data', 'default');
-    revalidateTag('car-data', 'max');
+    // Clear globalThis caches
+    const g = globalThis as typeof globalThis & { _carsCache?: unknown; _3dModelsCache?: unknown };
+    delete g._carsCache;
+    delete g._3dModelsCache;
     return NextResponse.json({ ok: true });
   }
 
   if (action === 'delete') {
-    const sb = getServiceClient();
-    await sb.from('expert_reviews')
-      .delete()
-      .eq('make_slug', makeSlug)
-      .eq('model_slug', modelSlug);
+    await dbRun(
+      'DELETE FROM expert_reviews WHERE make_slug = ? AND model_slug = ? AND year IS NULL',
+      makeSlug, modelSlug,
+    );
     return NextResponse.json({ ok: true });
   }
 
   if (action === 'delete_all') {
-    const sb = getServiceClient();
-    await sb.from('expert_reviews').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+    await dbRun('DELETE FROM expert_reviews');
     return NextResponse.json({ ok: true });
   }
 
@@ -89,27 +90,28 @@ export async function POST(req: NextRequest) {
 
   if (action === 'delete_review') {
     if (!reviewId) return NextResponse.json({ error: 'Missing reviewId' }, { status: 400 });
-    await getServiceClient().from('reviews').delete().eq('id', reviewId);
-    revalidateTag('reviews', 'default');
-    revalidateTag('reviews', 'max');
+    await dbRun('DELETE FROM reviews WHERE id = ?', reviewId);
     return NextResponse.json({ ok: true });
   }
 
   if (action === 'bulk_delete_reviews') {
     if (!Array.isArray(ids) || ids.length === 0) return NextResponse.json({ ok: true });
-    await getServiceClient().from('reviews').delete().in('id', ids);
-    revalidateTag('reviews', 'default');
-    revalidateTag('reviews', 'max');
+    const placeholders = ids.map(() => '?').join(',');
+    await dbRun(`DELETE FROM reviews WHERE id IN (${placeholders})`, ...ids);
     return NextResponse.json({ ok: true });
   }
 
   if (action === 'edit_review') {
     if (!reviewId) return NextResponse.json({ error: 'Missing reviewId' }, { status: 400 });
-    const updates: Record<string, unknown> = {};
-    if (title !== undefined)      updates.title  = title;
-    if (reviewBody !== undefined) updates.body   = reviewBody;
-    if (rating !== undefined)     updates.rating = rating;
-    await getServiceClient().from('reviews').update(updates).eq('id', reviewId);
+    const sets: string[] = [];
+    const params: (string | number | null)[] = [];
+    if (title !== undefined)      { sets.push('title = ?');  params.push(title); }
+    if (reviewBody !== undefined) { sets.push('body = ?');   params.push(reviewBody); }
+    if (rating !== undefined)     { sets.push('rating = ?'); params.push(rating); }
+    if (sets.length) {
+      params.push(reviewId);
+      await dbRun(`UPDATE reviews SET ${sets.join(', ')} WHERE id = ?`, ...params);
+    }
     return NextResponse.json({ ok: true });
   }
 

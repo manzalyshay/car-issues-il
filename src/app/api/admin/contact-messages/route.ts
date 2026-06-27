@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { isAdmin, getServiceClient } from '@/lib/adminAuth';
+import { isAdmin } from '@/lib/adminAuth';
+import { dbAll, dbFirst, dbRun } from '@/lib/db';
 import { Resend } from 'resend';
 
 const SUBJECT_LABELS: Record<string, string> = {
@@ -13,15 +14,10 @@ const SUBJECT_LABELS: Record<string, string> = {
 export async function GET(req: NextRequest) {
   if (!await isAdmin(req)) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
-  const sb = getServiceClient();
-  const { data, error } = await sb
-    .from('contact_messages')
-    .select('id, name, email, subject, message, status, reply_body, replied_at, created_at')
-    .order('created_at', { ascending: false })
-    .limit(200);
-
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-  return NextResponse.json(data ?? []);
+  const data = await dbAll(
+    'SELECT id, name, email, subject, message, status, reply_body, replied_at, created_at FROM contact_messages ORDER BY created_at DESC LIMIT 200',
+  );
+  return NextResponse.json(data);
 }
 
 export async function POST(req: NextRequest) {
@@ -29,14 +25,9 @@ export async function POST(req: NextRequest) {
 
   const body = await req.json().catch(() => ({}));
   const { action, id } = body;
-  const sb = getServiceClient();
 
   if (action === 'mark_read') {
-    const { error } = await sb
-      .from('contact_messages')
-      .update({ status: 'read', read: true })
-      .eq('id', id);
-    if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+    await dbRun("UPDATE contact_messages SET status = 'read', read = 1 WHERE id = ?", id);
     return NextResponse.json({ ok: true });
   }
 
@@ -44,13 +35,9 @@ export async function POST(req: NextRequest) {
     const { replyBody } = body;
     if (!replyBody?.trim()) return NextResponse.json({ error: 'reply body required' }, { status: 400 });
 
-    // Fetch the message to get sender details
-    const { data: msg } = await sb
-      .from('contact_messages')
-      .select('name, email, subject, message')
-      .eq('id', id)
-      .single();
-
+    const msg = await dbFirst<{ name: string; email: string; subject: string; message: string }>(
+      'SELECT name, email, subject, message FROM contact_messages WHERE id = ?', id,
+    );
     if (!msg) return NextResponse.json({ error: 'message not found' }, { status: 404 });
 
     if (!process.env.RESEND_API_KEY) {
@@ -87,20 +74,15 @@ export async function POST(req: NextRequest) {
     }
     console.log('[contact reply] sent', sendData?.id);
 
-    // Mark as replied in DB
-    await sb.from('contact_messages').update({
-      status: 'replied',
-      read: true,
-      reply_body: replyBody.trim(),
-      replied_at: new Date().toISOString(),
-    }).eq('id', id);
-
+    await dbRun(
+      "UPDATE contact_messages SET status = 'replied', read = 1, reply_body = ?, replied_at = ? WHERE id = ?",
+      replyBody.trim(), new Date().toISOString(), id,
+    );
     return NextResponse.json({ ok: true });
   }
 
   if (action === 'delete') {
-    const { error } = await sb.from('contact_messages').delete().eq('id', id);
-    if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+    await dbRun('DELETE FROM contact_messages WHERE id = ?', id);
     return NextResponse.json({ ok: true });
   }
 

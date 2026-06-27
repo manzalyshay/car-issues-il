@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import type { CarMake } from '@/lib/carsDb';
+import { useLocale } from '@/lib/localeContext';
 
 interface SearchResult {
   label: string;
@@ -18,6 +19,8 @@ export default function SearchBox({ fullWidth = false, compact = false }: { full
   const [carDatabase, setCarDatabase] = useState<CarMake[]>([]);
   const inputRef = useRef<HTMLInputElement>(null);
   const router   = useRouter();
+  const { locale, t } = useLocale();
+  const isEn = locale === 'en';
 
   useEffect(() => {
     fetch('/api/cars').then(r => r.json()).then(setCarDatabase);
@@ -32,20 +35,24 @@ export default function SearchBox({ fullWidth = false, compact = false }: { full
         make.nameHe.toLowerCase().includes(q) ||
         make.nameEn.toLowerCase().includes(q)
       ) {
-        found.push({ label: `${make.nameHe} — כל הדגמים`, href: `/cars/${make.slug}`, type: 'make' });
+        const makeName = isEn ? make.nameEn : make.nameHe;
+        const allModels = isEn ? 'All Models' : 'כל הדגמים';
+        found.push({ label: `${makeName} — ${allModels}`, href: `/cars/${make.slug}`, type: 'make' });
       }
       for (const model of make.models) {
         if (
           model.nameHe.toLowerCase().includes(q) ||
           model.nameEn.toLowerCase().includes(q)
         ) {
-          found.push({ label: `${make.nameHe} ${model.nameHe}`, href: `/cars/${make.slug}/${model.slug}`, type: 'model' });
+          const makeName = isEn ? make.nameEn : make.nameHe;
+          const modelName = isEn ? model.nameEn : model.nameHe;
+          found.push({ label: `${makeName} ${modelName}`, href: `/cars/${make.slug}/${model.slug}`, type: 'model' });
         }
       }
     }
     setResults(found.slice(0, 8));
     setOpen(found.length > 0);
-  }, [query, carDatabase]);
+  }, [query, carDatabase, isEn]);
 
   const choose = (href: string) => {
     setQuery('');
@@ -64,7 +71,7 @@ export default function SearchBox({ fullWidth = false, compact = false }: { full
           cursor: 'pointer',
           padding: '6px 10px',
           fontSize: '1rem',
-          color: 'var(--text-secondary)',
+          color: 'var(--text-muted)',
           display: 'flex',
           alignItems: 'center',
         }}
@@ -94,16 +101,16 @@ export default function SearchBox({ fullWidth = false, compact = false }: { full
           ref={inputRef}
           value={query}
           onChange={(e) => setQuery(e.target.value)}
-          placeholder="חפש יצרן או דגם..."
+          placeholder={t.search.placeholderShort}
           style={{
             flex: 1,
             border: 'none',
             background: 'transparent',
             outline: 'none',
             fontSize: '0.8375rem',
-            color: 'var(--text-primary)',
+            color: 'var(--text)',
             fontFamily: 'inherit',
-            direction: 'rtl',
+            direction: isEn ? 'ltr' : 'rtl',
             minWidth: 0,
           }}
           onFocus={() => results.length > 0 && setOpen(true)}
@@ -137,7 +144,7 @@ export default function SearchBox({ fullWidth = false, compact = false }: { full
                 background: 'transparent',
                 cursor: 'pointer',
                 textAlign: 'right',
-                color: 'var(--text-primary)',
+                color: 'var(--text)',
                 fontSize: '0.875rem',
                 fontFamily: 'inherit',
                 transition: 'background 0.1s',

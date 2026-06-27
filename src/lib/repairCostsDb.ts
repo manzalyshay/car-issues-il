@@ -1,4 +1,4 @@
-import { getServiceClient } from '@/lib/adminAuth';
+import { dbAll } from '@/lib/db';
 
 const CATEGORY_TIER: Record<string, string> = {
   suv: 'suv', crossover: 'suv', pickup: 'suv',
@@ -9,24 +9,24 @@ const CATEGORY_TIER: Record<string, string> = {
 export interface RepairCost {
   repair_key: string;
   repair_name_he: string;
-  min_ils: number;
-  max_ils: number;
+  cost_min_ils: number;
+  cost_max_ils: number;
   category: string;
   applies_to: string;
-  source_url?: string;
-  notes_he?: string;
+  notes?: string;
 }
 
 export async function getRepairCosts(category: string): Promise<RepairCost[]> {
   const tier = CATEGORY_TIER[category] ?? 'family';
-  const db = getServiceClient();
-  const { data } = await db
-    .from('repair_costs')
-    .select('repair_key, repair_name_he, min_ils, max_ils, category, applies_to, source_url, notes_he')
-    .in('applies_to', ['all', tier])
-    .order('category')
-    .order('repair_key');
-  return data ?? [];
+  try {
+    return await dbAll<RepairCost>(
+      `SELECT repair_key, repair_name_he, cost_min_ils, cost_max_ils, category, applies_to, notes
+       FROM repair_costs WHERE applies_to IN ('all', ?) ORDER BY category, repair_key`,
+      tier,
+    );
+  } catch {
+    return [];
+  }
 }
 
 export interface ModelRepairCost {
@@ -39,12 +39,13 @@ export interface ModelRepairCost {
 }
 
 export async function getModelRepairCosts(makeSlug: string, modelSlug: string): Promise<ModelRepairCost[]> {
-  const db = getServiceClient();
-  const { data } = await db
-    .from('user_repair_costs')
-    .select('repair_key, repair_name_he, cost_ils, workshop_type, notes, year')
-    .eq('make_slug', makeSlug)
-    .eq('model_slug', modelSlug)
-    .order('repair_key');
-  return data ?? [];
+  try {
+    return await dbAll<ModelRepairCost>(
+      `SELECT repair_key, repair_name_he, cost_ils, workshop_type, notes, year
+       FROM user_repair_costs WHERE make_slug = ? AND model_slug = ? ORDER BY repair_key`,
+      makeSlug, modelSlug,
+    );
+  } catch {
+    return [];
+  }
 }

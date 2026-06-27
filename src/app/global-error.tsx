@@ -2,11 +2,19 @@
 
 import { useEffect } from 'react';
 
+const isEn = typeof window !== 'undefined' && window.location.hostname.includes('.net');
+
+const CONTENT = {
+  en: { lang: 'en', dir: 'ltr', title: 'Site Under Maintenance', body: "The database is currently unavailable. We're working on it — we'll be back soon.", retry: 'Please try again in a few minutes.', tryAgain: 'Try Again', home: 'Home' },
+  he: { lang: 'he', dir: 'rtl', title: 'האתר בתחזוקה זמנית', body: 'מסד הנתונים אינו זמין כרגע. אנחנו עובדים על זה — נחזור בקרוב.', retry: 'ניתן לנסות שוב בעוד מספר דקות.', tryAgain: 'נסה שוב', home: 'עמוד הבית' },
+};
+
 export default function GlobalError({ error, reset }: { error: Error & { digest?: string }; reset: () => void }) {
   useEffect(() => { console.error(error); }, [error]);
+  const c = isEn ? CONTENT.en : CONTENT.he;
 
   return (
-    <html lang="he" dir="rtl">
+    <html lang={c.lang} dir={c.dir}>
       <body style={{ margin: 0, fontFamily: 'system-ui, sans-serif', background: '#0f0f0f' }}>
         <div style={{
           minHeight: '100vh', display: 'flex', flexDirection: 'column',
@@ -15,12 +23,12 @@ export default function GlobalError({ error, reset }: { error: Error & { digest?
         }}>
           <div style={{ fontSize: '4rem', marginBottom: 16 }}>🔧</div>
           <h1 style={{ fontSize: '1.75rem', fontWeight: 800, color: '#fff', marginBottom: 12 }}>
-            האתר בתחזוקה זמנית
+            {c.title}
           </h1>
           <p style={{ fontSize: '1.05rem', color: '#aaa', maxWidth: 420, lineHeight: 1.7, marginBottom: 28 }}>
-            מסד הנתונים אינו זמין כרגע. אנחנו עובדים על זה — נחזור בקרוב.
+            {c.body}
             <br />
-            <span style={{ fontSize: '0.85rem' }}>ניתן לנסות שוב בעוד מספר דקות.</span>
+            <span style={{ fontSize: '0.85rem' }}>{c.retry}</span>
           </p>
           <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', justifyContent: 'center' }}>
             <button
@@ -31,7 +39,7 @@ export default function GlobalError({ error, reset }: { error: Error & { digest?
                 border: 'none', fontWeight: 700, fontSize: '0.95rem', cursor: 'pointer',
               }}
             >
-              נסה שוב
+              {c.tryAgain}
             </button>
             <a
               href="/"
@@ -42,7 +50,7 @@ export default function GlobalError({ error, reset }: { error: Error & { digest?
                 fontSize: '0.95rem', textDecoration: 'none',
               }}
             >
-              עמוד הבית
+              {c.home}
             </a>
           </div>
         </div>

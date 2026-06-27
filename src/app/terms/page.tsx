@@ -19,7 +19,7 @@ export default function TermsPage() {
         <h1 style={{ fontSize: '2rem', fontWeight: 900, marginBottom: 8 }}>תנאי שימוש</h1>
         <p style={{ color: 'var(--text-muted)', fontSize: '0.875rem', marginBottom: 40 }}>עדכון אחרון: מרץ 2026</p>
 
-        <div className="card" style={{ padding: '32px', lineHeight: 1.8, color: 'var(--text-secondary)' }}>
+        <div className="card" style={{ padding: '32px', lineHeight: 1.8, color: 'var(--text-muted)' }}>
           <Section title="1. כללי">
             <p>ברוכים הבאים ל-CarIssues IL ("האתר"). השימוש באתר מהווה הסכמה לתנאים המפורטים להלן. אם אינך מסכים לתנאים אלה, אנא הפסק את השימוש באתר.</p>
           </Section>
@@ -62,7 +62,7 @@ export default function TermsPage() {
         </div>
 
         <div style={{ marginTop: 24, textAlign: 'center' }}>
-          <Link href="/contact" style={{ color: 'var(--brand-red)', fontWeight: 600, textDecoration: 'none' }}>
+          <Link href="/contact" style={{ color: 'var(--accent)', fontWeight: 600, textDecoration: 'none' }}>
             שאלות? צור קשר ←
           </Link>
         </div>
@@ -74,7 +74,7 @@ export default function TermsPage() {
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <div style={{ marginBottom: 32 }}>
-      <h2 style={{ fontSize: '1.0625rem', fontWeight: 800, color: 'var(--text-primary)', marginBottom: 12 }}>{title}</h2>
+      <h2 style={{ fontSize: '1.0625rem', fontWeight: 800, color: 'var(--text)', marginBottom: 12 }}>{title}</h2>
       {children}
     </div>
   );

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getServiceClient } from '@/lib/adminAuth';
+import { dbAll, dbRun } from '@/lib/db';
 
 export interface Recall {
   id: string;
@@ -116,7 +116,6 @@ export async function GET(req: NextRequest) {
 
   try {
     const currentYear = new Date().getFullYear();
-    const sb = getServiceClient();
 
     // 1. Fetch raw recalls from NHTSA
     let rawRecalls: any[] = [];
@@ -156,13 +155,12 @@ export async function GET(req: NextRequest) {
 
     // 2. Load already-translated records from DB
     const ids = unique.map(r => r.NHTSACampaignNumber ?? '').filter(Boolean);
-    const { data: cached } = await sb
-      .from('recalls_cache')
-      .select('*')
-      .in('id', ids);
+    const cached = ids.length > 0
+      ? await dbAll(`SELECT * FROM recalls_cache WHERE id IN (${ids.map(() => '?').join(',')})`, ...ids).catch(() => [])
+      : [];
 
     const cacheMap = new Map<string, any>();
-    for (const row of cached ?? []) cacheMap.set(row.id, row);
+    for (const row of cached) cacheMap.set(row.id as string, row);
 
     // 3. Identify which recalls need translation
     const toTranslate = unique.filter(r => {
@@ -207,9 +205,15 @@ export async function GET(req: NextRequest) {
       }
 
       // Upsert new rows (fire-and-forget errors)
-      await sb.from('recalls_cache').upsert(rows, { onConflict: 'id' }).then(
-        () => {}, err => console.error('[Recalls cache upsert]', err)
-      );
+      for (const row of rows) {
+        dbRun(
+          `INSERT OR REPLACE INTO recalls_cache (id, make, model, date, component_he, summary_he, consequence_he, remedy_he, manufacturer, recall_year)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+          row.id, row.make, row.model, row.date,
+          row.component_he, row.summary_he, row.consequence_he, row.remedy_he,
+          row.manufacturer, row.recall_year,
+        ).catch(err => console.error('[Recalls cache upsert]', err));
+      }
     }
 
     // 5. Build final response from cache

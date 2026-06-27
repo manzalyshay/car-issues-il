@@ -1,24 +1,27 @@
 import { getModelRepairCosts, getRepairCosts, type RepairCost } from '@/lib/repairCostsDb';
 import RepairCostSubmit from './RepairCostSubmit';
+import { getHostLocale } from '@/lib/hostLocale';
+import { translations } from '@/lib/translations';
 
 interface Props {
   makeSlug: string;
   modelSlug: string;
   makeNameHe: string;
   modelNameHe: string;
+  makeNameEn?: string;
+  modelNameEn?: string;
   category: string;
 }
 
-const WORKSHOP_LABELS: Record<string, string> = {
-  dealer: 'יבואן מורשה',
-  independent: 'מוסך עצמאי',
-  chain: 'רשת מוסכים',
-};
-
-export default async function RepairCostsSection({ makeSlug, modelSlug, makeNameHe, modelNameHe, category }: Props) {
+export default async function RepairCostsSection({ makeSlug, modelSlug, makeNameHe, modelNameHe, makeNameEn, modelNameEn, category }: Props) {
+  const locale = await getHostLocale();
+  const rp = translations[locale].repairCosts;
+  const carName = locale === 'en'
+    ? `${makeNameEn ?? makeNameHe} ${modelNameEn ?? modelNameHe}`
+    : `${makeNameHe} ${modelNameHe}`;
   const [modelCosts, genericCosts] = await Promise.all([
-    getModelRepairCosts(makeSlug, modelSlug),
-    getRepairCosts(category),
+    getModelRepairCosts(makeSlug, modelSlug).catch(() => []),
+    getRepairCosts(category).catch(() => []),
   ]);
 
   const repairOptions = [...new Map(genericCosts.map(c => [c.repair_key, { repair_key: c.repair_key, repair_name_he: c.repair_name_he }])).values()];
@@ -38,11 +41,11 @@ export default async function RepairCostsSection({ makeSlug, modelSlug, makeName
     <section style={{ marginTop: 40, paddingTop: 28, borderTop: '1px solid var(--border)' }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 8, marginBottom: 16 }}>
         <h2 style={{ fontSize: '1.05rem', fontWeight: 700, margin: 0 }}>
-          🔧 עלויות תיקון — {makeNameHe} {modelNameHe}
+          🔧 {rp.title} — {carName}
         </h2>
         {hasModelData && (
           <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>
-            מבוסס על {modelCosts.length} דיווחי בעלים · פורום רכב ישראל
+            {rp.basedOn} {modelCosts.length} {rp.ownerReports}
           </span>
         )}
       </div>
@@ -57,16 +60,16 @@ export default async function RepairCostsSection({ makeSlug, modelSlug, makeName
               const median = sorted[Math.floor(sorted.length / 2)];
               return (
                 <div key={key} style={{
-                  background: 'var(--bg-secondary)', border: '1px solid var(--border)',
+                  background: 'var(--surface-2)', border: '1px solid var(--border)',
                   borderRadius: 10, padding: '12px 14px',
                 }}>
                   <div style={{ fontWeight: 600, fontSize: '0.875rem', marginBottom: 6 }}>{name}</div>
-                  <div style={{ fontSize: '1.1rem', fontWeight: 800, color: 'var(--brand-red)' }}>
+                  <div style={{ fontSize: '1.1rem', fontWeight: 800, color: 'var(--accent)' }}>
                     ₪{min.toLocaleString('he-IL')}{min !== max ? `–₪${max.toLocaleString('he-IL')}` : ''}
                   </div>
                   {costs.length > 1 && (
                     <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginTop: 3 }}>
-                      חציון: ₪{median.toLocaleString('he-IL')} · {costs.length} דיווחים
+                      {rp.median}: ₪{median.toLocaleString('he-IL')} · {costs.length} {rp.reports}
                     </div>
                   )}
                 </div>
@@ -74,12 +77,12 @@ export default async function RepairCostsSection({ makeSlug, modelSlug, makeName
             })}
           </div>
           <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: 20 }}>
-            המחירים מבוססים על דיווחים מהפורום — ייתכנו הבדלים בין מוסכים ושנות ייצור.
+            {rp.disclaimer}
           </p>
         </>
       ) : (
         <p style={{ fontSize: '0.875rem', color: 'var(--text-muted)', marginBottom: 20 }}>
-          אין עדיין נתוני עלויות ספציפיים ל{makeNameHe} {modelNameHe}. אם תיקנת רכב זה — שתף את העלות!
+          {rp.noData} {carName}{rp.noDataSuffix}
         </p>
       )}
 
@@ -88,6 +91,8 @@ export default async function RepairCostsSection({ makeSlug, modelSlug, makeName
         modelSlug={modelSlug}
         makeNameHe={makeNameHe}
         modelNameHe={modelNameHe}
+        makeNameEn={makeNameEn}
+        modelNameEn={modelNameEn}
         repairOptions={repairOptions}
       />
     </section>

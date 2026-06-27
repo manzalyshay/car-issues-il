@@ -6,6 +6,8 @@ import { getExpertReviews } from '@/lib/expertReviews';
 import { getReviewsForModel } from '@/lib/reviewsDb';
 import { getRepairCosts } from '@/lib/repairCostsDb';
 import MakeLogo from '@/components/MakeLogo';
+import { getHostLocale } from '@/lib/hostLocale';
+import { translations } from '@/lib/translations';
 
 export const revalidate = 86400;
 
@@ -32,10 +34,16 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
 export default async function IssuesPage({ params }: Props) {
   const { make: makeSlug, model: modelSlug } = await params;
-  const make = await getMakeBySlug(makeSlug);
+  const [locale, make, model] = await Promise.all([
+    getHostLocale(), getMakeBySlug(makeSlug), getModelBySlug(makeSlug, modelSlug),
+  ]);
   if (!make) notFound();
-  const model = await getModelBySlug(makeSlug, modelSlug);
   if (!model) notFound();
+  const ip = translations[locale].issuesPage;
+  const cp = translations[locale].carsPage;
+  const isEn = locale === 'en';
+  const makeName = isEn ? make.nameEn : make.nameHe;
+  const modelName = isEn ? model.nameEn : model.nameHe;
 
   const [expertReviewsList, allReviews, repairCosts] = await Promise.all([
     getExpertReviews(makeSlug, modelSlug),
@@ -98,13 +106,13 @@ export default async function IssuesPage({ params }: Props) {
 
         {/* Breadcrumb */}
         <nav style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: 20, display: 'flex', gap: 6, alignItems: 'center', flexWrap: 'wrap' }}>
-          <Link href="/cars" style={{ color: 'var(--text-muted)', textDecoration: 'none' }}>יצרנים</Link>
+          <Link href="/cars" style={{ color: 'var(--text-muted)', textDecoration: 'none' }}>{cp.makes}</Link>
           <span>›</span>
-          <Link href={`/cars/${make.slug}`} style={{ color: 'var(--text-muted)', textDecoration: 'none' }}>{make.nameHe}</Link>
+          <Link href={`/cars/${make.slug}`} style={{ color: 'var(--text-muted)', textDecoration: 'none' }}>{makeName}</Link>
           <span>›</span>
-          <Link href={`/cars/${make.slug}/${model.slug}`} style={{ color: 'var(--text-muted)', textDecoration: 'none' }}>{model.nameHe}</Link>
+          <Link href={`/cars/${make.slug}/${model.slug}`} style={{ color: 'var(--text-muted)', textDecoration: 'none' }}>{modelName}</Link>
           <span>›</span>
-          <span>בעיות נפוצות</span>
+          <span>{ip.breadcrumb}</span>
         </nav>
 
         {/* Header */}
@@ -112,10 +120,10 @@ export default async function IssuesPage({ params }: Props) {
           <MakeLogo logoUrl={make.logoUrl} nameEn={make.nameEn} size={44} />
           <div>
             <h1 style={{ fontSize: '1.5rem', fontWeight: 800, margin: 0, lineHeight: 1.2 }}>
-              {make.nameHe} {model.nameHe} — בעיות נפוצות ותקלות
+              {makeName} {modelName} — {ip.titleSuffix}
             </h1>
             <p style={{ margin: '4px 0 0', fontSize: '0.875rem', color: 'var(--text-muted)' }}>
-              {make.nameEn} {model.nameEn} · מבוסס על {allReviews.length} ביקורות בעלים
+              {isEn ? make.nameEn : make.nameHe} {isEn ? model.nameEn : model.nameHe} · {ip.basedOn} {allReviews.length} {ip.ownerReviews}
             </p>
           </div>
         </div>
@@ -124,7 +132,7 @@ export default async function IssuesPage({ params }: Props) {
         {cons.length > 0 && (
           <section style={{ marginBottom: 32 }}>
             <h2 style={{ fontSize: '1.1rem', fontWeight: 700, marginBottom: 14, display: 'flex', alignItems: 'center', gap: 8 }}>
-              ⚠️ בעיות וחסרונות מדווחים
+              {ip.reportedIssues}
             </h2>
             <div style={{ background: 'rgba(230,57,70,0.05)', border: '1px solid rgba(230,57,70,0.15)', borderRadius: 12, padding: '16px 20px' }}>
               <ul style={{ margin: 0, padding: 0, listStyle: 'none', display: 'flex', flexDirection: 'column', gap: 10 }}>
@@ -143,7 +151,7 @@ export default async function IssuesPage({ params }: Props) {
         {pros.length > 0 && (
           <section style={{ marginBottom: 32 }}>
             <h2 style={{ fontSize: '1.1rem', fontWeight: 700, marginBottom: 14, display: 'flex', alignItems: 'center', gap: 8 }}>
-              ✅ יתרונות
+              {ip.pros}
             </h2>
             <div style={{ background: 'rgba(22,163,74,0.05)', border: '1px solid rgba(22,163,74,0.15)', borderRadius: 12, padding: '16px 20px' }}>
               <ul style={{ margin: 0, padding: 0, listStyle: 'none', display: 'flex', flexDirection: 'column', gap: 10 }}>
@@ -162,9 +170,9 @@ export default async function IssuesPage({ params }: Props) {
         {expertReview?.localSummaryHe && (
           <section style={{ marginBottom: 32 }}>
             <h2 style={{ fontSize: '1.1rem', fontWeight: 700, marginBottom: 12 }}>
-              🤖 ניתוח AI — מה אומרים הבעלים
+              {ip.aiAnalysis}
             </h2>
-            <p style={{ fontSize: '0.9rem', lineHeight: 1.8, color: 'var(--text-secondary)', background: 'var(--bg-secondary)', borderRadius: 10, padding: '14px 18px', margin: 0 }}>
+            <p style={{ fontSize: '0.9rem', lineHeight: 1.8, color: 'var(--text-muted)', background: 'var(--surface-2)', borderRadius: 10, padding: '14px 18px', margin: 0 }}>
               {expertReview.localSummaryHe}
             </p>
           </section>
@@ -174,23 +182,23 @@ export default async function IssuesPage({ params }: Props) {
         {repairCosts.length > 0 && (
           <section style={{ marginBottom: 32 }}>
             <h2 style={{ fontSize: '1.1rem', fontWeight: 700, marginBottom: 14 }}>
-              🔧 עלויות תיקון נפוצות
+              {ip.repairCosts}
             </h2>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: 8 }}>
               {repairCosts.slice(0, 8).map(r => (
                 <div key={r.repair_key + r.applies_to} style={{
-                  background: 'var(--bg-secondary)', border: '1px solid var(--border)',
+                  background: 'var(--surface-2)', border: '1px solid var(--border)',
                   borderRadius: 10, padding: '10px 14px',
                 }}>
                   <div style={{ fontSize: '0.825rem', fontWeight: 600, marginBottom: 3 }}>{r.repair_name_he}</div>
-                  <div style={{ fontSize: '0.95rem', fontWeight: 800, color: 'var(--brand-red)' }}>
+                  <div style={{ fontSize: '0.95rem', fontWeight: 800, color: 'var(--accent)' }}>
                     ₪{r.min_ils.toLocaleString('he-IL')}–₪{r.max_ils.toLocaleString('he-IL')}
                   </div>
                 </div>
               ))}
             </div>
             <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: 10 }}>
-              מחירים משוערים לישראל · <Link href="/repairs" style={{ color: 'var(--text-muted)' }}>כל עלויות התיקון</Link>
+              {ip.pricesNote} · <Link href="/repairs" style={{ color: 'var(--text-muted)' }}>{ip.allRepairCosts}</Link>
             </p>
           </section>
         )}
@@ -199,18 +207,18 @@ export default async function IssuesPage({ params }: Props) {
         {problemReviews.length > 0 && (
           <section style={{ marginBottom: 32 }}>
             <h2 style={{ fontSize: '1.1rem', fontWeight: 700, marginBottom: 14 }}>
-              💬 מה אומרים הבעלים
+              {ip.ownersSay}
             </h2>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
               {problemReviews.map(r => (
-                <div key={r.id} style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 10, padding: '14px 16px' }}>
+                <div key={r.id} style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 10, padding: '14px 16px' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
-                    <span style={{ fontWeight: 700, fontSize: '0.875rem' }}>{r.authorName ?? 'בעל רכב'}</span>
+                    <span style={{ fontWeight: 700, fontSize: '0.875rem' }}>{r.authorName ?? ip.carOwner}</span>
                     <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>· {r.rating}/5 ★</span>
                     {r.year && <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>· {r.year}</span>}
                   </div>
                   {r.body && (
-                    <p style={{ margin: 0, fontSize: '0.875rem', lineHeight: 1.7, color: 'var(--text-secondary)' }}>
+                    <p style={{ margin: 0, fontSize: '0.875rem', lineHeight: 1.7, color: 'var(--text-muted)' }}>
                       {r.body.slice(0, 300)}{r.body.length > 300 ? '…' : ''}
                     </p>
                   )}
@@ -227,14 +235,14 @@ export default async function IssuesPage({ params }: Props) {
             className="btn btn-outline"
             style={{ fontSize: '0.875rem' }}
           >
-            ← חזרה לדף {model.nameHe}
+            {ip.backTo} {modelName}
           </Link>
           <Link
             href={`/cars/${make.slug}/${model.slug}#write-review`}
             className="btn btn-primary"
             style={{ fontSize: '0.875rem' }}
           >
-            ✍️ הוסף חוות דעת
+            {ip.addReview}
           </Link>
         </div>
       </div>

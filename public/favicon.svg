@@ -1,10 +1,10 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
-  <!-- Dark background -->
-  <rect width="32" height="32" rx="7" fill="#0a0b0f"/>
-  <!-- Left red accent bar -->
-  <rect x="4" y="6" width="3" height="20" rx="1.5" fill="#e63946"/>
+  <!-- Background -->
+  <rect width="32" height="32" rx="7" fill="#15202e"/>
+  <!-- Blue accent bar -->
+  <rect x="4" y="6" width="3" height="20" rx="1.5" fill="#1b4f8a"/>
   <!-- "C" letter -->
-  <text x="20" y="23" font-family="Arial Black, sans-serif" font-size="20" font-weight="900" text-anchor="middle" fill="#f0f2f5">C</text>
-  <!-- Red dot -->
-  <circle cx="28" cy="22" r="2.5" fill="#e63946"/>
+  <text x="20" y="23" font-family="Arial Black, sans-serif" font-size="20" font-weight="900" text-anchor="middle" fill="#f4f6fa">C</text>
+  <!-- Blue dot -->
+  <circle cx="28" cy="22" r="2.5" fill="#2f6fb0"/>
 </svg>

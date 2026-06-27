@@ -4,7 +4,6 @@ import { useState, useEffect } from 'react';
 import StarRating from './StarRating';
 import SharePopup from './SharePopup';
 import type { Review } from '@/data/reviews';
-import { CATEGORY_LABELS } from '@/data/reviews';
 import { useAuth } from '@/lib/authContext';
 import { useLocale } from '@/lib/localeContext';
 
@@ -14,14 +13,11 @@ interface Props {
   onDislike?: (id: string, delta: number) => void;
 }
 
-const FILTER_OPTIONS = [
-  { value: 'all',        label: 'הכל' },
-  { value: 'mechanical', label: 'מכאני' },
-  { value: 'electrical', label: 'חשמל' },
-  { value: 'comfort',    label: 'נוחות' },
-  { value: 'safety',     label: 'בטיחות' },
-  { value: 'general',    label: 'כללי' },
-];
+const FILTER_VALUES = ['all', 'mechanical', 'electrical', 'comfort', 'safety', 'general'] as const;
+
+const isHebrew = (s: string) => /[\u0590-\u05FF]/.test(s);
+const safeDisplayName = (name: string, locale: string) =>
+  locale === 'en' && isHebrew(name) ? 'Anonymous' : name;
 
 const LS_KEY = 'car_liked_reviews';
 const LS_DISLIKE_KEY = 'car_disliked_reviews';
@@ -56,6 +52,8 @@ interface Reply {
 }
 
 function ReplySection({ reviewId, user }: { reviewId: string; user: { id: string; email?: string } | null }) {
+  const { t, locale } = useLocale();
+  const rl = t.reviewList;
   const [open, setOpen]         = useState(false);
   const [replies, setReplies]   = useState<Reply[]>([]);
   const [loading, setLoading]   = useState(false);
@@ -122,10 +120,10 @@ function ReplySection({ reviewId, user }: { reviewId: string; user: { id: string
           borderRadius: 6, fontFamily: 'inherit', transition: 'color 0.15s',
           display: 'flex', alignItems: 'center', gap: 4,
         }}
-        onMouseEnter={e => { if (!loading) (e.currentTarget as HTMLElement).style.color = 'var(--text-primary)'; }}
+        onMouseEnter={e => { if (!loading) (e.currentTarget as HTMLElement).style.color = 'var(--text)'; }}
         onMouseLeave={e => { (e.currentTarget as HTMLElement).style.color = 'var(--text-muted)'; }}
       >
-        💬 {loading ? '...' : replyCount > 0 ? `${replyCount} תגובות` : 'הגב'}
+        💬 {loading ? '...' : replyCount > 0 ? `${replyCount} ${rl.replies}` : rl.reply}
       </button>
 
       {/* Replies + form */}
@@ -135,11 +133,11 @@ function ReplySection({ reviewId, user }: { reviewId: string; user: { id: string
             <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 10 }}>
               {replies.map(reply => (
                 <div key={reply.id} style={{ fontSize: '0.85rem', lineHeight: 1.6 }}>
-                  <span style={{ fontWeight: 700, color: 'var(--text-primary)', marginLeft: 6 }}>{reply.author_name}</span>
+                  <span style={{ fontWeight: 700, color: 'var(--text)', marginLeft: 6 }}>{safeDisplayName(reply.author_name, locale)}</span>
                   <span style={{ color: 'var(--text-muted)', fontSize: '0.72rem' }}>
-                    {new Date(reply.created_at).toLocaleDateString('he-IL', { year: 'numeric', month: 'short', day: 'numeric' })}
+                    {new Date(reply.created_at).toLocaleDateString(locale === 'en' ? 'en-US' : 'he-IL', { year: 'numeric', month: 'short', day: 'numeric' })}
                   </span>
-                  <p style={{ margin: '3px 0 0', color: 'var(--text-secondary)' }}>{reply.body}</p>
+                  <p style={{ margin: '3px 0 0', color: 'var(--text-muted)' }}>{reply.body}</p>
                 </div>
               ))}
             </div>
@@ -149,27 +147,27 @@ function ReplySection({ reviewId, user }: { reviewId: string; user: { id: string
             <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
               {!user && (
                 <input
-                  placeholder="שמך"
+                  placeholder={rl.namePlaceholder}
                   value={name}
                   onChange={e => setName(e.target.value)}
                   maxLength={50}
                   style={{
                     height: 34, padding: '0 10px', borderRadius: 8,
-                    border: '1.5px solid var(--border)', background: 'var(--bg-base)',
-                    color: 'var(--text-primary)', fontSize: '0.875rem', fontFamily: 'inherit',
+                    border: '1.5px solid var(--border)', background: 'var(--bg)',
+                    color: 'var(--text)', fontSize: '0.875rem', fontFamily: 'inherit',
                   }}
                 />
               )}
               <textarea
-                placeholder="כתוב תגובה..."
+                placeholder={rl.replyPlaceholder}
                 value={body}
                 onChange={e => setBody(e.target.value)}
                 maxLength={1000}
                 rows={3}
                 style={{
                   padding: '8px 10px', borderRadius: 8,
-                  border: '1.5px solid var(--border)', background: 'var(--bg-base)',
-                  color: 'var(--text-primary)', fontSize: '0.875rem', fontFamily: 'inherit',
+                  border: '1.5px solid var(--border)', background: 'var(--bg)',
+                  color: 'var(--text)', fontSize: '0.875rem', fontFamily: 'inherit',
                   resize: 'vertical', lineHeight: 1.5,
                 }}
               />
@@ -179,12 +177,12 @@ function ReplySection({ reviewId, user }: { reviewId: string; user: { id: string
                   disabled={submitting || !body.trim() || (!user && !name.trim())}
                   style={{
                     height: 30, padding: '0 16px', borderRadius: 8, border: 'none',
-                    background: 'var(--brand-red)', color: '#fff',
+                    background: 'var(--accent)', color: '#fff',
                     fontSize: '0.8125rem', fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit',
                     opacity: (submitting || !body.trim() || (!user && !name.trim())) ? 0.5 : 1,
                   }}
                 >
-                  {submitting ? '...' : 'שלח'}
+                  {submitting ? '...' : rl.send}
                 </button>
                 <button
                   onClick={() => { setShowForm(false); setBody(''); }}
@@ -192,10 +190,10 @@ function ReplySection({ reviewId, user }: { reviewId: string; user: { id: string
                     height: 30, padding: '0 12px', borderRadius: 8,
                     border: '1px solid var(--border)', background: 'transparent',
                     fontSize: '0.8125rem', cursor: 'pointer', fontFamily: 'inherit',
-                    color: 'var(--text-secondary)',
+                    color: 'var(--text-muted)',
                   }}
                 >
-                  ביטול
+                  {rl.cancel}
                 </button>
               </div>
             </div>
@@ -208,7 +206,7 @@ function ReplySection({ reviewId, user }: { reviewId: string; user: { id: string
                 borderRadius: 8, fontFamily: 'inherit', width: '100%', textAlign: 'center',
               }}
             >
-              + הוסף תגובה
+              {rl.addReply}
             </button>
           )}
         </div>
@@ -217,15 +215,11 @@ function ReplySection({ reviewId, user }: { reviewId: string; user: { id: string
   );
 }
 
-const REPORT_REASONS = [
-  { value: 'spam',      label: 'ספאם' },
-  { value: 'fake',      label: 'ביקורת מזויפת' },
-  { value: 'offensive', label: 'תוכן פוגעני' },
-  { value: 'wrong_car', label: 'רכב שגוי' },
-  { value: 'other',     label: 'אחר' },
-];
+const REPORT_REASON_VALUES = ['spam', 'fake', 'offensive', 'wrong_car', 'other'] as const;
 
 function ReportButton({ reviewId }: { reviewId: string }) {
+  const { t } = useLocale();
+  const rl = t.reviewList;
   const [open, setOpen]   = useState(false);
   const [reason, setReason] = useState('spam');
   const [sent, setSent]   = useState(false);
@@ -242,7 +236,7 @@ function ReportButton({ reviewId }: { reviewId: string }) {
     setBusy(false);
   };
 
-  if (sent) return <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>✓ דווח</span>;
+  if (sent) return <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{rl.reportSent}</span>;
 
   return (
     <div style={{ position: 'relative', marginRight: 'auto' }}>
@@ -254,31 +248,31 @@ function ReportButton({ reviewId }: { reviewId: string }) {
           borderRadius: 6, fontFamily: 'inherit',
           transition: 'color 0.15s',
         }}
-        onMouseEnter={(e) => ((e.target as HTMLElement).style.color = 'var(--brand-red)')}
+        onMouseEnter={(e) => ((e.target as HTMLElement).style.color = 'var(--accent)')}
         onMouseLeave={(e) => ((e.target as HTMLElement).style.color = 'var(--text-muted)')}
-        title="דווח על ביקורת"
+        title={rl.reportTitle}
       >
-        ⚑ דווח
+        {rl.reportButton}
       </button>
       {open && (
         <div style={{
           position: 'absolute', bottom: '100%', right: 0, zIndex: 50,
-          background: 'var(--bg-card)', border: '1px solid var(--border)',
+          background: 'var(--surface)', border: '1px solid var(--border)',
           borderRadius: 10, padding: 12, minWidth: 180,
           boxShadow: 'var(--shadow-md)',
         }}>
-          <p style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-muted)', marginBottom: 8 }}>סיבת הדיווח:</p>
+          <p style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-muted)', marginBottom: 8 }}>{rl.reportReason}</p>
           <select
             value={reason}
             onChange={(e) => setReason(e.target.value)}
             style={{
               width: '100%', height: 34, padding: '0 8px', marginBottom: 8,
               border: '1px solid var(--border)', borderRadius: 6,
-              background: 'var(--bg-base)', color: 'var(--text-primary)',
+              background: 'var(--bg)', color: 'var(--text)',
               fontSize: '0.8125rem', fontFamily: 'inherit',
             }}
           >
-            {REPORT_REASONS.map((r) => <option key={r.value} value={r.value}>{r.label}</option>)}
+            {REPORT_REASON_VALUES.map((v) => <option key={v} value={v}>{rl.reportReasons[v]}</option>)}
           </select>
           <div style={{ display: 'flex', gap: 6 }}>
             <button
@@ -286,11 +280,11 @@ function ReportButton({ reviewId }: { reviewId: string }) {
               disabled={busy}
               style={{
                 flex: 1, height: 30, borderRadius: 6, border: 'none',
-                background: 'var(--brand-red)', color: '#fff',
+                background: 'var(--accent)', color: '#fff',
                 fontSize: '0.8125rem', fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit',
               }}
             >
-              {busy ? '...' : 'שלח'}
+              {busy ? '...' : rl.send}
             </button>
             <button
               onClick={() => setOpen(false)}
@@ -298,10 +292,10 @@ function ReportButton({ reviewId }: { reviewId: string }) {
                 height: 30, padding: '0 10px', borderRadius: 6,
                 border: '1px solid var(--border)', background: 'transparent',
                 fontSize: '0.8125rem', cursor: 'pointer', fontFamily: 'inherit',
-                color: 'var(--text-secondary)',
+                color: 'var(--text-muted)',
               }}
             >
-              ביטול
+              {rl.cancel}
             </button>
           </div>
         </div>
@@ -312,7 +306,8 @@ function ReportButton({ reviewId }: { reviewId: string }) {
 
 export default function ReviewList({ reviews, onHelpful, onDislike }: Props) {
   const { user } = useAuth();
-  const { locale } = useLocale();
+  const { locale, t } = useLocale();
+  const rl = t.reviewList;
   const [filter, setFilter]     = useState<string>('all');
   const [yearFilter, setYearFilter] = useState<number | 'all'>('all');
   const [subModelFilter, setSubModelFilter] = useState<string | 'all'>('all');
@@ -439,19 +434,19 @@ export default function ReviewList({ reviews, onHelpful, onDislike }: Props) {
         {/* Controls */}
         <div style={{ display: 'flex', gap: 12, marginBottom: 20, flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between' }}>
           <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-            {FILTER_OPTIONS.map((o) => (
+            {FILTER_VALUES.map((v) => (
               <button
-                key={o.value}
-                onClick={() => setFilter(o.value)}
+                key={v}
+                onClick={() => setFilter(v)}
                 style={{
                   height: 32, padding: '0 14px', borderRadius: 9999, border: '1.5px solid',
-                  borderColor: filter === o.value ? 'var(--brand-red)' : 'var(--border)',
-                  background: filter === o.value ? 'rgba(230,57,70,.08)' : 'transparent',
-                  color: filter === o.value ? 'var(--brand-red)' : 'var(--text-secondary)',
+                  borderColor: filter === v ? 'var(--accent)' : 'var(--border)',
+                  background: filter === v ? 'rgba(27,79,138,.06)' : 'transparent',
+                  color: filter === v ? 'var(--accent)' : 'var(--text-muted)',
                   fontSize: '0.8125rem', fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit', transition: 'all 0.15s',
                 }}
               >
-                {o.label}
+                {rl[v]}
               </button>
             ))}
             {availableYears.length > 1 && (
@@ -465,7 +460,7 @@ export default function ReviewList({ reviews, onHelpful, onDislike }: Props) {
                       height: 32, padding: '0 14px', borderRadius: 9999, border: '1.5px solid',
                       borderColor: yearFilter === y ? '#2563eb' : 'var(--border)',
                       background: yearFilter === y ? 'rgba(37,99,235,.08)' : 'transparent',
-                      color: yearFilter === y ? '#2563eb' : 'var(--text-secondary)',
+                      color: yearFilter === y ? '#2563eb' : 'var(--text-muted)',
                       fontSize: '0.8125rem', fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit', transition: 'all 0.15s',
                     }}
                   >
@@ -485,7 +480,7 @@ export default function ReviewList({ reviews, onHelpful, onDislike }: Props) {
                       height: 32, padding: '0 14px', borderRadius: 9999, border: '1.5px solid',
                       borderColor: subModelFilter === sm ? '#7c3aed' : 'var(--border)',
                       background: subModelFilter === sm ? 'rgba(124,58,237,.08)' : 'transparent',
-                      color: subModelFilter === sm ? '#7c3aed' : 'var(--text-secondary)',
+                      color: subModelFilter === sm ? '#7c3aed' : 'var(--text-muted)',
                       fontSize: '0.8125rem', fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit', transition: 'all 0.15s',
                     }}
                   >
@@ -500,13 +495,13 @@ export default function ReviewList({ reviews, onHelpful, onDislike }: Props) {
             onChange={(e) => setSort(e.target.value as typeof sort)}
             style={{
               height: 32, padding: '0 12px', borderRadius: 8, border: '1.5px solid var(--border)',
-              background: 'var(--bg-base)', color: 'var(--text-secondary)',
+              background: 'var(--bg)', color: 'var(--text-muted)',
               fontSize: '0.8125rem', fontFamily: 'inherit', cursor: 'pointer',
             }}
           >
-            <option value="newest">חדש ביותר</option>
-            <option value="helpful">הכי שימושי</option>
-            <option value="rating">דירוג גבוה</option>
+            <option value="newest">{rl.sortNewest}</option>
+            <option value="helpful">{rl.sortHelpful}</option>
+            <option value="rating">{rl.sortRating}</option>
           </select>
         </div>
 
@@ -514,7 +509,7 @@ export default function ReviewList({ reviews, onHelpful, onDislike }: Props) {
           <div className="card" style={{ padding: 48, textAlign: 'center', color: 'var(--text-muted)' }}>
             <div style={{ fontSize: 40, marginBottom: 12 }}>📝</div>
             <p style={{ fontSize: '0.9375rem' }}>
-              {filter === 'all' ? 'אין ביקורות עדיין — היה הראשון לכתוב!' : 'אין ביקורות בקטגוריה זו.'}
+              {filter === 'all' ? rl.noReviews : rl.noReviewsCategory}
             </p>
           </div>
         ) : (
@@ -534,21 +529,24 @@ export default function ReviewList({ reviews, onHelpful, onDislike }: Props) {
                         <StarRating rating={review.rating} size={15} />
                         <span className="badge badge-blue">{review.year}</span>
                         {review.subModel && <span className="badge badge-gray" style={{ background: 'rgba(37,99,235,.08)', color: '#2563eb', border: '1px solid rgba(37,99,235,.2)' }}>{review.subModel}</span>}
-                        <span className="badge badge-gray">{CATEGORY_LABELS[review.category]}</span>
+                        <span className="badge badge-gray">{t.reviewForm.categories[review.category]}</span>
                         {review.mileage && (
                           <span style={{ color: 'var(--text-muted)', fontSize: '0.8125rem' }}>
-                            📍 {review.mileage.toLocaleString('he-IL')} ק״מ
+                            📍 {review.mileage.toLocaleString(locale === 'en' ? 'en-US' : 'he-IL')} {rl.km}
                           </span>
                         )}
-                        {showEn && (
-                          <span title="Originally written in Hebrew — translated by AI" style={{ display: 'inline-flex', alignItems: 'center', gap: 4, padding: '3px 8px', borderRadius: 4, background: 'rgba(251,191,36,0.1)', border: '1px solid rgba(251,191,36,0.35)', fontSize: '0.7rem', fontWeight: 700, letterSpacing: '0.05em', color: '#d97706', cursor: 'default', whiteSpace: 'nowrap' }}>
-                            🇮🇱→🇬🇧 Translated from Hebrew
+                        {locale === 'en' ? (
+                          <span
+                            title={showEn ? "AI-translated from Hebrew" : "Originally written in Hebrew — translation pending"}
+                            style={{ display: 'inline-flex', alignItems: 'center', gap: 4, padding: '3px 8px', borderRadius: 4, background: showEn ? 'rgba(251,191,36,0.1)' : 'rgba(59,130,246,0.08)', border: `1px solid ${showEn ? 'rgba(251,191,36,0.35)' : 'rgba(59,130,246,0.25)'}`, fontSize: '0.7rem', fontWeight: 700, letterSpacing: '0.05em', color: showEn ? '#d97706' : '#2563eb', cursor: 'default', whiteSpace: 'nowrap' }}
+                          >
+                            {showEn ? '🌐 Translated' : '🇮🇱 Hebrew'}
                           </span>
-                        )}
+                        ) : null}
                       </div>
                     </div>
                     <div style={{ textAlign: 'left', flexShrink: 0 }}>
-                      <div style={{ fontWeight: 700, fontSize: '0.875rem', color: 'var(--text-primary)' }}>{review.authorName}</div>
+                      <div style={{ fontWeight: 700, fontSize: '0.875rem', color: 'var(--text)' }}>{safeDisplayName(review.authorName, locale)}</div>
                       <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
                         {new Date(review.createdAt).toLocaleDateString(locale === 'en' ? 'en-US' : 'he-IL', { year: 'numeric', month: 'long', day: 'numeric' })}
                       </div>
@@ -556,7 +554,7 @@ export default function ReviewList({ reviews, onHelpful, onDislike }: Props) {
                   </div>
 
                   {/* Body */}
-                  <p style={{ color: 'var(--text-secondary)', lineHeight: 1.7, fontSize: '0.9375rem', marginBottom: review.images?.length ? 12 : 16, direction: showEn ? 'ltr' : 'rtl', textAlign: showEn ? 'left' : 'right' }}>
+                  <p style={{ color: 'var(--text-muted)', lineHeight: 1.7, fontSize: '0.9375rem', marginBottom: review.images?.length ? 12 : 16, direction: showEn ? 'ltr' : 'rtl', textAlign: showEn ? 'left' : 'right' }}>
                     {displayBody}
                   </p>
 
@@ -598,8 +596,8 @@ export default function ReviewList({ reviews, onHelpful, onDislike }: Props) {
                         display: 'flex', alignItems: 'center', gap: 5,
                         height: 30, padding: '0 12px', borderRadius: 9999,
                         border: `1.5px solid ${disliked.has(review.id) ? 'rgba(230,57,70,.4)' : 'var(--border)'}`,
-                        background: disliked.has(review.id) ? 'rgba(230,57,70,.08)' : 'transparent',
-                        color: disliked.has(review.id) ? 'var(--brand-red)' : 'var(--text-muted)',
+                        background: disliked.has(review.id) ? 'rgba(27,79,138,.06)' : 'transparent',
+                        color: disliked.has(review.id) ? 'var(--accent)' : 'var(--text-muted)',
                         fontSize: '0.8125rem', cursor: 'pointer',
                         fontFamily: 'inherit', transition: 'all 0.15s',
                       }}
@@ -610,9 +608,9 @@ export default function ReviewList({ reviews, onHelpful, onDislike }: Props) {
                     <span style={{ flex: 1 }} />
                     <SharePopup
                       compact
-                      label="שתף"
-                      title={`${review.title || `ביקורת על ${review.makeSlug} ${review.modelSlug}`} — CarIssues IL`}
-                      url={`https://carissues.co.il/cars/${review.makeSlug}/${review.modelSlug}#review-${review.id}`}
+                      label={rl.share}
+                      title={`${review.title || `${review.makeSlug} ${review.modelSlug}`} — CarIssues`}
+                      url={`https://${locale === 'en' ? 'carissues.net' : 'carissues.co.il'}/cars/${review.makeSlug}/${review.modelSlug}#review-${review.id}`}
                     />
                   </div>
 

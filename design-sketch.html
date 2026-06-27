@@ -1,0 +1,833 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CarIssues — New Design Sketch</title>
+<style>
+  /* ── TOKENS ── */
+  :root {
+    --red:        #dc1a2c;
+    --red-light:  #fff0f1;
+    --red-mid:    #ffd6d9;
+
+    --bg:         #f5f6f8;
+    --bg-card:    #ffffff;
+    --bg-subtle:  #eef0f3;
+
+    --text:       #111318;
+    --text-2:     #4a4f5e;
+    --text-3:     #8890a0;
+
+    --border:     #e2e5eb;
+    --border-mid: #cdd1da;
+
+    --shadow-sm:  0 1px 4px rgba(0,0,0,.07);
+    --shadow-md:  0 4px 20px rgba(0,0,0,.10);
+    --shadow-lg:  0 12px 48px rgba(0,0,0,.12);
+
+    --radius:     14px;
+    --radius-sm:  8px;
+    --radius-full:9999px;
+
+    --font: 'Rubik', 'Segoe UI', system-ui, sans-serif;
+    --font-display: 'Bebas Neue', 'Syne', Impact, sans-serif;
+  }
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html { font-size: 16px; }
+  body { font-family: var(--font); background: var(--bg); color: var(--text); line-height: 1.6; }
+  a { color: inherit; text-decoration: none; }
+  img { max-width: 100%; }
+
+  /* ── UTILS ── */
+  .container { max-width: 1200px; margin: 0 auto; padding: 0 24px; }
+  .tag { display: inline-flex; align-items: center; gap: 5px; font-size: .72rem; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; padding: 3px 10px; border-radius: var(--radius-full); }
+  .tag-red { background: var(--red-light); color: var(--red); }
+  .tag-gray { background: var(--bg-subtle); color: var(--text-2); }
+  .section-label { font-size: .68rem; font-weight: 800; letter-spacing: .22em; text-transform: uppercase; color: var(--red); display: flex; align-items: center; gap: 8px; margin-bottom: 18px; }
+  .section-label::before { content: ''; display: block; width: 20px; height: 2.5px; background: var(--red); border-radius: 2px; flex-shrink: 0; }
+  .card { background: var(--bg-card); border-radius: var(--radius); box-shadow: var(--shadow-sm); border: 1px solid var(--border); overflow: hidden; transition: box-shadow .18s, transform .18s; }
+  .card:hover { box-shadow: var(--shadow-md); transform: translateY(-2px); }
+  .btn { display: inline-flex; align-items: center; gap: 7px; font-size: .8rem; font-weight: 700; padding: 9px 18px; border-radius: var(--radius-full); cursor: pointer; transition: all .18s; }
+  .btn-red { background: var(--red); color: #fff; border: none; }
+  .btn-red:hover { background: #b8141f; }
+  .btn-outline { background: transparent; color: var(--text-2); border: 1.5px solid var(--border-mid); }
+  .btn-outline:hover { border-color: var(--red); color: var(--red); }
+  .stars { color: #f59e0b; font-size: .85rem; letter-spacing: 1px; }
+  .score { display: inline-flex; align-items: center; justify-content: center; width: 40px; height: 40px; border-radius: 50%; font-weight: 800; font-size: .9rem; color: #fff; }
+  .score-high { background: #22c55e; }
+  .score-mid  { background: #f59e0b; }
+  .score-low  { background: var(--red); }
+
+  /* ── HEADER ── */
+  header {
+    background: #fff;
+    border-bottom: 1px solid var(--border);
+    position: sticky; top: 0; z-index: 100;
+    box-shadow: 0 1px 8px rgba(0,0,0,.06);
+  }
+  .header-inner { display: flex; align-items: center; gap: 24px; height: 62px; }
+  .logo { font-family: var(--font-display); font-size: 1.6rem; letter-spacing: .04em; color: var(--text); }
+  .logo span { color: var(--red); }
+  nav { display: flex; align-items: center; gap: 4px; flex: 1; }
+  .nav-link { font-size: .82rem; font-weight: 600; padding: 6px 12px; border-radius: var(--radius-sm); color: var(--text-2); transition: all .15s; }
+  .nav-link:hover, .nav-link.active { color: var(--red); background: var(--red-light); }
+  .header-actions { display: flex; align-items: center; gap: 10px; margin-inline-start: auto; }
+  .avatar { width: 34px; height: 34px; border-radius: 50%; background: var(--red-light); border: 2px solid var(--red-mid); display: flex; align-items: center; justify-content: center; font-size: .8rem; font-weight: 700; color: var(--red); }
+
+  /* ── HERO ── */
+  .hero {
+    background: linear-gradient(135deg, #fff 0%, #f9fafb 100%);
+    padding: 56px 0 48px;
+    border-bottom: 1px solid var(--border);
+    position: relative;
+    overflow: hidden;
+  }
+  .hero::after {
+    content: 'CARISSUES';
+    position: absolute; inset-inline-end: -20px; top: 50%; transform: translateY(-50%);
+    font-family: var(--font-display); font-size: clamp(6rem, 12vw, 11rem);
+    color: rgba(220,26,44,.04); pointer-events: none; user-select: none;
+    white-space: nowrap;
+  }
+  .hero-content { max-width: 640px; position: relative; }
+  .hero h1 {
+    font-family: var(--font-display);
+    font-size: clamp(2.4rem, 5vw, 3.8rem);
+    line-height: 1.05;
+    letter-spacing: .02em;
+    color: var(--text);
+    margin-bottom: 12px;
+    font-weight: 400;
+  }
+  .hero h1 em { color: var(--red); font-style: normal; }
+  .hero-sub { font-size: .95rem; color: var(--text-2); margin-bottom: 28px; max-width: 480px; line-height: 1.75; }
+
+  /* Search bar */
+  .search-bar {
+    display: flex;
+    background: #fff;
+    border: 2px solid var(--border);
+    border-radius: var(--radius-full);
+    overflow: hidden;
+    box-shadow: var(--shadow-md);
+    transition: border-color .2s, box-shadow .2s;
+    max-width: 540px;
+  }
+  .search-bar:focus-within { border-color: var(--red); box-shadow: 0 4px 24px rgba(220,26,44,.12); }
+  .search-input { flex: 1; border: none; outline: none; padding: 14px 20px; font-size: .95rem; font-family: var(--font); color: var(--text); background: transparent; }
+  .search-input::placeholder { color: var(--text-3); }
+  .search-btn { background: var(--red); color: #fff; border: none; padding: 0 24px; font-size: .85rem; font-weight: 700; cursor: pointer; display: flex; align-items: center; gap: 8px; transition: background .15s; }
+  .search-btn:hover { background: #b8141f; }
+
+  .hero-stats { display: flex; gap: 28px; margin-top: 28px; }
+  .stat { display: flex; flex-direction: column; }
+  .stat-num { font-family: var(--font-display); font-size: 1.6rem; color: var(--text); letter-spacing: .02em; }
+  .stat-label { font-size: .72rem; color: var(--text-3); text-transform: uppercase; letter-spacing: .1em; font-weight: 600; }
+
+  /* ── MAIN GRID ── */
+  .main-section { padding: 48px 0; }
+  .home-grid { display: grid; grid-template-columns: 1fr 340px; gap: 32px; align-items: start; }
+
+  /* Recent Reviews — main column */
+  .reviews-grid { display: grid; gap: 16px; }
+  .review-card { display: grid; grid-template-columns: 72px 1fr; gap: 16px; align-items: start; padding: 20px; }
+  .review-logo { width: 72px; height: 72px; border-radius: var(--radius-sm); background: var(--bg-subtle); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+  .review-logo img { max-width: 52px; max-height: 44px; object-fit: contain; filter: drop-shadow(0 2px 4px rgba(0,0,0,.1)); }
+  .review-meta { font-size: .72rem; color: var(--text-3); font-weight: 600; text-transform: uppercase; letter-spacing: .08em; margin-bottom: 4px; }
+  .review-car { font-size: 1rem; font-weight: 700; color: var(--text); margin-bottom: 4px; }
+  .review-title { font-size: .88rem; color: var(--text-2); margin-bottom: 8px; line-height: 1.5; }
+  .review-footer { display: flex; align-items: center; justify-content: space-between; }
+  .review-author { font-size: .72rem; color: var(--text-3); }
+
+  /* Sidebar */
+  .sidebar { display: flex; flex-direction: column; gap: 24px; }
+
+  /* Top Ranked */
+  .ranked-list { display: flex; flex-direction: column; gap: 2px; }
+  .ranked-item { display: flex; align-items: center; gap: 12px; padding: 12px 16px; border-radius: var(--radius-sm); transition: background .15s; }
+  .ranked-item:hover { background: var(--bg-subtle); }
+  .ranked-num { font-family: var(--font-display); font-size: 1.3rem; color: var(--red); width: 28px; text-align: center; flex-shrink: 0; }
+  .ranked-logo { width: 40px; height: 36px; object-fit: contain; filter: drop-shadow(0 1px 3px rgba(0,0,0,.1)); }
+  .ranked-name { flex: 1; font-size: .88rem; font-weight: 700; }
+  .ranked-score { font-size: .78rem; font-weight: 700; color: var(--text-2); }
+
+  /* Recalls widget */
+  .recall-list { display: flex; flex-direction: column; gap: 0; }
+  .recall-item { display: flex; align-items: flex-start; gap: 12px; padding: 12px 16px; border-bottom: 1px solid var(--border); }
+  .recall-item:last-child { border-bottom: none; }
+  .recall-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--red); flex-shrink: 0; margin-top: 6px; }
+  .recall-text { font-size: .82rem; color: var(--text-2); line-height: 1.55; }
+  .recall-car { font-weight: 700; color: var(--text); }
+  .recall-date { font-size: .7rem; color: var(--text-3); margin-top: 2px; }
+
+  /* Videos */
+  .videos-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+  .video-card { position: relative; border-radius: var(--radius-sm); overflow: hidden; aspect-ratio: 16/9; background: var(--bg-subtle); }
+  .video-thumb { width: 100%; height: 100%; object-fit: cover; }
+  .video-thumb-placeholder { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; background: linear-gradient(135deg, #e8eaed 0%, #d2d5db 100%); }
+  .video-thumb-placeholder span { font-size: 1.8rem; opacity: .4; }
+  .video-play { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; }
+  .play-btn { width: 36px; height: 36px; background: rgba(220,26,44,.9); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: #fff; font-size: .9rem; box-shadow: 0 2px 10px rgba(220,26,44,.4); }
+  .video-label { position: absolute; bottom: 0; left: 0; right: 0; padding: 6px 8px; background: linear-gradient(transparent, rgba(0,0,0,.65)); font-size: .7rem; font-weight: 600; color: #fff; }
+
+  /* ── DIVIDER ── */
+  .section-divider { border: none; border-top: 1px solid var(--border); margin: 0; }
+
+  /* ══════════════════════════════════════════
+     CAR PAGE SKETCH (below a visual separator)
+     ══════════════════════════════════════════ */
+  .page-divider {
+    background: var(--red);
+    color: #fff;
+    text-align: center;
+    padding: 14px;
+    font-size: .72rem;
+    font-weight: 800;
+    letter-spacing: .22em;
+    text-transform: uppercase;
+    margin: 0;
+  }
+
+  /* Car page layout */
+  .car-page { background: var(--bg); }
+
+  /* 3D hero — full width */
+  .car-3d-hero {
+    width: 100%;
+    background: linear-gradient(160deg, #1a1a24 0%, #0d0d18 100%);
+    position: relative;
+    overflow: hidden;
+    min-height: 340px;
+    display: flex;
+    align-items: center;
+  }
+  .car-3d-bg-text {
+    position: absolute;
+    font-family: var(--font-display);
+    font-size: clamp(8rem, 18vw, 16rem);
+    color: rgba(255,255,255,.03);
+    top: 50%; transform: translateY(-50%);
+    inset-inline-start: -2vw;
+    pointer-events: none; user-select: none;
+    white-space: nowrap; letter-spacing: -.02em;
+  }
+  .car-3d-canvas { flex: 1; min-height: 300px; display: flex; align-items: center; justify-content: center; }
+  .car-3d-placeholder { text-align: center; color: rgba(255,255,255,.15); }
+  .car-3d-placeholder .car-icon { font-size: 7rem; display: block; margin-bottom: 8px; }
+  .car-3d-placeholder p { font-size: .8rem; letter-spacing: .1em; text-transform: uppercase; font-weight: 600; }
+  .car-3d-info { position: absolute; bottom: 0; left: 0; right: 0; background: linear-gradient(transparent, rgba(0,0,0,.7)); padding: 32px 32px 24px; display: flex; align-items: flex-end; justify-content: space-between; }
+  .car-3d-title { color: #fff; }
+  .car-3d-title .make { font-size: .75rem; font-weight: 700; letter-spacing: .18em; text-transform: uppercase; color: rgba(255,255,255,.5); margin-bottom: 4px; }
+  .car-3d-title h1 { font-family: var(--font-display); font-size: clamp(2rem, 4vw, 3.2rem); color: #fff; font-weight: 400; letter-spacing: .04em; }
+  .car-3d-badges { display: flex; gap: 8px; align-items: center; }
+  .badge { background: rgba(255,255,255,.12); border: 1px solid rgba(255,255,255,.2); color: rgba(255,255,255,.85); font-size: .72rem; font-weight: 700; padding: 5px 12px; border-radius: var(--radius-full); backdrop-filter: blur(8px); }
+  .badge-score { background: rgba(220,26,44,.85); border-color: rgba(220,26,44,.5); color: #fff; }
+
+  /* Car page content layout */
+  .car-content { display: grid; grid-template-columns: 220px 1fr; gap: 0; min-height: 600px; }
+  .car-sidenav {
+    background: #fff;
+    border-inline-end: 1px solid var(--border);
+    padding: 24px 0;
+    position: sticky; top: 62px;
+    height: calc(100vh - 62px);
+    overflow-y: auto;
+  }
+  .sidenav-section { margin-bottom: 8px; }
+  .sidenav-label { font-size: .65rem; font-weight: 800; letter-spacing: .18em; text-transform: uppercase; color: var(--text-3); padding: 8px 20px 4px; }
+  .sidenav-link { display: flex; align-items: center; gap: 10px; padding: 9px 20px; font-size: .84rem; font-weight: 600; color: var(--text-2); transition: all .15s; border-inline-start: 3px solid transparent; }
+  .sidenav-link:hover { color: var(--red); background: var(--red-light); border-inline-start-color: var(--red); }
+  .sidenav-link.active { color: var(--red); background: var(--red-light); border-inline-start-color: var(--red); }
+  .sidenav-icon { font-size: 1rem; width: 20px; text-align: center; }
+
+  .car-main { padding: 32px; }
+
+  /* Score summary bar */
+  .score-summary {
+    background: #fff;
+    border-radius: var(--radius);
+    border: 1px solid var(--border);
+    padding: 24px 28px;
+    margin-bottom: 28px;
+    display: flex;
+    align-items: center;
+    gap: 32px;
+  }
+  .main-score { text-align: center; }
+  .main-score .num { font-family: var(--font-display); font-size: 3.5rem; color: var(--red); line-height: 1; }
+  .main-score .out-of { font-size: .75rem; color: var(--text-3); font-weight: 600; }
+  .score-divider { width: 1px; height: 60px; background: var(--border); flex-shrink: 0; }
+  .score-breakdown { display: flex; flex-direction: column; gap: 8px; flex: 1; }
+  .score-row { display: flex; align-items: center; gap: 10px; }
+  .score-row-label { font-size: .78rem; color: var(--text-2); width: 110px; flex-shrink: 0; }
+  .score-bar-bg { flex: 1; height: 6px; background: var(--bg-subtle); border-radius: 9999px; overflow: hidden; }
+  .score-bar-fill { height: 100%; background: linear-gradient(90deg, var(--red), #ff6b7a); border-radius: 9999px; }
+  .score-val { font-size: .78rem; font-weight: 700; color: var(--text); width: 28px; text-align: end; }
+
+  /* Pros/cons */
+  .pros-cons { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 28px; }
+  .pros-box, .cons-box { background: #fff; border-radius: var(--radius); border: 1px solid var(--border); padding: 20px; }
+  .pros-box { border-top: 3px solid #22c55e; }
+  .cons-box { border-top: 3px solid var(--red); }
+  .pc-label { font-size: .72rem; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; margin-bottom: 12px; }
+  .pros-box .pc-label { color: #22c55e; }
+  .cons-box .pc-label { color: var(--red); }
+  .pc-list { list-style: none; display: flex; flex-direction: column; gap: 7px; }
+  .pc-list li { font-size: .84rem; color: var(--text-2); display: flex; align-items: flex-start; gap: 8px; line-height: 1.5; }
+  .pc-list li::before { flex-shrink: 0; margin-top: 2px; font-size: .75rem; }
+  .pros-box .pc-list li::before { content: '+'; color: #22c55e; font-weight: 800; }
+  .cons-box .pc-list li::before { content: '–'; color: var(--red); font-weight: 800; }
+
+  /* Year selector */
+  .year-grid { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 24px; }
+  .year-btn { padding: 6px 14px; border-radius: var(--radius-sm); border: 1.5px solid var(--border); font-size: .82rem; font-weight: 700; color: var(--text-2); background: #fff; cursor: pointer; transition: all .15s; }
+  .year-btn:hover { border-color: var(--red); color: var(--red); }
+  .year-btn.active { background: var(--red); border-color: var(--red); color: #fff; }
+
+  /* Review cards in car page */
+  .car-reviews { display: flex; flex-direction: column; gap: 16px; }
+  .car-review-card { background: #fff; border-radius: var(--radius); border: 1px solid var(--border); padding: 20px; }
+  .cr-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+  .cr-author { font-size: .82rem; font-weight: 700; color: var(--text); }
+  .cr-date { font-size: .72rem; color: var(--text-3); }
+  .cr-title { font-size: .95rem; font-weight: 700; color: var(--text); margin-bottom: 6px; }
+  .cr-body { font-size: .85rem; color: var(--text-2); line-height: 1.65; }
+
+  /* ── FOOTER ── */
+  footer {
+    background: #1a1a24;
+    color: rgba(255,255,255,.5);
+    text-align: center;
+    padding: 24px;
+    font-size: .78rem;
+  }
+  footer strong { color: rgba(255,255,255,.8); }
+
+  /* ── PAGE NAV (mock tabs at top of sketch) ── */
+  .sketch-nav {
+    background: #fff;
+    border-bottom: 2px solid var(--red);
+    display: flex;
+    justify-content: center;
+    gap: 0;
+    position: sticky; top: 62px; z-index: 90;
+  }
+  .sketch-tab { padding: 12px 28px; font-size: .82rem; font-weight: 700; color: var(--text-2); cursor: pointer; border-bottom: 3px solid transparent; margin-bottom: -2px; transition: all .15s; }
+  .sketch-tab.active { color: var(--red); border-bottom-color: var(--red); }
+  .sketch-tab:hover { color: var(--red); }
+
+  /* Separator between pages */
+  .sketch-separator {
+    background: linear-gradient(135deg, #1a1a24, #0d0d18);
+    padding: 32px;
+    text-align: center;
+    color: rgba(255,255,255,.5);
+    font-size: .75rem;
+    letter-spacing: .15em;
+    text-transform: uppercase;
+    font-weight: 700;
+    border-top: 4px solid var(--red);
+    border-bottom: 4px solid var(--red);
+  }
+  .sketch-separator span { color: rgba(255,255,255,.2); font-size: 1.5rem; display: block; margin: 6px 0 0; }
+
+  /* Scrollspy label */
+  .design-label {
+    position: fixed; bottom: 20px; inset-inline-end: 20px;
+    background: var(--text); color: #fff;
+    padding: 8px 14px; border-radius: var(--radius-full);
+    font-size: .72rem; font-weight: 700; letter-spacing: .06em;
+    opacity: .75; pointer-events: none;
+    z-index: 9999;
+  }
+</style>
+</head>
+<body>
+
+<!-- ══════════════════════════════════
+     SECTION 1 — HOME PAGE
+     ══════════════════════════════════ -->
+
+<!-- HEADER -->
+<header>
+  <div class="container">
+    <div class="header-inner">
+      <a class="logo" href="#">Car<span>Issues</span></a>
+      <nav>
+        <a class="nav-link active" href="#">Home</a>
+        <a class="nav-link" href="#">Cars</a>
+        <a class="nav-link" href="#">Rankings</a>
+        <a class="nav-link" href="#">Recalls</a>
+        <a class="nav-link" href="#">Repairs</a>
+        <a class="nav-link" href="#">TCO</a>
+      </nav>
+      <div class="header-actions">
+        <a class="btn btn-outline" href="#">Login</a>
+        <div class="avatar">YC</div>
+      </div>
+    </div>
+  </div>
+</header>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="container">
+    <div class="hero-content">
+      <p class="section-label">Israel's car database</p>
+      <h1>Real Problems.<br><em>Real Reviews.</em></h1>
+      <p class="hero-sub">Find common issues, recalls and owner reviews for any car sold in Israel — by make, model and year.</p>
+
+      <!-- SEARCH BAR — prominent -->
+      <div class="search-bar">
+        <input class="search-input" type="text" placeholder="Search by make, model or problem…">
+        <button class="search-btn">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          Search
+        </button>
+      </div>
+
+      <!-- Quick links -->
+      <div style="display:flex;gap:8px;margin-top:14px;flex-wrap:wrap;">
+        <span style="font-size:.72rem;color:var(--text-3);align-self:center;">Popular:</span>
+        <a href="#" class="btn btn-outline" style="padding:4px 12px;font-size:.72rem;">Toyota</a>
+        <a href="#" class="btn btn-outline" style="padding:4px 12px;font-size:.72rem;">Mazda</a>
+        <a href="#" class="btn btn-outline" style="padding:4px 12px;font-size:.72rem;">Hyundai</a>
+        <a href="#" class="btn btn-outline" style="padding:4px 12px;font-size:.72rem;">Kia</a>
+        <a href="#" class="btn btn-outline" style="padding:4px 12px;font-size:.72rem;">Honda</a>
+        <a href="#" class="btn btn-outline" style="padding:4px 12px;font-size:.72rem;">Skoda</a>
+      </div>
+
+      <div class="hero-stats">
+        <div class="stat">
+          <span class="stat-num">47+</span>
+          <span class="stat-label">Brands</span>
+        </div>
+        <div class="stat">
+          <span class="stat-num">320+</span>
+          <span class="stat-label">Models</span>
+        </div>
+        <div class="stat">
+          <span class="stat-num">2,400+</span>
+          <span class="stat-label">Reviews</span>
+        </div>
+        <div class="stat">
+          <span class="stat-num">180+</span>
+          <span class="stat-label">Recalls</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- MAIN CONTENT -->
+<div class="container">
+  <div class="main-section">
+    <div class="home-grid">
+
+      <!-- LEFT COLUMN: Recent Reviews + Videos -->
+      <div>
+
+        <!-- Recent Reviews -->
+        <p class="section-label">Latest Owner Reviews</p>
+        <div class="reviews-grid">
+
+          <!-- Review card 1 -->
+          <div class="card review-card">
+            <div class="review-logo">
+              <!-- SVG placeholder logo -->
+              <svg width="52" height="36" viewBox="0 0 52 36" fill="none"><rect width="52" height="36" rx="6" fill="#f1f3f5"/><text x="50%" y="55%" dominant-baseline="middle" text-anchor="middle" font-size="11" fill="#9ca3af" font-weight="700">MAZDA</text></svg>
+            </div>
+            <div>
+              <div class="review-meta">Mazda CX-30 &bull; 2022</div>
+              <div class="review-car" style="font-size:.82rem;color:var(--text-3);margin-bottom:2px;">Verified Owner</div>
+              <div class="review-title">Engine noise after cold start — annoying but got used to it. Overall very happy with the car.</div>
+              <div class="review-footer">
+                <span class="stars">★★★★☆</span>
+                <span class="review-author">2 days ago</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Review card 2 -->
+          <div class="card review-card">
+            <div class="review-logo">
+              <svg width="52" height="36" viewBox="0 0 52 36" fill="none"><rect width="52" height="36" rx="6" fill="#f1f3f5"/><text x="50%" y="55%" dominant-baseline="middle" text-anchor="middle" font-size="11" fill="#9ca3af" font-weight="700">TOYOTA</text></svg>
+            </div>
+            <div>
+              <div class="review-meta">Toyota RAV4 &bull; 2021</div>
+              <div class="review-car" style="font-size:.82rem;color:var(--text-3);margin-bottom:2px;">Verified Owner</div>
+              <div class="review-title">Great hybrid — over 180k km, zero major issues. AC fan slightly noisy but nothing serious.</div>
+              <div class="review-footer">
+                <span class="stars">★★★★★</span>
+                <span class="review-author">4 days ago</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Review card 3 -->
+          <div class="card review-card">
+            <div class="review-logo">
+              <svg width="52" height="36" viewBox="0 0 52 36" fill="none"><rect width="52" height="36" rx="6" fill="#f1f3f5"/><text x="50%" y="55%" dominant-baseline="middle" text-anchor="middle" font-size="11" fill="#9ca3af" font-weight="700">KIA</text></svg>
+            </div>
+            <div>
+              <div class="review-meta">Kia Sportage &bull; 2023</div>
+              <div class="review-car" style="font-size:.82rem;color:var(--text-3);margin-bottom:2px;">Verified Owner</div>
+              <div class="review-title">Infotainment freezes occasionally. Dealership couldn't reproduce. Otherwise a solid car.</div>
+              <div class="review-footer">
+                <span class="stars">★★★★☆</span>
+                <span class="review-author">1 week ago</span>
+              </div>
+            </div>
+          </div>
+
+        </div>
+
+        <div style="text-align:center;margin-top:20px;">
+          <a class="btn btn-outline" href="#">View all reviews &rarr;</a>
+        </div>
+
+        <!-- Separator -->
+        <hr class="section-divider" style="margin:36px 0;">
+
+        <!-- Videos Section -->
+        <p class="section-label">Car Videos</p>
+        <div class="videos-row">
+          <div class="video-card card">
+            <div class="video-thumb-placeholder"><span>&#127909;</span></div>
+            <div class="video-play"><div class="play-btn">&#9654;</div></div>
+            <div class="video-label">Mazda CX-5 — 2024 Review</div>
+          </div>
+          <div class="video-card card">
+            <div class="video-thumb-placeholder"><span>&#127909;</span></div>
+            <div class="video-play"><div class="play-btn">&#9654;</div></div>
+            <div class="video-label">Toyota Corolla Cross Test</div>
+          </div>
+          <div class="video-card card">
+            <div class="video-thumb-placeholder"><span>&#127909;</span></div>
+            <div class="video-play"><div class="play-btn">&#9654;</div></div>
+            <div class="video-label">Hyundai Tucson vs Kia Sportage</div>
+          </div>
+        </div>
+
+      </div><!-- /left column -->
+
+      <!-- RIGHT SIDEBAR: Top Ranked + Recalls -->
+      <div class="sidebar">
+
+        <!-- Top Ranked -->
+        <div class="card" style="padding:20px 8px;">
+          <div style="padding:0 12px;"><p class="section-label">Top Ranked Cars</p></div>
+          <div class="ranked-list">
+            <a class="ranked-item" href="#">
+              <span class="ranked-num">1</span>
+              <svg class="ranked-logo" viewBox="0 0 60 36" fill="none"><rect width="60" height="36" rx="4" fill="#f1f3f5"/><text x="50%" y="55%" dominant-baseline="middle" text-anchor="middle" font-size="10" fill="#9ca3af" font-weight="700">TOYOTA</text></svg>
+              <span class="ranked-name">Toyota RAV4</span>
+              <span class="ranked-score">9.4</span>
+            </a>
+            <a class="ranked-item" href="#">
+              <span class="ranked-num">2</span>
+              <svg class="ranked-logo" viewBox="0 0 60 36" fill="none"><rect width="60" height="36" rx="4" fill="#f1f3f5"/><text x="50%" y="55%" dominant-baseline="middle" text-anchor="middle" font-size="10" fill="#9ca3af" font-weight="700">MAZDA</text></svg>
+              <span class="ranked-name">Mazda CX-5</span>
+              <span class="ranked-score">9.1</span>
+            </a>
+            <a class="ranked-item" href="#">
+              <span class="ranked-num">3</span>
+              <svg class="ranked-logo" viewBox="0 0 60 36" fill="none"><rect width="60" height="36" rx="4" fill="#f1f3f5"/><text x="50%" y="55%" dominant-baseline="middle" text-anchor="middle" font-size="10" fill="#9ca3af" font-weight="700">HONDA</text></svg>
+              <span class="ranked-name">Honda HR-V</span>
+              <span class="ranked-score">8.8</span>
+            </a>
+            <a class="ranked-item" href="#">
+              <span class="ranked-num">4</span>
+              <svg class="ranked-logo" viewBox="0 0 60 36" fill="none"><rect width="60" height="36" rx="4" fill="#f1f3f5"/><text x="50%" y="55%" dominant-baseline="middle" text-anchor="middle" font-size="10" fill="#9ca3af" font-weight="700">SKODA</text></svg>
+              <span class="ranked-name">Skoda Octavia</span>
+              <span class="ranked-score">8.7</span>
+            </a>
+            <a class="ranked-item" href="#">
+              <span class="ranked-num">5</span>
+              <svg class="ranked-logo" viewBox="0 0 60 36" fill="none"><rect width="60" height="36" rx="4" fill="#f1f3f5"/><text x="50%" y="55%" dominant-baseline="middle" text-anchor="middle" font-size="10" fill="#9ca3af" font-weight="700">KIA</text></svg>
+              <span class="ranked-name">Kia Sportage</span>
+              <span class="ranked-score">8.5</span>
+            </a>
+          </div>
+          <div style="padding:8px 16px 0;"><a class="btn btn-outline" href="#" style="width:100%;justify-content:center;font-size:.78rem;">Full Rankings &rarr;</a></div>
+        </div>
+
+        <!-- Recalls -->
+        <div class="card" style="overflow:hidden;">
+          <div style="padding:16px 16px 0;"><p class="section-label">Latest Recalls</p></div>
+          <div class="recall-list">
+            <div class="recall-item">
+              <div class="recall-dot"></div>
+              <div>
+                <div class="recall-text"><span class="recall-car">Toyota RAV4 2019–2022</span> — Fuel pump may fail causing stall</div>
+                <div class="recall-date">June 2025 &bull; 14,200 vehicles</div>
+              </div>
+            </div>
+            <div class="recall-item">
+              <div class="recall-dot"></div>
+              <div>
+                <div class="recall-text"><span class="recall-car">Mazda CX-5 2018–2021</span> — Airbag sensor malfunction</div>
+                <div class="recall-date">May 2025 &bull; 8,400 vehicles</div>
+              </div>
+            </div>
+            <div class="recall-item">
+              <div class="recall-dot"></div>
+              <div>
+                <div class="recall-text"><span class="recall-car">Hyundai Tucson 2020</span> — Brake system software update</div>
+                <div class="recall-date">May 2025 &bull; 3,100 vehicles</div>
+              </div>
+            </div>
+            <div class="recall-item">
+              <div class="recall-dot"></div>
+              <div>
+                <div class="recall-text"><span class="recall-car">Kia Sportage 2022</span> — Windshield wiper motor</div>
+                <div class="recall-date">Apr 2025 &bull; 5,700 vehicles</div>
+              </div>
+            </div>
+          </div>
+          <div style="padding:12px 16px;border-top:1px solid var(--border);"><a class="btn btn-outline" href="#" style="width:100%;justify-content:center;font-size:.78rem;">All Recalls &rarr;</a></div>
+        </div>
+
+      </div><!-- /sidebar -->
+
+    </div><!-- /home-grid -->
+  </div>
+</div>
+
+<!-- FOOTER -->
+<footer>
+  <strong>CarIssues</strong> &mdash; Israel's car issues database &bull; carissues.co.il &bull; carissues.net
+</footer>
+
+
+<!-- ══════════════════════════════════
+     SEPARATOR
+     ══════════════════════════════════ -->
+<div class="sketch-separator">
+  Car Page Design
+  <span>&darr;</span>
+</div>
+
+
+<!-- ══════════════════════════════════
+     SECTION 2 — CAR PAGE
+     ══════════════════════════════════ -->
+
+<!-- CAR PAGE HEADER (same) -->
+<header>
+  <div class="container">
+    <div class="header-inner">
+      <a class="logo" href="#">Car<span>Issues</span></a>
+      <nav>
+        <a class="nav-link" href="#">Home</a>
+        <a class="nav-link active" href="#">Cars</a>
+        <a class="nav-link" href="#">Rankings</a>
+        <a class="nav-link" href="#">Recalls</a>
+        <a class="nav-link" href="#">Repairs</a>
+        <a class="nav-link" href="#">TCO</a>
+      </nav>
+      <div class="header-actions">
+        <a class="btn btn-outline" href="#">Login</a>
+        <div class="avatar">YC</div>
+      </div>
+    </div>
+  </div>
+</header>
+
+<!-- 3D MODEL — FULL WIDTH AT TOP -->
+<div class="car-3d-hero">
+  <div class="car-3d-bg-text">MAZDA</div>
+  <div class="car-3d-canvas">
+    <div class="car-3d-placeholder">
+      <span class="car-icon">&#128663;</span>
+      <p>3D Model Viewer</p>
+    </div>
+  </div>
+  <div class="car-3d-info">
+    <div class="car-3d-title">
+      <div class="make">Mazda &bull; Crossover SUV</div>
+      <h1>CX-30</h1>
+    </div>
+    <div class="car-3d-badges">
+      <span class="badge">2019–2024</span>
+      <span class="badge">320+ Reviews</span>
+      <span class="badge badge-score">Expert 8.7</span>
+    </div>
+  </div>
+</div>
+
+<!-- CAR PAGE: side nav + content -->
+<div class="car-page">
+  <div class="car-content">
+
+    <!-- SIDE NAVIGATION -->
+    <aside class="car-sidenav">
+      <div class="sidenav-section">
+        <div class="sidenav-label">Overview</div>
+        <a class="sidenav-link active" href="#">
+          <span class="sidenav-icon">&#128203;</span> Summary
+        </a>
+        <a class="sidenav-link" href="#">
+          <span class="sidenav-icon">&#11088;</span> Expert Review
+        </a>
+        <a class="sidenav-link" href="#">
+          <span class="sidenav-icon">&#128200;</span> Rankings
+        </a>
+      </div>
+      <div class="sidenav-section">
+        <div class="sidenav-label">Details</div>
+        <a class="sidenav-link" href="#">
+          <span class="sidenav-icon">&#128467;</span> By Year
+        </a>
+        <a class="sidenav-link" href="#">
+          <span class="sidenav-icon">&#128295;</span> Common Issues
+        </a>
+        <a class="sidenav-link" href="#">
+          <span class="sidenav-icon">&#9888;&#65039;</span> Recalls
+        </a>
+        <a class="sidenav-link" href="#">
+          <span class="sidenav-icon">&#128664;</span> Trims
+        </a>
+      </div>
+      <div class="sidenav-section">
+        <div class="sidenav-label">Community</div>
+        <a class="sidenav-link" href="#">
+          <span class="sidenav-icon">&#128172;</span> Reviews
+        </a>
+        <a class="sidenav-link" href="#">
+          <span class="sidenav-icon">&#128249;</span> Videos
+        </a>
+        <a class="sidenav-link" href="#">
+          <span class="sidenav-icon">&#128247;</span> Photos
+        </a>
+      </div>
+      <div class="sidenav-section">
+        <div class="sidenav-label">Costs</div>
+        <a class="sidenav-link" href="#">
+          <span class="sidenav-icon">&#128176;</span> Repair Costs
+        </a>
+        <a class="sidenav-link" href="#">
+          <span class="sidenav-icon">&#128208;</span> TCO
+        </a>
+      </div>
+      <div class="sidenav-section">
+        <div class="sidenav-label">Compare</div>
+        <a class="sidenav-link" href="#">
+          <span class="sidenav-icon">&#9878;&#65039;</span> vs Similar Cars
+        </a>
+      </div>
+    </aside>
+
+    <!-- MAIN CONTENT AREA -->
+    <main class="car-main">
+
+      <!-- Score summary -->
+      <div class="score-summary">
+        <div class="main-score">
+          <div class="num">8.7</div>
+          <div class="out-of">out of 10</div>
+          <div class="stars" style="font-size:.8rem;margin-top:4px;">★★★★☆</div>
+        </div>
+        <div class="score-divider"></div>
+        <div class="score-breakdown">
+          <div class="score-row">
+            <span class="score-row-label">Reliability</span>
+            <div class="score-bar-bg"><div class="score-bar-fill" style="width:88%"></div></div>
+            <span class="score-val">8.8</span>
+          </div>
+          <div class="score-row">
+            <span class="score-row-label">Comfort</span>
+            <div class="score-bar-bg"><div class="score-bar-fill" style="width:82%"></div></div>
+            <span class="score-val">8.2</span>
+          </div>
+          <div class="score-row">
+            <span class="score-row-label">Value</span>
+            <div class="score-bar-bg"><div class="score-bar-fill" style="width:75%"></div></div>
+            <span class="score-val">7.5</span>
+          </div>
+          <div class="score-row">
+            <span class="score-row-label">Safety</span>
+            <div class="score-bar-bg"><div class="score-bar-fill" style="width:91%"></div></div>
+            <span class="score-val">9.1</span>
+          </div>
+          <div class="score-row">
+            <span class="score-row-label">Running Costs</span>
+            <div class="score-bar-bg"><div class="score-bar-fill" style="width:79%"></div></div>
+            <span class="score-val">7.9</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Pros & Cons -->
+      <div class="pros-cons">
+        <div class="pros-box">
+          <div class="pc-label">Pros</div>
+          <ul class="pc-list">
+            <li>Excellent fuel efficiency for the class</li>
+            <li>Premium interior feel and materials</li>
+            <li>Low reliability issues across all years</li>
+            <li>Strong safety ratings (5-star Euro NCAP)</li>
+          </ul>
+        </div>
+        <div class="cons-box">
+          <div class="pc-label">Cons</div>
+          <ul class="pc-list">
+            <li>Infotainment interface dated vs competitors</li>
+            <li>Rear cargo space smaller than class average</li>
+            <li>Engine noise on cold starts (minor)</li>
+            <li>No plug-in hybrid option</li>
+          </ul>
+        </div>
+      </div>
+
+      <!-- By Year -->
+      <p class="section-label">Browse by Year</p>
+      <div class="year-grid" style="margin-bottom:28px;">
+        <button class="year-btn">2019</button>
+        <button class="year-btn">2020</button>
+        <button class="year-btn active">2021</button>
+        <button class="year-btn">2022</button>
+        <button class="year-btn">2023</button>
+        <button class="year-btn">2024</button>
+      </div>
+
+      <!-- Owner Reviews -->
+      <p class="section-label">Owner Reviews</p>
+      <div class="car-reviews">
+        <div class="car-review-card">
+          <div class="cr-header">
+            <div>
+              <div class="cr-author">David K.</div>
+              <span class="stars" style="font-size:.78rem;">★★★★★</span>
+            </div>
+            <div class="cr-date">CX-30 2021 &bull; 62,000 km &bull; 3 months ago</div>
+          </div>
+          <div class="cr-title">Best car I've owned — zero issues in 3 years</div>
+          <div class="cr-body">Bought it brand new in 2021. Now at 62k km with zero mechanical issues. The engine noise on cold start was alarming at first but completely normal according to the dealership and it disappears after a minute. Fuel economy is excellent for a crossover.</div>
+        </div>
+        <div class="car-review-card">
+          <div class="cr-header">
+            <div>
+              <div class="cr-author">Miri S.</div>
+              <span class="stars" style="font-size:.78rem;">★★★★☆</span>
+            </div>
+            <div class="cr-date">CX-30 2022 &bull; 38,000 km &bull; 1 month ago</div>
+          </div>
+          <div class="cr-title">Great car, infotainment could be better</div>
+          <div class="cr-body">Love the driving experience and comfort. The only complaint is the infotainment — no touch screen and the MZD connect rotary dial takes getting used to. Otherwise very happy.</div>
+        </div>
+      </div>
+
+    </main>
+  </div><!-- /car-content -->
+</div><!-- /car-page -->
+
+<footer>
+  <strong>CarIssues</strong> &mdash; Israel's car issues database &bull; carissues.co.il &bull; carissues.net
+</footer>
+
+<div class="design-label">Design Sketch v1</div>
+
+</body>
+</html>

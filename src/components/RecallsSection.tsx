@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useMemo } from 'react';
 import type { Recall } from '@/app/api/recalls/route';
+import { useLocale } from '@/lib/localeContext';
 
 interface Props {
   makeEn: string;
@@ -11,6 +12,8 @@ interface Props {
 }
 
 export default function RecallsSection({ makeEn, modelEn, year, years }: Props) {
+  const { t } = useLocale();
+  const rc = t.recalls;
   const [recalls, setRecalls]     = useState<Recall[]>([]);
   const [loading, setLoading]     = useState(false);
   const [expanded, setExpanded]   = useState<string | null>(null);
@@ -47,8 +50,8 @@ export default function RecallsSection({ makeEn, modelEn, year, years }: Props) 
         onClick={() => setIsOpen(o => !o)}
         style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: isOpen ? 16 : 0, flexWrap: 'wrap', cursor: 'pointer', userSelect: 'none' }}
       >
-        <div style={{ width: 4, height: 24, borderRadius: 2, background: 'var(--brand-red)', flexShrink: 0 }} />
-        <h2 style={{ fontSize: '1.25rem', fontWeight: 800, margin: 0 }}>ריקולים וקריאות חזרה</h2>
+        <div style={{ width: 4, height: 24, borderRadius: 2, background: 'var(--accent)', flexShrink: 0 }} />
+        <h2 style={{ fontSize: '1.25rem', fontWeight: 800, margin: 0 }}>{rc.title}</h2>
         {!loading && recalls.length > 0 && (
           <span style={{
             fontSize: '0.75rem', color: 'var(--text-muted)',
@@ -59,7 +62,7 @@ export default function RecallsSection({ makeEn, modelEn, year, years }: Props) 
         )}
         {!loading && recalls.length > 0 && (
           <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
-            מקור: NHTSA
+            {rc.source}
           </span>
         )}
         <span style={{ marginRight: 'auto', fontSize: '0.875rem', color: 'var(--text-muted)' }}>
@@ -74,12 +77,12 @@ export default function RecallsSection({ makeEn, modelEn, year, years }: Props) 
             onClick={() => setFilterYear('all')}
             style={{
               height: 30, padding: '0 14px', borderRadius: 9999, fontSize: '0.8rem', fontWeight: 600,
-              background: filterYear === 'all' ? 'var(--brand-red)' : 'var(--bg-muted)',
-              color: filterYear === 'all' ? '#fff' : 'var(--text-secondary)',
+              background: filterYear === 'all' ? 'var(--accent)' : 'var(--bg-muted)',
+              color: filterYear === 'all' ? '#fff' : 'var(--text-muted)',
               border: 'none', cursor: 'pointer',
             }}
           >
-            כל השנים
+            {rc.allYears}
           </button>
           {availableYears.map(y => (
             <button
@@ -87,8 +90,8 @@ export default function RecallsSection({ makeEn, modelEn, year, years }: Props) 
               onClick={() => setFilterYear(y)}
               style={{
                 height: 30, padding: '0 14px', borderRadius: 9999, fontSize: '0.8rem', fontWeight: 600,
-                background: filterYear === y ? 'var(--brand-red)' : 'var(--bg-muted)',
-                color: filterYear === y ? '#fff' : 'var(--text-secondary)',
+                background: filterYear === y ? 'var(--accent)' : 'var(--bg-muted)',
+                color: filterYear === y ? '#fff' : 'var(--text-muted)',
                 border: 'none', cursor: 'pointer',
               }}
             >
@@ -102,13 +105,15 @@ export default function RecallsSection({ makeEn, modelEn, year, years }: Props) 
       {isOpen && loading ? (
         <div className="card" style={{ padding: 32, textAlign: 'center', color: 'var(--text-muted)' }}>
           <div style={{ fontSize: '1.5rem', marginBottom: 8 }}>🔍</div>
-          טוען ריקולים...
+          {rc.loading}
         </div>
       ) : isOpen && filtered.length === 0 ? (
         <div className="card" style={{ padding: 32, textAlign: 'center', color: 'var(--text-muted)' }}>
           <div style={{ fontSize: 36, marginBottom: 12 }}>✅</div>
           <p style={{ margin: 0 }}>
-            לא נמצאו ריקולים{year ? ` לשנת ${year}` : filterYear !== 'all' ? ` לשנת ${filterYear}` : ''}
+            {year || filterYear !== 'all'
+              ? `${rc.noneForYear} ${year ?? filterYear}`
+              : rc.noneFound}
           </p>
         </div>
       ) : isOpen ? (
@@ -125,7 +130,7 @@ export default function RecallsSection({ makeEn, modelEn, year, years }: Props) 
                     {r.year && (
                       <span style={{
                         fontSize: '0.75rem', fontWeight: 700,
-                        background: 'var(--bg-muted)', color: 'var(--text-secondary)',
+                        background: 'var(--bg-muted)', color: 'var(--text-muted)',
                         padding: '2px 8px', borderRadius: 4,
                       }}>
                         {r.year}
@@ -144,7 +149,7 @@ export default function RecallsSection({ makeEn, modelEn, year, years }: Props) 
 
                   {/* Component = title */}
                   <div style={{ fontWeight: 700, fontSize: '0.9375rem', marginBottom: 4, lineHeight: 1.4 }}>
-                    {r.component || 'ריקול'}
+                    {r.component || rc.component}
                   </div>
 
                   {/* Summary preview */}
@@ -169,7 +174,7 @@ export default function RecallsSection({ makeEn, modelEn, year, years }: Props) 
                   {r.summary && (
                     <div>
                       <div style={{ fontSize: '0.7rem', fontWeight: 700, color: 'var(--text-muted)', marginBottom: 4, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
-                        תיאור הבעיה
+                        {rc.descLabel}
                       </div>
                       <p style={{ margin: 0, fontSize: '0.875rem', lineHeight: 1.65 }}>{r.summary}</p>
                     </div>
@@ -177,7 +182,7 @@ export default function RecallsSection({ makeEn, modelEn, year, years }: Props) 
                   {r.consequence && (
                     <div>
                       <div style={{ fontSize: '0.7rem', fontWeight: 700, color: '#dc2626', marginBottom: 4, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
-                        סכנה אפשרית
+                        {rc.riskLabel}
                       </div>
                       <p style={{ margin: 0, fontSize: '0.875rem', lineHeight: 1.65 }}>{r.consequence}</p>
                     </div>
@@ -185,7 +190,7 @@ export default function RecallsSection({ makeEn, modelEn, year, years }: Props) 
                   {r.remedy && (
                     <div>
                       <div style={{ fontSize: '0.7rem', fontWeight: 700, color: '#16a34a', marginBottom: 4, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
-                        פתרון / תיקון
+                        {rc.fixLabel}
                       </div>
                       <p style={{ margin: 0, fontSize: '0.875rem', lineHeight: 1.65 }}>{r.remedy}</p>
                     </div>
@@ -194,9 +199,9 @@ export default function RecallsSection({ makeEn, modelEn, year, years }: Props) 
                     href={`https://www.nhtsa.gov/vehicle-safety/recalls#${r.id}`}
                     target="_blank"
                     rel="noopener noreferrer"
-                    style={{ fontSize: '0.8125rem', color: 'var(--brand-red)', textDecoration: 'none', fontWeight: 600 }}
+                    style={{ fontSize: '0.8125rem', color: 'var(--accent)', textDecoration: 'none', fontWeight: 600 }}
                   >
-                    פרטים נוספים באתר NHTSA ←
+                    {rc.moreDetails}
                   </a>
                 </div>
               )}

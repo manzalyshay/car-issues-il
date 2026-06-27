@@ -15,7 +15,7 @@ export default function CarRepairLoader({ text = 'טוען נתונים...' }: {
         <div className="car-loader-car" style={{ position: 'absolute', bottom: 16, left: '50%', transform: 'translateX(-50%)' }}>
           <svg width="90" height="44" viewBox="0 0 90 44" fill="none" xmlns="http://www.w3.org/2000/svg">
             {/* Body */}
-            <rect x="4" y="18" width="82" height="20" rx="4" fill="var(--brand-red)" />
+            <rect x="4" y="18" width="82" height="20" rx="4" fill="var(--accent)" />
             {/* Cabin */}
             <path d="M20 18 L28 4 L62 4 L70 18 Z" fill="#c1121f" />
             {/* Windows */}

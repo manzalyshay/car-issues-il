@@ -1,18 +1,25 @@
 import type { MetadataRoute } from 'next';
+import { headers } from 'next/headers';
 import { getAllMakes } from '@/lib/carsDb';
-import { getServiceClient } from '@/lib/adminAuth';
+import { dbAll } from '@/lib/db';
 
 export const dynamic = 'force-dynamic';
 
-const BASE = 'https://carissues.co.il';
+const HE_BASE = 'https://carissues.co.il';
+const EN_BASE = 'https://carissues.net';
+
+function isEnHost(h: string) {
+  return h === 'carissues.net' || h === 'www.carissues.net' || h.startsWith('en.');
+}
 
 function toTrimSlug(name: string) {
   return name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
 }
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
+  const host = (await headers()).get('host') ?? '';
+  const BASE = isEnHost(host) ? EN_BASE : HE_BASE;
   const makes = await getAllMakes().catch(() => []);
-  const db = getServiceClient();
 
   const makeUrls = makes.map((make) => ({
     url: `${BASE}/cars/${make.slug}`,
@@ -47,11 +54,9 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   );
 
   // Trim pages
-  let trims: { make_slug: string; model_slug: string; name: string }[] = [];
-  try {
-    const { data } = await db.from('car_trims').select('make_slug, model_slug, name');
-    trims = data ?? [];
-  } catch { /* skip trims in sitemap if DB unavailable */ }
+  const trims = await dbAll<{ make_slug: string; model_slug: string; name: string }>(
+    'SELECT make_slug, model_slug, name FROM car_trims',
+  ).catch(() => []);
   const trimUrls: MetadataRoute.Sitemap = trims.map((t) => ({
     url: `${BASE}/cars/${t.make_slug}/${t.model_slug}/trim/${toTrimSlug(t.name)}`,
     changeFrequency: 'weekly' as const,

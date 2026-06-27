@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { revalidateTag } from 'next/cache';
-import { getServiceClient } from '@/lib/adminAuth';
+import { dbFirst, dbRun } from '@/lib/db';
 
 export async function POST(
   req: NextRequest,
@@ -11,24 +11,11 @@ export async function POST(
     const body = await req.json().catch(() => ({}));
     const delta: number = body.delta === -1 ? -1 : 1;
 
-    const { data } = await getServiceClient()
-      .from('reviews')
-      .select('dislikes')
-      .eq('id', id)
-      .single();
+    const row = await dbFirst<{ dislikes: number }>('SELECT dislikes FROM reviews WHERE id = ?', id);
+    const current = row?.dislikes ?? 0;
+    await dbRun('UPDATE reviews SET dislikes = ? WHERE id = ?', Math.max(0, current + delta), id);
 
-    const current = data?.dislikes ?? 0;
-    const { error } = await getServiceClient()
-      .from('reviews')
-      .update({ dislikes: Math.max(0, current + delta) })
-      .eq('id', id);
-
-    if (error) {
-      console.error('[dislike]', error.message);
-      return NextResponse.json({ ok: false, error: error.message }, { status: 500 });
-    }
-
-    revalidateTag('reviews', 'default');
+    revalidateTag('reviews');
     return NextResponse.json({ ok: true });
   } catch (err) {
     console.error('[dislike] unexpected', err);

@@ -1,20 +1,25 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
-import { getMakeBySlug, getModelBySlug, getCategoryLabel } from '@/lib/carsDb';
+import { getMakeBySlug, getModelBySlug, getCategoryLabel, getSimilarModels } from '@/lib/carsDb';
+import { getHostLocale, getBaseUrl } from '@/lib/hostLocale';
+import { translations } from '@/lib/translations';
 import { getReviewsForCar, getAverageRating } from '@/lib/reviewsDb';
-import { getExpertReviewsForYear, getExpertReviews } from '@/lib/expertReviews';
+import { getExpertReviewsForYear } from '@/lib/expertReviews';
 import { getTrimSpecs } from '@/lib/trimSpecsDb';
-import { getRepairCosts } from '@/lib/repairCostsDb';
+import { findCarModel } from '@/lib/sketchfab';
+import { getImagesForCar } from '@/lib/carImages';
 import StarRating from '@/components/StarRating';
 import ExpertReviewsSection from '@/components/ExpertReviewsSection';
 import CarYearClient from './CarYearClient';
 import MakeLogo from '@/components/MakeLogo';
-import ShareButtons from '@/components/ShareButtons';
+import SharePopup from '@/components/SharePopup';
 import RecallsSection from '@/components/RecallsSection';
 import RecallsBadge from '@/components/RecallsBadge';
-import YearHero from './YearHero';
 import RepairCostsSection from '@/components/RepairCostsSection';
+import Car3DViewer from '@/components/Car3DViewer';
+import CarSidebarLayout from '../CarSidebarLayout';
+import FirstReviewCta from '../FirstReviewCta';
 
 export const revalidate = 86400;
 
@@ -22,11 +27,16 @@ interface Props { params: Promise<{ make: string; model: string; year: string }>
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { make: makeSlug, model: modelSlug, year } = await params;
-  const make = await getMakeBySlug(makeSlug);
-  if (!make) return {};
-  const model = await getModelBySlug(makeSlug, modelSlug);
-  if (!model) return {};
+  const [locale, make, model] = await Promise.all([
+    getHostLocale(),
+    getMakeBySlug(makeSlug),
+    getModelBySlug(makeSlug, modelSlug),
+  ]);
+  if (!make || !model) return {};
   const yearNum = parseInt(year);
+  const base = getBaseUrl(locale);
+  const url = `${base}/cars/${make.slug}/${model.slug}/${year}`;
+
   const [avgRating, reviews, trims, { review: metaExpertReview }] = await Promise.all([
     getAverageRating(makeSlug, modelSlug),
     getReviewsForCar(makeSlug, modelSlug, yearNum),
@@ -43,29 +53,41 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const trimNames = trims.slice(0, 4).map(t => t.name).join(', ');
   const trimDesc = trimNames ? ` גימורים: ${trimNames}${trims.length > 4 ? ' ועוד' : ''}.` : '';
 
-  const url = `https://carissues.co.il/cars/${make.slug}/${model.slug}/${year}`;
-  const ratingStr = avgRating ? ` · ${avgRating.toFixed(1)}★` : '';
-  const reviewPart = reviews.length > 0
-    ? `${reviews.length} ביקורות אמיתיות${avgRating ? ` ⭐ ${avgRating.toFixed(1)}` : ''}`
-    : 'ביקורות ובעיות נפוצות';
-
-  // When no user reviews but expert review exists — build a richer description from expert content
   const expertDesc = reviews.length === 0 && metaExpertReview
     ? (() => {
-        const topPro = metaExpertReview.pros[0] ?? '';
-        const topCon = metaExpertReview.cons[0] ?? '';
-        const parts = [topPro, topCon].filter(Boolean).join(' · ');
+        const parts = [metaExpertReview.pros[0], metaExpertReview.cons[0]].filter(Boolean).join(' · ');
         return parts ? ` ${parts}.` : '';
       })()
     : '';
 
+  if (locale === 'en') {
+    const reviewPart = reviews.length > 0
+      ? `${reviews.length} reviews${avgRating ? ` ⭐ ${avgRating.toFixed(1)}` : ''}`
+      : 'Reviews & Common Problems';
+    return {
+      title: `${make.nameEn} ${model.nameEn} ${year} — ${reviewPart} | Pros & Cons`,
+      description: `${reviews.length > 0 ? `${reviews.length} real owner reviews` : 'Real owner reviews'} for the ${make.nameEn} ${model.nameEn} ${year}${avgRating ? `. Average rating ${avgRating.toFixed(1)}/5` : ''}. Common problems, pros, cons and reliability.`,
+      alternates: { canonical: url, languages: { he: `https://carissues.co.il/cars/${make.slug}/${model.slug}/${year}`, en: url } },
+      openGraph: {
+        title: `${make.nameEn} ${model.nameEn} ${year} | CarIssues`,
+        description: `Owner reviews & common problems — ${make.nameEn} ${model.nameEn} ${year}`,
+        url,
+        images: [{ url: '/og-default.svg', width: 1200, height: 630 }],
+      },
+    };
+  }
+
+  const ratingStr = avgRating ? ` · ${avgRating.toFixed(1)}★` : '';
+  const reviewPart = reviews.length > 0
+    ? `${reviews.length} ביקורות אמיתיות${avgRating ? ` ⭐ ${avgRating.toFixed(1)}` : ''}`
+    : 'ביקורות ובעיות נפוצות';
   return {
     title: `${make.nameHe} ${model.nameHe} ${year} — ${reviewPart} | יתרונות וחסרונות`,
     description: `${reviews.length > 0 ? `${reviews.length} ביקורות אמיתיות על` : 'חוות דעת על'} ${make.nameHe} ${model.nameHe} ${year} (${make.nameEn} ${model.nameEn})${avgRating ? ` — דירוג ממוצע ${avgRating.toFixed(1)}/5` : ''}.${expertDesc}${priceDesc}${trimDesc} יתרונות, חסרונות ובעיות נפוצות מבעלי רכב בישראל.`,
-    alternates: { canonical: url },
+    alternates: { canonical: url, languages: { he: url, en: `https://carissues.net/cars/${make.slug}/${model.slug}/${year}` } },
     openGraph: {
       title: `${make.nameHe} ${model.nameHe} ${year}${ratingStr} | CarIssues IL`,
-      description: `${reviews.length > 0 ? `${reviews.length} ביקורות` : 'ביקורות'} ובעיות נפוצות — ${make.nameHe} ${model.nameHe} ${year}`,
+      description: `ביקורות ובעיות נפוצות — ${make.nameHe} ${model.nameHe} ${year}`,
       url,
       images: [{ url: '/og-default.svg', width: 1200, height: 630 }],
     },
@@ -74,29 +96,32 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
 export default async function CarYearPage({ params }: Props) {
   const { make: makeSlug, model: modelSlug, year } = await params;
-  const make = await getMakeBySlug(makeSlug);
+  const [locale, make, model] = await Promise.all([
+    getHostLocale(), getMakeBySlug(makeSlug), getModelBySlug(makeSlug, modelSlug),
+  ]);
   if (!make) notFound();
-  const model = await getModelBySlug(makeSlug, modelSlug);
   if (!model) notFound();
+
   const yearNum = parseInt(year);
   if (!model.years.includes(yearNum)) notFound();
 
-  const [reviews, { review: yearReview, isYearSpecific }, generalReviewsList, repairCosts] = await Promise.all([
+  const [reviews, { review: yearReview, isYearSpecific }, sketchfabModel, similarModels, carImages] = await Promise.all([
     getReviewsForCar(makeSlug, modelSlug, yearNum),
     getExpertReviewsForYear(makeSlug, modelSlug, yearNum),
-    getExpertReviews(makeSlug, modelSlug),
-    getRepairCosts(model.category),
+    findCarModel(makeSlug, modelSlug).catch(() => null),
+    getSimilarModels(makeSlug, modelSlug, model.category, 8).catch(() => []),
+    getImagesForCar(makeSlug, modelSlug).catch(() => []),
   ]);
-  const generalReview = generalReviewsList[0] ?? null;
 
   const avgRating = reviews.length
     ? reviews.reduce((s, r) => s + r.rating, 0) / reviews.length
     : null;
 
-  const ratingDist = [5, 4, 3, 2, 1].map((stars) => ({
-    stars,
-    count: reviews.filter((r) => r.rating === stars).length,
-  }));
+  const isEn = locale === 'en';
+  const cp = translations[locale].carPage;
+  const yp = translations[locale].yearPage;
+  const makeName = isEn ? make.nameEn : make.nameHe;
+  const modelName = isEn ? model.nameEn : model.nameHe;
 
   const jsonLd = {
     '@context': 'https://schema.org',
@@ -105,7 +130,7 @@ export default async function CarYearPage({ params }: Props) {
         '@type': 'Product',
         name: `${make.nameEn} ${model.nameEn} ${year}`,
         brand: { '@type': 'Brand', name: make.nameEn },
-        url: `https://carissues.co.il/cars/${make.slug}/${model.slug}/${year}`,
+        url: `${getBaseUrl(locale)}/cars/${make.slug}/${model.slug}/${year}`,
         ...(avgRating !== null && {
           aggregateRating: {
             '@type': 'AggregateRating',
@@ -134,219 +159,309 @@ export default async function CarYearPage({ params }: Props) {
           { '@type': 'ListItem', position: 5, name: String(year), item: `https://carissues.co.il/cars/${make.slug}/${model.slug}/${year}` },
         ],
       },
-      {
+      ...(yearReview && (yearReview.pros.length > 0 || yearReview.cons.length > 0) ? [{
         '@type': 'FAQPage',
         mainEntity: [
-          ...(yearReview && yearReview.pros.length > 0 ? [{
+          yearReview.pros.length > 0 && {
             '@type': 'Question',
             name: `מה היתרונות של ${make.nameHe} ${model.nameHe} ${year}?`,
             acceptedAnswer: { '@type': 'Answer', text: yearReview.pros.join('. ') },
-          }] : []),
-          ...(yearReview && yearReview.cons.length > 0 ? [{
+          },
+          yearReview.cons.length > 0 && {
             '@type': 'Question',
             name: `מה החסרונות של ${make.nameHe} ${model.nameHe} ${year}?`,
             acceptedAnswer: { '@type': 'Answer', text: yearReview.cons.join('. ') },
-          }] : []),
-          ...(yearReview?.localSummaryHe ? [{
+          },
+          yearReview.localSummaryHe && {
             '@type': 'Question',
             name: `מה אומרים בעלי ${make.nameHe} ${model.nameHe} ${year} בישראל?`,
             acceptedAnswer: { '@type': 'Answer', text: yearReview.localSummaryHe },
-          }] : []),
-          ...(avgRating !== null && reviews.length > 0 ? [{
+          },
+          avgRating !== null && reviews.length > 0 && {
             '@type': 'Question',
             name: `מה הדירוג של ${make.nameHe} ${model.nameHe} ${year}?`,
-            acceptedAnswer: { '@type': 'Answer', text: `${make.nameHe} ${model.nameHe} ${year} מקבל דירוג ממוצע של ${avgRating.toFixed(1)} מתוך 5 על בסיס ${reviews.length} ביקורות של בעלי רכב.` },
-          }] : []),
-          // Repair cost FAQ entries — great for AI search engines
-          ...(repairCosts.length > 0 ? [{
-            '@type': 'Question',
-            name: `כמה עולה טיפול תקופתי ל${make.nameHe} ${model.nameHe}?`,
-            acceptedAnswer: { '@type': 'Answer', text: `טיפול 10,000 ק"מ ל${make.nameHe} ${model.nameHe} עולה בממוצע ₪${repairCosts.find(r => r.repair_key === 'service_10k')?.min_ils ?? 450}–₪${repairCosts.find(r => r.repair_key === 'service_10k')?.max_ils ?? 1400}. טיפול 15,000 ק"מ: ₪${repairCosts.find(r => r.repair_key === 'service_15k')?.min_ils ?? 600}–₪${repairCosts.find(r => r.repair_key === 'service_15k')?.max_ils ?? 2000}. המחירים תלויים ביבואן מורשה לעומת מוסך עצמאי.` },
-          }, {
-            '@type': 'Question',
-            name: `כמה עולה החלפת בלמים ל${make.nameHe} ${model.nameHe}?`,
-            acceptedAnswer: { '@type': 'Answer', text: `החלפת בלמים קדמיים (רפידות + צלחות) ל${make.nameHe} ${model.nameHe} עולה ₪${repairCosts.find(r => r.repair_key === 'brake_pads_front')?.min_ils ?? 500}–₪${repairCosts.find(r => r.repair_key === 'brake_pads_front')?.max_ils ?? 1200}. בלמים אחוריים: ₪${repairCosts.find(r => r.repair_key === 'brake_pads_rear')?.min_ils ?? 500}–₪${repairCosts.find(r => r.repair_key === 'brake_pads_rear')?.max_ils ?? 900}.` },
-          }] : []),
+            acceptedAnswer: { '@type': 'Answer', text: `${make.nameHe} ${model.nameHe} ${year} מקבל דירוג ממוצע של ${avgRating.toFixed(1)} מתוך 5 על בסיס ${reviews.length} ביקורות.` },
+          },
         ].filter(Boolean),
-      },
+      }] : []),
     ],
   };
 
   return (
-    <div className="page-section">
-      <div className="container">
+    <div style={{ background: 'var(--bg)', minHeight: '100vh' }}>
+
+      {/* ── YEAR HERO — same look as model page ── */}
+      <div className="wrap" style={{ paddingBottom: 32 }}>
+
         {/* Breadcrumb */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: 'var(--text-muted)', fontSize: '0.875rem', marginBottom: 24, flexWrap: 'wrap' }}>
-          <Link href="/" style={{ color: 'var(--text-muted)', textDecoration: 'none' }}>בית</Link>
+        <nav className="model-breadcrumb">
+          <Link href="/">{translations[locale].carsPage.home}</Link>
           <span>›</span>
-          <Link href="/cars" style={{ color: 'var(--text-muted)', textDecoration: 'none' }}>יצרנים</Link>
+          <Link href="/cars">{translations[locale].carsPage.makes}</Link>
           <span>›</span>
-          <Link href={`/cars/${make.slug}`} style={{ color: 'var(--text-muted)', textDecoration: 'none' }}>{make.nameHe}</Link>
+          <Link href={`/cars/${make.slug}`}>{makeName}</Link>
           <span>›</span>
-          <Link href={`/cars/${make.slug}/${model.slug}`} style={{ color: 'var(--text-muted)', textDecoration: 'none' }}>{model.nameHe}</Link>
+          <Link href={`/cars/${make.slug}/${model.slug}`}>{modelName}</Link>
           <span>›</span>
-          <span style={{ color: 'var(--text-primary)' }}>{year}</span>
-        </div>
+          <span style={{ color: 'var(--text)', fontWeight: 600 }}>{year}</span>
+        </nav>
 
-        {/* Hero image */}
-        <YearHero
-          makeSlug={makeSlug}
-          modelSlug={modelSlug}
-          year={yearNum}
-          makeNameHe={make.nameHe}
-          modelNameHe={model.nameHe}
-          makeNameEn={make.nameEn}
-          modelNameEn={model.nameEn}
-        />
+        {/* Gallery + summary grid */}
+        <div className="model-hero">
 
-        {/* Page header — logo + share + recalls */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 32, flexWrap: 'wrap' }}>
-          <MakeLogo logoUrl={make.logoUrl} nameEn={make.nameEn} size={40} />
-          <div style={{ flex: 1 }}>
-            <p style={{ color: 'var(--text-secondary)', fontSize: '0.875rem' }}>
-              {make.nameEn} {model.nameEn} · {getCategoryLabel(model.category)}
-            </p>
-          </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
-            <ShareButtons title={`${make.nameHe} ${model.nameHe} ${year} — ביקורות ובעיות נפוצות | CarIssues IL`} url={`https://carissues.co.il/cars/${make.slug}/${model.slug}/${year}`} />
-            <RecallsBadge makeEn={make.nameEn} modelEn={model.nameEn} year={yearNum} />
-          </div>
-        </div>
-
-        {/* Expert reviews — year-specific first, right after hero */}
-        {isYearSpecific && yearReview && (
-          <div style={{ marginBottom: 20 }}>
-            {/* Subtle year-specific label */}
-            <div style={{
-              display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10,
-            }}>
-              <span style={{
-                display: 'inline-flex', alignItems: 'center', gap: 5,
-                background: 'rgba(230,57,70,0.1)', color: 'var(--brand-red)',
-                fontSize: '0.8rem', fontWeight: 700, letterSpacing: '0.04em',
-                padding: '3px 12px', borderRadius: 20,
-              }}>
-                סיכום שנת {yearNum}
-              </span>
-              <div style={{ flex: 1, height: 1, background: 'var(--border)' }} />
+          {/* Left: gallery */}
+          <div>
+            <div className="gallery-main">
+              {sketchfabModel ? (
+                <Car3DViewer uid={sketchfabModel.uid} modelName={`${make.nameHe} ${model.nameHe}`} makeSlug={makeSlug} modelSlug={modelSlug} />
+              ) : carImages.length > 0 ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={carImages[0].thumbnail_url ?? carImages[0].url}
+                  alt={`${make.nameEn} ${model.nameEn} ${year}`}
+                  style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
+                />
+              ) : (
+                <div style={{ width: '100%', height: '100%', background: 'linear-gradient(135deg, #dde6f1, #b9c7da)', display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative' }}>
+                  <svg viewBox="0 0 120 60" fill="none" style={{ width: '52%', color: 'rgba(255,255,255,.75)' }}>
+                    <path d="M8 42 L18 26 C20 22 24 20 29 20 L74 20 C80 20 85 22 90 27 L102 39" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"/>
+                    <path d="M6 42 L112 42 C114 42 115 41 115 39 L114 35 C113.5 33 112 32 110 32 L98 32" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"/>
+                    <path d="M30 20 L36 32 L70 32 L72 21" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" opacity="0.8"/>
+                    <circle cx="34" cy="44" r="9" stroke="currentColor" strokeWidth="3"/>
+                    <circle cx="86" cy="44" r="9" stroke="currentColor" strokeWidth="3"/>
+                  </svg>
+                  <span style={{ position: 'absolute', bottom: 10, insetInlineStart: 12, fontSize: 12, fontWeight: 700, letterSpacing: '.04em', textTransform: 'uppercase', color: 'rgba(255,255,255,.85)', background: 'rgba(20,32,46,.28)', padding: '3px 9px', borderRadius: 999, backdropFilter: 'blur(3px)' }}>
+                    {make.nameEn} {model.nameEn} {year}
+                  </span>
+                </div>
+              )}
             </div>
+            {carImages.length > 1 && (
+              <div className="gallery-thumbs">
+                {carImages.slice(0, 4).map((img, i) => (
+                  <div key={img.id} className={`gallery-thumb${i === 0 ? ' active' : ''}`} style={{ background: '#dde6f1' }}>
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={img.thumbnail_url ?? img.url}
+                      alt=""
+                      style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
+                    />
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Right: summary card */}
+          <div className="model-summary">
+            <div className="yr">
+              {year}{' · '}{getCategoryLabel(model.category, locale)}
+            </div>
+            <h1>{isEn ? `${make.nameEn} ${model.nameEn} ${year}` : `${make.nameHe} ${model.nameHe} ${year}`}</h1>
+            {!isEn && <p style={{ fontSize: 14, color: 'var(--text-faint)', marginTop: 2 }}>{make.nameEn} {model.nameEn} {year}</p>}
+
+            {/* Make logo + meta */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 12, flexWrap: 'wrap' }}>
+              <div style={{ width: 28, height: 28, background: 'var(--surface-2)', border: '1px solid var(--border)', borderRadius: 6, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                <MakeLogo logoUrl={make.logoUrl} nameEn={make.nameEn} size={20} />
+              </div>
+              <span style={{ fontSize: 13, color: 'var(--text-muted)', fontWeight: 600 }}>{translations[locale].carsPage.countryNames[make.country] ?? make.country}</span>
+              <RecallsBadge makeEn={make.nameEn} modelEn={model.nameEn} year={yearNum} />
+              <SharePopup title={`${makeName} ${modelName} ${year} — ${cp.shareTitle}`} url={`${getBaseUrl(locale)}/cars/${make.slug}/${model.slug}/${year}`} />
+            </div>
+
+            {/* Score columns */}
+            <div className="score-cols">
+              <div className="score-col">
+                <div className="cap">{isEn ? 'Expert Score' : 'ציון מומחה'}</div>
+                <div className="big" style={{ color: yearReview?.topScore != null ? 'var(--accent)' : 'var(--text-faint)' }}>
+                  {yearReview?.topScore != null ? yearReview.topScore.toFixed(1) : '—'}
+                </div>
+                <div className="cnt">{isEn ? 'out of 10' : 'מתוך 10'}</div>
+              </div>
+              <div className="score-col">
+                <div className="cap">{isEn ? 'Owner Rating' : 'דירוג בעלים'}</div>
+                <div className="big">{avgRating !== null ? avgRating.toFixed(1) : '—'}</div>
+                <div className="cnt">
+                  {avgRating !== null
+                    ? <><StarRating rating={avgRating} size={11} />{` · ${reviews.length} ${isEn ? 'reviews' : 'ביקורות'}`}</>
+                    : (isEn ? 'No reviews yet' : 'עדיין אין ביקורות')}
+                </div>
+              </div>
+            </div>
+
+            {/* Year pills — highlight current year */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 5, flexWrap: 'wrap', marginBottom: 14 }}>
+              <span style={{ fontSize: 12, color: 'var(--text-muted)', fontWeight: 600 }}>{cp.yearLabel}:</span>
+              {model.years.slice(0, 8).map(y => (
+                y === yearNum ? (
+                  <Link key={y} href={`/cars/${make.slug}/${model.slug}`} className="year-pill" style={{ fontSize: '0.65rem', padding: '2px 8px', minWidth: 'auto', background: 'var(--accent)', color: '#fff', borderColor: 'var(--accent)' }}>{y}</Link>
+                ) : (
+                  <Link key={y} href={`/cars/${make.slug}/${model.slug}/${y}`} className="year-pill" style={{ fontSize: '0.65rem', padding: '2px 8px', minWidth: 'auto' }}>{y}</Link>
+                )
+              ))}
+            </div>
+
+            {/* Action buttons */}
+            <div className="model-hero-actions" style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+              <Link href={`/cars/compare?car1=${make.slug}/${model.slug}`} className="btn btn-primary" style={{ flex: 1, justifyContent: 'center', height: 40, fontSize: 14 }}>
+                {isEn ? 'Compare' : '⚖️ השוואה'}
+              </Link>
+              <a href="#reviews" className="btn btn-outline" style={{ flex: 1, justifyContent: 'center', height: 40, fontSize: 14 }}>
+                {isEn ? 'Reviews' : 'ביקורות'}
+              </a>
+              <Link href={`/cars/${make.slug}/${model.slug}/issues`} className="btn btn-outline" style={{ flex: 1, justifyContent: 'center', height: 40, fontSize: 14 }}>
+                {cp.issuesLink}
+              </Link>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* ── SIDEBAR + CONTENT ── */}
+      <CarSidebarLayout
+        makeSlug={makeSlug}
+        modelSlug={modelSlug}
+        makeNameHe={make.nameHe}
+        modelNameHe={model.nameHe}
+        defaultYear={yearNum}
+      >
+        <style>{`
+          .model-reviews-split { display: grid; grid-template-columns: 1fr 340px; gap: 24px; align-items: start; margin-bottom: 40px; }
+          @media (max-width: 800px) { .model-reviews-split { grid-template-columns: 1fr !important; gap: 16px; } }
+        `}</style>
+        <div className="model-reviews-split">
+          {/* Left: year reviews */}
+          <div id="reviews">
+            {/* Owner score summary */}
+            <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 12, padding: '14px 16px', marginBottom: 14 }}>
+              <div style={{ fontSize: '0.58rem', fontWeight: 800, letterSpacing: '0.1em', color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: 8 }}>
+                {cp.ownersLabel} · {year}
+              </div>
+              {avgRating !== null ? (
+                <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+                  <div style={{ fontSize: '2.2rem', fontWeight: 900, color: 'var(--accent)', lineHeight: 1, fontFamily: 'var(--font-display)' }}>{avgRating.toFixed(1)}</div>
+                  <div>
+                    <StarRating rating={avgRating} size={15} />
+                    <div style={{ fontSize: '0.68rem', color: 'var(--text-muted)', marginTop: 4 }}>{reviews.length} {cp.ownerReviewsSuffix}</div>
+                  </div>
+                </div>
+              ) : (
+                <div style={{ fontSize: '0.82rem', color: 'var(--text-muted)' }}>{cp.noReviewsBeFirst}</div>
+              )}
+              {/* Year selector */}
+              <div style={{ marginTop: 10, display: 'flex', alignItems: 'center', gap: 5, flexWrap: 'wrap' }}>
+                <span style={{ fontSize: '0.58rem', fontWeight: 700, color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>{cp.yearLabel}</span>
+                {model.years.map((y) => (
+                  y === yearNum ? (
+                    <Link key={y} href={`/cars/${make.slug}/${model.slug}`} className="year-pill" style={{ fontSize: '0.68rem', padding: '1px 7px', background: 'var(--accent)', color: '#fff', borderColor: 'var(--accent)' }}>{y}</Link>
+                  ) : (
+                    <Link key={y} href={`/cars/${make.slug}/${model.slug}/${y}`} className="year-pill" style={{ fontSize: '0.68rem', padding: '1px 7px' }}>{y}</Link>
+                  )
+                ))}
+              </div>
+            </div>
+
+            {reviews.length === 0 && (
+              <FirstReviewCta makeNameHe={make.nameHe} modelNameHe={model.nameHe} makeNameEn={make.nameEn} modelNameEn={model.nameEn} />
+            )}
+
+            <CarYearClient
+              makeSlug={makeSlug}
+              modelSlug={modelSlug}
+              year={yearNum}
+              initialReviews={reviews}
+              isYearSpecific={isYearSpecific}
+              makeNameHe={make.nameHe}
+              modelNameHe={model.nameHe}
+            />
+          </div>
+
+          {/* Right: expert review for this year */}
+          <div id="expert">
             <ExpertReviewsSection
               review={yearReview}
               makeNameHe={make.nameHe}
               modelNameHe={model.nameHe}
+              makeNameEn={make.nameEn}
+              modelNameEn={model.nameEn}
               year={yearNum}
-              isYearSpecific={true}
+              isYearSpecific={isYearSpecific}
               userAvgRating={avgRating}
               userReviewCount={reviews.length}
+              inline={!!sketchfabModel}
+              label={cp.externalReviews}
+              hideTitle
             />
           </div>
-        )}
+        </div>
 
-        {/* General model review — always show, labeled when both exist */}
-        {generalReview && (
-          <div style={{ marginBottom: 32 }}>
-            {isYearSpecific && (
-              <div style={{
-                display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10,
-              }}>
-                <span style={{
-                  display: 'inline-flex', alignItems: 'center',
-                  background: 'var(--bg-muted)', color: 'var(--text-muted)',
-                  fontSize: '0.8rem', fontWeight: 600, letterSpacing: '0.04em',
-                  padding: '3px 12px', borderRadius: 20,
-                }}>
-                  סיכום כללי
-                </span>
-                <div style={{ flex: 1, height: 1, background: 'var(--border)' }} />
-              </div>
-            )}
-            <ExpertReviewsSection
-              review={generalReview}
-              makeNameHe={make.nameHe}
-              modelNameHe={model.nameHe}
-              year={isYearSpecific ? undefined : yearNum}
-              isYearSpecific={false}
-              userAvgRating={isYearSpecific ? null : avgRating}
-              userReviewCount={isYearSpecific ? 0 : reviews.length}
-            />
-          </div>
-        )}
-
-        {/* Fallback: show year-specific review when no general exists */}
-        {!generalReview && !isYearSpecific && yearReview && (
-          <ExpertReviewsSection
-            review={yearReview}
-            makeNameHe={make.nameHe}
-            modelNameHe={model.nameHe}
-            year={yearNum}
-            isYearSpecific={false}
-            userAvgRating={avgRating}
-            userReviewCount={reviews.length}
-          />
-        )}
-
-        {/* Rating distribution — below AI summaries */}
-        {avgRating !== null && (
-          <div className="card" style={{ padding: '20px 24px', marginBottom: 32 }}>
-            <div className="rating-dist">
-              <div style={{ textAlign: 'center', minWidth: 90, flexShrink: 0 }}>
-                <div style={{ fontSize: '2.75rem', fontWeight: 900, color: 'var(--text-primary)', lineHeight: 1 }}>
-                  {avgRating.toFixed(1)}
-                </div>
-                <StarRating rating={avgRating} size={18} />
-                <div style={{ color: 'var(--text-muted)', fontSize: '0.75rem', marginTop: 5 }}>
-                  {reviews.length} ביקורות
-                </div>
-              </div>
-              <div className="rating-dist-bars">
-                {ratingDist.map(({ stars, count }) => (
-                  <div key={stars} style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
-                    <span style={{ width: 28, color: 'var(--text-muted)', fontSize: '0.75rem', textAlign: 'center', flexShrink: 0 }}>{stars}★</span>
-                    <div style={{ flex: 1, height: 6, background: 'var(--bg-muted)', borderRadius: 9999, overflow: 'hidden' }}>
-                      <div style={{
-                        width: reviews.length ? `${(count / reviews.length) * 100}%` : '0%',
-                        height: '100%',
-                        background: stars >= 4 ? '#16a34a' : stars === 3 ? '#ca8a04' : 'var(--brand-red)',
-                        borderRadius: 9999,
-                      }} />
-                    </div>
-                    <span style={{ width: 20, color: 'var(--text-muted)', fontSize: '0.75rem', textAlign: 'left', flexShrink: 0 }}>{count}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Client component handles reviews list + review form + on-demand AI generation + video tab */}
-        <CarYearClient
-          makeSlug={makeSlug}
-          modelSlug={modelSlug}
-          year={yearNum}
-          initialReviews={reviews}
-          isYearSpecific={isYearSpecific}
-          makeNameHe={make.nameHe}
-          modelNameHe={model.nameHe}
-        />
-
-        {/* Repair costs */}
+        <div id="repair" />
         <RepairCostsSection
           makeSlug={makeSlug}
           modelSlug={modelSlug}
           makeNameHe={make.nameHe}
           modelNameHe={model.nameHe}
+          makeNameEn={make.nameEn}
+          modelNameEn={model.nameEn}
           category={model.category}
         />
 
-        {/* Recalls for this year */}
-        <RecallsSection makeEn={make.nameEn} modelEn={model.nameEn} year={yearNum} />
+        <div id="recalls" style={{ marginTop: 48 }}>
+          <RecallsSection makeEn={make.nameEn} modelEn={model.nameEn} year={yearNum} />
+        </div>
+
+        {/* Similar models */}
+        {similarModels.length > 0 && (
+          <section style={{ marginTop: 40, paddingTop: 28, borderTop: '1px solid var(--border)' }}>
+            <h2 style={{ fontSize: '1.05rem', fontWeight: 700, marginBottom: 18 }}>
+              {cp.similarModels}
+            </h2>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 16 }}>
+              {similarModels.map(({ makeSlug: ms, makeNameHe, makeNameEn, model: m }) => (
+                <Link
+                  key={`browse-${ms}/${m.slug}`}
+                  href={`/cars/${ms}/${m.slug}`}
+                  style={{
+                    padding: '7px 14px', borderRadius: 20, fontSize: '0.85rem',
+                    background: 'var(--surface-2)', color: 'var(--text)',
+                    textDecoration: 'none', border: '1px solid var(--border)', whiteSpace: 'nowrap',
+                  }}
+                >
+                  {isEn ? `${makeNameEn} ${m.nameEn}` : `${makeNameHe} ${m.nameHe}`}
+                </Link>
+              ))}
+            </div>
+            <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: 8, fontWeight: 600 }}>
+              {cp.compareWith} {makeName} {modelName} {cp.compareVs}
+            </div>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+              {similarModels.slice(0, 6).map(({ makeSlug: ms, makeNameHe, makeNameEn, model: m }) => {
+                const [s1, s2] = [`${makeSlug}/${modelSlug}`, `${ms}/${m.slug}`].sort();
+                return (
+                  <Link
+                    key={`cmp-${ms}/${m.slug}`}
+                    href={`/cars/compare/${s1}/${s2}`}
+                    style={{
+                      padding: '6px 12px', borderRadius: 20, fontSize: '0.8rem',
+                      background: 'transparent', color: 'var(--accent)',
+                      textDecoration: 'none', border: '1px solid var(--accent)', whiteSpace: 'nowrap',
+                    }}
+                  >
+                    {isEn ? `${makeNameEn} ${m.nameEn}` : `${makeNameHe} ${m.nameHe}`}
+                  </Link>
+                );
+              })}
+            </div>
+          </section>
+        )}
 
         {/* JSON-LD */}
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
         />
-      </div>
+      </CarSidebarLayout>
     </div>
   );
 }

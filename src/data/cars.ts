@@ -37,36 +37,36 @@ export interface TrimSpec {
 /** All feature keys used in TrimSpec.features */
 export const TRIM_FEATURES = {
   // Tech
-  apple_carplay:       { labelHe: 'CarPlay / Android Auto',   category: 'tech' },
-  wireless_carplay:    { labelHe: 'CarPlay אלחוטי',           category: 'tech' },
-  wireless_charging:   { labelHe: 'טעינה אלחוטית',            category: 'tech' },
-  digital_cluster:     { labelHe: 'לוח מחוונים דיגיטלי',     category: 'tech' },
-  hud:                 { labelHe: 'HUD (מידע על השמשה)',       category: 'tech' },
-  premium_audio:       { labelHe: 'מערכת שמע פרמיום',         category: 'tech' },
+  apple_carplay:       { labelHe: 'CarPlay / Android Auto',      labelEn: 'CarPlay / Android Auto',        category: 'tech' },
+  wireless_carplay:    { labelHe: 'CarPlay אלחוטי',              labelEn: 'Wireless CarPlay',               category: 'tech' },
+  wireless_charging:   { labelHe: 'טעינה אלחוטית',               labelEn: 'Wireless Charging',              category: 'tech' },
+  digital_cluster:     { labelHe: 'לוח מחוונים דיגיטלי',        labelEn: 'Digital Instrument Cluster',     category: 'tech' },
+  hud:                 { labelHe: 'HUD (מידע על השמשה)',          labelEn: 'HUD (Head-Up Display)',          category: 'tech' },
+  premium_audio:       { labelHe: 'מערכת שמע פרמיום',            labelEn: 'Premium Audio System',          category: 'tech' },
   // Safety
-  aeb:                 { labelHe: 'בלימת חירום אוטומטית (AEB)', category: 'safety' },
-  adaptive_cruise:     { labelHe: 'קרוז קונטרול אדפטיבי',    category: 'safety' },
-  lane_keep:           { labelHe: 'שמירת נתיב',               category: 'safety' },
-  blind_spot:          { labelHe: 'ניטור נקודת עיוורת',       category: 'safety' },
-  rear_camera:         { labelHe: 'מצלמה אחורית',             category: 'safety' },
-  camera_360:          { labelHe: 'מצלמה 360°',               category: 'safety' },
-  parking_sensors:     { labelHe: 'חיישני חניה',              category: 'safety' },
-  traffic_sign:        { labelHe: 'זיהוי תמרורים',            category: 'safety' },
+  aeb:                 { labelHe: 'בלימת חירום אוטומטית (AEB)',  labelEn: 'Automatic Emergency Braking (AEB)', category: 'safety' },
+  adaptive_cruise:     { labelHe: 'קרוז קונטרול אדפטיבי',       labelEn: 'Adaptive Cruise Control',       category: 'safety' },
+  lane_keep:           { labelHe: 'שמירת נתיב',                  labelEn: 'Lane Keeping Assist',           category: 'safety' },
+  blind_spot:          { labelHe: 'ניטור נקודת עיוורת',          labelEn: 'Blind Spot Monitoring',         category: 'safety' },
+  rear_camera:         { labelHe: 'מצלמה אחורית',                labelEn: 'Rear Camera',                   category: 'safety' },
+  camera_360:          { labelHe: 'מצלמה 360°',                  labelEn: '360° Camera',                   category: 'safety' },
+  parking_sensors:     { labelHe: 'חיישני חניה',                 labelEn: 'Parking Sensors',               category: 'safety' },
+  traffic_sign:        { labelHe: 'זיהוי תמרורים',               labelEn: 'Traffic Sign Recognition',      category: 'safety' },
   // Comfort
-  heated_seats_front:  { labelHe: 'חימום מושבים קדמיים',      category: 'comfort' },
-  heated_seats_rear:   { labelHe: 'חימום מושבים אחוריים',     category: 'comfort' },
-  ventilated_seats:    { labelHe: 'מושבים מאווררים',          category: 'comfort' },
-  electric_seats:      { labelHe: 'כיוון חשמלי למושב',        category: 'comfort' },
-  memory_seats:        { labelHe: 'מושב עם זיכרון',           category: 'comfort' },
-  sunroof:             { labelHe: 'גג שמש',                   category: 'comfort' },
-  panoramic_roof:      { labelHe: 'גג פנורמי',                category: 'comfort' },
-  keyless_entry:       { labelHe: 'כניסה ללא מפתח',           category: 'comfort' },
-  push_start:          { labelHe: 'הפעלה בלחצן',              category: 'comfort' },
-  ambient_lighting:    { labelHe: 'תאורת אווירה',             category: 'comfort' },
-  led_lights:          { labelHe: 'פנסי LED',                 category: 'comfort' },
-  auto_lights:         { labelHe: 'פנסים אוטומטיים',          category: 'comfort' },
-  heated_steering:     { labelHe: 'הגה מחומם',                category: 'comfort' },
-} as const satisfies Record<string, { labelHe: string; category: 'tech' | 'safety' | 'comfort' }>;
+  heated_seats_front:  { labelHe: 'חימום מושבים קדמיים',         labelEn: 'Heated Front Seats',            category: 'comfort' },
+  heated_seats_rear:   { labelHe: 'חימום מושבים אחוריים',        labelEn: 'Heated Rear Seats',             category: 'comfort' },
+  ventilated_seats:    { labelHe: 'מושבים מאווררים',             labelEn: 'Ventilated Seats',              category: 'comfort' },
+  electric_seats:      { labelHe: 'כיוון חשמלי למושב',           labelEn: 'Electric Seat Adjustment',      category: 'comfort' },
+  memory_seats:        { labelHe: 'מושב עם זיכרון',              labelEn: 'Memory Seats',                  category: 'comfort' },
+  sunroof:             { labelHe: 'גג שמש',                      labelEn: 'Sunroof',                       category: 'comfort' },
+  panoramic_roof:      { labelHe: 'גג פנורמי',                   labelEn: 'Panoramic Roof',                category: 'comfort' },
+  keyless_entry:       { labelHe: 'כניסה ללא מפתח',              labelEn: 'Keyless Entry',                 category: 'comfort' },
+  push_start:          { labelHe: 'הפעלה בלחצן',                 labelEn: 'Push Button Start',             category: 'comfort' },
+  ambient_lighting:    { labelHe: 'תאורת אווירה',                labelEn: 'Ambient Lighting',              category: 'comfort' },
+  led_lights:          { labelHe: 'פנסי LED',                    labelEn: 'LED Headlights',                category: 'comfort' },
+  auto_lights:         { labelHe: 'פנסים אוטומטיים',             labelEn: 'Automatic Headlights',          category: 'comfort' },
+  heated_steering:     { labelHe: 'הגה מחומם',                   labelEn: 'Heated Steering Wheel',         category: 'comfort' },
+} as const satisfies Record<string, { labelHe: string; labelEn: string; category: 'tech' | 'safety' | 'comfort' }>;
 
 export type FeatureKey = keyof typeof TRIM_FEATURES;
 
@@ -80,10 +80,14 @@ export interface CarMake {
   models: CarModel[];
 }
 
-export function getCategoryLabel(cat: CarModel['category']): string {
-  const MAP: Record<CarModel['category'], string> = {
+export function getCategoryLabel(cat: CarModel['category'], locale: 'he' | 'en' = 'he'): string {
+  const MAP_HE: Record<CarModel['category'], string> = {
     sedan: 'סדאן', suv: 'SUV', hatchback: "האצ'בק", pickup: 'פיקאפ',
     van: 'ואן', coupe: 'קופה', electric: 'חשמלי',
   };
-  return MAP[cat] ?? cat;
+  const MAP_EN: Record<CarModel['category'], string> = {
+    sedan: 'Sedan', suv: 'SUV', hatchback: 'Hatchback', pickup: 'Pickup',
+    van: 'Van', coupe: 'Coupe', electric: 'Electric',
+  };
+  return (locale === 'en' ? MAP_EN : MAP_HE)[cat] ?? cat;
 }

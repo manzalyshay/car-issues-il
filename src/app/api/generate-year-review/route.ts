@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getMakeBySlug, getModelBySlug } from '@/lib/carsDb';
 import { getExpertReviewsForYear, scrapeExpertReviews } from '@/lib/expertReviews';
-import { getServiceClient } from '@/lib/adminAuth';
+import { dbFirst } from '@/lib/db';
 
 export const dynamic = 'force-dynamic';
 export const maxDuration = 120;
@@ -16,15 +16,11 @@ export async function POST(req: NextRequest) {
 
   // Skip if ANY year-specific row exists in the DB (even 0-post LLM-fallback rows)
   // — we only generate once per car/year, regardless of whether real posts were found.
-  const sb = getServiceClient();
-  const { data: existing } = await sb
-    .from('expert_reviews')
-    .select('id')
-    .eq('make_slug', makeSlug)
-    .eq('model_slug', modelSlug)
-    .eq('year', yearNum)
-    .limit(1);
-  if (existing && existing.length > 0) {
+  const existing = await dbFirst(
+    'SELECT id FROM expert_reviews WHERE make_slug = ? AND model_slug = ? AND year = ? LIMIT 1',
+    makeSlug, modelSlug, yearNum,
+  ).catch(() => null);
+  if (existing) {
     const { review } = await getExpertReviewsForYear(makeSlug, modelSlug, yearNum);
     return NextResponse.json({ review, generated: false });
   }

@@ -46,6 +46,11 @@ export interface ExpertReview {
   topScore: number | null;
   pros: string[];
   cons: string[];
+  prosEn: string[];
+  consEn: string[];
+  localSummaryEn: string | null;
+  globalSummaryEn: string | null;
+  summaryEn: string | null;
   localPostCount: number;
   globalPostCount: number;
   sourcesBreakdown: SourceBreakdown[];
@@ -1038,11 +1043,16 @@ function mapRow(r: any): ExpertReview {
     localScore: r.local_score != null ? parseFloat(r.local_score) : null,
     globalScore: r.global_score != null ? parseFloat(r.global_score) : null,
     topScore: r.top_score != null ? parseFloat(r.top_score) : null,
-    pros: r.pros ?? [],
-    cons: r.cons ?? [],
+    pros: (() => { try { return Array.isArray(r.pros) ? r.pros : JSON.parse(String(r.pros || '[]')); } catch { return []; } })(),
+    cons: (() => { try { return Array.isArray(r.cons) ? r.cons : JSON.parse(String(r.cons || '[]')); } catch { return []; } })(),
+    prosEn: (() => { try { return Array.isArray(r.pros_en) ? r.pros_en : JSON.parse(String(r.pros_en || '[]')); } catch { return []; } })(),
+    consEn: (() => { try { return Array.isArray(r.cons_en) ? r.cons_en : JSON.parse(String(r.cons_en || '[]')); } catch { return []; } })(),
+    localSummaryEn: r.local_summary_en ?? null,
+    globalSummaryEn: r.global_summary_en ?? null,
+    summaryEn: r.summary_en ?? null,
     localPostCount: r.local_post_count ?? 0,
     globalPostCount: r.global_post_count ?? 0,
-    sourcesBreakdown: Array.isArray(r.sources_breakdown) ? r.sources_breakdown : [],
+    sourcesBreakdown: (() => { try { return Array.isArray(r.sources_breakdown) ? r.sources_breakdown : JSON.parse(String(r.sources_breakdown || '[]')); } catch { return []; } })(),
     scrapedAt: r.scraped_at,
   };
 }

@@ -32,7 +32,7 @@ export default function ShareButtons({ title, url }: Props) {
   const btnStyle: React.CSSProperties = {
     display: 'flex', alignItems: 'center', gap: 6,
     padding: '7px 14px', borderRadius: 8, border: '1px solid var(--border)',
-    background: 'var(--bg-card)', color: 'var(--text-secondary)',
+    background: 'var(--surface)', color: 'var(--text-muted)',
     cursor: 'pointer', fontSize: '0.8125rem', fontWeight: 600,
     transition: 'all 0.15s',
   };

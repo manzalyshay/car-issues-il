@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/lib/authContext';
+import { useLocale } from '@/lib/localeContext';
 import { supabase } from '@/lib/supabase';
 
 interface CarImageData {
@@ -22,6 +23,9 @@ interface Props {
 
 export default function YearHero({ makeSlug, modelSlug, year, makeNameHe, modelNameHe, makeNameEn, modelNameEn }: Props) {
   const { isAdmin } = useAuth();
+  const { locale } = useLocale();
+  const primaryName = locale === 'en' ? `${makeNameEn} ${modelNameEn}` : `${makeNameHe} ${modelNameHe}`;
+  const secondaryName = locale === 'en' ? `${makeNameHe} ${modelNameHe}` : `${makeNameEn} ${modelNameEn}`;
   const [images, setImages] = useState<CarImageData[]>([]);
   const [hiddenIds, setHiddenIds] = useState<Set<string>>(new Set());
   const [loaded, setLoaded] = useState(false);
@@ -78,7 +82,7 @@ export default function YearHero({ makeSlug, modelSlug, year, makeNameHe, modelN
       {!loaded && (
         <div style={{
           position: 'absolute', inset: 0,
-          background: 'linear-gradient(90deg, var(--bg-muted) 25%, var(--bg-card) 50%, var(--bg-muted) 75%)',
+          background: 'linear-gradient(90deg, var(--bg-muted) 25%, var(--surface) 50%, var(--bg-muted) 75%)',
           backgroundSize: '200% 100%',
           animation: 'shimmer 1.6s infinite',
         }} />
@@ -149,7 +153,7 @@ export default function YearHero({ makeSlug, modelSlug, year, makeNameHe, modelN
                   onClick={() => handleFlag(flagReason)}
                   style={{
                     flex: 1, padding: '5px 10px', borderRadius: 6, border: 'none',
-                    background: 'var(--brand-red)', color: '#fff', cursor: 'pointer',
+                    background: 'var(--accent)', color: '#fff', cursor: 'pointer',
                     fontSize: '0.78rem', fontWeight: 700,
                   }}
                 >
@@ -184,24 +188,24 @@ export default function YearHero({ makeSlug, modelSlug, year, makeNameHe, modelN
           <div style={{
             fontSize: 'clamp(1.25rem, 3vw, 1.875rem)',
             fontWeight: 800,
-            color: imgUrl && loaded ? '#fff' : 'var(--text-primary)',
+            color: imgUrl && loaded ? '#fff' : 'var(--text)',
             lineHeight: 1.15,
             textShadow: imgUrl && loaded ? '0 1px 8px rgba(0,0,0,0.4)' : 'none',
           }}>
-            {makeNameHe} {modelNameHe}
+            {primaryName}
           </div>
           <div style={{
             fontSize: '0.8125rem',
             color: imgUrl && loaded ? 'rgba(255,255,255,0.6)' : 'var(--text-muted)',
             marginTop: 2,
           }}>
-            {makeNameEn} {modelNameEn}
+            {secondaryName}
           </div>
         </div>
 
         {/* Year badge */}
         <div style={{
-          background: 'var(--brand-red)',
+          background: 'var(--accent)',
           color: '#fff',
           fontWeight: 700,
           fontSize: 'clamp(1.1rem, 2.5vw, 1.5rem)',

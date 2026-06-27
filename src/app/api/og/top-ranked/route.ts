@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { getServiceClient } from '@/lib/adminAuth';
+import { dbAll } from '@/lib/db';
 import { getAllMakes } from '@/lib/carsDb';
 
 export const dynamic = 'force-dynamic';
@@ -12,22 +12,25 @@ const TEXT = '#f0f2f5';
 const MUTED = '#6b7280';
 
 async function getTopRanked(limit = 6) {
-  const sb = getServiceClient();
   const makes = await getAllMakes();
   const lookup = new Map<string, { makeHe: string; modelHe: string; logoUrl: string }>();
   for (const make of makes)
     for (const model of make.models)
       lookup.set(`${make.slug}/${model.slug}`, { makeHe: make.nameHe, modelHe: model.nameHe, logoUrl: make.logoUrl });
 
-  const [{ data: expertData }, { data: reviewData }] = await Promise.all([
-    sb.from('expert_reviews').select('make_slug,model_slug,top_score').is('year', null).not('top_score', 'is', null),
-    sb.from('reviews').select('make_slug,model_slug,rating'),
+  const [expertData, reviewData] = await Promise.all([
+    dbAll<{ make_slug: string; model_slug: string; top_score: number }>(
+      'SELECT make_slug, model_slug, top_score FROM expert_reviews WHERE year IS NULL AND top_score IS NOT NULL',
+    ).catch(() => []),
+    dbAll<{ make_slug: string; model_slug: string; rating: number }>(
+      'SELECT make_slug, model_slug, rating FROM reviews',
+    ).catch(() => []),
   ]);
 
   const scoreMap = new Map<string, number>();
-  for (const row of expertData ?? []) scoreMap.set(`${row.make_slug}/${row.model_slug}`, row.top_score);
+  for (const row of expertData) scoreMap.set(`${row.make_slug}/${row.model_slug}`, row.top_score);
   const reviewMap = new Map<string, number[]>();
-  for (const row of reviewData ?? []) {
+  for (const row of reviewData) {
     const key = `${row.make_slug}/${row.model_slug}`;
     if (!reviewMap.has(key)) reviewMap.set(key, []);
     reviewMap.get(key)!.push(row.rating);

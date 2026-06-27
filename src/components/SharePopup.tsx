@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useRef, useEffect, useCallback } from 'react';
+import { useLocale } from '@/lib/localeContext';
 
 interface Props {
   title: string;
@@ -9,7 +10,7 @@ interface Props {
   compact?: boolean;
 }
 
-const PLATFORMS = [
+const PLATFORMS_HE = [
   {
     id: 'whatsapp',
     label: 'וואטסאפ',
@@ -56,7 +57,43 @@ const PLATFORMS = [
   },
 ];
 
-export default function SharePopup({ title, url, label = 'שתף', compact = false }: Props) {
+const PLATFORMS_EN = [
+  {
+    id: 'whatsapp',
+    label: 'WhatsApp',
+    color: '#25d366',
+    icon: PLATFORMS_HE[0].icon,
+    href: (title: string, url: string) => `https://wa.me/?text=${encodeURIComponent(title + '\n' + url)}`,
+  },
+  {
+    id: 'facebook',
+    label: 'Facebook',
+    color: '#1877f2',
+    icon: PLATFORMS_HE[1].icon,
+    href: (_: string, url: string) => `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}`,
+  },
+  {
+    id: 'twitter',
+    label: 'X / Twitter',
+    color: '#000',
+    icon: PLATFORMS_HE[2].icon,
+    href: (title: string, url: string) => `https://twitter.com/intent/tweet?text=${encodeURIComponent(title)}&url=${encodeURIComponent(url)}`,
+  },
+  {
+    id: 'telegram',
+    label: 'Telegram',
+    color: '#229ed9',
+    icon: PLATFORMS_HE[3].icon,
+    href: (title: string, url: string) => `https://t.me/share/url?url=${encodeURIComponent(url)}&text=${encodeURIComponent(title)}`,
+  },
+];
+
+export default function SharePopup({ title, url, label, compact = false }: Props) {
+  const { locale } = useLocale();
+  const isEn = locale === 'en';
+  const PLATFORMS = isEn ? PLATFORMS_EN : PLATFORMS_HE;
+  const defaultLabel = isEn ? 'Share' : 'שתף';
+  const resolvedLabel = label ?? defaultLabel;
   const [open, setOpen] = useState(false);
   const [copied, setCopied] = useState(false);
   const [popupStyle, setPopupStyle] = useState<React.CSSProperties>({});
@@ -107,7 +144,7 @@ export default function SharePopup({ title, url, label = 'שתף', compact = fal
           height: compact ? 30 : 36, padding: compact ? '0 12px' : '0 16px',
           borderRadius: 9999, border: '1.5px solid var(--border)',
           background: open ? 'var(--bg-muted)' : 'transparent',
-          color: 'var(--text-secondary)', fontSize: compact ? '0.8125rem' : '0.875rem',
+          color: 'var(--text-muted)', fontSize: compact ? '0.8125rem' : '0.875rem',
           fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit', transition: 'all 0.15s',
         }}
       >
@@ -115,7 +152,7 @@ export default function SharePopup({ title, url, label = 'שתף', compact = fal
           <circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/>
           <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/>
         </svg>
-        {label}
+        {resolvedLabel}
       </button>
 
       {open && (
@@ -123,7 +160,7 @@ export default function SharePopup({ title, url, label = 'שתף', compact = fal
           ...popupStyle,
           zIndex: 9999,
           minWidth: 200,
-          background: 'var(--bg-card)',
+          background: 'var(--surface)',
           border: '1px solid var(--border)',
           borderRadius: 12,
           padding: 8,
@@ -131,7 +168,7 @@ export default function SharePopup({ title, url, label = 'שתף', compact = fal
           display: 'flex', flexDirection: 'column', gap: 2,
         }}>
           <div style={{ fontSize: '0.7rem', fontWeight: 700, color: 'var(--text-muted)', padding: '4px 10px 8px', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
-            שתף ב...
+            {isEn ? 'Share via...' : 'שתף ב...'}
           </div>
           {PLATFORMS.map((p) => (
             <a
@@ -160,7 +197,7 @@ export default function SharePopup({ title, url, label = 'שתף', compact = fal
             style={{
               display: 'flex', alignItems: 'center', gap: 10,
               padding: '9px 12px', borderRadius: 8, border: 'none', background: 'transparent',
-              color: copied ? '#16a34a' : 'var(--text-secondary)',
+              color: copied ? '#16a34a' : 'var(--text-muted)',
               fontSize: '0.875rem', fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit',
               transition: 'all 0.1s', width: '100%', textAlign: 'right',
             }}
@@ -172,7 +209,7 @@ export default function SharePopup({ title, url, label = 'שתף', compact = fal
             ) : (
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>
             )}
-            {copied ? 'הועתק!' : 'העתק קישור'}
+            {copied ? (isEn ? 'Copied!' : 'הועתק!') : (isEn ? 'Copy link' : 'העתק קישור')}
           </button>
         </div>
       )}

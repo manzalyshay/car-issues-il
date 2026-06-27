@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
-import { getServiceClient } from '@/lib/adminAuth';
 import { createClient } from '@supabase/supabase-js';
+import { dbFirst, dbRun, dbAll } from '@/lib/db';
 
 function getAdminClient() {
   return createClient(
@@ -16,21 +16,24 @@ async function verifyAdmin(req: Request) {
   const sb = getAdminClient();
   const { data: { user } } = await sb.auth.getUser(token);
   if (!user) return null;
-  const { data } = await getServiceClient().from('profiles').select('is_admin').eq('id', user.id).single();
-  return data?.is_admin ? user : null;
+  const profile = await dbFirst<{ is_admin: number }>(
+    'SELECT is_admin FROM profiles WHERE id = ?', user.id,
+  );
+  return profile?.is_admin === 1 ? user : null;
 }
 
 export async function GET(req: Request) {
   const admin = await verifyAdmin(req);
   if (!admin) return NextResponse.json({ error: 'unauthorized' }, { status: 401 });
 
-  const sb = getServiceClient();
   const adminSb = getAdminClient();
   const { data: { users }, error } = await adminSb.auth.admin.listUsers({ perPage: 1000 });
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
 
-  const { data: profiles } = await sb.from('profiles').select('id,is_admin,display_name');
-  const profileMap = new Map((profiles ?? []).map((p: any) => [p.id, p]));
+  const profiles = await dbAll<{ id: string; is_admin: number; display_name: string | null }>(
+    'SELECT id, is_admin, display_name FROM profiles',
+  );
+  const profileMap = new Map(profiles.map((p) => [p.id, p]));
 
   const result = (users ?? []).map((u) => {
     const profile = profileMap.get(u.id);
@@ -56,9 +59,9 @@ export async function PATCH(req: Request) {
   const { userId, is_admin } = await req.json();
   if (!userId) return NextResponse.json({ error: 'userId required' }, { status: 400 });
 
-  const sb = getServiceClient();
-  const { error } = await sb.from('profiles').upsert({ id: userId, is_admin }, { onConflict: 'id' });
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-
+  await dbRun(
+    'INSERT INTO profiles (id, is_admin) VALUES (?, ?) ON CONFLICT(id) DO UPDATE SET is_admin = excluded.is_admin',
+    userId, is_admin ? 1 : 0,
+  );
   return NextResponse.json({ ok: true });
 }

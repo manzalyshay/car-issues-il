@@ -1,4 +1,3 @@
-import { unstable_cache } from 'next/cache';
 import { dbAll, dbFirst, dbRun } from './db';
 import type { Review } from '@/data/reviews';
 import { translateReview } from './translateReview';
@@ -11,41 +10,29 @@ export async function getAllReviews(): Promise<Review[]> {
   return rows.map(dbToReview);
 }
 
-export const getReviewsForModel = unstable_cache(
-  async (makeSlug: string, modelSlug: string): Promise<Review[]> => {
-    const rows = await dbAll(
-      'SELECT * FROM reviews WHERE make_slug = ? AND model_slug = ? ORDER BY created_at DESC',
-      makeSlug, modelSlug,
-    );
-    return rows.map(dbToReview);
-  },
-  ['reviews-model'],
-  { revalidate: 3600, tags: ['reviews'] },
-);
+export async function getReviewsForModel(makeSlug: string, modelSlug: string): Promise<Review[]> {
+  const rows = await dbAll(
+    'SELECT * FROM reviews WHERE make_slug = ? AND model_slug = ? ORDER BY created_at DESC',
+    makeSlug, modelSlug,
+  );
+  return rows.map(dbToReview);
+}
 
-export const getReviewsForCar = unstable_cache(
-  async (makeSlug: string, modelSlug: string, year: number): Promise<Review[]> => {
-    const rows = await dbAll(
-      'SELECT * FROM reviews WHERE make_slug = ? AND model_slug = ? AND year = ? ORDER BY helpful DESC, created_at DESC',
-      makeSlug, modelSlug, year,
-    );
-    return rows.map(dbToReview);
-  },
-  ['reviews-car'],
-  { revalidate: 3600, tags: ['reviews'] },
-);
+export async function getReviewsForCar(makeSlug: string, modelSlug: string, year: number): Promise<Review[]> {
+  const rows = await dbAll(
+    'SELECT * FROM reviews WHERE make_slug = ? AND model_slug = ? AND year = ? ORDER BY helpful DESC, created_at DESC',
+    makeSlug, modelSlug, year,
+  );
+  return rows.map(dbToReview);
+}
 
-export const getAverageRating = unstable_cache(
-  async (makeSlug: string, modelSlug: string): Promise<number | null> => {
-    const row = await dbFirst<{ avg: number | null }>(
-      'SELECT AVG(rating) as avg FROM reviews WHERE make_slug = ? AND model_slug = ?',
-      makeSlug, modelSlug,
-    );
-    return row?.avg ?? null;
-  },
-  ['reviews-avg'],
-  { revalidate: 3600, tags: ['reviews'] },
-);
+export async function getAverageRating(makeSlug: string, modelSlug: string): Promise<number | null> {
+  const row = await dbFirst<{ avg: number | null }>(
+    'SELECT AVG(rating) as avg FROM reviews WHERE make_slug = ? AND model_slug = ?',
+    makeSlug, modelSlug,
+  );
+  return row?.avg ?? null;
+}
 
 // ── Write ─────────────────────────────────────────────────────────────────────
 

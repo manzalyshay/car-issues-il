@@ -53,8 +53,8 @@ export default function CarVideosTab({ initialVideos, makeSlug, modelSlug, makeN
             key={v.youtube_id}
             onClick={() => setActiveVideo(v.youtube_id === activeVideo ? null : v.youtube_id)}
             style={{
-              background: 'var(--bg-card)',
-              border: v.youtube_id === activeVideo ? '2px solid var(--brand-red)' : '1px solid var(--border)',
+              background: 'var(--surface)',
+              border: v.youtube_id === activeVideo ? '2px solid var(--accent)' : '1px solid var(--border)',
               borderRadius: 10,
               padding: 0,
               cursor: 'pointer',
@@ -88,7 +88,7 @@ export default function CarVideosTab({ initialVideos, makeSlug, modelSlug, makeN
               }}>
                 <div style={{
                   width: 44, height: 44, borderRadius: '50%',
-                  background: v.youtube_id === activeVideo ? 'var(--brand-red)' : 'rgba(255,255,255,0.9)',
+                  background: v.youtube_id === activeVideo ? 'var(--accent)' : 'rgba(255,255,255,0.9)',
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
                   boxShadow: '0 2px 12px rgba(0,0,0,0.3)',
                 }}>
@@ -101,7 +101,7 @@ export default function CarVideosTab({ initialVideos, makeSlug, modelSlug, makeN
             <div style={{ padding: '12px 14px' }}>
               <div style={{
                 fontSize: '0.875rem', fontWeight: 700,
-                color: 'var(--text-primary)', lineHeight: 1.35,
+                color: 'var(--text)', lineHeight: 1.35,
                 marginBottom: 6,
                 display: '-webkit-box',
                 WebkitLineClamp: 2,
@@ -124,7 +124,7 @@ export default function CarVideosTab({ initialVideos, makeSlug, modelSlug, makeN
         <a
           href={`https://www.youtube.com/results?search_query=${encodeURIComponent(`${makeSlug} ${modelSlug} review`)}`}
           target="_blank" rel="noopener noreferrer"
-          style={{ color: 'var(--brand-red)' }}
+          style={{ color: 'var(--accent)' }}
         >
           חיפוש ב-YouTube
         </a>

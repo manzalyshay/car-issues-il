@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useLocale } from '@/lib/localeContext';
 
 interface Props {
   makeEn: string;
@@ -10,6 +11,7 @@ interface Props {
 }
 
 export default function RecallsBadge({ makeEn, modelEn, year, years }: Props) {
+  const { locale } = useLocale();
   const [count, setCount] = useState<number | null>(null);
 
   useEffect(() => {
@@ -40,7 +42,7 @@ export default function RecallsBadge({ makeEn, modelEn, year, years }: Props) {
         document.getElementById('recalls')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
       }}
     >
-      ⚠️ {count} ריקול{count > 1 ? 'ים' : ''}
+      ⚠️ {count} {locale === 'en' ? (count === 1 ? 'Recall' : 'Recalls') : `ריקול${count > 1 ? 'ים' : ''}`}
     </a>
   );
 }

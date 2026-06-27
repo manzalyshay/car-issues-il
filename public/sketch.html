@@ -1,0 +1,956 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CarIssues — Design Sketch</title>
+<link href="https://fonts.googleapis.com/css2?family=Rubik:wght@300;400;500;600;700;800;900&family=Syne:wght@700;800&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --red: #dc1a2c;
+    --red-soft: rgba(220,26,44,.08);
+    --blue: #1558d6;
+    --blue-dark: #0d3e9e;
+    --blue-soft: #eef3ff;
+    --navy: #0d1b3e;
+    --text: #111318;
+    --text2: #52565f;
+    --muted: #8e929c;
+    --border: #e4e4e7;
+    --bg: #f5f5f7;
+    --white: #fff;
+    --green: #16a34a;
+    --amber: #d97706;
+    --radius: 10px;
+    --shadow: 0 2px 12px rgba(0,0,0,.08);
+    --shadow-md: 0 6px 24px rgba(0,0,0,.1);
+  }
+  body { font-family: 'Rubik', sans-serif; background: #e8e8ea; color: var(--text); direction: rtl; }
+
+  /* ─── PAGE LABELS ─── */
+  .page-label {
+    background: var(--navy); color: #fff; padding: 12px 32px;
+    font-size: 0.75rem; font-weight: 700; letter-spacing: .15em; text-transform: uppercase;
+    display: flex; align-items: center; gap: 12px;
+  }
+  .page-label::before { content: ''; display: block; width: 28px; height: 2px; background: var(--red); }
+
+  /* ─── SECTION WRAPPER ─── */
+  .page { background: var(--white); margin-bottom: 40px; box-shadow: 0 8px 40px rgba(0,0,0,.15); }
+  .container { max-width: 1180px; margin: 0 auto; padding: 0 24px; }
+
+  /* ══════════════════════════════════════════
+     HEADER
+  ══════════════════════════════════════════ */
+  .hdr {
+    background: var(--white);
+    border-bottom: 1px solid var(--border);
+    position: sticky; top: 0; z-index: 10;
+  }
+  .hdr-main {
+    display: flex; align-items: center; gap: 8px;
+    height: 64px; justify-content: space-between;
+  }
+  .logo {
+    display: flex; align-items: center; gap: 8px;
+    font-family: 'Syne', sans-serif; font-size: 18px; font-weight: 800;
+    color: var(--text); text-decoration: none; flex-shrink: 0;
+  }
+  .logo svg { flex-shrink: 0; }
+  .logo .dot { color: var(--red); }
+  .hdr-nav { display: flex; align-items: stretch; height: 64px; gap: 0; }
+  .hdr-nav a {
+    display: flex; align-items: center; padding: 0 14px;
+    font-size: 0.875rem; font-weight: 600; color: var(--text2);
+    border-bottom: 2.5px solid transparent; text-decoration: none;
+    transition: all .15s; white-space: nowrap;
+  }
+  .hdr-nav a:hover, .hdr-nav a.active { color: var(--blue); border-bottom-color: var(--blue); }
+  .hdr-actions { display: flex; align-items: center; gap: 8px; }
+  .hdr-search {
+    display: flex; align-items: center; gap: 6px;
+    border: 1.5px solid var(--border); border-radius: 8px;
+    padding: 0 12px; height: 36px; font-size: .84rem; color: var(--muted);
+    background: var(--bg); cursor: pointer; min-width: 180px;
+  }
+  .btn-login {
+    background: var(--blue); color: #fff; border: none; border-radius: 8px;
+    padding: 0 16px; height: 36px; font-size: .82rem; font-weight: 700;
+    cursor: pointer; white-space: nowrap;
+  }
+  .lang-btn {
+    border: 1.5px solid var(--border); border-radius: 6px;
+    padding: 4px 10px; font-size: .72rem; font-weight: 700; color: var(--muted);
+    background: none; cursor: pointer;
+  }
+
+  /* Category bar */
+  .cat-bar {
+    border-top: 1px solid var(--border);
+    background: var(--white);
+  }
+  .cat-bar-inner {
+    display: flex; height: 40px; gap: 0; overflow-x: auto;
+  }
+  .cat-bar a {
+    display: flex; align-items: center; gap: 5px; padding: 0 16px;
+    font-size: .78rem; font-weight: 600; color: var(--text2);
+    border-bottom: 2px solid transparent; text-decoration: none;
+    white-space: nowrap; flex-shrink: 0;
+  }
+  .cat-bar a:hover { color: var(--blue); border-bottom-color: var(--blue); }
+  .cat-bar a.active { color: var(--blue); border-bottom-color: var(--blue); }
+
+  /* ══════════════════════════════════════════
+     HOME HERO
+  ══════════════════════════════════════════ */
+  .hero {
+    background: var(--white);
+    border-bottom: 1px solid var(--border);
+    padding: 56px 0 48px;
+    position: relative; overflow: hidden;
+  }
+  .hero-grid {
+    display: grid; grid-template-columns: 1fr 400px; gap: 48px; align-items: center;
+  }
+  .hero-badge {
+    display: inline-flex; align-items: center; gap: 6px;
+    background: var(--blue-soft); border: 1px solid rgba(21,88,214,.15);
+    border-radius: 99px; padding: 4px 12px; margin-bottom: 18px;
+    font-size: .72rem; font-weight: 700; color: var(--blue); letter-spacing: .08em;
+  }
+  .hero-badge span { width: 6px; height: 6px; border-radius: 50%; background: var(--blue); display: block; }
+  .hero h1 {
+    font-family: 'Syne', sans-serif; font-size: 2.8rem; font-weight: 800;
+    line-height: 1.1; color: var(--text); margin-bottom: 12px; letter-spacing: -.02em;
+  }
+  .hero h1 em { color: var(--blue); font-style: normal; }
+  .hero-sub { font-size: 1rem; color: var(--text2); line-height: 1.65; margin-bottom: 24px; max-width: 460px; }
+
+  /* Search tool — Edmunds style */
+  .search-tool {
+    background: var(--white); border: 2px solid var(--border);
+    border-radius: 12px; padding: 18px 20px 20px;
+    box-shadow: var(--shadow); margin-bottom: 20px;
+  }
+  .search-tabs { display: flex; gap: 0; margin-bottom: 14px; border-bottom: 1px solid var(--border); }
+  .search-tab {
+    padding: 6px 16px 10px; font-size: .82rem; font-weight: 700;
+    color: var(--muted); border-bottom: 2px solid transparent; margin-bottom: -1px; cursor: pointer;
+  }
+  .search-tab.active { color: var(--blue); border-bottom-color: var(--blue); }
+  .search-fields { display: flex; gap: 8px; }
+  .search-select {
+    flex: 1; height: 44px; border: 1.5px solid var(--border); border-radius: 8px;
+    padding: 0 12px; font-family: 'Rubik', sans-serif; font-size: .875rem;
+    color: var(--text); background: var(--bg); appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath d='M2 4l4 4 4-4' stroke='%238e929c' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+    background-repeat: no-repeat; background-position: left 12px center;
+  }
+  .search-btn {
+    height: 44px; padding: 0 22px; background: var(--blue); color: #fff;
+    border: none; border-radius: 8px; font-weight: 700; font-size: .875rem;
+    cursor: pointer; white-space: nowrap; flex-shrink: 0;
+  }
+  .search-or { display: flex; align-items: center; gap: 10px; margin: 10px 0; color: var(--muted); font-size: .75rem; font-weight: 600; }
+  .search-or::before, .search-or::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+  .search-free {
+    display: flex; align-items: center; gap: 8px;
+    border: 1.5px solid var(--border); border-radius: 8px;
+    padding: 0 14px; height: 40px; color: var(--muted); font-size: .84rem;
+    cursor: pointer;
+  }
+
+  .hero-popular { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+  .hero-popular span { font-size: .72rem; color: var(--muted); font-weight: 700; }
+  .pill {
+    font-size: .78rem; font-weight: 700; padding: 4px 12px;
+    border: 1.5px solid var(--border); color: var(--text2);
+    border-radius: 99px; background: var(--white); cursor: pointer;
+  }
+  .pill:hover { border-color: var(--blue); color: var(--blue); }
+
+  /* 3D placeholder */
+  .hero-3d {
+    background: linear-gradient(135deg, #f0f3ff 0%, #e8f0fe 60%, #f5f0ff 100%);
+    border-radius: 16px; height: 360px;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    gap: 16px; position: relative; overflow: hidden; border: 1px solid rgba(21,88,214,.1);
+  }
+  .hero-3d-car {
+    font-size: 5rem; filter: drop-shadow(0 12px 24px rgba(21,88,214,.2));
+    animation: float 3s ease-in-out infinite;
+  }
+  @keyframes float { 0%,100% { transform: translateY(0) rotate(-2deg); } 50% { transform: translateY(-12px) rotate(2deg); } }
+  .hero-3d-glow {
+    position: absolute; bottom: -30px; width: 200px; height: 60px;
+    background: radial-gradient(ellipse, rgba(220,26,44,.25) 0%, transparent 70%);
+  }
+  .hero-3d-label {
+    position: absolute; background: rgba(255,255,255,.92); backdrop-filter: blur(8px);
+    border: 1px solid rgba(21,88,214,.15); border-radius: 8px;
+    padding: 5px 10px; font-size: .72rem; font-weight: 700; color: var(--text);
+    box-shadow: 0 2px 8px rgba(0,0,0,.08);
+  }
+  .hero-3d-label .score { color: var(--blue); }
+  .hero-3d-label-1 { top: 30px; right: 20px; }
+  .hero-3d-label-2 { top: 80px; left: 16px; }
+  .hero-3d-label-3 { bottom: 50px; right: 24px; }
+  .hero-3d-hint { font-size: .68rem; color: var(--muted); position: absolute; bottom: 12px; }
+
+  .hero-stats { display: flex; gap: 28px; margin-top: 18px; }
+  .hero-stat-n { font-family: 'Syne', sans-serif; font-size: 1.5rem; font-weight: 800; color: var(--text); line-height: 1; }
+  .hero-stat-l { font-size: .65rem; color: var(--muted); font-weight: 700; text-transform: uppercase; letter-spacing: .1em; margin-top: 2px; }
+
+  /* ══════════════════════════════════════════
+     TYPE STRIP
+  ══════════════════════════════════════════ */
+  .type-strip { background: var(--bg); border-bottom: 1px solid var(--border); padding: 24px 0; }
+  .type-grid { display: flex; gap: 10px; flex-wrap: wrap; }
+  .type-card {
+    background: var(--white); border: 1.5px solid var(--border); border-radius: 10px;
+    padding: 14px 20px; display: flex; flex-direction: column; align-items: center; gap: 6px;
+    font-size: .78rem; font-weight: 700; color: var(--text2); cursor: pointer;
+    transition: all .15s; min-width: 80px;
+  }
+  .type-card:hover { border-color: var(--blue); color: var(--blue); transform: translateY(-2px); box-shadow: var(--shadow); }
+  .type-card .type-icon { font-size: 1.6rem; }
+
+  /* ══════════════════════════════════════════
+     SECTION HEADERS
+  ══════════════════════════════════════════ */
+  .sec-hdr { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
+  .sec-hdr h2 { font-size: 1.1rem; font-weight: 700; color: var(--text); }
+  .sec-hdr a { font-size: .78rem; font-weight: 700; color: var(--blue); text-decoration: none; }
+  .sec-label { font-size: .68rem; font-weight: 800; letter-spacing: .14em; text-transform: uppercase; color: var(--muted); margin-bottom: 14px; }
+
+  /* ══════════════════════════════════════════
+     TOP RANKED CARDS
+  ══════════════════════════════════════════ */
+  .ranked-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 14px; }
+  .ranked-card {
+    background: var(--white); border: 1.5px solid var(--border); border-radius: 10px;
+    padding: 18px 16px; transition: all .18s; cursor: pointer;
+  }
+  .ranked-card:hover { border-color: var(--blue); box-shadow: var(--shadow-md); transform: translateY(-2px); }
+  .ranked-card-top { display: flex; align-items: center; gap: 10px; margin-bottom: 14px; }
+  .car-logo-box {
+    width: 40px; height: 40px; background: var(--bg); border: 1px solid var(--border);
+    border-radius: 8px; display: flex; align-items: center; justify-content: center;
+    font-size: 1.3rem; flex-shrink: 0;
+  }
+  .ranked-num { font-size: .65rem; font-weight: 800; color: var(--muted); letter-spacing: .1em; margin-left: auto; }
+  .ranked-name { font-size: .88rem; font-weight: 700; color: var(--text); }
+  .ranked-cat { font-size: .68rem; color: var(--muted); font-weight: 500; margin-top: 1px; }
+  .ranked-card-bottom { display: flex; align-items: center; justify-content: space-between; }
+  .score-ring { position: relative; width: 52px; height: 52px; flex-shrink: 0; }
+  .score-ring svg { position: absolute; inset: 0; transform: rotate(-90deg); }
+  .score-ring-val { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-family: 'Syne', sans-serif; font-size: .9rem; font-weight: 800; }
+  .score-green { color: var(--green); }
+  .score-amber { color: var(--amber); }
+  .user-rating { display: flex; flex-direction: column; gap: 3px; }
+  .stars { color: #f59e0b; font-size: .8rem; letter-spacing: -.02em; }
+  .rating-count { font-size: .65rem; color: var(--muted); font-weight: 500; }
+  .see-link { font-size: .72rem; font-weight: 700; color: var(--blue); text-decoration: none; display: flex; align-items: center; gap: 3px; }
+
+  /* ══════════════════════════════════════════
+     HOME MAIN GRID
+  ══════════════════════════════════════════ */
+  .home-body { padding: 36px 0 64px; }
+  .home-grid { display: grid; grid-template-columns: 1fr 290px; gap: 28px; align-items: start; }
+
+  /* Review cards */
+  .reviews-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 14px; }
+  .review-card {
+    background: var(--white); border: 1.5px solid var(--border); border-radius: 10px;
+    padding: 14px 16px; cursor: pointer; transition: all .15s;
+  }
+  .review-card:hover { border-color: var(--blue); box-shadow: var(--shadow); }
+  .review-top { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
+  .review-logo { width: 36px; height: 36px; background: var(--bg); border-radius: 7px; display: flex; align-items: center; justify-content: center; font-size: 1.1rem; flex-shrink: 0; }
+  .review-carname { font-size: .82rem; font-weight: 700; color: var(--text); }
+  .review-meta { display: flex; align-items: center; gap: 6px; margin-top: 2px; }
+  .review-body { font-size: .8rem; color: var(--text2); line-height: 1.55; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
+
+  /* Sidebar */
+  .sidebar-card { background: var(--white); border: 1.5px solid var(--border); border-radius: 10px; overflow: hidden; margin-bottom: 16px; }
+  .sidebar-head { padding: 11px 14px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; }
+  .sidebar-head-label { font-size: .68rem; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); }
+  .sidebar-head a { font-size: .72rem; font-weight: 700; color: var(--blue); text-decoration: none; }
+  .makes-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 1px; background: var(--border); }
+  .make-cell { background: var(--white); padding: 12px 8px; display: flex; flex-direction: column; align-items: center; gap: 5px; cursor: pointer; }
+  .make-cell:hover { background: var(--blue-soft); }
+  .make-cell .icon { font-size: 1.4rem; }
+  .make-cell .lbl { font-size: .62rem; font-weight: 700; color: var(--muted); text-align: center; }
+
+  /* ══════════════════════════════════════════
+     MODEL PAGE
+  ══════════════════════════════════════════ */
+  .model-hero {
+    background: var(--white); border-bottom: 1px solid var(--border);
+    padding: 28px 0 24px;
+  }
+  .breadcrumb { display: flex; align-items: center; gap: 6px; font-size: .75rem; color: var(--muted); margin-bottom: 18px; }
+  .breadcrumb a { color: var(--muted); text-decoration: none; }
+  .breadcrumb a:hover { color: var(--blue); }
+  .model-hero-grid { display: grid; grid-template-columns: 1fr 320px; gap: 32px; align-items: start; }
+  .model-hero-left {}
+  .model-make-logo { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+  .model-make-icon { width: 44px; height: 44px; background: var(--bg); border: 1px solid var(--border); border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 1.4rem; }
+  .model-make-name { font-size: .8rem; font-weight: 700; color: var(--text2); }
+  .model-title { font-family: 'Syne', sans-serif; font-size: 2.2rem; font-weight: 800; color: var(--text); letter-spacing: -.02em; margin-bottom: 10px; line-height: 1.05; }
+  .model-badges { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 18px; }
+  .model-badge { padding: 3px 10px; border-radius: 99px; font-size: .7rem; font-weight: 700; border: 1px solid var(--border); color: var(--muted); background: var(--bg); }
+  .model-badge.blue { background: var(--blue-soft); color: var(--blue); border-color: rgba(21,88,214,.2); }
+  .model-badge.green { background: rgba(22,163,74,.07); color: var(--green); border-color: rgba(22,163,74,.2); }
+
+  /* Scores */
+  .scores-row { display: flex; gap: 20px; align-items: center; margin-bottom: 20px; }
+  .score-big { display: flex; flex-direction: column; align-items: center; }
+  .score-big-ring { position: relative; width: 80px; height: 80px; }
+  .score-big-ring svg { position: absolute; inset: 0; transform: rotate(-90deg); }
+  .score-big-val { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+  .score-big-num { font-family: 'Syne', sans-serif; font-size: 1.4rem; font-weight: 800; color: var(--green); line-height: 1; }
+  .score-big-den { font-size: .6rem; color: var(--muted); font-weight: 600; }
+  .score-big-label { font-size: .62rem; font-weight: 700; text-transform: uppercase; letter-spacing: .1em; color: var(--muted); margin-top: 5px; }
+  .score-divider { width: 1px; height: 60px; background: var(--border); }
+  .user-score { display: flex; flex-direction: column; gap: 3px; }
+  .user-score .stars-big { font-size: 1.1rem; color: #f59e0b; }
+  .user-score .score-num { font-family: 'Syne', sans-serif; font-size: 1.2rem; font-weight: 800; color: var(--text); }
+  .user-score .score-sub { font-size: .7rem; color: var(--muted); }
+
+  /* Pros/cons */
+  .pros-cons { display: grid; grid-template-columns: 1fr 1fr; gap: 0; border: 1.5px solid var(--border); border-radius: 10px; overflow: hidden; margin-bottom: 18px; }
+  .pros-col { padding: 14px 16px; background: rgba(22,163,74,.03); border-left: 1px solid var(--border); }
+  .cons-col { padding: 14px 16px; }
+  .pc-head { font-size: .68rem; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; margin-bottom: 10px; display: flex; align-items: center; gap: 5px; }
+  .pros-col .pc-head { color: var(--green); }
+  .cons-col .pc-head { color: var(--red); }
+  .pc-item { display: flex; align-items: flex-start; gap: 7px; margin-bottom: 7px; font-size: .8rem; color: var(--text2); line-height: 1.4; }
+  .pc-item .dot { width: 5px; height: 5px; border-radius: 50%; flex-shrink: 0; margin-top: 5px; }
+  .pros-col .dot { background: var(--green); }
+  .cons-col .dot { background: var(--red); }
+
+  /* Rating breakdown */
+  .rating-breakdown { padding: 0; }
+  .rb-item { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+  .rb-label { font-size: .78rem; font-weight: 600; color: var(--text2); width: 70px; flex-shrink: 0; text-align: right; }
+  .rb-track { flex: 1; height: 6px; background: var(--border); border-radius: 3px; overflow: hidden; }
+  .rb-fill { height: 100%; border-radius: 3px; }
+  .rb-val { font-size: .78rem; font-weight: 700; width: 28px; flex-shrink: 0; }
+
+  /* 3D card */
+  .model-3d-card {
+    background: linear-gradient(135deg, #f0f3ff, #e8f0fe);
+    border: 1.5px solid rgba(21,88,214,.12); border-radius: 12px;
+    height: 260px; display: flex; flex-direction: column; align-items: center; justify-content: center;
+    gap: 8px; position: relative; overflow: hidden;
+  }
+  .model-3d-car { font-size: 4rem; animation: float 3s ease-in-out infinite; }
+  .model-3d-note { font-size: .68rem; color: var(--muted); position: absolute; bottom: 10px; }
+
+  /* Subnav */
+  .subnav { background: var(--white); border-bottom: 1px solid var(--border); position: sticky; top: 64px; z-index: 9; overflow-x: auto; }
+  .subnav-inner { display: flex; height: 48px; padding: 0 24px; min-width: max-content; }
+  .subnav-link {
+    display: flex; align-items: center; gap: 5px; padding: 0 14px;
+    font-size: .84rem; font-weight: 600; color: var(--muted);
+    border-bottom: 2.5px solid transparent; cursor: pointer;
+    white-space: nowrap; transition: all .15s; background: none; border-left: none; border-right: none; border-top: none;
+  }
+  .subnav-link:hover { color: var(--text); }
+  .subnav-link.active { color: var(--blue); border-bottom-color: var(--blue); }
+
+  /* ══════════════════════════════════════════
+     MAKE PAGE
+  ══════════════════════════════════════════ */
+  .make-hero { background: var(--white); border-bottom: 1px solid var(--border); padding: 28px 0; }
+  .make-hero-inner { display: flex; align-items: center; gap: 24px; }
+  .make-logo-big { width: 80px; height: 80px; background: var(--bg); border: 1px solid var(--border); border-radius: 14px; display: flex; align-items: center; justify-content: center; font-size: 2.8rem; flex-shrink: 0; }
+  .make-hero-text {}
+  .make-country-label { font-size: .7rem; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; color: var(--blue); margin-bottom: 4px; }
+  .make-title { font-family: 'Syne', sans-serif; font-size: 2.2rem; font-weight: 800; color: var(--text); letter-spacing: -.02em; margin-bottom: 8px; }
+  .make-pills { display: flex; gap: 6px; flex-wrap: wrap; }
+  .make-pill-tag { padding: 4px 12px; border-radius: 99px; font-size: .7rem; font-weight: 700; }
+  .make-pill-tag.red { background: rgba(220,26,44,.07); color: var(--red); border: 1px solid rgba(220,26,44,.15); }
+  .make-pill-tag.gray { background: var(--bg); color: var(--muted); border: 1px solid var(--border); }
+
+  .models-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; padding: 32px 0 64px; }
+  .model-card {
+    background: var(--white); border: 1.5px solid var(--border); border-radius: 10px;
+    padding: 18px 16px; cursor: pointer; transition: all .18s;
+    display: flex; flex-direction: column; gap: 12px;
+  }
+  .model-card:hover { border-color: var(--blue); box-shadow: var(--shadow); transform: translateY(-2px); }
+  .model-card-top { display: flex; align-items: center; gap: 10px; }
+  .model-card-logo { width: 36px; height: 36px; background: var(--bg); border-radius: 7px; display: flex; align-items: center; justify-content: center; font-size: 1.1rem; flex-shrink: 0; }
+  .model-card-name { font-size: .92rem; font-weight: 700; color: var(--text); }
+  .model-card-en { font-size: .7rem; color: var(--muted); }
+  .model-card-bottom { display: flex; align-items: center; justify-content: space-between; }
+  .model-card-tag { font-size: .65rem; font-weight: 700; letter-spacing: .07em; text-transform: uppercase; color: var(--muted); background: var(--bg); border: 1px solid var(--border); border-radius: 5px; padding: 2px 7px; }
+  .model-card-years { font-size: .72rem; color: var(--muted); font-weight: 600; }
+
+  /* ══════════════════════════════════════════
+     FOOTER
+  ══════════════════════════════════════════ */
+  .footer { background: var(--white); border-top: 1px solid var(--border); padding: 48px 0 24px; }
+  .footer-grid { display: grid; grid-template-columns: 200px repeat(3, 1fr); gap: 40px; margin-bottom: 36px; }
+  .footer-brand-name { font-family: 'Syne', sans-serif; font-size: 16px; font-weight: 800; color: var(--text); margin-bottom: 10px; display: flex; align-items: center; gap: 7px; }
+  .footer-brand-name .dot { color: var(--red); }
+  .footer-about { font-size: .82rem; color: var(--muted); line-height: 1.7; margin-bottom: 14px; }
+  .footer-lang { display: inline-flex; align-items: center; gap: 5px; font-size: .72rem; font-weight: 700; color: var(--text2); border: 1.5px solid var(--border); border-radius: 7px; padding: 5px 11px; cursor: pointer; }
+  .footer-col-head { font-size: .67rem; font-weight: 800; letter-spacing: .13em; text-transform: uppercase; color: var(--muted); margin-bottom: 14px; }
+  .footer-col ul { list-style: none; display: flex; flex-direction: column; gap: 9px; }
+  .footer-col ul a { font-size: .875rem; color: var(--text2); text-decoration: none; }
+  .footer-col ul a:hover { color: var(--blue); }
+  .footer-bottom { border-top: 1px solid var(--border); padding-top: 18px; display: flex; justify-content: space-between; align-items: center; font-size: .73rem; color: var(--muted); }
+
+  /* ══════════════════════════════════════════
+     UTILS
+  ══════════════════════════════════════════ */
+  .btn-outline-blue {
+    display: inline-flex; align-items: center; gap: 5px;
+    height: 36px; padding: 0 16px; border: 1.5px solid var(--blue);
+    border-radius: 8px; color: var(--blue); font-size: .82rem; font-weight: 700;
+    background: none; cursor: pointer;
+  }
+  .section-sep { padding: 36px 0; }
+  .divider { height: 1px; background: var(--border); margin: 0; }
+</style>
+</head>
+<body>
+
+<!-- ═══════════════════════════════════════════════════ -->
+<div class="page-label">⬆ PAGE 1 — HEADER + HOMEPAGE</div>
+<!-- ═══════════════════════════════════════════════════ -->
+<div class="page">
+
+  <!-- HEADER -->
+  <header class="hdr">
+    <div class="container hdr-main">
+      <a class="logo" href="#">
+        <svg width="26" height="16" viewBox="0 0 40 24" fill="none">
+          <path d="M3 14 L7 8 L33 8 L37 14 L37 19 L3 19 Z" fill="#dc1a2c"/>
+          <path d="M10 8 L14 3 L28 3 L33 8 Z" fill="#dc1a2c" opacity=".7"/>
+          <circle cx="10" cy="19" r="4" fill="#222"/>
+          <circle cx="10" cy="19" r="2" fill="#888"/>
+          <circle cx="30" cy="19" r="4" fill="#222"/>
+          <circle cx="30" cy="19" r="2" fill="#888"/>
+          <path d="M14 8 L16 4 L27 4 L30 8 Z" fill="rgba(160,210,240,.65)"/>
+        </svg>
+        CarIssues<span class="dot">.co.il</span>
+      </a>
+
+      <nav class="hdr-nav">
+        <a href="#" class="active">יצרנים</a>
+        <a href="#">השוואה</a>
+        <a href="#">דירוגים</a>
+        <a href="#">תיקונים</a>
+        <a href="#">TCO</a>
+      </nav>
+
+      <div class="hdr-actions">
+        <div class="hdr-search">
+          <svg width="14" height="14" viewBox="0 0 20 20" fill="none"><circle cx="8.5" cy="8.5" r="5.5" stroke="#8e929c" stroke-width="1.8"/><path d="M12.5 12.5L17 17" stroke="#8e929c" stroke-width="1.8" stroke-linecap="round"/></svg>
+          חיפוש מהיר...
+        </div>
+        <span class="lang-btn">EN</span>
+        <button class="btn-login">כניסה</button>
+      </div>
+    </div>
+
+    <!-- Category bar -->
+    <div class="cat-bar">
+      <div class="container cat-bar-inner">
+        <a href="#" class="active">🚗 פרטי</a>
+        <a href="#">🚐 SUV</a>
+        <a href="#">⚡ חשמלי</a>
+        <a href="#">🏎 ספורט</a>
+        <a href="#">👨‍👩‍👧 משפחתי</a>
+        <a href="#">🔧 פיקאפ</a>
+        <a href="#">🚐 מסחרי</a>
+      </div>
+    </div>
+  </header>
+
+  <!-- HERO -->
+  <section class="hero">
+    <div class="container">
+      <div class="hero-grid">
+        <!-- Left: Search tool -->
+        <div>
+          <div class="hero-badge"><span></span>פלטפורמת ביקורות הרכב מס׳ 1 בישראל</div>
+          <h1>מצא את הרכב<br><em>שמתאים לך</em></h1>
+          <p class="hero-sub">ביקורות אמיתיות מבעלי רכב בישראל. בעיות נפוצות, ריקולים ועלויות תיקון — כל מה שצריך לדעת לפני הרכישה.</p>
+
+          <!-- Search tool — Edmunds style -->
+          <div class="search-tool">
+            <div class="search-tabs">
+              <div class="search-tab active">לפי יצרן ודגם</div>
+              <div class="search-tab">לפי סוג</div>
+              <div class="search-tab">השוואה</div>
+            </div>
+            <div class="search-fields">
+              <select class="search-select">
+                <option>בחר יצרן ▾</option>
+                <option>Toyota</option>
+                <option>Hyundai</option>
+                <option>Kia</option>
+              </select>
+              <select class="search-select">
+                <option>בחר דגם ▾</option>
+              </select>
+              <button class="search-btn">🔍 חפש</button>
+            </div>
+            <div class="search-or">או</div>
+            <div class="search-free">
+              <svg width="14" height="14" viewBox="0 0 20 20" fill="none"><circle cx="8.5" cy="8.5" r="5.5" stroke="#8e929c" stroke-width="1.8"/><path d="M12.5 12.5L17 17" stroke="#8e929c" stroke-width="1.8" stroke-linecap="round"/></svg>
+              חיפוש חופשי — "Toyota Corolla 2020"...
+            </div>
+          </div>
+
+          <div class="hero-popular">
+            <span>פופולרי:</span>
+            <span class="pill">Toyota</span>
+            <span class="pill">Hyundai</span>
+            <span class="pill">Kia</span>
+            <span class="pill">Mazda</span>
+            <span class="pill">Skoda</span>
+            <a href="#" style="font-size:.78rem;font-weight:700;color:var(--blue);text-decoration:none;">הכל ›</a>
+          </div>
+
+          <div class="hero-stats">
+            <div><div class="hero-stat-n">40+</div><div class="hero-stat-l">יצרנים</div></div>
+            <div><div class="hero-stat-n">200+</div><div class="hero-stat-l">דגמים</div></div>
+            <div><div class="hero-stat-n">2,400+</div><div class="hero-stat-l">ביקורות</div></div>
+          </div>
+        </div>
+
+        <!-- Right: 3D car placeholder -->
+        <div class="hero-3d">
+          <div class="hero-3d-label hero-3d-label-1"><span class="score">9.1</span> אמינות</div>
+          <div class="hero-3d-label hero-3d-label-2"><span class="score">8.4</span> ביצועים</div>
+          <div class="hero-3d-label hero-3d-label-3"><span class="score">8.7</span> ערך לכסף</div>
+          <div class="hero-3d-car">🚗</div>
+          <div class="hero-3d-glow"></div>
+          <div class="hero-3d-hint">🖱️ גרור לסיבוב | מודל 3D אינטראקטיבי</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- BROWSE BY TYPE -->
+  <div class="type-strip">
+    <div class="container">
+      <div class="sec-label">גלוש לפי סוג</div>
+      <div class="type-grid">
+        <div class="type-card"><div class="type-icon">🚗</div>פרטי</div>
+        <div class="type-card"><div class="type-icon">🚐</div>SUV</div>
+        <div class="type-card"><div class="type-icon">⚡</div>חשמלי</div>
+        <div class="type-card"><div class="type-icon">🏎</div>ספורט</div>
+        <div class="type-card"><div class="type-icon">👨‍👩‍👧</div>משפחתי</div>
+        <div class="type-card"><div class="type-icon">🚐</div>מסחרי</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- HOME BODY -->
+  <div class="home-body">
+    <div class="container">
+      <!-- Top Ranked -->
+      <div class="sec-hdr"><h2>🏆 מובילים החודש</h2><a href="#">כל הדירוגים ›</a></div>
+      <div class="ranked-grid" style="margin-bottom:36px;">
+        <!-- Card 1 -->
+        <div class="ranked-card">
+          <div class="ranked-card-top">
+            <div class="car-logo-box">🚙</div>
+            <div><div class="ranked-name">Toyota RAV4</div><div class="ranked-cat">SUV</div></div>
+            <div class="ranked-num">#1</div>
+          </div>
+          <div class="ranked-card-bottom">
+            <div class="score-ring">
+              <svg width="52" height="52"><circle cx="26" cy="26" r="22" fill="none" stroke="#e4e4e7" stroke-width="4"/><circle cx="26" cy="26" r="22" fill="none" stroke="#16a34a" stroke-width="4" stroke-dasharray="124 138" stroke-linecap="round"/></svg>
+              <div class="score-ring-val score-green">8.7</div>
+            </div>
+            <div class="user-rating">
+              <div class="stars">⭐⭐⭐⭐½</div>
+              <div class="rating-count">47 ביקורות</div>
+            </div>
+            <a class="see-link" href="#">ראה ›</a>
+          </div>
+        </div>
+        <!-- Card 2 -->
+        <div class="ranked-card">
+          <div class="ranked-card-top">
+            <div class="car-logo-box">🚘</div>
+            <div><div class="ranked-name">Mazda 3</div><div class="ranked-cat">Hatchback</div></div>
+            <div class="ranked-num">#2</div>
+          </div>
+          <div class="ranked-card-bottom">
+            <div class="score-ring">
+              <svg width="52" height="52"><circle cx="26" cy="26" r="22" fill="none" stroke="#e4e4e7" stroke-width="4"/><circle cx="26" cy="26" r="22" fill="none" stroke="#16a34a" stroke-width="4" stroke-dasharray="116 138" stroke-linecap="round"/></svg>
+              <div class="score-ring-val score-green">8.4</div>
+            </div>
+            <div class="user-rating">
+              <div class="stars">⭐⭐⭐⭐</div>
+              <div class="rating-count">31 ביקורות</div>
+            </div>
+            <a class="see-link" href="#">ראה ›</a>
+          </div>
+        </div>
+        <!-- Card 3 -->
+        <div class="ranked-card">
+          <div class="ranked-card-top">
+            <div class="car-logo-box">🚕</div>
+            <div><div class="ranked-name">Hyundai Tucson</div><div class="ranked-cat">SUV</div></div>
+            <div class="ranked-num">#3</div>
+          </div>
+          <div class="ranked-card-bottom">
+            <div class="score-ring">
+              <svg width="52" height="52"><circle cx="26" cy="26" r="22" fill="none" stroke="#e4e4e7" stroke-width="4"/><circle cx="26" cy="26" r="22" fill="none" stroke="#d97706" stroke-width="4" stroke-dasharray="110 138" stroke-linecap="round"/></svg>
+              <div class="score-ring-val score-amber">7.9</div>
+            </div>
+            <div class="user-rating">
+              <div class="stars">⭐⭐⭐⭐</div>
+              <div class="rating-count">22 ביקורות</div>
+            </div>
+            <a class="see-link" href="#">ראה ›</a>
+          </div>
+        </div>
+      </div>
+
+      <!-- Main grid -->
+      <div class="home-grid">
+        <div>
+          <div class="sec-hdr"><h2>📝 ביקורות אחרונות</h2></div>
+          <div class="reviews-grid">
+            <div class="review-card">
+              <div class="review-top">
+                <div class="review-logo">🚙</div>
+                <div>
+                  <div class="review-carname">Toyota Corolla 2021</div>
+                  <div class="review-meta"><span style="color:#f59e0b;font-size:.75rem;">⭐⭐⭐⭐⭐</span><span style="font-size:.65rem;color:var(--muted);">לפני 2 ימים</span></div>
+                </div>
+              </div>
+              <p class="review-body">רכב אמין מאוד, לא היו לי בעיות כל השנים. צריכת הדלק מצוינת, נסיעה נוחה בעיר.</p>
+            </div>
+            <div class="review-card">
+              <div class="review-top">
+                <div class="review-logo">🚘</div>
+                <div>
+                  <div class="review-carname">Mazda 3 2022</div>
+                  <div class="review-meta"><span style="color:#f59e0b;font-size:.75rem;">⭐⭐⭐⭐</span><span style="font-size:.65rem;color:var(--muted);">לפני שבוע</span></div>
+                </div>
+              </div>
+              <p class="review-body">עיצוב מדהים ותחושת נהיגה מעולה. מעט יקר לתחזוקה אבל שווה את זה.</p>
+            </div>
+            <div class="review-card">
+              <div class="review-top">
+                <div class="review-logo">🚕</div>
+                <div>
+                  <div class="review-carname">Hyundai Tucson 2020</div>
+                  <div class="review-meta"><span style="color:#f59e0b;font-size:.75rem;">⭐⭐⭐</span><span style="font-size:.65rem;color:var(--muted);">לפני 2 שבועות</span></div>
+                </div>
+              </div>
+              <p class="review-body">היה בעיה עם השידור אחרי 80,000 ק"מ. השירות של היבואן היה סביר.</p>
+            </div>
+            <div class="review-card">
+              <div class="review-top">
+                <div class="review-logo">🚗</div>
+                <div>
+                  <div class="review-carname">Kia Sportage 2023</div>
+                  <div class="review-meta"><span style="color:#f59e0b;font-size:.75rem;">⭐⭐⭐⭐⭐</span><span style="font-size:.65rem;color:var(--muted);">לפני חודש</span></div>
+                </div>
+              </div>
+              <p class="review-body">הרכב הכי טוב שקניתי. טכנולוגיה מתקדמת, נוחות מעולה וחיסכון בדלק.</p>
+            </div>
+          </div>
+          <button class="btn-outline-blue">כל הביקורות ›</button>
+        </div>
+
+        <!-- Sidebar -->
+        <aside>
+          <div class="sidebar-card">
+            <div class="sidebar-head"><span class="sidebar-head-label">יצרנים פופולריים</span><a href="#">הכל ›</a></div>
+            <div class="makes-grid">
+              <div class="make-cell"><div class="icon">🇯🇵</div><div class="lbl">Toyota</div></div>
+              <div class="make-cell"><div class="icon">🇰🇷</div><div class="lbl">Hyundai</div></div>
+              <div class="make-cell"><div class="icon">🇰🇷</div><div class="lbl">Kia</div></div>
+              <div class="make-cell"><div class="icon">🇯🇵</div><div class="lbl">Mazda</div></div>
+              <div class="make-cell"><div class="icon">🇩🇪</div><div class="lbl">Skoda</div></div>
+              <div class="make-cell"><div class="icon">🇩🇪</div><div class="lbl">VW</div></div>
+              <div class="make-cell"><div class="icon">🇯🇵</div><div class="lbl">Honda</div></div>
+              <div class="make-cell"><div class="icon">🇫🇷</div><div class="lbl">Renault</div></div>
+              <div class="make-cell"><div class="icon">🇩🇪</div><div class="lbl">BMW</div></div>
+            </div>
+          </div>
+
+          <div class="sidebar-card">
+            <div class="sidebar-head"><span class="sidebar-head-label">ריקולים אחרונים</span></div>
+            <div style="padding:12px 14px;display:flex;flex-direction:column;gap:10px;">
+              <div style="display:flex;gap:8px;align-items:flex-start;">
+                <div style="width:6px;height:6px;border-radius:50%;background:var(--red);flex-shrink:0;margin-top:5px;"></div>
+                <div><div style="font-size:.78rem;font-weight:700;color:var(--text);">Toyota</div><div style="font-size:.72rem;color:var(--text2);line-height:1.4;">כריות אוויר — סיכון בבטיחות המושב הקדמי</div><div style="font-size:.65rem;color:var(--muted);margin-top:2px;">מרץ 2025</div></div>
+              </div>
+              <div style="display:flex;gap:8px;align-items:flex-start;">
+                <div style="width:6px;height:6px;border-radius:50%;background:var(--red);flex-shrink:0;margin-top:5px;"></div>
+                <div><div style="font-size:.78rem;font-weight:700;color:var(--text);">Hyundai</div><div style="font-size:.72rem;color:var(--text2);line-height:1.4;">מערכת הבלמים — אובדן לחץ אפשרי</div><div style="font-size:.65rem;color:var(--muted);margin-top:2px;">פברואר 2025</div></div>
+              </div>
+            </div>
+          </div>
+        </aside>
+      </div>
+    </div>
+  </div>
+
+  <!-- FOOTER -->
+  <footer class="footer">
+    <div class="container">
+      <div class="footer-grid">
+        <div>
+          <div class="footer-brand-name">
+            <svg width="20" height="12" viewBox="0 0 40 24" fill="none"><path d="M3 14 L7 8 L33 8 L37 14 L37 19 L3 19 Z" fill="#dc1a2c"/><path d="M10 8 L14 3 L28 3 L33 8 Z" fill="#dc1a2c" opacity=".7"/><circle cx="10" cy="19" r="4" fill="#333"/><circle cx="30" cy="19" r="4" fill="#333"/></svg>
+            CarIssues<span class="dot">.co.il</span>
+          </div>
+          <p class="footer-about">המאגר הגדול ביותר בישראל לביקורות רכב, בעיות נפוצות וריקולים.</p>
+          <div class="footer-lang">🌐 English</div>
+        </div>
+        <div class="footer-col">
+          <div class="footer-col-head">עיון</div>
+          <ul><li><a href="#">כל היצרנים</a></li><li><a href="#">דירוגים</a></li><li><a href="#">השוואת רכבים</a></li><li><a href="#">ביקורות אחרונות</a></li></ul>
+        </div>
+        <div class="footer-col">
+          <div class="footer-col-head">כלים</div>
+          <ul><li><a href="#">מחשבון TCO</a></li><li><a href="#">עלויות תיקון</a></li><li><a href="#">ריקולים</a></li><li><a href="#">בעיות נפוצות</a></li></ul>
+        </div>
+        <div class="footer-col">
+          <div class="footer-col-head">מידע</div>
+          <ul><li><a href="#">מדיניות פרטיות</a></li><li><a href="#">תנאי שימוש</a></li><li><a href="#">צור קשר</a></li></ul>
+        </div>
+      </div>
+      <div class="footer-bottom">
+        <span>© 2026 CarIssues. כל הזכויות שמורות.</span>
+        <span>נבנה עם ❤️ בישראל</span>
+      </div>
+    </div>
+  </footer>
+
+</div><!-- /page 1 -->
+
+
+<!-- ═══════════════════════════════════════════════════ -->
+<div class="page-label">⬆ PAGE 2 — MODEL PAGE (Toyota Corolla)</div>
+<!-- ═══════════════════════════════════════════════════ -->
+<div class="page">
+
+  <!-- Reuse header -->
+  <header class="hdr">
+    <div class="container hdr-main">
+      <a class="logo" href="#"><svg width="26" height="16" viewBox="0 0 40 24" fill="none"><path d="M3 14 L7 8 L33 8 L37 14 L37 19 L3 19 Z" fill="#dc1a2c"/><path d="M10 8 L14 3 L28 3 L33 8 Z" fill="#dc1a2c" opacity=".7"/><circle cx="10" cy="19" r="4" fill="#222"/><circle cx="10" cy="19" r="2" fill="#888"/><circle cx="30" cy="19" r="4" fill="#222"/><circle cx="30" cy="19" r="2" fill="#888"/></svg>CarIssues<span class="dot">.co.il</span></a>
+      <nav class="hdr-nav"><a href="#">יצרנים</a><a href="#">השוואה</a><a href="#">דירוגים</a><a href="#">תיקונים</a></nav>
+      <div class="hdr-actions"><span class="lang-btn">EN</span><button class="btn-login">כניסה</button></div>
+    </div>
+  </header>
+
+  <!-- Model Hero -->
+  <div class="model-hero">
+    <div class="container">
+      <div class="breadcrumb">
+        <a href="#">בית</a> › <a href="#">יצרנים</a> › <a href="#">Toyota</a> › <span style="color:var(--text);font-weight:600;">Corolla</span>
+      </div>
+      <div class="model-hero-grid">
+        <div class="model-hero-left">
+          <div class="model-make-logo">
+            <div class="model-make-icon">🚙</div>
+            <span class="model-make-name">Toyota</span>
+          </div>
+          <h1 class="model-title">טויוטה קורולה</h1>
+          <div class="model-badges">
+            <span class="model-badge">2014 – 2024</span>
+            <span class="model-badge blue">Sedan</span>
+            <span class="model-badge green">✓ אמין</span>
+            <span class="model-badge" style="background:rgba(220,26,44,.07);color:var(--red);border-color:rgba(220,26,44,.2);">⚠ 2 ריקולים</span>
+          </div>
+
+          <!-- Scores -->
+          <div class="scores-row">
+            <div class="score-big">
+              <div class="score-big-ring">
+                <svg width="80" height="80"><circle cx="40" cy="40" r="34" fill="none" stroke="#e4e4e7" stroke-width="5"/><circle cx="40" cy="40" r="34" fill="none" stroke="#16a34a" stroke-width="5" stroke-dasharray="186 214" stroke-linecap="round"/></svg>
+                <div class="score-big-val"><span class="score-big-num">8.7</span><span class="score-big-den">/10</span></div>
+              </div>
+              <div class="score-big-label">ציון CarIssues</div>
+            </div>
+            <div class="score-divider"></div>
+            <div class="user-score">
+              <div class="stars-big">⭐⭐⭐⭐½</div>
+              <div class="score-num">4.4</div>
+              <div class="score-sub">47 ביקורות בעלים</div>
+            </div>
+            <div class="score-divider"></div>
+            <!-- Rating breakdown -->
+            <div class="rating-breakdown" style="flex:1;">
+              <div class="rb-item"><span class="rb-label">אמינות</span><div class="rb-track"><div class="rb-fill" style="width:90%;background:var(--green);"></div></div><span class="rb-val score-green">9.0</span></div>
+              <div class="rb-item"><span class="rb-label">ביצועים</span><div class="rb-track"><div class="rb-fill" style="width:80%;background:var(--green);"></div></div><span class="rb-val score-green">8.1</span></div>
+              <div class="rb-item"><span class="rb-label">נוחות</span><div class="rb-track"><div class="rb-fill" style="width:74%;background:var(--amber);"></div></div><span class="rb-val score-amber">7.4</span></div>
+              <div class="rb-item"><span class="rb-label">ערך</span><div class="rb-track"><div class="rb-fill" style="width:88%;background:var(--green);"></div></div><span class="rb-val score-green">8.8</span></div>
+            </div>
+          </div>
+
+          <!-- Pros / Cons -->
+          <div class="pros-cons">
+            <div class="pros-col">
+              <div class="pc-head">✅ יתרונות</div>
+              <div class="pc-item"><div class="dot"></div>אמינות גבוהה לאורך זמן</div>
+              <div class="pc-item"><div class="dot"></div>צריכת דלק חסכונית</div>
+              <div class="pc-item"><div class="dot"></div>ערך שימור גבוה</div>
+            </div>
+            <div class="cons-col">
+              <div class="pc-head">❌ חסרונות</div>
+              <div class="pc-item"><div class="dot"></div>עיצוב פנים פשוט</div>
+              <div class="pc-item"><div class="dot"></div>ביצועי מנוע בינוניים</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 3D viewer card -->
+        <div>
+          <div class="model-3d-card">
+            <div class="model-3d-car">🚗</div>
+            <div style="font-size:.78rem;color:var(--text2);font-weight:600;">מודל 3D אינטראקטיבי</div>
+            <div class="model-3d-note">🖱️ גרור לסיבוב</div>
+          </div>
+          <div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap;">
+            <button class="btn-outline-blue" style="flex:1;justify-content:center;">📷 תמונות</button>
+            <button class="btn-outline-blue" style="flex:1;justify-content:center;">🎬 סרטונים</button>
+            <button class="btn-outline-blue" style="flex:1;justify-content:center;">⚖️ השוואה</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Sticky subnav -->
+  <nav class="subnav">
+    <div class="subnav-inner container">
+      <button class="subnav-link active">⭐ ביקורות</button>
+      <button class="subnav-link">📋 מפרטים</button>
+      <button class="subnav-link">🚗 גרסאות</button>
+      <button class="subnav-link">🔧 תיקונים</button>
+      <button class="subnav-link">⚠️ ריקולים</button>
+      <button class="subnav-link">🎬 סרטונים</button>
+      <button class="subnav-link">📷 תמונות</button>
+    </div>
+  </nav>
+
+  <!-- Review content preview -->
+  <div style="padding:32px 0 64px;">
+    <div class="container">
+      <div style="background:var(--blue-soft);border:1.5px solid rgba(21,88,214,.15);border-radius:10px;padding:18px 20px;margin-bottom:20px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;">
+        <div>
+          <div style="font-size:.72rem;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:var(--blue);margin-bottom:4px;">מה אומרים הבעלים</div>
+          <div style="display:flex;align-items:center;gap:12px;">
+            <span style="font-family:'Syne',sans-serif;font-size:2rem;font-weight:800;color:var(--text);">4.4</span>
+            <div><div style="color:#f59e0b;font-size:1rem;">⭐⭐⭐⭐½</div><div style="font-size:.72rem;color:var(--text2);">47 ביקורות בעלי רכב</div></div>
+          </div>
+        </div>
+        <button style="background:var(--blue);color:#fff;border:none;border-radius:8px;padding:0 20px;height:40px;font-weight:700;font-size:.84rem;cursor:pointer;">✍️ כתוב ביקורת</button>
+      </div>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+        <div class="review-card">
+          <div class="review-top"><div class="review-logo">👤</div><div><div class="review-carname">קורולה 2021</div><div class="review-meta"><span style="color:#f59e0b;font-size:.75rem;">⭐⭐⭐⭐⭐</span><span style="font-size:.65rem;color:var(--muted);">ישראל כ. · לפני 3 ימים</span></div></div></div>
+          <p class="review-body">אחרי 4 שנים ו-85,000 ק"מ — אפס תקלות. צריכת דלק 6.5 ל/100. השירות אצל היבואן מהיר.</p>
+        </div>
+        <div class="review-card">
+          <div class="review-top"><div class="review-logo">👤</div><div><div class="review-carname">קורולה 2019</div><div class="review-meta"><span style="color:#f59e0b;font-size:.75rem;">⭐⭐⭐⭐</span><span style="font-size:.65rem;color:var(--muted);">מיכל ר. · לפני שבוע</span></div></div></div>
+          <p class="review-body">הייתה בעיה עם החיישן בגב פעם אחת אבל תוקנה בחינם תחת אחריות. בסך הכל מרוצה.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div><!-- /page 2 -->
+
+
+<!-- ═══════════════════════════════════════════════════ -->
+<div class="page-label">⬆ PAGE 3 — MAKE PAGE (Toyota)</div>
+<!-- ═══════════════════════════════════════════════════ -->
+<div class="page">
+
+  <header class="hdr">
+    <div class="container hdr-main">
+      <a class="logo" href="#"><svg width="26" height="16" viewBox="0 0 40 24" fill="none"><path d="M3 14 L7 8 L33 8 L37 14 L37 19 L3 19 Z" fill="#dc1a2c"/><path d="M10 8 L14 3 L28 3 L33 8 Z" fill="#dc1a2c" opacity=".7"/><circle cx="10" cy="19" r="4" fill="#222"/><circle cx="30" cy="19" r="4" fill="#222"/></svg>CarIssues<span class="dot">.co.il</span></a>
+      <nav class="hdr-nav"><a href="#">יצרנים</a><a href="#">השוואה</a><a href="#">דירוגים</a></nav>
+      <div class="hdr-actions"><span class="lang-btn">EN</span><button class="btn-login">כניסה</button></div>
+    </div>
+  </header>
+
+  <div class="make-hero">
+    <div class="container">
+      <div class="breadcrumb" style="margin-bottom:18px;">
+        <a href="#">בית</a> › <a href="#">יצרנים</a> › <span style="color:var(--text);font-weight:600;">Toyota</span>
+      </div>
+      <div class="make-hero-inner">
+        <div class="make-logo-big">🚙</div>
+        <div class="make-hero-text">
+          <div class="make-country-label">יפן · Japan</div>
+          <h1 class="make-title">Toyota <span style="font-size:.5em;color:var(--muted);font-weight:500;">טויוטה</span></h1>
+          <div class="make-pills">
+            <span class="make-pill-tag red">14 דגמים</span>
+            <span class="make-pill-tag gray">SUV</span>
+            <span class="make-pill-tag gray">Sedan</span>
+            <span class="make-pill-tag gray">Hatchback</span>
+            <span class="make-pill-tag gray">חשמלי</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="container">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-top:28px;margin-bottom:16px;flex-wrap:wrap;gap:8px;">
+      <h2 style="font-size:1.1rem;font-weight:700;color:var(--text);">בחר דגם</h2>
+      <div style="display:flex;gap:6px;">
+        <span class="make-pill-tag gray" style="cursor:pointer;">הכל</span>
+        <span class="make-pill-tag gray" style="cursor:pointer;">SUV</span>
+        <span class="make-pill-tag gray" style="cursor:pointer;">Sedan</span>
+        <span class="make-pill-tag gray" style="cursor:pointer;">Hatchback</span>
+      </div>
+    </div>
+
+    <div class="models-grid">
+      <a href="#" class="model-card">
+        <div class="model-card-top"><div class="model-card-logo">🚙</div><div><div class="model-card-name">קורולה</div><div class="model-card-en">Corolla</div></div></div>
+        <div class="model-card-bottom"><span class="model-card-tag">Sedan</span><span class="model-card-years">2014–2024</span></div>
+      </a>
+      <a href="#" class="model-card">
+        <div class="model-card-top"><div class="model-card-logo">🚐</div><div><div class="model-card-name">RAV4</div><div class="model-card-en">RAV4</div></div></div>
+        <div class="model-card-bottom"><span class="model-card-tag">SUV</span><span class="model-card-years">2013–2024</span></div>
+      </a>
+      <a href="#" class="model-card">
+        <div class="model-card-top"><div class="model-card-logo">🚗</div><div><div class="model-card-name">יאריס</div><div class="model-card-en">Yaris</div></div></div>
+        <div class="model-card-bottom"><span class="model-card-tag">Hatchback</span><span class="model-card-years">2011–2024</span></div>
+      </a>
+      <a href="#" class="model-card">
+        <div class="model-card-top"><div class="model-card-logo">🚕</div><div><div class="model-card-name">קמרי</div><div class="model-card-en">Camry</div></div></div>
+        <div class="model-card-bottom"><span class="model-card-tag">Sedan</span><span class="model-card-years">2012–2024</span></div>
+      </a>
+      <a href="#" class="model-card">
+        <div class="model-card-top"><div class="model-card-logo">🚘</div><div><div class="model-card-name">C-HR</div><div class="model-card-en">C-HR</div></div></div>
+        <div class="model-card-bottom"><span class="model-card-tag">SUV</span><span class="model-card-years">2017–2024</span></div>
+      </a>
+      <a href="#" class="model-card">
+        <div class="model-card-top"><div class="model-card-logo">⚡</div><div><div class="model-card-name">bZ4X</div><div class="model-card-en">bZ4X</div></div></div>
+        <div class="model-card-bottom"><span class="model-card-tag" style="background:rgba(22,163,74,.07);color:var(--green);border-color:rgba(22,163,74,.2);">חשמלי</span><span class="model-card-years">2022–2024</span></div>
+      </a>
+    </div>
+  </div>
+
+</div><!-- /page 3 -->
+
+<div style="height:60px;"></div>
+
+</body>
+</html>

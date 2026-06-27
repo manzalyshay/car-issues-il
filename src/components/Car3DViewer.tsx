@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useRef } from 'react';
 import { useAuth } from '@/lib/authContext';
 import { supabase } from '@/lib/supabase';
 
@@ -14,16 +14,10 @@ interface Props {
   onHidden?: () => void;
 }
 
-declare global {
-  interface Window {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    Sketchfab: new (iframe: HTMLIFrameElement) => any;
-  }
-}
 
 export default function Car3DViewer({ uid, modelName, author, makeSlug, modelSlug, onHidden }: Props) {
   const { isAdmin } = useAuth();
-  const iframeRef = useRef<HTMLIFrameElement>(null);
+  const iframeRef = useRef<HTMLIFrameElement>(null); // kept for potential future API use
   const [loaded, setLoaded] = useState(() => {
     if (typeof navigator === 'undefined') return false;
     const mem = (navigator as { deviceMemory?: number }).deviceMemory ?? 4;
@@ -37,53 +31,9 @@ export default function Car3DViewer({ uid, modelName, author, makeSlug, modelSlu
 
   const thumbnailUrl = `https://media.sketchfab.com/models/${uid}/thumbnails/result.jpg`;
 
-  // Use Sketchfab Viewer API to initialise the embed
-  useEffect(() => {
-    if (!loaded || !iframeRef.current) return;
+  // Build embed URL with all UI suppressed
+  const embedUrl = `https://sketchfab.com/models/${uid}/embed?autostart=1&preload=1&ui_infos=0&ui_watermark=0&ui_watermark_link=0&ui_hint=0&ui_stop=0&ui_inspector=0&ui_vr=0&ui_ar=0&ui_help=0&ui_settings=0&ui_annotations=0&ui_controls=0&ui_fadeout=0&dnt=1&transparent=0&camera=0`;
 
-    let scriptEl: HTMLScriptElement | null = null;
-
-    const initViewer = () => {
-      if (!iframeRef.current || !window.Sketchfab) return;
-      const client = new window.Sketchfab(iframeRef.current);
-      client.init(uid, {
-        success: (api: any) => { // eslint-disable-line @typescript-eslint/no-explicit-any
-          api.start();
-          api.addEventListener('viewerready', () => {
-            api.setBackground({ color: [0, 0, 0] });
-          });
-        },
-        error: () => { /* silently fall back to default view */ },
-        autostart: 1,
-        preload: 1,
-        ui_hint: 0,
-        ui_watermark: 0,
-        ui_infos: 0,
-        ui_stop: 0,
-        ui_inspector: 0,
-        ui_vr: 0,
-        ui_ar: 0,
-        ui_help: 0,
-        ui_settings: 0,
-        ui_annotations: 0,
-        dnt: 1,
-      });
-    };
-
-    if (window.Sketchfab) {
-      initViewer();
-    } else {
-      scriptEl = document.createElement('script');
-      scriptEl.src = 'https://static.sketchfab.com/api/sketchfab-viewer-1.12.1.js';
-      scriptEl.async = true;
-      scriptEl.onload = initViewer;
-      document.head.appendChild(scriptEl);
-    }
-
-    return () => {
-      if (scriptEl?.parentNode) scriptEl.parentNode.removeChild(scriptEl);
-    };
-  }, [loaded, uid]);
 
   const handleFlag = async () => {
     if (!makeSlug || !modelSlug) return;
@@ -107,11 +57,11 @@ export default function Car3DViewer({ uid, modelName, author, makeSlug, modelSlu
   if (hidden) return null;
 
   return (
-    <div style={{ position: 'relative', width: '100%', height: '100%', minHeight: 300, borderRadius: 12, overflow: 'hidden', border: '1px solid var(--border)', background: '#000' }}>
+    <div style={{ position: 'relative', width: '100%', height: '100%', minHeight: 220, overflow: 'hidden', background: '#111' }}>
       {loaded ? (
-        // No src — Sketchfab API initialises the iframe and controls the camera
         <iframe
           ref={iframeRef}
+          src={embedUrl}
           title={`${modelName} 3D`}
           frameBorder={0}
           allow="autoplay; fullscreen; xr-spatial-tracking"
@@ -195,7 +145,7 @@ export default function Car3DViewer({ uid, modelName, author, makeSlug, modelSlu
                   onClick={handleFlag}
                   style={{
                     flex: 1, padding: '5px 10px', borderRadius: 6, border: 'none',
-                    background: 'var(--brand-red)', color: '#fff', cursor: 'pointer',
+                    background: 'var(--accent)', color: '#fff', cursor: 'pointer',
                     fontSize: '0.78rem', fontWeight: 700,
                   }}
                 >

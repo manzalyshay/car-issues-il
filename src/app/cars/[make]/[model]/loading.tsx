@@ -1,6 +1,8 @@
 import CarRepairLoader from '@/components/CarRepairLoader';
+import { getHostLocale } from '@/lib/hostLocale';
 
-export default function Loading() {
+export default async function Loading() {
+  const locale = await getHostLocale();
   return (
     <div style={{ padding: '48px 0 80px' }}>
       <div className="container">
@@ -12,7 +14,7 @@ export default function Loading() {
         </div>
 
         {/* Car repair animation */}
-        <CarRepairLoader text="טוען פרטי הדגם" />
+        <CarRepairLoader text={locale === 'en' ? 'Loading model details' : 'טוען פרטי הדגם'} />
 
         {/* Content skeleton below */}
         <div style={{ marginTop: 24 }}>

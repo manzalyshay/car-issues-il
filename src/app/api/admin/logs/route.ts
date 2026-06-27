@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { isAdmin, getServiceClient } from '@/lib/adminAuth';
+import { isAdmin } from '@/lib/adminAuth';
+import { dbAll, dbRun } from '@/lib/db';
 
 export const dynamic = 'force-dynamic';
 
@@ -11,19 +12,18 @@ export async function GET(req: NextRequest) {
   const source = url.searchParams.get('source');
   const limit  = Math.min(Number(url.searchParams.get('limit') ?? 200), 500);
 
-  const sb = getServiceClient();
-  let query = sb
-    .from('admin_logs')
-    .select('id, created_at, level, source, message, details')
-    .order('created_at', { ascending: false })
-    .limit(limit);
+  const conditions: string[] = [];
+  const params: (string | number | null)[] = [];
+  let sql = 'SELECT id, created_at, level, source, message, details FROM admin_logs';
 
-  if (level)  query = query.eq('level', level);
-  if (source) query = query.eq('source', source);
+  if (level)  { conditions.push('level = ?');  params.push(level); }
+  if (source) { conditions.push('source = ?'); params.push(source); }
+  if (conditions.length) sql += ' WHERE ' + conditions.join(' AND ');
+  sql += ' ORDER BY created_at DESC LIMIT ?';
+  params.push(limit);
 
-  const { data, error } = await query;
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-  return NextResponse.json(data ?? []);
+  const data = await dbAll(sql, ...params);
+  return NextResponse.json(data);
 }
 
 export async function DELETE(req: NextRequest) {
@@ -33,8 +33,6 @@ export async function DELETE(req: NextRequest) {
   const olderThanDays = Number(url.searchParams.get('days') ?? 7);
   const cutoff = new Date(Date.now() - olderThanDays * 24 * 60 * 60 * 1000).toISOString();
 
-  const sb = getServiceClient();
-  const { error } = await sb.from('admin_logs').delete().lt('created_at', cutoff);
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  await dbRun('DELETE FROM admin_logs WHERE created_at < ?', cutoff);
   return NextResponse.json({ ok: true });
 }

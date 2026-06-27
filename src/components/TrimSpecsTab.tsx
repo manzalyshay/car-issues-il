@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import type { TrimSpec } from '@/data/cars';
 import { TRIM_FEATURES } from '@/data/cars';
+import { useLocale } from '@/lib/localeContext';
 
 function toTrimSlug(name: string) {
   return name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
@@ -22,30 +23,29 @@ interface Props {
   defaultYear?: number; // year page passes this
 }
 
-const ENGINE_TYPE_HE: Record<string, string> = {
-  petrol: 'בנזין', hybrid: 'היברידי', phev: 'PHEV', electric: 'חשמלי', diesel: 'דיזל',
-};
-const TRANSMISSION_HE: Record<string, string> = {
-  manual: 'ידני', automatic: 'אוטומטי', cvt: 'CVT', dct: 'DCT',
-};
-const DRIVE_HE: Record<string, string> = {
-  fwd: 'קדמי', rwd: 'אחורי', awd: 'AWD / 4×4',
-};
-const SEATS_HE: Record<string, string> = {
-  fabric: 'בד', leatherette: 'דמוי-עור', leather: 'עור',
-};
-
-const FEATURE_GROUPS: { label: string; icon: string; keys: (keyof typeof TRIM_FEATURES)[] }[] = [
-  { label: 'טכנולוגיה', icon: '📱', keys: ['apple_carplay', 'wireless_carplay', 'wireless_charging', 'digital_cluster', 'hud', 'premium_audio'] },
-  { label: 'בטיחות', icon: '🛡️', keys: ['aeb', 'adaptive_cruise', 'lane_keep', 'blind_spot', 'traffic_sign', 'rear_camera', 'camera_360', 'parking_sensors'] },
-  { label: 'נוחות', icon: '✨', keys: ['heated_seats_front', 'heated_seats_rear', 'ventilated_seats', 'electric_seats', 'memory_seats', 'heated_steering', 'sunroof', 'panoramic_roof', 'keyless_entry', 'push_start', 'ambient_lighting', 'led_lights', 'auto_lights'] },
+const FEATURE_GROUPS: { sectionKey: 'tech' | 'safety' | 'comfort'; icon: string; keys: (keyof typeof TRIM_FEATURES)[] }[] = [
+  { sectionKey: 'tech', icon: '📱', keys: ['apple_carplay', 'wireless_carplay', 'wireless_charging', 'digital_cluster', 'hud', 'premium_audio'] },
+  { sectionKey: 'safety', icon: '🛡️', keys: ['aeb', 'adaptive_cruise', 'lane_keep', 'blind_spot', 'traffic_sign', 'rear_camera', 'camera_360', 'parking_sensors'] },
+  { sectionKey: 'comfort', icon: '✨', keys: ['heated_seats_front', 'heated_seats_rear', 'ventilated_seats', 'electric_seats', 'memory_seats', 'heated_steering', 'sunroof', 'panoramic_roof', 'keyless_entry', 'push_start', 'ambient_lighting', 'led_lights', 'auto_lights'] },
 ];
 
 function anyHas(trims: TrimWithYear[], key: string) {
   return trims.some(t => t.features.includes(key));
 }
 
+// ILS → USD fixed rate (approximate)
+const ILS_TO_USD = 3.65;
+function fmtPrice(priceIls: number, locale: string) {
+  if (locale === 'en') {
+    const usd = Math.round(priceIls / ILS_TO_USD);
+    return `$${Math.round(usd / 1000)}K`;
+  }
+  return `₪${Math.round(priceIls / 1000)}K`;
+}
+
 export default function TrimSpecsTab({ makeSlug, modelSlug, makeNameHe, modelNameHe, defaultYear }: Props) {
+  const { t, locale } = useLocale();
+  const ts = t.trimSpecs;
   const [allTrims, setAllTrims] = useState<TrimWithYear[] | null>(null);
   const [loading, setLoading] = useState(true);
   const [selected, setSelected] = useState<string>('');
@@ -63,14 +63,15 @@ export default function TrimSpecsTab({ makeSlug, modelSlug, makeNameHe, modelNam
   }, [makeSlug, modelSlug, defaultYear]);
 
   if (loading) return (
-    <div style={{ textAlign: 'center', padding: '56px 0', color: 'var(--text-muted)', fontSize: '0.9rem' }}>טוען מפרטים...</div>
+    <div style={{ textAlign: 'center', padding: '56px 0', color: 'var(--text-muted)', fontSize: '0.9rem' }}>{ts.loading}</div>
   );
 
   if (!allTrims || allTrims.length === 0) return (
     <div style={{ textAlign: 'center', padding: '56px 24px', color: 'var(--text-muted)' }}>
       <div style={{ fontSize: '2.5rem', marginBottom: 12 }}>🔧</div>
-      <p style={{ fontWeight: 600, color: 'var(--text-secondary)', marginBottom: 6 }}>אין עדיין מפרט גימור ל{makeNameHe} {modelNameHe}</p>
-      <p style={{ fontSize: '0.875rem' }}>נעדכן בהמשך. בינתיים ניתן לבדוק באתר היבואן.</p>
+      <p style={{ fontWeight: 600, color: 'var(--text-muted)', marginBottom: 6 }}>
+        {ts.noData} {makeNameHe} {modelNameHe}{ts.noDataSuffix}
+      </p>
     </div>
   );
 
@@ -82,28 +83,32 @@ export default function TrimSpecsTab({ makeSlug, modelSlug, makeNameHe, modelNam
   const row = (label: string, value: React.ReactNode) => (
     <div key={label} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 0', borderBottom: '1px solid var(--border)' }}>
       <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)', fontWeight: 500 }}>{label}</span>
-      <span style={{ fontSize: '0.9rem', fontWeight: 600, color: 'var(--text-primary)' }}>{value}</span>
+      <span style={{ fontSize: '0.9rem', fontWeight: 600, color: 'var(--text)' }}>{value}</span>
     </div>
   );
 
-  const featureRow = (labelHe: string, key: string) => (
+  const featureRow = (labelHe: string, key: string) => {
+    const feat = TRIM_FEATURES[key as keyof typeof TRIM_FEATURES];
+    const label = locale === 'en' && feat?.labelEn ? feat.labelEn : labelHe;
+    return (
     <div key={key} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 0', borderBottom: '1px solid var(--border)' }}>
-      <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>{labelHe}</span>
+      <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>{label}</span>
       <span style={{
         fontSize: '0.8rem', fontWeight: 700,
         color: trim.features.includes(key) ? '#16a34a' : 'var(--border-strong)',
       }}>
-        {trim.features.includes(key) ? '✓ כלול' : '–'}
+        {trim.features.includes(key) ? ts.included : ts.notIncluded}
       </span>
     </div>
   );
+  };
 
   return (
     <div>
       {/* Trim selector */}
       <div style={{ marginBottom: 20 }}>
         <p style={{ fontSize: '0.78rem', color: 'var(--text-muted)', marginBottom: 10, fontWeight: 600 }}>
-          בחר גימור:
+          {ts.selectTrim}
         </p>
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
           {allTrims.map(t => {
@@ -114,9 +119,9 @@ export default function TrimSpecsTab({ makeSlug, modelSlug, makeNameHe, modelNam
                 onClick={() => setSelected(t.name)}
                 style={{
                   padding: '6px 16px', borderRadius: 999,
-                  border: on ? '2px solid var(--brand-red)' : '1.5px solid var(--border)',
-                  background: on ? 'var(--brand-red)' : 'var(--bg-card)',
-                  color: on ? '#fff' : 'var(--text-secondary)',
+                  border: on ? '2px solid var(--accent)' : '1.5px solid var(--border)',
+                  background: on ? 'var(--accent)' : 'var(--surface)',
+                  color: on ? '#fff' : 'var(--text-muted)',
                   fontWeight: on ? 700 : 500,
                   fontSize: '0.83rem', cursor: 'pointer', transition: 'all 0.15s',
                   display: 'flex', alignItems: 'center', gap: 6,
@@ -125,7 +130,7 @@ export default function TrimSpecsTab({ makeSlug, modelSlug, makeNameHe, modelNam
                 {t.name}
                 {t.priceIls && (
                   <span style={{ fontSize: '0.72rem', opacity: on ? 0.85 : 0.6 }}>
-                    ₪{Math.round(t.priceIls / 1000)}K
+                    {fmtPrice(t.priceIls, locale)}
                   </span>
                 )}
               </button>
@@ -135,9 +140,9 @@ export default function TrimSpecsTab({ makeSlug, modelSlug, makeNameHe, modelNam
       </div>
 
       {/* Detail card for selected trim */}
-      <div style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 14, overflow: 'hidden' }}>
+      <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 14, overflow: 'hidden' }}>
         {/* Card header */}
-        <div style={{ background: 'var(--brand-red)', padding: '16px 20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <div style={{ background: 'var(--accent)', padding: '16px 20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <div>
             <div style={{ fontSize: '1.1rem', fontWeight: 800, color: '#fff' }}>{trim.name}</div>
             <div style={{ fontSize: '0.8rem', color: 'rgba(255,255,255,0.75)', marginTop: 2 }}>
@@ -146,8 +151,8 @@ export default function TrimSpecsTab({ makeSlug, modelSlug, makeNameHe, modelNam
           </div>
           {trim.priceIls && (
             <div style={{ textAlign: 'left' }}>
-              <div style={{ fontSize: '1.25rem', fontWeight: 900, color: '#fff' }}>₪{trim.priceIls.toLocaleString('he-IL')}</div>
-              <div style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.7)' }}>מחיר מומלץ</div>
+              <div style={{ fontSize: '1.25rem', fontWeight: 900, color: '#fff' }}>{locale === 'en' ? `$${Math.round(trim.priceIls / ILS_TO_USD).toLocaleString('en-US')}` : `₪${trim.priceIls.toLocaleString('he-IL')}`}</div>
+              <div style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.7)' }}>{ts.recommended}</div>
             </div>
           )}
         </div>
@@ -157,13 +162,13 @@ export default function TrimSpecsTab({ makeSlug, modelSlug, makeNameHe, modelNam
           {hasEngine && (
             <div style={{ marginBottom: 8 }}>
               <div style={{ fontSize: '0.72rem', fontWeight: 800, color: 'var(--text-muted)', letterSpacing: '0.08em', textTransform: 'uppercase', padding: '14px 0 4px' }}>
-                🔧 מנוע ותיבת הילוכים
+                {ts.engine}
               </div>
-              {trim.engineType && row('סוג מנוע', ENGINE_TYPE_HE[trim.engineType] ?? trim.engineType)}
-              {trim.engineCc && row('נפח מנוע', `${trim.engineCc.toLocaleString()} סמ"ק`)}
-              {trim.engineHp && row('הספק', <span style={{ color: 'var(--brand-red)' }}>{trim.engineHp} כ"ס</span>)}
-              {trim.transmission && row('תיבת הילוכים', TRANSMISSION_HE[trim.transmission] ?? trim.transmission)}
-              {trim.drive && row('הנעה', DRIVE_HE[trim.drive] ?? trim.drive)}
+              {trim.engineType && row(ts.engineType, ts.engineTypes[trim.engineType as keyof typeof ts.engineTypes] ?? trim.engineType)}
+              {trim.engineCc && row(ts.engineCc, `${trim.engineCc.toLocaleString()} ${ts.cc}`)}
+              {trim.engineHp && row(ts.engineHp, <span style={{ color: 'var(--accent)' }}>{trim.engineHp} {ts.hp}</span>)}
+              {trim.transmission && row(ts.transmission, ts.transmissions[trim.transmission as keyof typeof ts.transmissions] ?? trim.transmission)}
+              {trim.drive && row(ts.drive, ts.drives[trim.drive as keyof typeof ts.drives] ?? trim.drive)}
             </div>
           )}
 
@@ -171,11 +176,11 @@ export default function TrimSpecsTab({ makeSlug, modelSlug, makeNameHe, modelNam
           {hasInterior && (
             <div style={{ marginBottom: 8 }}>
               <div style={{ fontSize: '0.72rem', fontWeight: 800, color: 'var(--text-muted)', letterSpacing: '0.08em', textTransform: 'uppercase', padding: '14px 0 4px' }}>
-                🪑 פנים הרכב
+                {ts.interior}
               </div>
-              {trim.seats && row('ריפוד', SEATS_HE[trim.seats])}
-              {trim.seatCount && trim.seatCount !== 5 && row('מושבים', trim.seatCount)}
-              {trim.screenSize && row('מסך מולטימדיה', `${trim.screenSize}"`)}
+              {trim.seats && row(ts.upholstery, ts.upholsteries[trim.seats as keyof typeof ts.upholsteries] ?? trim.seats)}
+              {trim.seatCount && trim.seatCount !== 5 && row(ts.seats, trim.seatCount)}
+              {trim.screenSize && row(ts.screen, `${trim.screenSize}"`)}
             </div>
           )}
 
@@ -184,9 +189,9 @@ export default function TrimSpecsTab({ makeSlug, modelSlug, makeNameHe, modelNam
             const relevantKeys = group.keys.filter(k => anyHas(allTrims, k));
             if (relevantKeys.length === 0) return null;
             return (
-              <div key={group.label} style={{ marginBottom: 8 }}>
+              <div key={group.sectionKey} style={{ marginBottom: 8 }}>
                 <div style={{ fontSize: '0.72rem', fontWeight: 800, color: 'var(--text-muted)', letterSpacing: '0.08em', textTransform: 'uppercase', padding: '14px 0 4px' }}>
-                  {group.icon} {group.label}
+                  {group.icon} {ts.sections[group.sectionKey]}
                 </div>
                 {relevantKeys.map(k => featureRow(TRIM_FEATURES[k].labelHe, k))}
               </div>
@@ -195,18 +200,18 @@ export default function TrimSpecsTab({ makeSlug, modelSlug, makeNameHe, modelNam
         </div>
 
         {/* Footer link */}
-        <div style={{ borderTop: '1px solid var(--border)', padding: '12px 20px', background: 'var(--bg-secondary)' }}>
+        <div style={{ borderTop: '1px solid var(--border)', padding: '12px 20px', background: 'var(--surface-2)' }}>
           <Link
             href={`/cars/${makeSlug}/${modelSlug}/trim/${toTrimSlug(trim.name)}`}
-            style={{ fontSize: '0.83rem', color: 'var(--brand-red)', fontWeight: 600, textDecoration: 'none' }}
+            style={{ fontSize: '0.83rem', color: 'var(--accent)', fontWeight: 600, textDecoration: 'none' }}
           >
-            פרטים מלאים על גימור {trim.name} ←
+            {ts.moreDetails} {trim.name} ←
           </Link>
         </div>
       </div>
 
       <p style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginTop: 10, textAlign: 'center' }}>
-        מפרט לשוק ישראל · ייתכנו שינויים בין שנות ייצור · מומלץ לאמת מול היבואן
+        {ts.disclaimer}
       </p>
     </div>
   );

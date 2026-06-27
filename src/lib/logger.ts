@@ -1,4 +1,5 @@
-import { getServiceClient } from './adminAuth';
+import { dbRun } from './db';
+import { randomUUID } from 'crypto';
 
 export type LogLevel = 'info' | 'warn' | 'error';
 
@@ -10,13 +11,12 @@ export async function adminLog(
 ): Promise<void> {
   // Never throw — logging must never break the calling request
   try {
-    const sb = getServiceClient();
-    await sb.from('admin_logs').insert({
-      level,
-      source,
-      message,
-      details: details ?? null,
-    });
+    await dbRun(
+      'INSERT INTO admin_logs (id, level, source, message, details, created_at) VALUES (?, ?, ?, ?, ?, ?)',
+      randomUUID(), level, source, message,
+      details != null ? JSON.stringify(details) : null,
+      new Date().toISOString(),
+    );
   } catch {
     // Swallow silently
   }

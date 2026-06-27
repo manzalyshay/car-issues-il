@@ -1,4 +1,5 @@
 import { NextRequest } from 'next/server';
+import { createClient } from '@supabase/supabase-js';
 import { dbFirst } from './db';
 
 /**
@@ -15,7 +16,6 @@ export async function isAdmin(req: NextRequest): Promise<boolean> {
 
   // Supabase JWT-based admin (for logged-in users)
   try {
-    const { createClient } = await import('@supabase/supabase-js');
     const sb = createClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
       process.env.SUPABASE_SERVICE_ROLE_KEY!,
@@ -32,10 +32,15 @@ export async function isAdmin(req: NextRequest): Promise<boolean> {
 }
 
 /**
- * Returns the D1 database — kept for backwards compat with any code that
- * imports getServiceClient() expecting a query interface. Use dbAll/dbFirst
- * directly in new code instead.
+ * Returns a Supabase service-role client.
+ * Used by admin routes that need Supabase Storage or Auth Admin API.
+ * For D1 data queries use dbAll/dbFirst from @/lib/db instead.
  */
-export function getServiceClient() {
-  throw new Error('getServiceClient() removed — import dbAll/dbFirst from @/lib/db instead');
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export function getServiceClient(): any {
+  return createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!,
+    { auth: { autoRefreshToken: false, persistSession: false } },
+  );
 }

@@ -9,6 +9,7 @@ import CarImagesTab from '@/components/CarImagesTab';
 import type { Review } from '@/data/reviews';
 import type { CarVideo } from '@/lib/youtubeVideos';
 import type { CarImage } from '@/lib/carImages';
+import { useLocale } from '@/lib/localeContext';
 
 interface Props {
   makeSlug: string;
@@ -24,6 +25,8 @@ type Tab = 'reviews' | 'videos' | 'images';
 
 export default function CarYearClient({ makeSlug, modelSlug, year, initialReviews, isYearSpecific, makeNameHe, modelNameHe }: Props) {
   const router = useRouter();
+  const { t } = useLocale();
+  const yp = t.yearPage;
   const [reviews, setReviews] = useState<Review[]>(initialReviews);
   const [showForm, setShowForm] = useState(false);
   const [search, setSearch] = useState('');
@@ -100,9 +103,9 @@ export default function CarYearClient({ makeSlug, modelSlug, year, initialReview
   const tabStyle = (tab: Tab) => ({
     padding: '10px 20px',
     border: 'none',
-    borderBottom: activeTab === tab ? '2px solid var(--brand-red)' : '2px solid transparent',
+    borderBottom: activeTab === tab ? '2px solid var(--accent)' : '2px solid transparent',
     background: 'none',
-    color: activeTab === tab ? 'var(--text-primary)' : 'var(--text-muted)',
+    color: activeTab === tab ? 'var(--text)' : 'var(--text-muted)',
     fontWeight: activeTab === tab ? 700 : 400,
     fontSize: '0.9375rem',
     cursor: 'pointer',
@@ -111,7 +114,7 @@ export default function CarYearClient({ makeSlug, modelSlug, year, initialReview
 
   const loadingPlaceholder = (
     <div style={{ textAlign: 'center', padding: '48px 0', color: 'var(--text-muted)', fontSize: '0.9rem' }}>
-      טוען...
+      {yp.loading}
     </div>
   );
 
@@ -126,14 +129,14 @@ export default function CarYearClient({ makeSlug, modelSlug, year, initialReview
           fontSize: '0.875rem', color: 'var(--text-muted)',
         }}>
           <span style={{ animation: 'spin 1s linear infinite', display: 'inline-block' }}>⚙️</span>
-          מייצר סיכום AI ייחודי לשנת {year}...
+          {yp.generatingSummary} {year}...
         </div>
       )}
 
       {/* Tab bar */}
       <div style={{ display: 'flex', borderBottom: '1px solid var(--border)', marginBottom: 24, gap: 4 }}>
         <button style={tabStyle('reviews')} onClick={() => handleTabClick('reviews')}>
-          ביקורות ובעיות
+          {yp.tabReviews}
           {reviews.length > 0 && (
             <span style={{ fontSize: '0.8rem', fontWeight: 400, color: 'var(--text-muted)', marginRight: 6 }}>
               ({reviews.length})
@@ -141,7 +144,7 @@ export default function CarYearClient({ makeSlug, modelSlug, year, initialReview
           )}
         </button>
         <button style={tabStyle('videos')} onClick={() => handleTabClick('videos')}>
-          🎬 סרטוני ביקורת
+          {yp.tabVideos}
           {videos && videos.length > 0 && (
             <span style={{ fontSize: '0.8rem', fontWeight: 400, color: 'var(--text-muted)', marginRight: 6 }}>
               ({videos.length})
@@ -149,7 +152,7 @@ export default function CarYearClient({ makeSlug, modelSlug, year, initialReview
           )}
         </button>
         <button style={tabStyle('images')} onClick={() => handleTabClick('images')}>
-          📷 תמונות
+          {yp.tabImages}
           {images && images.length > 0 && (
             <span style={{ fontSize: '0.8rem', fontWeight: 400, color: 'var(--text-muted)', marginRight: 6 }}>
               ({images.length})
@@ -163,7 +166,7 @@ export default function CarYearClient({ makeSlug, modelSlug, year, initialReview
         <div>
           <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 24 }}>
             <button className="btn btn-primary" onClick={() => setShowForm(!showForm)} style={{ height: 42 }}>
-              {showForm ? '✕ סגור טופס' : '✏️ כתוב ביקורת'}
+              {showForm ? yp.closeForm : yp.writeReview}
             </button>
           </div>
 
@@ -179,16 +182,16 @@ export default function CarYearClient({ makeSlug, modelSlug, year, initialReview
                 type="search"
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                placeholder="חיפוש בביקורות..."
+                placeholder={yp.searchPlaceholder}
                 style={{
                   width: '100%', padding: '10px 14px', borderRadius: 10,
-                  border: '1.5px solid var(--border)', background: 'var(--bg-card)',
-                  color: 'var(--text-primary)', fontSize: '0.9375rem', outline: 'none', direction: 'rtl',
+                  border: '1.5px solid var(--border)', background: 'var(--surface)',
+                  color: 'var(--text)', fontSize: '0.9375rem', outline: 'none', direction: 'rtl',
                 }}
               />
               {search.trim() && (
                 <div style={{ marginTop: 8, fontSize: '0.875rem', color: 'var(--text-muted)' }}>
-                  {filtered.length === 0 ? 'לא נמצאו ביקורות תואמות' : `${filtered.length} ביקורות תואמות`}
+                  {filtered.length === 0 ? yp.noMatches : `${filtered.length} ${yp.matchesSuffix}`}
                 </div>
               )}
             </div>
@@ -199,11 +202,11 @@ export default function CarYearClient({ makeSlug, modelSlug, year, initialReview
           {reviews.length === 0 && !showForm && (
             <div className="card" style={{ padding: 48, textAlign: 'center', marginTop: 16 }}>
               <div style={{ fontSize: 48, marginBottom: 16 }}>🚗</div>
-              <h3 style={{ fontWeight: 700, marginBottom: 8, fontSize: '1.125rem' }}>היה הראשון לכתוב ביקורת!</h3>
-              <p style={{ color: 'var(--text-secondary)', marginBottom: 24, fontSize: '0.9375rem' }}>
-                עזור לאחרים לדעת על הרכב הזה — שתף את הניסיון שלך.
+              <h3 style={{ fontWeight: 700, marginBottom: 8, fontSize: '1.125rem' }}>{yp.emptyTitle}</h3>
+              <p style={{ color: 'var(--text-muted)', marginBottom: 24, fontSize: '0.9375rem' }}>
+                {yp.emptyBody}
               </p>
-              <button className="btn btn-primary" onClick={() => setShowForm(true)}>כתוב ביקורת</button>
+              <button className="btn btn-primary" onClick={() => setShowForm(true)}>{yp.writeReview}</button>
             </div>
           )}
         </div>

@@ -1,9 +1,8 @@
 /**
- * 3D model lookup — data lives in Supabase `car_3d_models` table.
- * Previously hardcoded; now DB-backed so admin can manage without deploys.
+ * 3D model lookup — data lives in D1 `car_3d_models` table.
+ * Uses a globalThis cache so the table is only queried once per Worker isolate.
  */
-import { unstable_cache } from 'next/cache';
-import { getServiceClient } from './adminAuth';
+import { dbAll } from './db';
 
 export interface SketchfabModel {
   uid: string;
@@ -14,15 +13,25 @@ export interface SketchfabModel {
   reelUrl: string | null;
 }
 
-const fetch3dModels = unstable_cache(
-  async (): Promise<Record<string, { uid: string; name: string; author: string; license: string; reelUrl: string | null }>> => {
-    const { data, error } = await getServiceClient()
-      .from('car_3d_models')
-      .select('make_slug,model_slug,sketchfab_uid,sketchfab_name,sketchfab_author,license,reel_url')
-      .not('hidden', 'is', true);
-    if (error) throw new Error(`car_3d_models: ${error.message}`);
-    const map: Record<string, { uid: string; name: string; author: string; license: string; reelUrl: string | null }> = {};
-    for (const row of data ?? []) {
+type ModelsMap = Record<string, { uid: string; name: string; author: string; license: string; reelUrl: string | null }>;
+
+const CACHE_TTL_MS = 60 * 60 * 1000; // 1 hour
+const g = globalThis as typeof globalThis & {
+  _3dModelsCache?: { data: ModelsMap; ts: number };
+};
+
+async function fetch3dModels(): Promise<ModelsMap> {
+  const now = Date.now();
+  if (g._3dModelsCache && now - g._3dModelsCache.ts < CACHE_TTL_MS) {
+    return g._3dModelsCache.data;
+  }
+  try {
+    const rows = await dbAll<{
+      make_slug: string; model_slug: string; sketchfab_uid: string;
+      sketchfab_name: string; sketchfab_author: string; license: string; reel_url: string | null;
+    }>('SELECT make_slug, model_slug, sketchfab_uid, sketchfab_name, sketchfab_author, license, reel_url FROM car_3d_models WHERE hidden IS NOT 1');
+    const map: ModelsMap = {};
+    for (const row of rows) {
       map[`${row.make_slug}/${row.model_slug}`] = {
         uid: row.sketchfab_uid,
         name: row.sketchfab_name,
@@ -31,11 +40,12 @@ const fetch3dModels = unstable_cache(
         reelUrl: row.reel_url ?? null,
       };
     }
+    g._3dModelsCache = { data: map, ts: now };
     return map;
-  },
-  ['car-3d-models'],
-  { revalidate: 3600, tags: ['car-data'] },
-);
+  } catch {
+    return {};
+  }
+}
 
 export async function findCarModel(
   makeSlug: string,

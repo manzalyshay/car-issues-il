@@ -72,7 +72,7 @@ export default function NavigationProgress() {
         style={{
           height: '100%',
           width: `${width}%`,
-          background: 'linear-gradient(90deg, var(--brand-red), #ff6b6b)',
+          background: 'linear-gradient(90deg, var(--accent), #ff6b6b)',
           borderRadius: '0 2px 2px 0',
           transitionProperty: 'width, opacity',
           transitionDuration: width === 100 ? '0.3s, 0.3s' : '0.6s, 0.6s',

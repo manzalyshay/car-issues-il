@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest, NextResponse, after } from 'next/server';
 import { revalidatePath } from 'next/cache';
 import { addReview, getReviewsForModel, translateAndSaveReview } from '@/lib/reviewsDb';
 
@@ -70,8 +70,8 @@ export async function POST(req: NextRequest) {
       images: Array.isArray(images) ? images.slice(0, 4) : [],
     } as Omit<Review, 'id' | 'createdAt' | 'helpful'>);
 
-    // Fire-and-forget translation (doesn't block the response)
-    translateAndSaveReview(review.id, review.title, review.body).catch(() => {});
+    // Translate after response is sent (uses waitUntil in Cloudflare Workers)
+    after(() => translateAndSaveReview(review.id, review.title, review.body).catch(() => {}));
 
     revalidatePath(`/cars/${makeSlug}/${modelSlug}`);
     revalidatePath(`/cars/${makeSlug}/${modelSlug}/issues`);

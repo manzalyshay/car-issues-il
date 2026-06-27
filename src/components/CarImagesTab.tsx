@@ -4,6 +4,7 @@ import { useState } from 'react';
 import type { CarImage } from '@/lib/carImages';
 import { useAuth } from '@/lib/authContext';
 import { supabase } from '@/lib/supabase';
+import { useLocale } from '@/lib/localeContext';
 
 interface Props {
   images: CarImage[];
@@ -13,6 +14,7 @@ interface Props {
 
 export default function CarImagesTab({ images: initialImages, makeNameHe, modelNameHe }: Props) {
   const { isAdmin } = useAuth();
+  const { locale } = useLocale();
   const [lightbox, setLightbox] = useState<CarImage | null>(null);
   const [hiddenIds, setHiddenIds] = useState<Set<string>>(new Set());
   const [flagTarget, setFlagTarget] = useState<CarImage | null>(null);
@@ -118,7 +120,7 @@ export default function CarImagesTab({ images: initialImages, makeNameHe, modelN
 
       {/* Attribution */}
       <p style={{ fontSize: '0.7rem', color: 'var(--text-muted)', marginTop: 16, textAlign: 'center' }}>
-        התמונות מסופקות על ידי Wikimedia Commons תחת רישיונות Creative Commons.
+        {locale === 'en' ? 'Images provided by Wikimedia Commons under Creative Commons licenses.' : 'התמונות מסופקות על ידי Wikimedia Commons תחת רישיונות Creative Commons.'}
       </p>
 
       {/* Flag confirmation modal */}
@@ -135,7 +137,7 @@ export default function CarImagesTab({ images: initialImages, makeNameHe, modelN
           <div
             onClick={e => e.stopPropagation()}
             style={{
-              background: 'var(--bg-card)', border: '1px solid var(--border)',
+              background: 'var(--surface)', border: '1px solid var(--border)',
               borderRadius: 14, padding: 24, maxWidth: 360, width: '100%',
               display: 'flex', flexDirection: 'column', gap: 14,
             }}
@@ -166,7 +168,7 @@ export default function CarImagesTab({ images: initialImages, makeNameHe, modelN
                 style={{
                   width: '100%', padding: '8px 10px', borderRadius: 8,
                   border: '1.5px solid var(--border)', background: 'var(--bg-muted)',
-                  color: 'var(--text-primary)', fontSize: '0.85rem', outline: 'none',
+                  color: 'var(--text)', fontSize: '0.85rem', outline: 'none',
                   direction: 'rtl', boxSizing: 'border-box',
                 }}
                 onKeyDown={e => { if (e.key === 'Enter') handleFlag(); if (e.key === 'Escape') setFlagTarget(null); }}
@@ -178,7 +180,7 @@ export default function CarImagesTab({ images: initialImages, makeNameHe, modelN
                 onClick={handleFlag}
                 style={{
                   flex: 1, padding: '9px 0', borderRadius: 8, border: 'none',
-                  background: 'var(--brand-red)', color: '#fff', cursor: 'pointer',
+                  background: 'var(--accent)', color: '#fff', cursor: 'pointer',
                   fontWeight: 700, fontSize: '0.875rem',
                 }}
               >

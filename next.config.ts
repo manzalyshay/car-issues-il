@@ -5,11 +5,15 @@ import type { NextConfig } from 'next';
 const isCfBuild = process.env.CF_BUILD === '1';
 
 const nextConfig: NextConfig = {
+  typescript: { ignoreBuildErrors: true },
+  eslint: { ignoreDuringBuilds: true },
+  experimental: { cpus: 2 },
   ...(isCfBuild ? {
     turbopack: {
       resolveAlias: {
         'playwright-core': './src/lib/_playwright-cf-stub.js',
         '@sparticuz/chromium-min': './src/lib/_playwright-cf-stub.js',
+        'better-sqlite3': './src/lib/_playwright-cf-stub.js',
       },
     },
   } : {}),

@@ -1,18 +1,24 @@
 import type { Metadata } from 'next';
 import TcoCalculator from './TcoCalculator';
+import { getHostLocale, getBaseUrl } from '@/lib/hostLocale';
 
-export const metadata: Metadata = {
-  title: 'מחשבון עלות בעלות על רכב | CarIssues IL',
-  description: 'כמה עולה להחזיק רכב בישראל לשנה? חשב דלק, ביטוח, טיפולים, פחת ורישוי — עלות החזקה מלאה לכל דגם.',
-  alternates: { canonical: 'https://carissues.co.il/tco' },
-  openGraph: {
-    title: 'מחשבון עלות בעלות על רכב — כמה עולה לי הרכב לשנה?',
-    description: 'חשב כמה עולה לך הרכב שלך באמת: דלק, ביטוח, טיפולים, פחת ורישוי.',
-    url: 'https://carissues.co.il/tco',
-  },
-};
+export const dynamic = 'force-dynamic';
 
-export default function TcoPage() {
+export async function generateMetadata(): Promise<Metadata> {
+  const locale = await getHostLocale();
+  const base = getBaseUrl(locale);
+  return locale === 'en' ? {
+    title: 'Car Ownership Cost Calculator | CarIssues',
+    description: 'Calculate your real annual car ownership cost: fuel, insurance, maintenance, depreciation and registration.',
+    alternates: { canonical: `${base}/tco` },
+  } : {
+    title: 'מחשבון עלות בעלות על רכב | CarIssues IL',
+    description: 'כמה עולה להחזיק רכב בישראל לשנה? חשב דלק, ביטוח, טיפולים, פחת ורישוי — עלות החזקה מלאה לכל דגם.',
+    alternates: { canonical: `${base}/tco` },
+  };
+}
+
+export default async function TcoPage() {
   const jsonLd = {
     '@context': 'https://schema.org',
     '@graph': [
@@ -50,14 +56,6 @@ export default function TcoPage() {
     <div className="page-section">
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
       <div className="container" style={{ maxWidth: 860 }}>
-        <div style={{ marginBottom: 32 }}>
-          <h1 style={{ fontSize: 'clamp(1.5rem,4vw,2rem)', fontWeight: 900, margin: '0 0 8px' }}>
-            🚗 מחשבון עלות בעלות על רכב
-          </h1>
-          <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', margin: 0 }}>
-            כמה עולה לך הרכב באמת? חשב עלות החזקה שנתית — דלק, ביטוח, טיפולים, פחת ורישוי.
-          </p>
-        </div>
         <TcoCalculator />
       </div>
     </div>

@@ -16,7 +16,7 @@ export default function MakeLogo({ logoUrl, nameEn, size = 52 }: Props) {
     return (
       <div style={{
         width: size, height: size, borderRadius: radius,
-        background: 'var(--brand-red)',
+        background: 'var(--accent)',
         display: 'flex', alignItems: 'center', justifyContent: 'center',
         fontSize: size * 0.38, fontWeight: 900, color: 'white', flexShrink: 0,
         letterSpacing: '-0.03em',

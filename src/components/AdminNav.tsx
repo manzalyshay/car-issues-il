@@ -23,7 +23,7 @@ export default function AdminNav({ active }: { active: AdminPage }) {
             borderRadius: 8,
             border: active === page ? 'none' : '1px solid var(--border)',
             background: active === page ? 'var(--brand-red)' : 'transparent',
-            color: active === page ? '#fff' : 'var(--text-secondary)',
+            color: active === page ? '#fff' : 'var(--text-muted)',
             cursor: 'pointer',
             fontWeight: 700,
             fontSize: '0.875rem',

@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useAuth } from '@/lib/authContext';
+import { useLocale } from '@/lib/localeContext';
 
 const GOOGLE_ICON = (
   <svg width="18" height="18" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
@@ -18,6 +19,8 @@ interface Props {
 
 export default function AuthModal({ onClose }: Props) {
   const { signIn, signUp, signInWithGoogle } = useAuth();
+  const { t } = useLocale();
+  const a = t.auth;
   const [mode, setMode] = useState<'login' | 'signup'>('login');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -34,13 +37,13 @@ export default function AuthModal({ onClose }: Props) {
     if (mode === 'login') {
       err = await signIn(email, password);
     } else {
-      if (!displayName.trim()) { setError('אנא הזן שם תצוגה'); setLoading(false); return; }
+      if (!displayName.trim()) { setError(a.errorName); setLoading(false); return; }
       err = await signUp(email, password, displayName.trim());
     }
 
     setLoading(false);
     if (err) {
-      setError(err.includes('Invalid') ? 'אימייל או סיסמה שגויים' : err);
+      setError(err.includes('Invalid') ? a.errorInvalid : err);
     } else {
       onClose();
     }
@@ -59,7 +62,7 @@ export default function AuthModal({ onClose }: Props) {
       <div className="card" style={{ width: '100%', maxWidth: 420, padding: 32 }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
           <h2 style={{ fontWeight: 700, fontSize: '1.25rem' }}>
-            {mode === 'login' ? 'התחברות' : 'הרשמה'}
+            {mode === 'login' ? a.loginTitle : a.signupTitle}
           </h2>
           <button
             onClick={onClose}
@@ -72,11 +75,11 @@ export default function AuthModal({ onClose }: Props) {
         <form onSubmit={handleSubmit}>
           {mode === 'signup' && (
             <div style={{ marginBottom: 16 }}>
-              <label style={labelStyle}>שם תצוגה</label>
+              <label style={labelStyle}>{a.displayName}</label>
               <input
                 value={displayName}
                 onChange={(e) => setDisplayName(e.target.value)}
-                placeholder="השם שיוצג בביקורות"
+                placeholder={a.displayNamePlaceholder}
                 maxLength={50}
                 style={inputStyle}
                 required
@@ -85,7 +88,7 @@ export default function AuthModal({ onClose }: Props) {
           )}
 
           <div style={{ marginBottom: 16 }}>
-            <label style={labelStyle}>אימייל</label>
+            <label style={labelStyle}>{a.email}</label>
             <input
               type="email"
               value={email}
@@ -97,12 +100,12 @@ export default function AuthModal({ onClose }: Props) {
           </div>
 
           <div style={{ marginBottom: 24 }}>
-            <label style={labelStyle}>סיסמה</label>
+            <label style={labelStyle}>{a.password}</label>
             <input
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              placeholder="לפחות 6 תווים"
+              placeholder={a.passwordPlaceholder}
               minLength={6}
               style={{ ...inputStyle, direction: 'ltr', textAlign: 'left' }}
               required
@@ -110,7 +113,7 @@ export default function AuthModal({ onClose }: Props) {
           </div>
 
           {error && (
-            <p style={{ color: 'var(--brand-red)', fontSize: '0.875rem', marginBottom: 12 }}>
+            <p style={{ color: 'var(--accent)', fontSize: '0.875rem', marginBottom: 12 }}>
               ⚠️ {error}
             </p>
           )}
@@ -121,13 +124,13 @@ export default function AuthModal({ onClose }: Props) {
             disabled={loading}
             style={{ width: '100%', height: 46, fontSize: '1rem' }}
           >
-            {loading ? '...' : mode === 'login' ? 'התחבר' : 'צור חשבון'}
+            {loading ? '...' : mode === 'login' ? a.submit : a.submitSignup}
           </button>
         </form>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: 12, margin: '16px 0' }}>
           <div style={{ flex: 1, height: 1, background: 'var(--border)' }} />
-          <span style={{ fontSize: '0.8125rem', color: 'var(--text-muted)' }}>או</span>
+          <span style={{ fontSize: '0.8125rem', color: 'var(--text-muted)' }}>{a.or}</span>
           <div style={{ flex: 1, height: 1, background: 'var(--border)' }} />
         </div>
 
@@ -138,21 +141,21 @@ export default function AuthModal({ onClose }: Props) {
             width: '100%', height: 44,
             display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10,
             border: '1.5px solid var(--border)', borderRadius: 10,
-            background: 'var(--bg-base)', color: 'var(--text-primary)',
+            background: 'var(--bg)', color: 'var(--text)',
             cursor: 'pointer', fontFamily: 'inherit', fontSize: '0.9375rem', fontWeight: 500,
           }}
         >
           {GOOGLE_ICON}
-          המשך עם Google
+          {a.continueGoogle}
         </button>
 
         <p style={{ textAlign: 'center', marginTop: 16, fontSize: '0.875rem', color: 'var(--text-muted)' }}>
-          {mode === 'login' ? 'אין לך חשבון? ' : 'יש לך כבר חשבון? '}
+          {mode === 'login' ? a.noAccount : a.hasAccount}
           <button
             onClick={() => { setMode(mode === 'login' ? 'signup' : 'login'); setError(''); }}
-            style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--brand-red)', fontWeight: 600, fontFamily: 'inherit', fontSize: 'inherit' }}
+            style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--accent)', fontWeight: 600, fontFamily: 'inherit', fontSize: 'inherit' }}
           >
-            {mode === 'login' ? 'הירשם' : 'התחבר'}
+            {mode === 'login' ? a.register : a.loginLink}
           </button>
         </p>
       </div>
@@ -162,13 +165,12 @@ export default function AuthModal({ onClose }: Props) {
 
 const labelStyle: React.CSSProperties = {
   display: 'block', fontSize: '0.8125rem', fontWeight: 600,
-  color: 'var(--text-secondary)', marginBottom: 6,
+  color: 'var(--text-muted)', marginBottom: 6,
 };
 
 const inputStyle: React.CSSProperties = {
   width: '100%', height: 42, padding: '0 12px',
   border: '1.5px solid var(--border)', borderRadius: 10,
-  background: 'var(--bg-base)', color: 'var(--text-primary)',
+  background: 'var(--bg)', color: 'var(--text)',
   fontSize: '0.9375rem', fontFamily: 'inherit', outline: 'none',
-  direction: 'rtl',
 };

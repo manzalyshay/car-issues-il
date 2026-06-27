@@ -33,7 +33,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
           cache: npm
       - run: npm ci
 
@@ -42,7 +42,7 @@ jobs:
           GENERAL_ONLY=true SKIP_EXISTING=${{ github.event.inputs.skip_existing || 'true' }} DELAY_MS=500 \
             node scripts/seed-knowledge.mjs
 
-  # ── Step 2: Seed year-specific summaries (can run in parallel) ───────────
+  # ── Step 2: Seed year-specific summaries ─────────────────────────────────
   seed-years:
     runs-on: ubuntu-latest
     timeout-minutes: 360   # 1200 year slots × 5s = ~100 min
@@ -53,7 +53,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
           cache: npm
       - run: npm ci
 
@@ -61,32 +61,3 @@ jobs:
         run: |
           YEARS_ONLY=true SKIP_EXISTING=${{ github.event.inputs.skip_existing || 'true' }} DELAY_MS=500 \
             node scripts/seed-knowledge.mjs
-
-  # ── Step 3: Daily enrichment — add real scraped data on top ──────────────
-  enrich-with-scraping:
-    runs-on: ubuntu-latest
-    timeout-minutes: 180
-    needs: seed-generals   # only after generals are seeded
-    if: ${{ github.event_name == 'schedule' }}  # only on daily cron, not manual
-
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 20
-          cache: npm
-      - run: npm ci
-
-      - name: Build Next.js app
-        run: npm run build
-
-      - name: Start Next.js server
-        run: npm run start &
-
-      - name: Wait for server
-        run: npx wait-on http://localhost:3000 --timeout 60000
-
-      - name: Run web scraper (stale entries only)
-        run: |
-          BASE_URL=http://localhost:3000 STALE_DAYS=14 DELAY_MS=4000 \
-            node scripts/scrape-stale.mjs

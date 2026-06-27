@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { revalidateTag } from 'next/cache';
-import { getServiceClient } from '@/lib/adminAuth';
+import { dbFirst, dbRun } from '@/lib/db';
 
 export async function POST(
   req: NextRequest,
@@ -11,24 +11,11 @@ export async function POST(
     const body = await req.json().catch(() => ({}));
     const delta: number = body.delta === -1 ? -1 : 1;
 
-    const { data } = await getServiceClient()
-      .from('reviews')
-      .select('helpful')
-      .eq('id', id)
-      .single();
+    const row = await dbFirst<{ helpful: number }>('SELECT helpful FROM reviews WHERE id = ?', id);
+    const current = row?.helpful ?? 0;
+    await dbRun('UPDATE reviews SET helpful = ? WHERE id = ?', Math.max(0, current + delta), id);
 
-    const current = data?.helpful ?? 0;
-    const { error } = await getServiceClient()
-      .from('reviews')
-      .update({ helpful: Math.max(0, current + delta) })
-      .eq('id', id);
-
-    if (error) {
-      console.error('[helpful]', error.message);
-      return NextResponse.json({ ok: false, error: error.message }, { status: 500 });
-    }
-
-    revalidateTag('reviews', 'default');
+    revalidateTag('reviews');
     return NextResponse.json({ ok: true });
   } catch (err) {
     console.error('[helpful] unexpected', err);
