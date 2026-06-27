@@ -182,13 +182,6 @@ export default function Header() {
                   </button>
             )}
 
-            {/* Language */}
-            <a href={locale === 'he' ? EN_SITE : HE_SITE}
-              style={{ fontSize: '0.72rem', fontWeight: 700, color: 'var(--text-muted)', padding: '4px 8px', border: '1px solid var(--border)', borderRadius: 6, textDecoration: 'none' }}
-            >
-              {locale === 'he' ? 'EN' : 'עב'}
-            </a>
-
             {!loading && (
               user ? (
                 <div
@@ -278,11 +271,6 @@ export default function Header() {
                   {t.nav.loginRegister}
                 </button>
               )}
-              <a href={locale === 'he' ? EN_SITE : HE_SITE}
-                style={{ border: '1px solid var(--border)', borderRadius: 8, padding: '7px 12px', fontSize: '0.78rem', fontWeight: 700, color: 'var(--text-muted)', textDecoration: 'none' }}
-              >
-                {locale === 'he' ? 'EN' : 'עב'}
-              </a>
             </div>
             {!isHome && <div style={{ marginTop: 14 }}><SearchBox fullWidth /></div>}
           </div>
