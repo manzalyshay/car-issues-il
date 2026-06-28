@@ -36,69 +36,102 @@ function extractYear(raw: string): number | null {
   return null;
 }
 
-// ── Groq translation (one call per chunk of 6 recalls) ───────────────────────
+// ── Translation (Groq → Gemini → Mistral fallback chain) ─────────────────────
 
 interface RecallFields { component: string; summary: string; consequence: string; remedy: string; }
 
-async function translateRecalls(recalls: RecallFields[], apiKey: string): Promise<RecallFields[]> {
-  if (recalls.length === 0) return recalls;
+function buildPrompt(input: string): string {
+  return (
+    'Translate each numbered car recall from English to Hebrew. Keep automotive technical terms accurate. ' +
+    'Reply ONLY in this exact format for each recall:\n[N]\ncomponent: ...\nsummary: ...\nconsequence: ...\nremedy: ...\n\n' +
+    input
+  );
+}
 
-  const input = recalls.map((r, i) =>
-    `[${i + 1}]\ncomponent: ${r.component}\nsummary: ${r.summary}\nconsequence: ${r.consequence}\nremedy: ${r.remedy}`
-  ).join('\n\n');
+function parseTranslationResponse(content: string, recalls: RecallFields[]): RecallFields[] {
+  const out = recalls.map(r => ({ ...r }));
+  const blocks = content.split(/\n(?=\[\d+\])/);
+  for (const block of blocks) {
+    const idxMatch = block.match(/^\[(\d+)\]/);
+    if (!idxMatch) continue;
+    const idx = parseInt(idxMatch[1]) - 1;
+    if (idx < 0 || idx >= out.length) continue;
+    const get = (field: string) => {
+      const m = block.match(new RegExp(`${field}:\\s*([\\s\\S]*?)(?=\\n(?:component|summary|consequence|remedy):|$)`));
+      return m?.[1]?.trim() || '';
+    };
+    const component = get('component'), summary = get('summary');
+    const consequence = get('consequence'), remedy = get('remedy');
+    if (component)   out[idx].component   = component;
+    if (summary)     out[idx].summary     = summary;
+    if (consequence) out[idx].consequence = consequence;
+    if (remedy)      out[idx].remedy      = remedy;
+  }
+  return out;
+}
 
+async function translateWithGroq(input: string, apiKey: string): Promise<string | null> {
   try {
     const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${apiKey}` },
       body: JSON.stringify({
-        model: 'llama-3.3-70b-versatile',
-        temperature: 0,
-        max_tokens: 8000,
-        messages: [
-          {
-            role: 'system',
-            content:
-              'Translate each numbered recall from English to Hebrew. Keep technical automotive terms accurate. ' +
-              'Reply ONLY in this exact format:\n[N]\ncomponent: ...\nsummary: ...\nconsequence: ...\nremedy: ...',
-          },
-          { role: 'user', content: input },
-        ],
+        model: 'llama-3.3-70b-versatile', temperature: 0, max_tokens: 8000,
+        messages: [{ role: 'user', content: buildPrompt(input) }],
       }),
       signal: AbortSignal.timeout(30000),
     });
-
-    if (!res.ok) return recalls;
+    if (!res.ok) return null;
     const data = await res.json();
-    const content: string = data.choices?.[0]?.message?.content ?? '';
+    return data.choices?.[0]?.message?.content?.trim() ?? null;
+  } catch { return null; }
+}
 
-    const out = recalls.map(r => ({ ...r }));
-    const blocks = content.split(/\n(?=\[\d+\])/);
-    for (const block of blocks) {
-      const idxMatch = block.match(/^\[(\d+)\]/);
-      if (!idxMatch) continue;
-      const idx = parseInt(idxMatch[1]) - 1;
-      if (idx < 0 || idx >= out.length) continue;
+async function translateWithGemini(input: string, apiKey: string): Promise<string | null> {
+  try {
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
+    const res = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ contents: [{ parts: [{ text: buildPrompt(input) }] }], generationConfig: { temperature: 0, maxOutputTokens: 4000 } }),
+      signal: AbortSignal.timeout(30000),
+    });
+    if (!res.ok) return null;
+    const data = await res.json();
+    return data?.candidates?.[0]?.content?.parts?.[0]?.text?.trim() ?? null;
+  } catch { return null; }
+}
 
-      const get = (field: string) => {
-        const m = block.match(new RegExp(`${field}:\\s*([\\s\\S]*?)(?=\\n(?:component|summary|consequence|remedy):|$)`));
-        return m?.[1]?.trim() || '';
-      };
+async function translateWithMistral(input: string, apiKey: string): Promise<string | null> {
+  try {
+    const res = await fetch('https://api.mistral.ai/v1/chat/completions', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${apiKey}` },
+      body: JSON.stringify({ model: 'mistral-small-latest', temperature: 0, max_tokens: 4000, messages: [{ role: 'user', content: buildPrompt(input) }] }),
+      signal: AbortSignal.timeout(30000),
+    });
+    if (!res.ok) return null;
+    const data = await res.json();
+    return data?.choices?.[0]?.message?.content?.trim() ?? null;
+  } catch { return null; }
+}
 
-      const component   = get('component');
-      const summary     = get('summary');
-      const consequence = get('consequence');
-      const remedy      = get('remedy');
+async function translateRecalls(recalls: RecallFields[]): Promise<RecallFields[]> {
+  if (recalls.length === 0) return recalls;
+  const input = recalls.map((r, i) =>
+    `[${i + 1}]\ncomponent: ${r.component}\nsummary: ${r.summary}\nconsequence: ${r.consequence}\nremedy: ${r.remedy}`
+  ).join('\n\n');
 
-      if (component)   out[idx].component   = component;
-      if (summary)     out[idx].summary     = summary;
-      if (consequence) out[idx].consequence = consequence;
-      if (remedy)      out[idx].remedy      = remedy;
-    }
-    return out;
-  } catch {
-    return recalls;
-  }
+  const groqKey   = process.env.GROQ_API_KEY;
+  const geminiKey = process.env.GEMINI_API_KEY;
+  const mistralKey= process.env.MISTRAL_API_KEY;
+
+  const raw = (groqKey    ? await translateWithGroq(input, groqKey)       : null)
+           ?? (geminiKey  ? await translateWithGemini(input, geminiKey)   : null)
+           ?? (mistralKey ? await translateWithMistral(input, mistralKey) : null);
+
+  if (!raw) return recalls;
+  return parseTranslationResponse(raw, recalls);
 }
 
 // ── Main handler ──────────────────────────────────────────────────────────────
@@ -153,11 +186,14 @@ export async function GET(req: NextRequest) {
 
     if (unique.length === 0) return NextResponse.json({ recalls: [] });
 
-    // 2. Load already-translated records from DB
+    // 2. Load already-translated records from DB (skip if stored in English — will re-translate)
     const ids = unique.map(r => r.NHTSACampaignNumber ?? '').filter(Boolean);
-    const cached = ids.length > 0
+    const allCached = ids.length > 0
       ? await dbAll(`SELECT * FROM recalls_cache WHERE id IN (${ids.map(() => '?').join(',')})`, ...ids).catch(() => [])
       : [];
+    // Only use cache entries that have Hebrew text
+    const hasHebrew = (s: string) => /[\u0590-\u05FF]/.test(s ?? '');
+    const cached = allCached.filter((row: any) => hasHebrew(row.summary_he) || hasHebrew(row.component_he));
 
     const cacheMap = new Map<string, any>();
     for (const row of cached) cacheMap.set(row.id as string, row);
@@ -170,7 +206,6 @@ export async function GET(req: NextRequest) {
 
     // 4. Translate new ones in chunks of 6 and save to DB
     if (toTranslate.length > 0) {
-      const apiKey = process.env.GROQ_API_KEY ?? '';
       const CHUNK = 6;
       const rows: any[] = [];
 
@@ -182,7 +217,7 @@ export async function GET(req: NextRequest) {
           consequence: r.Consequence ?? '',
           remedy:      r.Remedy      ?? '',
         }));
-        const translated = apiKey ? await translateRecalls(fields, apiKey) : fields;
+        const translated = await translateRecalls(fields);
 
         for (let j = 0; j < chunk.length; j++) {
           const r = chunk[j];
