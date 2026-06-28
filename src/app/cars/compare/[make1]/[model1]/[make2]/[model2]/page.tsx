@@ -45,12 +45,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   };
 }
 
-export const revalidate = 86400; // 24h — generated on first request, cached 1 day
-export const dynamicParams = true;
+export const dynamic = 'force-dynamic';
 
-export async function generateStaticParams() {
-  return []; // Don't pre-generate at build — render on demand and cache
-}
 
 function Score({ label, value, best }: { label: string; value: number | null; best: 'a' | 'b' | 'tie' | null }) {
   if (value === null) return <span style={{ color: 'var(--text-muted)', fontSize: '0.875rem' }}>—</span>;
