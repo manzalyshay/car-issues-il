@@ -93,7 +93,7 @@ export default async function RepairsPage() {
     mainEntity: COMMON_ISSUES.map(issue => ({
       '@type': 'Question',
       name: `כמה עולה ${issue.issue} בישראל?`,
-      acceptedAnswer: { '@type': 'Answer', text: `${issue.issue} עולה ${issue.cost} בישראל. ${issue.note}.` },
+      acceptedAnswer: { '@type': 'Answer', text: `${issue.issue} עולה ₪${issue.minIls.toLocaleString()}–₪${issue.maxIls.toLocaleString()} בישראל. ${issue.note}.` },
     })),
   };
 

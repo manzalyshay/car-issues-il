@@ -180,6 +180,14 @@ function ComparePageInner() {
   useEffect(() => { if (car1) loadCar(car1, setData1, setLoading1); else setData1(null); }, [car1, loadCar]);
   useEffect(() => { if (car2) loadCar(car2, setData2, setLoading2); else setData2(null); }, [car2, loadCar]);
 
+  // When both cars are selected, redirect to the rich static compare page
+  useEffect(() => {
+    if (car1 && car2) {
+      const [s1, s2] = [`${car1.makeSlug}/${car1.modelSlug}`, `${car2.makeSlug}/${car2.modelSlug}`].sort();
+      router.push(`/cars/compare/${s1}/${s2}`);
+    }
+  }, [car1, car2, router]);
+
   const showComparison = data1 && data2;
 
   return (
