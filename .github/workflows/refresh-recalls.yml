@@ -1,0 +1,22 @@
+name: Refresh Recalls Cache
+
+on:
+  schedule:
+    - cron: '0 3 * * *'   # Every day at 03:00 UTC
+  workflow_dispatch:       # Allow manual trigger from GitHub Actions UI
+
+jobs:
+  refresh-recalls:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Trigger refresh-recalls cron endpoint
+        run: |
+          response=$(curl -s -o /dev/null -w "%{http_code}" \
+            "https://carissues.co.il/api/cron/refresh-recalls")
+          echo "HTTP status: $response"
+          if [ "$response" != "200" ]; then
+            echo "Error: unexpected status $response"
+            exit 1
+          fi
