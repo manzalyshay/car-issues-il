@@ -117,8 +117,18 @@ export default function PlateSearch({ isHe, navigateOnSearch, initialVehicle, in
 
   return (
     <div>
+      <style>{`
+        .plate-form { display: flex; gap: 8px; width: 100%; max-width: 420px; }
+        .plate-submit { height: 54px; padding: 0 22px; border-radius: 12px; background: var(--accent); color: #fff; border: none; font-weight: 700; font-size: 0.9rem; cursor: pointer; flex-shrink: 0; transition: opacity 0.15s; white-space: nowrap; }
+        .plate-result-card { margin-top: 16px; border-radius: 14px; border: 1px solid var(--border); background: var(--surface); overflow: hidden; max-width: 480px; }
+        @media (max-width: 480px) {
+          .plate-form { max-width: 100%; }
+          .plate-submit { padding: 0 14px; font-size: 0.82rem; }
+          .plate-result-card { max-width: 100%; border-radius: 10px; }
+        }
+      `}</style>
       {/* Input */}
-      <form onSubmit={search} style={{ display: 'flex', gap: 8, maxWidth: 420 }}>
+      <form onSubmit={search} className="plate-form">
         <div style={{
           flex: 1, display: 'flex', alignItems: 'center',
           height: 54, borderRadius: 12,
@@ -157,14 +167,8 @@ export default function PlateSearch({ isHe, navigateOnSearch, initialVehicle, in
         <button
           type="submit"
           disabled={loading || plate.replace(/\D/g,'').length < 5}
-          style={{
-            height: 54, padding: '0 22px', borderRadius: 12,
-            background: 'var(--accent)', color: '#fff',
-            border: 'none', fontWeight: 700, fontSize: '0.9rem',
-            cursor: 'pointer', flexShrink: 0,
-            opacity: loading || plate.replace(/\D/g,'').length < 5 ? 0.5 : 1,
-            transition: 'opacity 0.15s',
-          }}
+          className="plate-submit"
+          style={{ opacity: loading || plate.replace(/\D/g,'').length < 5 ? 0.5 : 1 }}
         >
           {loading ? t.loading : t.btn}
         </button>
@@ -183,13 +187,7 @@ export default function PlateSearch({ isHe, navigateOnSearch, initialVehicle, in
 
       {/* Result card */}
       {vehicle && (
-        <div style={{
-          marginTop: 16, borderRadius: 14,
-          border: '1px solid var(--border)',
-          background: 'var(--surface)',
-          overflow: 'hidden',
-          maxWidth: 480,
-        }}>
+        <div className="plate-result-card">
           {/* Header */}
           <div style={{
             padding: '14px 18px',
