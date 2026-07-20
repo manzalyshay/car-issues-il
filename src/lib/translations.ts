@@ -9,6 +9,7 @@ export const translations = {
       rankings: 'דירוגים',
       repairs: 'עלויות תיקון',
       tco: 'עלות החזקה',
+      vehicleLookup: 'בדיקת רכב',
       admin: 'ניהול',
       login: 'התחברות',
       loginRegister: 'התחברות / הרשמה',
@@ -407,6 +408,10 @@ export const translations = {
       no3dModel: 'אין מודל 3D',
       models3dTitle: 'מודל תלת-ממד',
       vsGroup: 'מול...',
+      performanceTitle: 'ביצועים',
+      perfNoData: 'אין נתוני ביצועים עדיין',
+      perfLowerBetter: 'נמוך = טוב יותר',
+      perfHigherBetter: 'גבוה = טוב יותר',
     },
     writeReview: {
       success: 'תודה על הביקורת!',
@@ -518,6 +523,7 @@ export const translations = {
       rankings: 'Rankings',
       repairs: 'Repair Costs',
       tco: 'Ownership Cost',
+      vehicleLookup: 'Vehicle Check',
       admin: 'Admin',
       login: 'Sign In',
       loginRegister: 'Sign In / Register',
@@ -920,6 +926,10 @@ export const translations = {
       no3dModel: 'No 3D model',
       models3dTitle: '3D Models',
       vsGroup: 'vs...',
+      performanceTitle: 'Performance',
+      perfNoData: 'No performance data yet',
+      perfLowerBetter: 'lower = better',
+      perfHigherBetter: 'higher = better',
     },
     writeReview: {
       success: 'Thanks for your review!',
@@ -936,15 +946,15 @@ export const translations = {
       categories: { city: 'City / Small', family: 'Family / Hatchback', suv: 'SUV / Crossover', luxury: 'Luxury', electric: 'Electric' },
       fuelType: 'Fuel / Drive Type',
       fuelTypes: { petrol: 'Petrol', diesel: 'Diesel', hybrid: 'Hybrid', electric: 'Electric' },
-      carPrice: 'Car Price (₪)',
+      carPrice: 'Car Price',
       carAge: 'Car Age (years)',
       kmYear: 'km / year',
       consumption: 'Fuel consumption (L/100km)',
       consumptionEv: 'Consumption (kWh/100km)',
       annualCosts: '💰 Annual Costs (editable)',
-      insurance: 'Comprehensive insurance (₪/year)',
-      service: 'Service & maintenance (₪/year)',
-      registration: 'Registration & inspections (₪/year)',
+      insurance: 'Comprehensive insurance',
+      service: 'Service & maintenance',
+      registration: 'Registration & taxes',
       period: 'Calculation period (years)',
       summary: '📊 Ownership Cost Summary',
       totalYears: 'Total {n} years',
@@ -954,7 +964,7 @@ export const translations = {
       tableTitle: '📅 Year-by-year breakdown',
       tableHeaders: ['Year', 'Depreciation', 'Fuel', 'Insurance', 'Service', 'Registration', 'Annual Total', 'Cumulative'],
       yearRow: 'Year',
-      footnote: '* Petrol ₪{p}/L, diesel ₪{d}/L, hybrid ₪{h}/L, electricity ₪{e}/kWh. Depreciation calculated on car value.',
+      footnote: '* Fuel prices used: Petrol ${p}/L, diesel ${d}/L, hybrid ${h}/L, electricity ${e}/kWh. Depreciation calculated on remaining car value.',
       repairCostsLink: 'Repair Costs',
       compareCta: 'Compare models →',
       repairsCta: 'Repair Costs',
@@ -1027,7 +1037,7 @@ export const translations = {
 
 // Structural type — works for both locales
 export type Translations = {
-  nav: { allMakes: string; popularModels: string; compare: string; rankings: string; repairs: string; tco: string; admin: string; login: string; loginRegister: string; logout: string; search: string };
+  nav: { allMakes: string; popularModels: string; compare: string; rankings: string; repairs: string; tco: string; vehicleLookup: string; admin: string; login: string; loginRegister: string; logout: string; search: string };
   hero: { badge: string; headline1: string; headline2: string; sub: string; makes: string; models: string; aiPowered: string };
   home: { popularMakes: string; popularSub: string; allMakes: string; models: string; topRanked: string; allRankings: string; recentReviews: string; howTitle: string; steps: readonly { icon: string; title: string; desc: string }[] };
   footer: { tagline: string; about: string; quickNav: string; links: readonly { href: string; label: string }[]; disclaimer: string; disclaimerText: string; copyright: string; builtWith: string; legal: string };
@@ -1049,7 +1059,7 @@ export type Translations = {
   firstReviewCta: { title: string; body: string; cta: string };
   carTabs: { reviews: string; specs: string; videos: string; images: string; loading: string };
   notFound: { title: string; body: string; home: string };
-  compareStaticPage: { breadcrumbHome: string; breadcrumbCompare: string; vsWord: string; subtitleCompare: string; scoresTitle: string; userRating: string; aiScore: string; reviews: string; prosAndConsTitle: string; verdictTitle: string; verdictWinnerPre: string; verdictWinnerMid: string; verdictHasPros: string; verdictTie: string; ctaTitle: string; ctaSubtitle: string; ctaButton: string; relatedTitle: string; modelPageLink: string; no3dModel: string; models3dTitle: string; vsGroup: string };
+  compareStaticPage: { breadcrumbHome: string; breadcrumbCompare: string; vsWord: string; subtitleCompare: string; scoresTitle: string; userRating: string; aiScore: string; reviews: string; prosAndConsTitle: string; verdictTitle: string; verdictWinnerPre: string; verdictWinnerMid: string; verdictHasPros: string; verdictTie: string; ctaTitle: string; ctaSubtitle: string; ctaButton: string; relatedTitle: string; modelPageLink: string; no3dModel: string; models3dTitle: string; vsGroup: string; performanceTitle: string; perfNoData: string; perfLowerBetter: string; perfHigherBetter: string };
   writeReview: { success: string; successBody: string; addAnother: string; cta: string; cancel: string };
   contactPage: { home: string; breadcrumb: string; title: string; subtitle: string; sentTitle: string; sentBody: string; sendAnother: string; labelName: string; labelEmail: string; labelSubject: string; labelMessage: string; placeholderName: string; placeholderMessage: string; subjects: Record<string, string>; errorMsg: string; submitting: string; submit: string; infoItems: readonly { icon: string; title: string; desc: string }[]; terms: string; backHome: string };
   profilePage: { loginRequired: string; loginBody: string; backHome: string; home: string; breadcrumb: string; save: string; cancel: string; editNameTitle: string; reviewsLabel: string; avgLabel: string; myReviews: string; loadingReviews: string; noReviews: string; findCar: string; km: string; foundHelpful: string };

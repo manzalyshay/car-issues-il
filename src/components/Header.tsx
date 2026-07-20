@@ -36,20 +36,20 @@ function LogoMark({ size = 34 }: { size?: number }) {
 
 /* ── Category bar (shown on home + /cars) ── */
 const CATEGORIES_HE = [
-  { icon: '🚗', label: 'פרטי',   href: '/cars?type=sedan' },
-  { icon: '🚐', label: 'SUV',    href: '/cars?type=suv' },
-  { icon: '⚡', label: 'חשמלי', href: '/cars?type=electric' },
-  { icon: '🏎',  label: 'ספורט', href: '/cars?type=sport' },
-  { icon: '👨‍👩‍👧', label: 'משפחתי', href: '/cars?type=mpv' },
-  { icon: '🚐', label: 'מסחרי', href: '/cars?type=commercial' },
+  { icon: '🚗', label: 'פרטי',    href: '/cars/category/sedan' },
+  { icon: '🚐', label: 'SUV',     href: '/cars/category/suv' },
+  { icon: '⚡', label: 'חשמלי',  href: '/cars/category/electric' },
+  { icon: '🏎',  label: 'ספורט',  href: '/cars/category/sports' },
+  { icon: '👨‍👩‍👧', label: 'משפחתי', href: '/cars/category/minivan' },
+  { icon: '🚐', label: 'מסחרי',  href: '/cars/category/pickup' },
 ];
 const CATEGORIES_EN = [
-  { icon: '🚗', label: 'Sedan',      href: '/cars?type=sedan' },
-  { icon: '🚐', label: 'SUV',        href: '/cars?type=suv' },
-  { icon: '⚡', label: 'Electric',   href: '/cars?type=electric' },
-  { icon: '🏎',  label: 'Sport',      href: '/cars?type=sport' },
-  { icon: '👨‍👩‍👧', label: 'Family',    href: '/cars?type=mpv' },
-  { icon: '🚐', label: 'Commercial', href: '/cars?type=commercial' },
+  { icon: '🚗', label: 'Sedan',      href: '/cars/category/sedan' },
+  { icon: '🚐', label: 'SUV',        href: '/cars/category/suv' },
+  { icon: '⚡', label: 'Electric',   href: '/cars/category/electric' },
+  { icon: '🏎',  label: 'Sport',      href: '/cars/category/sports' },
+  { icon: '👨‍👩‍👧', label: 'Family',    href: '/cars/category/minivan' },
+  { icon: '🚐', label: 'Commercial', href: '/cars/category/pickup' },
 ];
 
 function CategoryBar({ locale }: { locale: 'he' | 'en' }) {
@@ -106,11 +106,12 @@ export default function Header() {
   }, []);
 
   const NAV_LINKS = [
-    { href: '/cars',         label: t.nav.allMakes },
-    { href: '/cars/compare', label: t.nav.compare },
-    { href: '/rankings',     label: t.nav.rankings },
-    { href: '/repairs',      label: t.nav.repairs },
-    { href: '/tco',          label: t.nav.tco },
+    { href: '/cars',              label: t.nav.allMakes },
+    { href: '/cars/compare',      label: t.nav.compare },
+    { href: '/rankings',          label: t.nav.rankings },
+    { href: '/repairs',           label: t.nav.repairs },
+    { href: '/tco',               label: t.nav.tco },
+    ...(locale === 'he' ? [{ href: '/vehicle-lookup', label: t.nav.vehicleLookup }] : []),
   ];
 
   const logoText = (
