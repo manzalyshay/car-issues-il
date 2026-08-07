@@ -13,6 +13,24 @@ export function middleware(req: NextRequest) {
   const isHeHost = host === HE_HOST || host === `www.${HE_HOST}`;
   const isEnHost = host === EN_HOST || host === `www.${EN_HOST}`;
 
+  // ── Embed routes: skip geo-redirect + flag for layout ───────────────────────
+  if (pathname.startsWith('/embed')) {
+    const res = NextResponse.next();
+    res.headers.set('x-is-embed', '1');
+    return res;
+  }
+
+  // ── Canonicalization: HTTPS + non-www ───────────────────────────────────────
+  const proto = req.headers.get('x-forwarded-proto') ?? 'https';
+  const hasWww = host.startsWith('www.');
+  const canonicalHost = hasWww ? host.slice(4) : host;
+  if (proto !== 'https' || hasWww) {
+    return NextResponse.redirect(
+      `https://${canonicalHost}${pathname}${req.nextUrl.search}`,
+      { status: 301 }
+    );
+  }
+
   // ── Compare canonical redirect ──────────────────────────────────────────────
   if (pathname === '/cars/compare') {
     const car1 = searchParams.get('car1');
@@ -28,6 +46,12 @@ export function middleware(req: NextRequest) {
 
   // ── Geo-redirect — only on production domains ───────────────────────────────
   if (!isHeHost && !isEnHost) return NextResponse.next();
+
+  // Never redirect crawlers — let them see the canonical page they requested
+  const ua = req.headers.get('user-agent') ?? '';
+  if (/googlebot|bingbot|slurp|duckduckbot|baiduspider|yandexbot|facebookexternalhit|twitterbot|linkedinbot|applebot/i.test(ua)) {
+    return NextResponse.next();
+  }
 
   // If user explicitly toggled language (?clang=1), set a preference cookie and
   // serve the page directly (no redirect). Client-side JS cleans up the param.

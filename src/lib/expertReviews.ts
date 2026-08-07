@@ -1028,6 +1028,18 @@ function computeNextScrapeAt(year: number | null | undefined, isKnowledgeOnly: b
 
 // ── Public API ────────────────────────────────────────────────────────────────
 
+/** Remove Israel/Israeli references from English-language content (global site). */
+function stripIsraelEn(text: string): string {
+  return text
+    .replace(/\bIsrael's\b/gi, 'the local')
+    .replace(/\bIsraeli\b/gi, 'local')
+    .replace(/\bin Israel\b/gi, 'locally')
+    .replace(/\bIsrael\b/gi, '')
+    .replace(/\s{2,}/g, ' ')
+    .replace(/,\s*\./g, '.')
+    .trim();
+}
+
 function mapRow(r: any): ExpertReview {
   return {
     id: r.id,
@@ -1045,11 +1057,11 @@ function mapRow(r: any): ExpertReview {
     topScore: r.top_score != null ? parseFloat(r.top_score) : null,
     pros: (() => { try { return Array.isArray(r.pros) ? r.pros : JSON.parse(String(r.pros || '[]')); } catch { return []; } })(),
     cons: (() => { try { return Array.isArray(r.cons) ? r.cons : JSON.parse(String(r.cons || '[]')); } catch { return []; } })(),
-    prosEn: (() => { try { return Array.isArray(r.pros_en) ? r.pros_en : JSON.parse(String(r.pros_en || '[]')); } catch { return []; } })(),
-    consEn: (() => { try { return Array.isArray(r.cons_en) ? r.cons_en : JSON.parse(String(r.cons_en || '[]')); } catch { return []; } })(),
-    localSummaryEn: r.local_summary_en ?? null,
-    globalSummaryEn: r.global_summary_en ?? null,
-    summaryEn: r.summary_en ?? null,
+    prosEn: (() => { try { const arr = Array.isArray(r.pros_en) ? r.pros_en : JSON.parse(String(r.pros_en || '[]')); return arr.map(stripIsraelEn); } catch { return []; } })(),
+    consEn: (() => { try { const arr = Array.isArray(r.cons_en) ? r.cons_en : JSON.parse(String(r.cons_en || '[]')); return arr.map(stripIsraelEn); } catch { return []; } })(),
+    localSummaryEn: r.local_summary_en ? stripIsraelEn(r.local_summary_en) : null,
+    globalSummaryEn: r.global_summary_en ? stripIsraelEn(r.global_summary_en) : null,
+    summaryEn: r.summary_en ? stripIsraelEn(r.summary_en) : null,
     localPostCount: r.local_post_count ?? 0,
     globalPostCount: r.global_post_count ?? 0,
     sourcesBreakdown: (() => { try { return Array.isArray(r.sources_breakdown) ? r.sources_breakdown : JSON.parse(String(r.sources_breakdown || '[]')); } catch { return []; } })(),

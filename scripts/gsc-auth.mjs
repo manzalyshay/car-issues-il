@@ -13,7 +13,7 @@ const creds = JSON.parse(readFileSync(resolve(__dir, 'gsc-oauth-client.json'), '
 
 const { client_id, client_secret } = creds;
 const REDIRECT = 'http://localhost:4242';
-const SCOPES = 'https://www.googleapis.com/auth/webmasters.readonly';
+const SCOPES = 'https://www.googleapis.com/auth/webmasters https://www.googleapis.com/auth/indexing';
 
 const authUrl = `https://accounts.google.com/o/oauth2/auth?` +
   `client_id=${client_id}` +

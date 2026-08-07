@@ -1,8 +1,9 @@
 /**
  * Hebrew → English review translation.
- * Tries providers in order: Gemini 2.0 Flash → Mistral → null
+ * Tries providers in order: Cloudflare AI → Gemini → Mistral → null
  * Used for both on-write translation (new reviews) and batch backfill.
  */
+import { getCloudflareContext } from '@opennextjs/cloudflare';
 
 const GEMINI_KEY   = process.env.GEMINI_API_KEY;
 const MISTRAL_KEY  = process.env.MISTRAL_API_KEY;
@@ -10,6 +11,21 @@ const MISTRAL_KEY  = process.env.MISTRAL_API_KEY;
 interface TranslationResult {
   titleEn: string | null;
   bodyEn: string | null;
+}
+
+async function tryCloudflareAI(prompt: string): Promise<string | null> {
+  try {
+    const ctx = await getCloudflareContext({ async: true });
+    const ai = (ctx.env as Record<string, unknown>).AI as { run: (model: string, opts: unknown) => Promise<Record<string, unknown>> } | undefined;
+    if (!ai) return null;
+    const result = await ai.run('@cf/meta/llama-4-scout-17b-16e-instruct', {
+      messages: [{ role: 'user', content: prompt }],
+      max_tokens: 1200,
+      temperature: 0.1,
+    });
+    return (typeof result?.response === 'string' ? result.response :
+      (result?.choices as Array<{message?: {content?: string}}>)?.[0]?.message?.content)?.trim() ?? null;
+  } catch { return null; }
 }
 
 function parseJson(raw: string): { title?: string; body?: string } | null {
@@ -74,7 +90,7 @@ Return ONLY a JSON object with this exact structure:
 Hebrew title: ${title || '(no title)'}
 Hebrew body: ${body}`;
 
-  const raw = await tryGemini(prompt) ?? await tryMistral(prompt);
+  const raw = await tryCloudflareAI(prompt) ?? await tryGemini(prompt) ?? await tryMistral(prompt);
   if (!raw) return { titleEn: null, bodyEn: null };
 
   const parsed = parseJson(raw);

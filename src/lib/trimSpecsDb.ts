@@ -23,6 +23,12 @@ function rowToTrimSpec(row: Record<string, unknown>): TrimSpecWithYear {
       try { return JSON.parse(String(row.features || '[]')); } catch { return []; }
     })(),
     priceIls: (row.price_ils as number) ?? undefined,
+    acceleration: (row.acceleration_0_100 as number) ?? undefined,
+    topSpeedKmh: (row.top_speed_kmh as number) ?? undefined,
+    torqueNm: (row.torque_nm as number) ?? undefined,
+    fuelConsumption: (row.fuel_consumption as number) ?? undefined,
+    cargoLiters: (row.cargo_liters as number) ?? undefined,
+    curbWeightKg: (row.curb_weight_kg as number) ?? undefined,
     modelYear: (row.model_year as number) ?? null,
     isIsrael: (row.is_israel as number) === 1,
   };

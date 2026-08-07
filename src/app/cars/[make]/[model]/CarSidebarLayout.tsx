@@ -16,6 +16,8 @@ interface Props {
   modelSlug: string;
   makeNameHe: string;
   modelNameHe: string;
+  makeNameEn?: string;
+  modelNameEn?: string;
   defaultYear?: number;
   children: React.ReactNode;
 }
@@ -23,7 +25,7 @@ interface Props {
 /* ── Section anchor IDs used by the main content ── */
 const ANCHORS = ['reviews', 'specs', 'trims', 'recalls', 'repair', 'compare'] as const;
 
-export default function CarSidebarLayout({ makeSlug, modelSlug, makeNameHe, modelNameHe, defaultYear, children }: Props) {
+export default function CarSidebarLayout({ makeSlug, modelSlug, makeNameHe, modelNameHe, makeNameEn, modelNameEn, defaultYear, children }: Props) {
   const { t } = useLocale();
   const s = t.sidebar;
   const [tab, setTab] = useState<Tab>('reviews');
@@ -78,8 +80,7 @@ export default function CarSidebarLayout({ makeSlug, modelSlug, makeNameHe, mode
   /* ── Subnav items — sections that scroll + media tabs ── */
   const subnavItems: { id: string; label: string; icon: string; isTab?: Tab; isAnchor?: boolean }[] = [
     { id: 'reviews', label: s.reviews, icon: '⭐', isAnchor: true },
-    { id: 'specs',   label: s.specs,   icon: '📋', isAnchor: true },
-    { id: 'trims',   label: t.nav.allMakes === 'All Makes' ? 'Trims' : 'גרסאות', icon: '🚗', isTab: 'specs' },
+    { id: 'specs',   label: s.specs,   icon: '📋', isTab: 'specs' },
     { id: 'repair',  label: s.tco,     icon: '🔧', isAnchor: true },
     { id: 'recalls', label: s.issues,  icon: '⚠️', isAnchor: true },
     { id: 'videos',  label: s.videos,  icon: '🎬', isTab: 'videos' },
@@ -154,7 +155,7 @@ export default function CarSidebarLayout({ makeSlug, modelSlug, makeNameHe, mode
           {/* Specs tab */}
           {tab === 'specs' && (
             <div>
-              <TrimSpecsTab makeSlug={makeSlug} modelSlug={modelSlug} makeNameHe={makeNameHe} modelNameHe={modelNameHe} defaultYear={defaultYear} />
+              <TrimSpecsTab makeSlug={makeSlug} modelSlug={modelSlug} makeNameHe={makeNameHe} modelNameHe={modelNameHe} makeNameEn={makeNameEn} modelNameEn={modelNameEn} defaultYear={defaultYear} />
             </div>
           )}
 

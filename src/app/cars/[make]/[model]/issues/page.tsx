@@ -6,7 +6,7 @@ import { getExpertReviews } from '@/lib/expertReviews';
 import { getReviewsForModel } from '@/lib/reviewsDb';
 import { getRepairCosts } from '@/lib/repairCostsDb';
 import MakeLogo from '@/components/MakeLogo';
-import { getHostLocale } from '@/lib/hostLocale';
+import { getHostLocale, getBaseUrl } from '@/lib/hostLocale';
 import { translations } from '@/lib/translations';
 
 export const revalidate = 86400;
@@ -15,18 +15,37 @@ interface Props { params: Promise<{ make: string; model: string }> }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { make: makeSlug, model: modelSlug } = await params;
-  const make = await getMakeBySlug(makeSlug);
-  if (!make) return {};
-  const model = await getModelBySlug(makeSlug, modelSlug);
-  if (!model) return {};
-  const url = `https://carissues.co.il/cars/${make.slug}/${model.slug}/issues`;
+  const [locale, make, model] = await Promise.all([
+    getHostLocale(),
+    getMakeBySlug(makeSlug),
+    getModelBySlug(makeSlug, modelSlug),
+  ]);
+  if (!make || !model) return {};
+  const isEn = locale === 'en';
+  const base = getBaseUrl(locale);
+  const url = `${base}/cars/${make.slug}/${model.slug}/issues`;
   return {
-    title: `${make.nameHe} ${model.nameHe} — בעיות נפוצות ותקלות | CarIssues IL`,
-    description: `אילו בעיות נפוצות יש ל${make.nameHe} ${model.nameHe}? תקלות מדווחות, חסרונות, עלויות תיקון וחוות דעת אמיתיות מבעלים בישראל.`,
-    alternates: { canonical: url },
+    title: isEn
+      ? `${make.nameEn} ${model.nameEn} — Common Problems & Issues`
+      : `${make.nameHe} ${model.nameHe} — בעיות נפוצות ותקלות`,
+    description: isEn
+      ? `What are the common problems with the ${make.nameEn} ${model.nameEn}? Reported issues, pros & cons, repair costs and real owner reviews.`
+      : `אילו בעיות נפוצות יש ל${make.nameHe} ${model.nameHe}? תקלות מדווחות, חסרונות, עלויות תיקון וחוות דעת אמיתיות מבעלים בישראל.`,
+    alternates: {
+      canonical: url,
+      languages: {
+        he: `https://carissues.co.il/cars/${make.slug}/${model.slug}/issues`,
+        en: `https://carissues.net/cars/${make.slug}/${model.slug}/issues`,
+        'x-default': `https://carissues.net/cars/${make.slug}/${model.slug}/issues`,
+      },
+    },
     openGraph: {
-      title: `${make.nameHe} ${model.nameHe} — בעיות נפוצות`,
-      description: `תקלות, חסרונות ועלויות תיקון — ${make.nameHe} ${model.nameHe}`,
+      title: isEn
+        ? `${make.nameEn} ${model.nameEn} — Common Problems`
+        : `${make.nameHe} ${model.nameHe} — בעיות נפוצות`,
+      description: isEn
+        ? `Common issues, pros & cons, repair costs — ${make.nameEn} ${model.nameEn}`
+        : `תקלות, חסרונות ועלויות תיקון — ${make.nameHe} ${model.nameHe}`,
       url,
     },
   };
@@ -52,8 +71,10 @@ export default async function IssuesPage({ params }: Props) {
   ]);
 
   const expertReview = expertReviewsList[0] ?? null;
-  const cons = expertReview?.cons ?? [];
-  const pros = expertReview?.pros ?? [];
+  const base = getBaseUrl(locale);
+  const cons = isEn ? (expertReview?.consEn ?? []) : (expertReview?.cons ?? []);
+  const pros = isEn ? (expertReview?.prosEn ?? []) : (expertReview?.pros ?? []);
+  const aiSummary = isEn ? expertReview?.localSummaryEn : expertReview?.localSummaryHe;
 
   // Reviews mentioning problems
   const problemReviews = allReviews
@@ -62,16 +83,24 @@ export default async function IssuesPage({ params }: Props) {
 
   const faqItems = [
     cons.length > 0 && {
-      q: `מה הבעיות הנפוצות של ${make.nameHe} ${model.nameHe}?`,
+      q: isEn
+        ? `What are the common problems with the ${make.nameEn} ${model.nameEn}?`
+        : `מה הבעיות הנפוצות של ${make.nameHe} ${model.nameHe}?`,
       a: cons.join('. '),
     },
     pros.length > 0 && {
-      q: `מה היתרונות של ${make.nameHe} ${model.nameHe}?`,
+      q: isEn
+        ? `What are the pros of the ${make.nameEn} ${model.nameEn}?`
+        : `מה היתרונות של ${make.nameHe} ${model.nameHe}?`,
       a: pros.join('. '),
     },
     repairCosts.length > 0 && {
-      q: `כמה עולים תיקונים ל${make.nameHe} ${model.nameHe}?`,
-      a: `עלויות תחזוקה: ${repairCosts.slice(0, 3).map(r => `${r.repair_name_he} ₪${r.min_ils.toLocaleString()}–₪${r.max_ils.toLocaleString()}`).join(', ')}.`,
+      q: isEn
+        ? `How much do repairs cost for the ${make.nameEn} ${model.nameEn}?`
+        : `כמה עולים תיקונים ל${make.nameHe} ${model.nameHe}?`,
+      a: isEn
+        ? `Typical repair costs: ${repairCosts.slice(0, 3).map(r => `${r.repair_name_en ?? r.repair_name_he} ₪${r.cost_min_ils.toLocaleString()}–₪${r.cost_max_ils.toLocaleString()}`).join(', ')}.`
+        : `עלויות תחזוקה: ${repairCosts.slice(0, 3).map(r => `${r.repair_name_he} ₪${r.cost_min_ils.toLocaleString()}–₪${r.cost_max_ils.toLocaleString()}`).join(', ')}.`,
     },
   ].filter(Boolean) as { q: string; a: string }[];
 
@@ -81,11 +110,11 @@ export default async function IssuesPage({ params }: Props) {
       {
         '@type': 'BreadcrumbList',
         itemListElement: [
-          { '@type': 'ListItem', position: 1, name: 'בית', item: 'https://carissues.co.il' },
-          { '@type': 'ListItem', position: 2, name: 'יצרנים', item: 'https://carissues.co.il/cars' },
-          { '@type': 'ListItem', position: 3, name: make.nameHe, item: `https://carissues.co.il/cars/${make.slug}` },
-          { '@type': 'ListItem', position: 4, name: model.nameHe, item: `https://carissues.co.il/cars/${make.slug}/${model.slug}` },
-          { '@type': 'ListItem', position: 5, name: 'בעיות נפוצות', item: `https://carissues.co.il/cars/${make.slug}/${model.slug}/issues` },
+          { '@type': 'ListItem', position: 1, name: isEn ? 'Home' : 'בית', item: base },
+          { '@type': 'ListItem', position: 2, name: isEn ? 'Makes' : 'יצרנים', item: `${base}/cars` },
+          { '@type': 'ListItem', position: 3, name: makeName, item: `${base}/cars/${make.slug}` },
+          { '@type': 'ListItem', position: 4, name: modelName, item: `${base}/cars/${make.slug}/${model.slug}` },
+          { '@type': 'ListItem', position: 5, name: isEn ? 'Common Problems' : 'בעיות נפוצות', item: `${base}/cars/${make.slug}/${model.slug}/issues` },
         ],
       },
       faqItems.length > 0 && {
@@ -167,13 +196,13 @@ export default async function IssuesPage({ params }: Props) {
         )}
 
         {/* AI summary */}
-        {expertReview?.localSummaryHe && (
+        {aiSummary && (
           <section style={{ marginBottom: 32 }}>
             <h2 style={{ fontSize: '1.1rem', fontWeight: 700, marginBottom: 12 }}>
               {ip.aiAnalysis}
             </h2>
             <p style={{ fontSize: '0.9rem', lineHeight: 1.8, color: 'var(--text-muted)', background: 'var(--surface-2)', borderRadius: 10, padding: '14px 18px', margin: 0 }}>
-              {expertReview.localSummaryHe}
+              {aiSummary}
             </p>
           </section>
         )}
@@ -190,9 +219,9 @@ export default async function IssuesPage({ params }: Props) {
                   background: 'var(--surface-2)', border: '1px solid var(--border)',
                   borderRadius: 10, padding: '10px 14px',
                 }}>
-                  <div style={{ fontSize: '0.825rem', fontWeight: 600, marginBottom: 3 }}>{r.repair_name_he}</div>
+                  <div style={{ fontSize: '0.825rem', fontWeight: 600, marginBottom: 3 }}>{isEn ? (r.repair_name_en ?? r.repair_name_he) : r.repair_name_he}</div>
                   <div style={{ fontSize: '0.95rem', fontWeight: 800, color: 'var(--accent)' }}>
-                    ₪{r.min_ils.toLocaleString('he-IL')}–₪{r.max_ils.toLocaleString('he-IL')}
+                    ₪{r.cost_min_ils.toLocaleString('he-IL')}–₪{r.cost_max_ils.toLocaleString('he-IL')}
                   </div>
                 </div>
               ))}

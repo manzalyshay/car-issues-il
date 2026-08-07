@@ -5,6 +5,7 @@ import { useState, useEffect } from 'react';
 import MakeLogo from '@/components/MakeLogo';
 import StarRating from '@/components/StarRating';
 import HeroSearch from '@/components/HeroSearch';
+import PlateSearch from '@/components/PlateSearch';
 import { useLocale } from '@/lib/localeContext';
 
 interface Make { slug: string; nameHe: string; nameEn: string; logoUrl: string; country: string; models: { slug: string; nameHe: string; nameEn: string }[]; }
@@ -98,26 +99,77 @@ function CarCard({ car, isHe }: { car: TopCar; isHe: boolean }) {
   );
 }
 
+// Curated model lists per category (Israeli market)
+type CatModel = { makeSlug: string; modelSlug: string; makeEn: string; modelEn: string; makeHe: string; modelHe: string; };
+const CATEGORY_MODELS: Record<string, CatModel[]> = {
+  suv: [
+    { makeSlug: 'toyota',   modelSlug: 'rav4',       makeEn: 'Toyota',   modelEn: 'RAV4',        makeHe: 'טויוטה',  modelHe: 'RAV4' },
+    { makeSlug: 'hyundai',  modelSlug: 'tucson',     makeEn: 'Hyundai',  modelEn: 'Tucson',       makeHe: 'יונדאי',  modelHe: 'טוקסון' },
+    { makeSlug: 'kia',      modelSlug: 'sportage',   makeEn: 'Kia',      modelEn: 'Sportage',     makeHe: 'קיה',     modelHe: "ספורטז'" },
+    { makeSlug: 'mazda',    modelSlug: 'cx5',        makeEn: 'Mazda',    modelEn: 'CX-5',         makeHe: 'מאזדה',   modelHe: 'CX-5' },
+    { makeSlug: 'hyundai',  modelSlug: 'santa-fe',   makeEn: 'Hyundai',  modelEn: 'Santa Fe',     makeHe: 'יונדאי',  modelHe: 'סנטה פה' },
+    { makeSlug: 'kia',      modelSlug: 'sorento',    makeEn: 'Kia',      modelEn: 'Sorento',      makeHe: 'קיה',     modelHe: 'סורנטו' },
+  ],
+  hybrid: [
+    { makeSlug: 'toyota',   modelSlug: 'corolla',        makeEn: 'Toyota',  modelEn: 'Corolla',        makeHe: 'טויוטה',  modelHe: 'קורולה' },
+    { makeSlug: 'toyota',   modelSlug: 'rav4',           makeEn: 'Toyota',  modelEn: 'RAV4 Hybrid',    makeHe: 'טויוטה',  modelHe: 'RAV4 היברידי' },
+    { makeSlug: 'toyota',   modelSlug: 'yaris-cross',    makeEn: 'Toyota',  modelEn: 'Yaris Cross',    makeHe: 'טויוטה',  modelHe: 'יאריס קרוס' },
+    { makeSlug: 'toyota',   modelSlug: 'corolla-cross',  makeEn: 'Toyota',  modelEn: 'Corolla Cross',  makeHe: 'טויוטה',  modelHe: 'קורולה קרוס' },
+    { makeSlug: 'kia',      modelSlug: 'niro',           makeEn: 'Kia',     modelEn: 'Niro',           makeHe: 'קיה',     modelHe: 'נירו' },
+    { makeSlug: 'toyota',   modelSlug: 'prius',          makeEn: 'Toyota',  modelEn: 'Prius',          makeHe: 'טויוטה',  modelHe: 'פריוס' },
+  ],
+  electric: [
+    { makeSlug: 'hyundai',  modelSlug: 'ioniq-5',    makeEn: 'Hyundai',  modelEn: 'Ioniq 5',      makeHe: 'יונדאי',  modelHe: 'איוניק 5' },
+    { makeSlug: 'hyundai',  modelSlug: 'ioniq-6',    makeEn: 'Hyundai',  modelEn: 'Ioniq 6',      makeHe: 'יונדאי',  modelHe: 'איוניק 6' },
+    { makeSlug: 'kia',      modelSlug: 'ev6',        makeEn: 'Kia',      modelEn: 'EV6',          makeHe: 'קיה',     modelHe: 'EV6' },
+    { makeSlug: 'byd',      modelSlug: 'atto3',      makeEn: 'BYD',      modelEn: 'Atto 3',       makeHe: 'BYD',     modelHe: 'Atto 3' },
+    { makeSlug: 'kia',      modelSlug: 'ev9',        makeEn: 'Kia',      modelEn: 'EV9',          makeHe: 'קיה',     modelHe: 'EV9' },
+    { makeSlug: 'byd',      modelSlug: 'seal',       makeEn: 'BYD',      modelEn: 'Seal',         makeHe: 'BYD',     modelHe: 'Seal' },
+  ],
+  sedan: [
+    { makeSlug: 'toyota',   modelSlug: 'camry',      makeEn: 'Toyota',   modelEn: 'Camry',        makeHe: 'טויוטה',  modelHe: 'קאמרי' },
+    { makeSlug: 'hyundai',  modelSlug: 'elantra',    makeEn: 'Hyundai',  modelEn: 'Elantra',      makeHe: 'יונדאי',  modelHe: 'אלנטרה' },
+    { makeSlug: 'honda',    modelSlug: 'civic',      makeEn: 'Honda',    modelEn: 'Civic',        makeHe: 'הונדה',   modelHe: "סיוויק" },
+    { makeSlug: 'kia',      modelSlug: 'cerato',     makeEn: 'Kia',      modelEn: 'Cerato',       makeHe: 'קיה',     modelHe: 'סראטו' },
+    { makeSlug: 'toyota',   modelSlug: 'corolla',    makeEn: 'Toyota',   modelEn: 'Corolla',      makeHe: 'טויוטה',  modelHe: 'קורולה' },
+    { makeSlug: 'hyundai',  modelSlug: 'sonata',     makeEn: 'Hyundai',  modelEn: 'Sonata',       makeHe: 'יונדאי',  modelHe: 'סונטה' },
+  ],
+  hatchback: [
+    { makeSlug: 'toyota',   modelSlug: 'yaris',      makeEn: 'Toyota',   modelEn: 'Yaris',        makeHe: 'טויוטה',  modelHe: 'יאריס' },
+    { makeSlug: 'hyundai',  modelSlug: 'i20',        makeEn: 'Hyundai',  modelEn: 'i20',          makeHe: 'יונדאי',  modelHe: 'i20' },
+    { makeSlug: 'honda',    modelSlug: 'jazz',       makeEn: 'Honda',    modelEn: 'Jazz',         makeHe: 'הונדה',   modelHe: "ג'אז" },
+    { makeSlug: 'kia',      modelSlug: 'picanto',    makeEn: 'Kia',      modelEn: 'Picanto',      makeHe: 'קיה',     modelHe: 'פיקנטו' },
+    { makeSlug: 'hyundai',  modelSlug: 'i30',        makeEn: 'Hyundai',  modelEn: 'i30',          makeHe: 'יונדאי',  modelHe: 'i30' },
+    { makeSlug: 'honda',    modelSlug: 'hrv',        makeEn: 'Honda',    modelEn: 'HR-V',         makeHe: 'הונדה',   modelHe: 'HR-V' },
+  ],
+};
+
 export default function HomeClient({ popularMakes, allMakes, topRanked, recentReviews }: Props) {
   const { locale, t } = useLocale();
   const isHe = locale === 'he';
   const makeName = (m: Make) => isHe ? m.nameHe : m.nameEn;
   const totalModels = allMakes.reduce((s, m) => s + m.models.length, 0);
 
+  // Build logo map from allMakes
+  const logoMap = Object.fromEntries(allMakes.map(m => [m.slug, m.logoUrl]));
+
+  const [selectedCat, setSelectedCat] = useState<string | null>(null);
+  const [searchMode, setSearchMode] = useState<'model' | 'plate'>('model');
+
   const cats = isHe
     ? [
-        { label: 'רכבי פנאי', href: '/cars/category/suv' },
-        { label: 'היברידי',   href: '/cars/category/hybrid' },
-        { label: 'חשמלי',    href: '/cars/category/electric' },
-        { label: 'סדאן',     href: '/cars/category/sedan' },
-        { label: "האצ'בק",   href: '/cars/category/hatchback' },
+        { key: 'suv',       label: 'רכבי פנאי' },
+        { key: 'hybrid',    label: 'היברידי' },
+        { key: 'electric',  label: 'חשמלי' },
+        { key: 'sedan',     label: 'סדאן' },
+        { key: 'hatchback', label: "האצ'בק" },
       ]
     : [
-        { label: 'SUV',      href: '/cars/category/suv' },
-        { label: 'Hybrid',   href: '/cars/category/hybrid' },
-        { label: 'Electric', href: '/cars/category/electric' },
-        { label: 'Sedan',    href: '/cars/category/sedan' },
-        { label: 'Hatchback',href: '/cars/category/hatchback' },
+        { key: 'suv',       label: 'SUV' },
+        { key: 'hybrid',    label: 'Hybrid' },
+        { key: 'electric',  label: 'Electric' },
+        { key: 'sedan',     label: 'Sedan' },
+        { key: 'hatchback', label: 'Hatchback' },
       ];
 
   return (
@@ -147,9 +199,31 @@ export default function HomeClient({ popularMakes, allMakes, topRanked, recentRe
                 : 'Expert reviews, real owner ratings and common issues — for every model and make.'}
             </p>
 
+            {/* Search mode tabs */}
+            <div style={{ display: 'flex', gap: 6, marginBottom: 12 }}>
+              {[
+                { key: 'model', label: isHe ? '🔍 חיפוש דגם' : '🔍 Search by model' },
+                { key: 'plate', label: isHe ? '🚗 בדוק לפי מספר רכב' : '🚗 Check by plate' },
+              ].map(({ key, label }) => (
+                <button
+                  key={key}
+                  onClick={() => setSearchMode(key as 'model' | 'plate')}
+                  style={{
+                    padding: '6px 14px', borderRadius: 9999, fontSize: '0.82rem', fontWeight: 700,
+                    border: 'none', cursor: 'pointer',
+                    background: searchMode === key ? 'var(--accent)' : 'var(--surface)',
+                    color: searchMode === key ? '#fff' : 'var(--text-muted)',
+                    transition: 'background 0.15s, color 0.15s',
+                  }}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+
             {/* Search */}
             <div style={{ marginBottom: 34 }}>
-              <HeroSearch />
+              {searchMode === 'model' ? <HeroSearch /> : <PlateSearch isHe={isHe} />}
             </div>
 
             {/* Stats row */}
@@ -171,11 +245,60 @@ export default function HomeClient({ popularMakes, allMakes, topRanked, recentRe
         <section style={{ margin: '24px 0' }}>
           <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
             {cats.map(c => (
-              <Link key={c.href} href={c.href} className="ci-chip">
+              <button
+                key={c.key}
+                onClick={() => setSelectedCat(selectedCat === c.key ? null : c.key)}
+                className="ci-chip"
+                style={{
+                  border: 'none', cursor: 'pointer',
+                  background: selectedCat === c.key ? 'var(--accent)' : undefined,
+                  color: selectedCat === c.key ? '#fff' : undefined,
+                }}
+              >
                 {c.label}
-              </Link>
+              </button>
             ))}
           </div>
+
+          {/* Model grid for selected category */}
+          {selectedCat && CATEGORY_MODELS[selectedCat] && (
+            <div style={{ marginTop: 16 }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))', gap: 10 }}>
+                {CATEGORY_MODELS[selectedCat].map(m => (
+                  <Link
+                    key={`${m.makeSlug}/${m.modelSlug}`}
+                    href={`/cars/${m.makeSlug}/${m.modelSlug}`}
+                    style={{ textDecoration: 'none' }}
+                  >
+                    <div style={{
+                      background: 'var(--surface)', border: '1px solid var(--border)',
+                      borderRadius: 10, padding: '12px 14px',
+                      display: 'flex', alignItems: 'center', gap: 10,
+                      transition: 'border-color 0.15s, box-shadow 0.15s',
+                    }} className="cat-model-card">
+                      <div style={{ width: 28, height: 28, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                        <MakeLogo logoUrl={logoMap[m.makeSlug] ?? ''} nameEn={m.makeEn} size={22} />
+                      </div>
+                      <div style={{ minWidth: 0 }}>
+                        <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', fontWeight: 600 }}>{m.makeEn}</div>
+                        <div style={{ fontSize: '0.875rem', fontWeight: 700, color: 'var(--text)', lineHeight: 1.2 }}>
+                          {isHe ? m.modelHe : m.modelEn}
+                        </div>
+                      </div>
+                    </div>
+                  </Link>
+                ))}
+              </div>
+              <div style={{ marginTop: 10, textAlign: 'center' }}>
+                <Link
+                  href={`/cars/category/${selectedCat}`}
+                  style={{ fontSize: '0.8125rem', color: 'var(--accent)', fontWeight: 600, textDecoration: 'none' }}
+                >
+                  {isHe ? `כל רכבי ${cats.find(c => c.key === selectedCat)?.label} ←` : `All ${cats.find(c => c.key === selectedCat)?.label} →`}
+                </Link>
+              </div>
+            </div>
+          )}
         </section>
 
         {/* ═══════════════════════════════════════════════════
@@ -211,7 +334,7 @@ export default function HomeClient({ popularMakes, allMakes, topRanked, recentRe
               <h2 style={{ fontSize: 22 }}>{isHe ? 'ביקורות אחרונות' : 'Latest Reviews'}</h2>
             </div>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2,1fr)', gap: 12, marginBottom: 16 }} className="reviews-grid">
-              {recentReviews.slice(0, 6).map((r) => {
+              {recentReviews.filter(r => locale !== 'en' || Boolean(r.title_en || r.body_en)).slice(0, 6).map((r) => {
                 const showEn = locale === 'en' && Boolean(r.title_en || r.body_en);
                 const cName  = showEn ? `${r.makeEn} ${r.modelEn}` : `${r.makeHe} ${r.modelHe}`;
                 const body   = showEn ? (r.body_en || r.body || '') : (r.body || '');
@@ -305,6 +428,7 @@ export default function HomeClient({ popularMakes, allMakes, topRanked, recentRe
         .ci-car-card:hover .photo-label { opacity: 1; }
         .review-card:hover { box-shadow: var(--shadow-lg) !important; border-color: var(--border-strong) !important; }
         .make-logo-cell:hover { background: var(--accent-soft) !important; }
+        .cat-model-card:hover { border-color: var(--accent) !important; box-shadow: var(--shadow) !important; }
         @media (max-width: 860px) { .home-main-grid { grid-template-columns: 1fr !important; } }
         @media (max-width: 640px) { .reviews-grid { grid-template-columns: 1fr !important; } }
       `}</style>
@@ -314,6 +438,37 @@ export default function HomeClient({ popularMakes, allMakes, topRanked, recentRe
 
 /* ── Videos feed ── */
 interface Video { youtube_id: string; title: string; thumbnail_url: string; make_slug: string; model_slug: string; }
+
+function VideoCard({ v }: { v: Video }) {
+  const [playing, setPlaying] = useState(false);
+  if (playing) {
+    return (
+      <div style={{ position:'relative', borderRadius:8, overflow:'hidden', aspectRatio:'16/9', background:'#000' }}>
+        <iframe
+          src={`https://www.youtube-nocookie.com/embed/${v.youtube_id}?autoplay=1&rel=0`}
+          title={v.title}
+          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+          allowFullScreen
+          style={{ width:'100%', height:'100%', border:'none', display:'block' }}
+        />
+      </div>
+    );
+  }
+  return (
+    <button onClick={() => setPlaying(true)}
+      style={{ display:'block', position:'relative', borderRadius:8, overflow:'hidden', aspectRatio:'16/9', background:'var(--surface-2)', border:'none', padding:0, cursor:'pointer', width:'100%' }}
+    >
+      <img src={v.thumbnail_url} alt={v.title} style={{ width:'100%', height:'100%', objectFit:'cover' }}
+        onError={e => { (e.target as HTMLImageElement).src = `https://i.ytimg.com/vi/${v.youtube_id}/mqdefault.jpg`; }} />
+      <div style={{ position:'absolute', inset:0, background:'linear-gradient(transparent 40%, rgba(0,0,0,.6))', display:'flex', alignItems:'center', justifyContent:'center' }}>
+        <div style={{ width:40, height:40, background:'rgba(255,0,0,.85)', borderRadius:'50%', display:'flex', alignItems:'center', justifyContent:'center', color:'#fff', fontSize:'1rem' }}>▶</div>
+      </div>
+      <p style={{ position:'absolute', bottom:0, left:0, right:0, padding:'4px 7px', fontSize:'0.65rem', fontWeight:600, color:'#fff', lineHeight:1.3, overflow:'hidden', display:'-webkit-box', WebkitLineClamp:2, WebkitBoxOrient:'vertical', textAlign:'start' }}>
+        {v.title}
+      </p>
+    </button>
+  );
+}
 
 function VideosFeed({ locale, isHe }: { locale: string; isHe: boolean }) {
   const [videos, setVideos] = useState<Video[] | null>(null);
@@ -331,20 +486,7 @@ function VideosFeed({ locale, isHe }: { locale: string; isHe: boolean }) {
   if (videos.length === 0) return null;
   return (
     <div className="videos-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 10 }}>
-      {videos.map((v, i) => (
-        <a key={i} href={`https://www.youtube.com/watch?v=${v.youtube_id}`} target="_blank" rel="noopener noreferrer"
-          style={{ display:'block', position:'relative', borderRadius:8, overflow:'hidden', aspectRatio:'16/9', textDecoration:'none', background:'var(--surface-2)' }}
-        >
-          <img src={v.thumbnail_url} alt={v.title} style={{ width:'100%', height:'100%', objectFit:'cover' }}
-            onError={e => { (e.target as HTMLImageElement).src = `https://i.ytimg.com/vi/${v.youtube_id}/mqdefault.jpg`; }} />
-          <div style={{ position:'absolute', inset:0, background:'linear-gradient(transparent 40%, rgba(0,0,0,.6))', display:'flex', alignItems:'center', justifyContent:'center' }}>
-            <div style={{ width:32, height:32, background:'rgba(27,79,138,.9)', borderRadius:'50%', display:'flex', alignItems:'center', justifyContent:'center', color:'#fff', fontSize:'0.8rem' }}>▶</div>
-          </div>
-          <p style={{ position:'absolute', bottom:0, left:0, right:0, padding:'4px 7px', fontSize:'0.65rem', fontWeight:600, color:'#fff', lineHeight:1.3, overflow:'hidden', display:'-webkit-box', WebkitLineClamp:2, WebkitBoxOrient:'vertical' }}>
-            {v.title}
-          </p>
-        </a>
-      ))}
+      {videos.map((v, i) => <VideoCard key={i} v={v} />)}
     </div>
   );
 }
@@ -353,10 +495,11 @@ function VideosFeed({ locale, isHe }: { locale: string; isHe: boolean }) {
 interface Recall { id: string; manufacturer: string; component: string; summary: string; date: string; }
 function RecallsWidget({ isHe }: { isHe: boolean }) {
   const [recalls, setRecalls] = useState<Recall[] | null>(null);
+  const locale = isHe ? 'he' : 'en';
   useEffect(() => {
-    fetch('/api/recalls?make=Toyota&model=RAV4&years=2019,2020,2021,2022,2023')
+    fetch(`/api/recalls?make=Toyota&model=RAV4&years=2019,2020,2021,2022,2023&locale=${locale}`)
       .then(r => r.json()).then((d: { recalls?: Recall[] }) => setRecalls((d.recalls ?? []).slice(0, 4))).catch(() => setRecalls([]));
-  }, []);
+  }, [locale]);
   return (
     <div style={{ background:'var(--surface)', border:'1px solid var(--border)', borderRadius:'var(--r)', overflow:'hidden', boxShadow:'var(--shadow)' }}>
       <div style={{ padding:'12px 16px', borderBottom:'1px solid var(--border)' }}>
@@ -376,9 +519,9 @@ function RecallsWidget({ isHe }: { isHe: boolean }) {
             <div key={rc.id || i} style={{ display:'flex', gap:10, padding:'10px 16px', borderBottom: i < recalls.length - 1 ? '1px solid var(--border)' : 'none', alignItems:'flex-start' }}>
               <div style={{ width:6, height:6, borderRadius:'50%', background:'var(--bad)', flexShrink:0, marginTop:5 }} />
               <div style={{ flex:1, minWidth:0 }}>
-                <div style={{ fontSize:'0.78rem', fontWeight:700, color:'var(--text)', marginBottom:2 }}>{rc.manufacturer}</div>
+                <div style={{ fontSize:'0.78rem', fontWeight:700, color:'var(--text)', marginBottom:2 }}>{rc.component}</div>
                 <div style={{ fontSize:'0.73rem', color:'var(--text-muted)', lineHeight:1.5, overflow:'hidden', display:'-webkit-box', WebkitLineClamp:2, WebkitBoxOrient:'vertical' }}>
-                  {rc.component} — {rc.summary}
+                  {rc.summary}
                 </div>
                 {rc.date && <div style={{ fontSize:'0.65rem', color:'var(--text-faint)', marginTop:2 }}>{rc.date}</div>}
               </div>

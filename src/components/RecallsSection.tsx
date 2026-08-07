@@ -12,7 +12,7 @@ interface Props {
 }
 
 export default function RecallsSection({ makeEn, modelEn, year, years }: Props) {
-  const { t } = useLocale();
+  const { t, locale } = useLocale();
   const rc = t.recalls;
   const [recalls, setRecalls]     = useState<Recall[]>([]);
   const [loading, setLoading]     = useState(false);
@@ -22,7 +22,7 @@ export default function RecallsSection({ makeEn, modelEn, year, years }: Props) 
 
   useEffect(() => {
     setLoading(true);
-    const params = new URLSearchParams({ make: makeEn, model: modelEn });
+    const params = new URLSearchParams({ make: makeEn, model: modelEn, locale });
     if (year) params.set('year', String(year));
     else if (years?.length) params.set('years', years.join(','));
     fetch(`/api/recalls?${params}`)
@@ -30,7 +30,7 @@ export default function RecallsSection({ makeEn, modelEn, year, years }: Props) 
       .then(d => setRecalls(d.recalls ?? []))
       .catch(() => setRecalls([]))
       .finally(() => setLoading(false));
-  }, [makeEn, modelEn, year]);
+  }, [makeEn, modelEn, year, locale]);
 
   // Collect unique years for the filter
   const availableYears = useMemo(() => {
@@ -68,6 +68,17 @@ export default function RecallsSection({ makeEn, modelEn, year, years }: Props) 
         <span style={{ marginRight: 'auto', fontSize: '0.875rem', color: 'var(--text-muted)' }}>
           {isOpen ? '▲' : '▼'}
         </span>
+        {!loading && recalls.length > 0 && (
+          <a
+            href={`/embed?make=${encodeURIComponent(makeEn)}&model=${encodeURIComponent(modelEn)}${year ? `&year=${year}` : ''}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            onClick={e => e.stopPropagation()}
+            style={{ fontSize: '0.7rem', color: 'var(--text-muted)', textDecoration: 'none', border: '1px solid var(--border)', borderRadius: 6, padding: '2px 8px', whiteSpace: 'nowrap', flexShrink: 0 }}
+          >
+            {locale === 'he' ? '‹/› הטמע' : '‹/› Embed'}
+          </a>
+        )}
       </div>
 
       {/* Year filter tabs — only when we have multiple years */}

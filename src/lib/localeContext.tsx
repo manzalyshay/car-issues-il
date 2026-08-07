@@ -35,11 +35,12 @@ const LocaleContext = createContext<LocaleContextType>({
   isDomainLocked: false,
 });
 
-export function LocaleProvider({ children }: { children: React.ReactNode }) {
-  const [locale, setLocaleState] = useState<Locale>('he');
-  const [isDomainLocked, setIsDomainLocked] = useState(false);
+export function LocaleProvider({ children, initialLocale }: { children: React.ReactNode; initialLocale?: Locale }) {
+  const [locale, setLocaleState] = useState<Locale>(initialLocale ?? 'he');
+  const [isDomainLocked, setIsDomainLocked] = useState(!!initialLocale);
 
   useEffect(() => {
+    if (initialLocale) return; // server already determined locale — skip client detection
     const domainLocale = detectDomainLocale();
     if (domainLocale) {
       setLocaleState(domainLocale);

@@ -49,7 +49,11 @@ async function getTopRanked(limit = 3) {
     const [makeSlug, modelSlug] = key.split('/');
     ranked.push({ makeSlug, modelSlug, ...info, combined, avgRating, imageUrl: imageMap.get(key) ?? null });
   }
-  ranked.sort((a, b) => b.combined - a.combined);
+  // Shuffle the ranked pool and pick randomly so the homepage shows different cars each visit
+  for (let i = ranked.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [ranked[i], ranked[j]] = [ranked[j], ranked[i]];
+  }
   return ranked.slice(0, limit);
 }
 

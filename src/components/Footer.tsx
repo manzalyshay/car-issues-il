@@ -41,6 +41,7 @@ export default function Footer() {
         { href: '/tco',         label: isEn ? 'TCO Calculator'  : 'מחשבון TCO' },
         { href: '/repairs',     label: isEn ? 'Repair Database' : 'מאגר תיקונים' },
         { href: '/rankings',    label: isEn ? 'Car Rankings'    : 'טבלת דירוגים' },
+        { href: '/embed',       label: isEn ? 'Recall Widget'   : 'ווידג\'ט ריקולים' },
       ],
     },
     {

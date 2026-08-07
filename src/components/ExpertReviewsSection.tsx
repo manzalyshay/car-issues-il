@@ -117,7 +117,7 @@ function SourceCard({ item, accent, translatedSummary }: { item: SourceBreakdown
           textAlign: 'start', fontFamily: 'inherit',
         }}
       >
-        <span style={{ fontSize: '0.72rem', lineHeight: 1 }}>{flag}</span>
+        {(locale !== 'en' || flag !== '🇮🇱') && <span style={{ fontSize: '0.72rem', lineHeight: 1 }}>{flag}</span>}
         <span style={{
           flex: 1, fontSize: '0.78rem', fontWeight: 800, color: accent,
           whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', letterSpacing: '0.01em',
@@ -488,10 +488,10 @@ export default function ExpertReviewsSection({
             )}
           </div>
         ) : (
-          /* Normal mode: AI summaries | Pros/Cons side-by-side */
-          <div className="ers-body-row">
-            {/* AI Summaries column */}
-            <div style={{ overflowY: 'auto' }}>
+          /* Normal mode: AI summaries then Pros/Cons below */
+          <>
+            {/* AI Summaries — always full width */}
+            <div style={{ borderTop: '1px solid var(--border)' }}>
               {hasPerSource ? (
                 locale === 'en' ? (
                   <SourceGroup sources={review.sourcesBreakdown} label={er.generalSummary} accent="#8b5cf6" bgAccent="rgba(139,92,246,0.04)"
@@ -535,11 +535,15 @@ export default function ExpertReviewsSection({
               )}
             </div>
 
-            {/* Pros/Cons column */}
+            {/* Pros/Cons — always below summaries, side-by-side */}
             {(review.pros.length > 0 || review.cons.length > 0) && (
-              <div className="ers-pros-cons-col">
+              <div style={{
+                display: 'grid',
+                gridTemplateColumns: review.pros.length > 0 && review.cons.length > 0 ? '1fr 1fr' : '1fr',
+                borderTop: '1px solid var(--border)',
+              }}>
                 {review.pros.length > 0 && (
-                  <div style={{ padding: '9px 12px 12px', background: 'rgba(22,163,74,0.02)', borderBottom: review.cons.length > 0 ? '1px solid var(--border)' : 'none' }}>
+                  <div style={{ padding: '9px 12px 12px', background: 'rgba(22,163,74,0.02)', borderInlineEnd: review.cons.length > 0 ? '1px solid var(--border)' : 'none' }}>
                     <div style={{ fontSize: '0.58rem', fontWeight: 900, color: '#16a34a', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 6, display: 'flex', alignItems: 'center', gap: 4 }}>
                       <span style={{ display: 'inline-block', width: 10, height: 2, background: '#16a34a', borderRadius: 1 }} />
                       {er.pros}
@@ -572,7 +576,7 @@ export default function ExpertReviewsSection({
                 )}
               </div>
             )}
-          </div>
+          </>
         )}
 
         {/* ── Footer ── */}

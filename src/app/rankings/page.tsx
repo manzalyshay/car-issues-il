@@ -15,10 +15,10 @@ export async function generateMetadata(): Promise<Metadata> {
   const base = getBaseUrl(locale);
   return {
     title: locale === 'en'
-      ? 'Car Reliability Rankings | CarIssues'
-      : 'דירוג אמינות רכבים בישראל | CarIssues IL',
+      ? 'Car Reliability Rankings Israel 2026 — Best & Worst Cars'
+      : 'דירוג רכבים בישראל 2026 — אמינות, חוות דעת ובעיות נפוצות',
     description: rp.subtitle,
-    alternates: { canonical: `${base}/rankings` },
+    alternates: { canonical: `${base}/rankings`, languages: { he: 'https://carissues.co.il/rankings', en: 'https://carissues.net/rankings', 'x-default': 'https://carissues.net/rankings' } },
   };
 }
 

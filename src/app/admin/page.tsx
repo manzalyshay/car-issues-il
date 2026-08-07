@@ -158,6 +158,11 @@ function AdminPageInner() {
   const [users, setUsers] = useState<{ id: string; email: string; display_name: string | null; is_admin: boolean; created_at: string; last_sign_in: string | null; provider: string }[]>([]);
   const [usersFetching, setUsersFetching] = useState(false);
 
+  // ── Translation state ──────────────────────────────────────────────────────────
+  const [untranslatedCount, setUntranslatedCount] = useState<number | null>(null);
+  const [translating, setTranslating] = useState(false);
+  const [translateResult, setTranslateResult] = useState<{ translated: number; failed: number } | null>(null);
+
   // ── Social Posts tab state ─────────────────────────────────────────────────────
   const [socialPosts, setSocialPosts] = useState<SocialPostRow[]>([]);
   const [socialFetching, setSocialFetching] = useState(false);
@@ -232,6 +237,26 @@ function AdminPageInner() {
     }
   }, []);
 
+  const fetchUntranslatedCount = useCallback(async () => {
+    try {
+      const res = await fetch('/api/admin/translate-reviews');
+      const d = await res.json() as { untranslated: number };
+      setUntranslatedCount(d.untranslated ?? 0);
+    } catch { /* ignore */ }
+  }, []);
+
+  const runTranslation = useCallback(async () => {
+    setTranslating(true);
+    setTranslateResult(null);
+    try {
+      const res = await fetch('/api/admin/translate-reviews', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ limit: 50 }) });
+      const d = await res.json() as { translated: number; failed: number };
+      setTranslateResult({ translated: d.translated, failed: d.failed });
+      fetchUntranslatedCount();
+    } catch { setTranslateResult({ translated: 0, failed: -1 }); }
+    finally { setTranslating(false); }
+  }, [fetchUntranslatedCount]);
+
   useEffect(() => {
     fetch('/api/cars').then(r => r.json()).then((makes: CarMake[]) =>
       setCarsMap(new Map(makes.map(m => [m.slug, m]))));
@@ -257,8 +282,8 @@ function AdminPageInner() {
   }, [isAdmin, getToken]);
 
   useEffect(() => {
-    if (isAdmin && tab === 'user_reviews') fetchUserReviews();
-  }, [isAdmin, tab, fetchUserReviews]);
+    if (isAdmin && tab === 'user_reviews') { fetchUserReviews(); fetchUntranslatedCount(); }
+  }, [isAdmin, tab, fetchUserReviews, fetchUntranslatedCount]);
 
   const fetchReports = useCallback(async () => {
     setReportsFetching(true);
@@ -1035,6 +1060,23 @@ function AdminPageInner() {
         {/* ── User Reviews Tab ────────────────────────────────────────────────── */}
         {tab === 'user_reviews' && (
           <>
+            {/* Translation status panel */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 16, padding: '10px 16px', borderRadius: 10, border: '1px solid var(--border)', background: 'var(--surface)', flexWrap: 'wrap' }}>
+              <span style={{ fontSize: '0.875rem', color: 'var(--text-muted)' }}>
+                {untranslatedCount === null ? 'בודק תרגומים...' : untranslatedCount === 0 ? '✅ כל הביקורות מתורגמות לאנגלית' : `⚠️ ${untranslatedCount} ביקורות לא מתורגמות`}
+              </span>
+              {(untranslatedCount ?? 0) > 0 && (
+                <button onClick={runTranslation} disabled={translating} style={{ padding: '5px 14px', borderRadius: 6, border: 'none', background: '#2563eb', color: '#fff', cursor: 'pointer', fontWeight: 700, fontSize: '0.8rem' }}>
+                  {translating ? 'מתרגם...' : 'תרגם עכשיו'}
+                </button>
+              )}
+              {translateResult && (
+                <span style={{ fontSize: '0.8rem', color: translateResult.failed === -1 ? '#dc2626' : translateResult.failed > 0 ? '#f59e0b' : '#16a34a' }}>
+                  {translateResult.failed === -1 ? 'שגיאה בתרגום' : `✓ ${translateResult.translated} תורגמו${translateResult.failed > 0 ? ` · ${translateResult.failed} נכשלו` : ''}`}
+                </span>
+              )}
+            </div>
+
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24, flexWrap: 'wrap', gap: 12 }}>
               <p style={{ color: 'var(--text-muted)', margin: 0 }}>
                 {userReviews.length} ביקורות סה"כ

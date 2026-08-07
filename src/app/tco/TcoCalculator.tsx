@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useLocale } from '@/lib/localeContext';
 
 const FUEL_PRICES = { petrol: 7.0, diesel: 6.8, hybrid: 5.2, electric: 0.7 };
+const RATE = 3.65;
 
 const CATEGORY_DEFAULTS: Record<string, { consumption: number; insurance: number; service: number; registration: number }> = {
   city:     { consumption: 7.5,  insurance: 3800, service: 2500, registration: 1200 },
@@ -16,13 +17,15 @@ const CATEGORY_DEFAULTS: Record<string, { consumption: number; insurance: number
 
 const DEPRECIATION_RATES = [0.18, 0.12, 0.10, 0.09, 0.08];
 
-function fmt(n: number) {
-  return Math.round(n).toLocaleString('he-IL');
-}
-
 export default function TcoCalculator() {
-  const { t } = useLocale();
+  const { t, locale } = useLocale();
   const tc = t.tcoPage;
+  const isEn = locale === 'en';
+  const fmt = (ils: number) => isEn
+    ? `$${Math.round(ils / RATE).toLocaleString('en-US')}`
+    : `₪${Math.round(ils).toLocaleString('he-IL')}`;
+  const toDisplay = (ils: number) => isEn ? Math.round(ils / RATE) : Math.round(ils);
+  const toIls = (val: number) => isEn ? val * RATE : val;
   const [carPrice, setCarPrice] = useState(120000);
   const [carAge, setCarAge] = useState(0);
   const [kmYear, setKmYear] = useState(18000);
@@ -104,9 +107,9 @@ export default function TcoCalculator() {
             </select>
           </div>
           <div>
-            <label style={labelStyle}>{tc.carPrice}</label>
-            <input type="number" style={inputStyle} value={carPrice} min={20000} max={800000} step={5000}
-              onChange={e => setCarPrice(Number(e.target.value))} />
+            <label style={labelStyle}>{tc.carPrice} ({isEn ? '$' : '₪'})</label>
+            <input type="number" style={inputStyle} value={toDisplay(carPrice)} min={isEn ? 5000 : 20000} max={isEn ? 220000 : 800000} step={isEn ? 1000 : 5000}
+              onChange={e => setCarPrice(toIls(Number(e.target.value)))} />
           </div>
           <div>
             <label style={labelStyle}>{tc.carAge}</label>
@@ -130,19 +133,19 @@ export default function TcoCalculator() {
         <h2 style={{ fontSize: '1rem', fontWeight: 700, margin: '0 0 18px' }}>{tc.annualCosts}</h2>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: 16 }}>
           <div>
-            <label style={labelStyle}>{tc.insurance}</label>
-            <input type="number" style={inputStyle} value={insurance} min={1000} max={30000} step={100}
-              onChange={e => setInsurance(Number(e.target.value))} />
+            <label style={labelStyle}>{tc.insurance} ({isEn ? '$' : '₪'})</label>
+            <input type="number" style={inputStyle} value={toDisplay(insurance)} min={isEn ? 300 : 1000} max={isEn ? 8000 : 30000} step={isEn ? 50 : 100}
+              onChange={e => setInsurance(toIls(Number(e.target.value)))} />
           </div>
           <div>
-            <label style={labelStyle}>{tc.service}</label>
-            <input type="number" style={inputStyle} value={service} min={500} max={20000} step={100}
-              onChange={e => setService(Number(e.target.value))} />
+            <label style={labelStyle}>{tc.service} ({isEn ? '$' : '₪'})</label>
+            <input type="number" style={inputStyle} value={toDisplay(service)} min={isEn ? 150 : 500} max={isEn ? 5500 : 20000} step={isEn ? 25 : 100}
+              onChange={e => setService(toIls(Number(e.target.value)))} />
           </div>
           <div>
-            <label style={labelStyle}>{tc.registration}</label>
-            <input type="number" style={inputStyle} value={registration} min={500} max={5000} step={100}
-              onChange={e => setRegistration(Number(e.target.value))} />
+            <label style={labelStyle}>{tc.registration} ({isEn ? '$' : '₪'})</label>
+            <input type="number" style={inputStyle} value={toDisplay(registration)} min={isEn ? 150 : 500} max={isEn ? 1400 : 5000} step={isEn ? 25 : 100}
+              onChange={e => setRegistration(toIls(Number(e.target.value)))} />
           </div>
           <div>
             <label style={labelStyle}>{tc.period}</label>
@@ -157,12 +160,12 @@ export default function TcoCalculator() {
         <h2 style={{ fontSize: '1rem', fontWeight: 700, margin: '0 0 16px', color: 'var(--accent)' }}>{tc.summary}</h2>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))', gap: 16 }}>
           {[
-            { label: tc.totalYears.replace('{n}', String(years)), value: `₪${fmt(totalCost)}`, highlight: true },
-            { label: tc.monthlyAvg, value: `₪${fmt(avgMonthly)}`, highlight: true },
-            { label: tc.fuelYear, value: `₪${fmt(fuelAnnual)}` },
-            { label: tc.deprYear1, value: `₪${fmt(rows[0]?.depreciation ?? 0)}` },
-            { label: tc.insurance, value: `₪${fmt(insurance)}` },
-            { label: tc.service, value: `₪${fmt(service)}` },
+            { label: tc.totalYears.replace('{n}', String(years)), value: fmt(totalCost), highlight: true },
+            { label: tc.monthlyAvg, value: fmt(avgMonthly), highlight: true },
+            { label: tc.fuelYear, value: fmt(fuelAnnual) },
+            { label: tc.deprYear1, value: fmt(rows[0]?.depreciation ?? 0) },
+            { label: tc.insurance, value: fmt(insurance) },
+            { label: tc.service, value: fmt(service) },
           ].map(({ label, value, highlight }) => (
             <div key={label} style={{
               textAlign: 'center',
@@ -193,13 +196,13 @@ export default function TcoCalculator() {
               {rows.map(r => (
                 <tr key={r.year} style={{ borderBottom: '1px solid var(--border)', background: r.year % 2 === 0 ? 'var(--surface-2)' : 'transparent' }}>
                   <td style={{ padding: '8px 10px', fontWeight: 700 }}>{tc.yearRow} {r.year}</td>
-                  <td style={{ padding: '8px 10px', color: 'var(--accent)' }}>₪{fmt(r.depreciation)}</td>
-                  <td style={{ padding: '8px 10px' }}>₪{fmt(r.fuel)}</td>
-                  <td style={{ padding: '8px 10px' }}>₪{fmt(r.insurance)}</td>
-                  <td style={{ padding: '8px 10px' }}>₪{fmt(r.service)}</td>
-                  <td style={{ padding: '8px 10px' }}>₪{fmt(r.registration)}</td>
-                  <td style={{ padding: '8px 10px', fontWeight: 700 }}>₪{fmt(r.total)}</td>
-                  <td style={{ padding: '8px 10px', fontWeight: 700, color: 'var(--accent)' }}>₪{fmt(r.cumulative)}</td>
+                  <td style={{ padding: '8px 10px', color: 'var(--accent)' }}>{fmt(r.depreciation)}</td>
+                  <td style={{ padding: '8px 10px' }}>{fmt(r.fuel)}</td>
+                  <td style={{ padding: '8px 10px' }}>{fmt(r.insurance)}</td>
+                  <td style={{ padding: '8px 10px' }}>{fmt(r.service)}</td>
+                  <td style={{ padding: '8px 10px' }}>{fmt(r.registration)}</td>
+                  <td style={{ padding: '8px 10px', fontWeight: 700 }}>{fmt(r.total)}</td>
+                  <td style={{ padding: '8px 10px', fontWeight: 700, color: 'var(--accent)' }}>{fmt(r.cumulative)}</td>
                 </tr>
               ))}
             </tbody>
@@ -207,10 +210,10 @@ export default function TcoCalculator() {
         </div>
         <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: 12, marginBottom: 0 }}>
           {tc.footnote
-            .replace('{p}', String(FUEL_PRICES.petrol))
-            .replace('{d}', String(FUEL_PRICES.diesel))
-            .replace('{h}', String(FUEL_PRICES.hybrid))
-            .replace('{e}', String(FUEL_PRICES.electric))
+            .replace('{p}', isEn ? (FUEL_PRICES.petrol / RATE).toFixed(2) : String(FUEL_PRICES.petrol))
+            .replace('{d}', isEn ? (FUEL_PRICES.diesel / RATE).toFixed(2) : String(FUEL_PRICES.diesel))
+            .replace('{h}', isEn ? (FUEL_PRICES.hybrid / RATE).toFixed(2) : String(FUEL_PRICES.hybrid))
+            .replace('{e}', isEn ? (FUEL_PRICES.electric / RATE).toFixed(2) : String(FUEL_PRICES.electric))
           }{' '}
           <Link href="/repairs" style={{ color: 'var(--text-muted)' }}>{tc.repairCostsLink}</Link>.
         </p>

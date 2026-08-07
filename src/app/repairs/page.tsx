@@ -11,13 +11,13 @@ export async function generateMetadata(): Promise<Metadata> {
   const locale = await getHostLocale();
   const base = getBaseUrl(locale);
   return locale === 'en' ? {
-    title: 'Car Repair & Maintenance Costs | CarIssues',
+    title: 'Car Repair & Maintenance Costs',
     description: 'Real repair and maintenance prices for cars: brakes, service, engine, electrical and more — based on owner reports and forum data.',
-    alternates: { canonical: `${base}/repairs` },
+    alternates: { canonical: `${base}/repairs`, languages: { he: 'https://carissues.co.il/repairs', en: 'https://carissues.net/repairs', 'x-default': 'https://carissues.net/repairs' } },
   } : {
     title: 'עלויות תיקון ותחזוקה לרכב בישראל — מדריך מחירים',
     description: 'מחירי תיקון ותחזוקה לרכב בישראל: החלפת בלמים, טיפולים תקופתיים, מנוע, חשמל ועוד.',
-    alternates: { canonical: `${base}/repairs` },
+    alternates: { canonical: `${base}/repairs`, languages: { he: 'https://carissues.co.il/repairs', en: 'https://carissues.net/repairs', 'x-default': 'https://carissues.net/repairs' } },
   };
 }
 
@@ -74,10 +74,11 @@ export default async function RepairsPage() {
     };
   }
 
-  // Group costs by category, prefer 'family' tier when both exist
+  // Group costs by category, prefer 'family' tier when both exist; skip rows with null costs
   const seen = new Set<string>();
   const grouped: Record<string, typeof allCosts> = {};
   for (const cost of allCosts) {
+    if (cost.cost_min_ils == null || cost.cost_max_ils == null) continue;
     const key = cost.repair_key;
     if (seen.has(key) && cost.applies_to !== 'family') continue;
     if (!seen.has(key)) seen.add(key);

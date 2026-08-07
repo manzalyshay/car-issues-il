@@ -8,13 +8,13 @@ export async function generateMetadata(): Promise<Metadata> {
   const locale = await getHostLocale();
   const base = getBaseUrl(locale);
   return locale === 'en' ? {
-    title: 'Car Ownership Cost Calculator | CarIssues',
+    title: 'Car Ownership Cost Calculator',
     description: 'Calculate your real annual car ownership cost: fuel, insurance, maintenance, depreciation and registration.',
-    alternates: { canonical: `${base}/tco` },
+    alternates: { canonical: `${base}/tco`, languages: { he: 'https://carissues.co.il/tco', en: 'https://carissues.net/tco', 'x-default': 'https://carissues.net/tco' } },
   } : {
-    title: 'מחשבון עלות בעלות על רכב | CarIssues IL',
+    title: 'מחשבון עלות בעלות על רכב',
     description: 'כמה עולה להחזיק רכב בישראל לשנה? חשב דלק, ביטוח, טיפולים, פחת ורישוי — עלות החזקה מלאה לכל דגם.',
-    alternates: { canonical: `${base}/tco` },
+    alternates: { canonical: `${base}/tco`, languages: { he: 'https://carissues.co.il/tco', en: 'https://carissues.net/tco', 'x-default': 'https://carissues.net/tco' } },
   };
 }
 

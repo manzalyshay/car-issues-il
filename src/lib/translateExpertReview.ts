@@ -8,12 +8,24 @@ import type { ExpertReview } from './expertReviews';
 const GEMINI_KEY = process.env.GEMINI_API_KEY;
 const GEMINI_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_KEY}`;
 
+/** Strip any remaining Israel/Israeli references from an English string. */
+function stripIsraelRefs(text: string): string {
+  return text
+    .replace(/\bIsrael's\b/gi, 'the local')
+    .replace(/\bIsraeli\b/gi, 'local')
+    .replace(/\bin Israel\b/gi, 'locally')
+    .replace(/\bIsrael\b/gi, '')
+    .replace(/\s{2,}/g, ' ')
+    .replace(/,\s*\./g, '.')
+    .trim();
+}
+
 async function batchTranslate(items: string[]): Promise<string[]> {
   if (!GEMINI_KEY || items.length === 0) return items.map(() => '');
   const nonEmpty = items.map((s, i) => ({ i, s })).filter(x => x.s.trim().length > 5);
   if (nonEmpty.length === 0) return items.map(() => '');
 
-  const prompt = `Translate each Hebrew automotive text to fluent English. Return ONLY a JSON array of strings, same order, no extra text.\n\nInput: ${JSON.stringify(nonEmpty.map(x => x.s))}`;
+  const prompt = `Translate each Hebrew automotive text to fluent English for a global audience. Important: replace any references to "Israel", "Israeli", or Israel-specific context with neutral/global equivalents (e.g. "Israeli road conditions" → "local road conditions", "not available in Israel" → "not always available", "Israel's heat" → "the heat"). Return ONLY a JSON array of strings, same order, no extra text.\n\nInput: ${JSON.stringify(nonEmpty.map(x => x.s))}`;
 
   try {
     const res = await fetch(GEMINI_URL, {
@@ -31,7 +43,7 @@ async function batchTranslate(items: string[]): Promise<string[]> {
     const parsed = JSON.parse(cleaned) as string[];
     if (Array.isArray(parsed) && parsed.length === nonEmpty.length) {
       const result = items.map(() => '');
-      nonEmpty.forEach(({ i }, ti) => { result[i] = parsed[ti] ?? ''; });
+      nonEmpty.forEach(({ i }, ti) => { result[i] = stripIsraelRefs(parsed[ti] ?? ''); });
       return result;
     }
   } catch { /* fall through */ }

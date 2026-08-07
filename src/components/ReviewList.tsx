@@ -314,7 +314,10 @@ export default function ReviewList({ reviews, onHelpful, onDislike }: Props) {
   const [sort, setSort]         = useState<'newest' | 'helpful' | 'rating'>('newest');
 
   const availableYears = Array.from(new Set(reviews.map((r) => r.year))).sort((a, b) => b - a);
-  const availableSubModels = Array.from(new Set(reviews.map((r) => r.subModel).filter(Boolean) as string[])).sort();
+  const hasHebrew = (s: string) => /[\u0590-\u05FF]/.test(s);
+  const availableSubModels = Array.from(new Set(reviews.map((r) => r.subModel).filter(Boolean) as string[]))
+    .filter(sm => locale !== 'en' || !hasHebrew(sm))
+    .sort();
   const [liked, setLiked]       = useState<Set<string>>(new Set());
   const [disliked, setDisliked] = useState<Set<string>>(new Set());
   const [lightbox, setLightbox] = useState<string | null>(null);
@@ -530,7 +533,7 @@ export default function ReviewList({ reviews, onHelpful, onDislike }: Props) {
                       <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
                         <StarRating rating={review.rating} size={15} />
                         <span className="badge badge-blue">{review.year}</span>
-                        {review.subModel && <span className="badge badge-gray" style={{ background: 'rgba(37,99,235,.08)', color: '#2563eb', border: '1px solid rgba(37,99,235,.2)' }}>{review.subModel}</span>}
+                        {review.subModel && (locale !== 'en' || !hasHebrew(review.subModel)) && <span className="badge badge-gray" style={{ background: 'rgba(37,99,235,.08)', color: '#2563eb', border: '1px solid rgba(37,99,235,.2)' }}>{review.subModel}</span>}
                         <span className="badge badge-gray">{t.reviewForm.categories[review.category]}</span>
                         {review.mileage && (
                           <span style={{ color: 'var(--text-muted)', fontSize: '0.8125rem' }}>

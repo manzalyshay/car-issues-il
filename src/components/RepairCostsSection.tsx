@@ -26,19 +26,21 @@ export default async function RepairCostsSection({ makeSlug, modelSlug, makeName
 
   const isEn = locale === 'en';
 
-  const repairOptions = [...new Map(genericCosts.map(c => [c.repair_key, { repair_key: c.repair_key, repair_name_he: c.repair_name_he }])).values()];
+  const repairOptions = [...new Map(genericCosts.map(c => [c.repair_key, { repair_key: c.repair_key, repair_name_he: c.repair_name_he, repair_name_en: c.repair_name_en ?? undefined }])).values()];
 
-  // Build a lookup for EN repair names from the generic costs table
+  // Build a lookup for EN repair names from the generic costs table (no Hebrew fallback)
   const enNameMap = new Map<string, string>(
-    genericCosts.map(c => [c.repair_key, c.repair_name_en ?? c.repair_name_he])
+    genericCosts.filter(c => c.repair_name_en).map(c => [c.repair_key, c.repair_name_en!])
   );
 
   // Group model-specific costs by repair type and compute median
   const grouped = new Map<string, { nameHe: string; nameEn: string; costs: number[]; notes: string[] }>();
   for (const c of modelCosts) {
+    const enName = enNameMap.get(c.repair_key) ?? '';
+    if (isEn && !enName) continue; // skip Hebrew-only entries on EN site
     if (!grouped.has(c.repair_key)) grouped.set(c.repair_key, {
       nameHe: c.repair_name_he,
-      nameEn: enNameMap.get(c.repair_key) ?? c.repair_name_he,
+      nameEn: enName,
       costs: [], notes: [],
     });
     const g = grouped.get(c.repair_key)!;

@@ -1,8 +1,24 @@
+import type { Metadata } from 'next';
 import Link from 'next/link';
 import { getAllMakes } from '@/lib/carsDb';
-import { getHostLocale } from '@/lib/hostLocale';
+import { getHostLocale, getBaseUrl } from '@/lib/hostLocale';
 import { translations } from '@/lib/translations';
 import { CompareClient } from './CompareClient';
+
+export async function generateMetadata(): Promise<Metadata> {
+  const locale = await getHostLocale();
+  const base = getBaseUrl(locale);
+  const langs = { he: 'https://carissues.co.il/cars/compare', en: 'https://carissues.net/cars/compare', 'x-default': 'https://carissues.net/cars/compare' };
+  return locale === 'en' ? {
+    title: 'Car Comparison — Compare Models Side by Side',
+    description: 'Compare any two cars side by side: owner ratings, expert scores, common problems, and reliability.',
+    alternates: { canonical: `${base}/cars/compare`, languages: langs },
+  } : {
+    title: 'השוואת רכבים — השווה דגמים זה לצד זה',
+    description: 'השווה בין שני רכבים: דירוגי בעלים, ציוני מומחים, בעיות נפוצות ואמינות.',
+    alternates: { canonical: `${base}/cars/compare`, languages: langs },
+  };
+}
 
 export const revalidate = 86400;
 

@@ -46,7 +46,7 @@ const HE_MAKE_MAP: Record<string, string> = {
   'קופרה':       'cupra',
 };
 
-const EN_MAKE_MAP: Record<string, string> = {
+export const EN_MAKE_MAP: Record<string, string> = {
   'ALFA ROMEO':    'alfa-romeo',
   'ALFA':          'alfa-romeo',
   'LAND ROVER':    'land-rover',
@@ -93,6 +93,7 @@ const EN_MULTI_WORD_MAKES = ['ALFA ROMEO', 'LAND ROVER', 'MERCEDES BENZ', 'MERCE
 export interface DbMatch { makeSlug: string; modelSlug: string; year: number | null; }
 
 export interface Vehicle {
+  country?: 'il' | 'uk';
   plate: number;
   displayPlate: string;
   name: string;
@@ -112,7 +113,21 @@ export interface Vehicle {
   hasAccident: boolean | null;
   wasRepainted: boolean | null;
   origin: string | null;
+  // UK-specific fields
+  motStatus?: string | null;
+  motExpiryDate?: string | null;
+  taxStatus?: string | null;
+  taxDueDate?: string | null;
+  engineCapacity?: number | null;
   dbMatch: DbMatch | null;
+}
+
+/** Detects the country from a raw plate string. */
+export function detectCountry(plate: string): 'il' | 'uk' | 'unknown' {
+  const s = plate.replace(/[\s\-]/g, '');
+  if (/^\d+$/.test(s)) return 'il';
+  if (/^[A-Z0-9]+$/i.test(s) && /[A-Z]/i.test(s) && /\d/.test(s)) return 'uk';
+  return 'unknown';
 }
 
 export type LookupResult =
@@ -221,6 +236,7 @@ export async function lookupVehicle(rawPlate: string): Promise<LookupResult> {
     return {
       status: 'found',
       vehicle: {
+        country:       'il',
         plate:         parseInt(plate, 10),
         displayPlate:  fmtPlate(plate),
         name:          kinuy,

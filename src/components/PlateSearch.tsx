@@ -3,14 +3,20 @@ import { useState, useRef, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import type { Vehicle } from '@/lib/vehicleLookup';
+import { detectCountry } from '@/lib/vehicleLookup';
 
 interface Props { isHe: boolean; navigateOnSearch?: boolean; initialVehicle?: Vehicle | null; initialPlate?: string; }
 
-function fmtDate(raw: string) {
+function fmtDate(raw: string, locale?: string) {
   if (!raw) return '—';
+  // Handle YYYY-MM format (UK monthOfFirstRegistration)
+  if (/^\d{4}-\d{2}$/.test(raw)) {
+    const [y, m] = raw.split('-');
+    return `${m}/${y}`;
+  }
   const d = new Date(raw);
   if (isNaN(d.getTime())) return raw;
-  return d.toLocaleDateString('he-IL', { day: '2-digit', month: '2-digit', year: 'numeric' });
+  return d.toLocaleDateString(locale === 'en' ? 'en-GB' : 'he-IL', { day: '2-digit', month: '2-digit', year: 'numeric' });
 }
 
 function isExpired(raw: string) {
@@ -46,8 +52,10 @@ export default function PlateSearch({ isHe, navigateOnSearch, initialVehicle, in
     tires: 'צמיגים',
     vin: 'מסגרת',
     viewModel: 'לביקורות ובעיות נפוצות →',
+    viewMake: 'לכל דגמי',
     yearPage: 'לשנת',
     source: 'מקור: משרד התחבורה (data.gov.il)',
+    sourceUk: 'Source: DVLA (UK Government)',
     odometer: 'ק"מ בטסט אחרון',
     accident: 'היסטוריית נזק',
     accidentYes: '⚠ נרשם נזק',
@@ -56,6 +64,11 @@ export default function PlateSearch({ isHe, navigateOnSearch, initialVehicle, in
     repaintYes: 'הרכב נצבע מחדש',
     origin: 'מקור',
     hint: 'לדוגמה: 1234567 או 12-345-67',
+    motValid: 'MOT valid until',
+    motExpired: 'MOT expired',
+    taxValid: 'Road tax paid',
+    taxExpired: 'Tax not paid',
+    engine: 'Engine',
   } : {
     placeholder: 'Enter license plate',
     btn: 'Check Vehicle',
@@ -73,8 +86,10 @@ export default function PlateSearch({ isHe, navigateOnSearch, initialVehicle, in
     tires: 'Tires',
     vin: 'VIN/Frame',
     viewModel: 'View reviews & common issues →',
+    viewMake: 'View all',
     yearPage: 'Year',
     source: 'Source: Ministry of Transport (data.gov.il)',
+    sourceUk: 'Source: DVLA (UK Government)',
     odometer: 'Odometer (last test)',
     accident: 'Damage history',
     accidentYes: '⚠ Damage recorded',
@@ -82,24 +97,32 @@ export default function PlateSearch({ isHe, navigateOnSearch, initialVehicle, in
     repaint: 'Color',
     repaintYes: 'Vehicle was repainted',
     origin: 'Origin',
-    hint: 'e.g. 1234567 or 12-345-67',
+    hint: 'e.g. 1234567 (IL) or AB12 CDE (UK)',
+    motValid: 'MOT valid until',
+    motExpired: 'MOT expired',
+    taxValid: 'Road tax paid',
+    taxExpired: 'Tax not paid',
+    engine: 'Engine',
   };
 
   async function search(e: React.FormEvent) {
     e.preventDefault();
-    const cleaned = plate.replace(/\D/g, '');
-    if (cleaned.length < 5) return;
+    const country = detectCountry(plate);
+    const cleaned = country === 'uk'
+      ? plate.replace(/[\s\-]/g, '').toUpperCase()
+      : plate.replace(/\D/g, '');
+    if (cleaned.length < 2) return;
     setLoading(true);
     setVehicle(null);
     setError(null);
     try {
-      const res = await fetch(`/api/vehicle-lookup?plate=${cleaned}`);
+      const res = await fetch(`/api/vehicle-lookup?plate=${encodeURIComponent(cleaned)}`);
       const d = await res.json() as { vehicle?: Vehicle; error?: string };
       if (!res.ok || d.error) {
         setError(res.status === 404 ? t.notFound : t.apiError);
       } else if (d.vehicle) {
         if (navigateOnSearch) {
-          router.push(`/vehicle-lookup/${cleaned}`);
+          router.push(`/vehicle-lookup/${encodeURIComponent(cleaned)}`);
         } else {
           setVehicle(d.vehicle);
         }
@@ -111,8 +134,13 @@ export default function PlateSearch({ isHe, navigateOnSearch, initialVehicle, in
     }
   }
 
-  const testExpired  = vehicle ? isExpired(vehicle.lastTestDate) : false;
-  const licExpired   = vehicle ? isExpired(vehicle.validUntil) : false;
+  const detectedCountry = detectCountry(plate);
+  const isUk = vehicle?.country === 'uk' || detectedCountry === 'uk';
+
+  const testExpired  = vehicle && !isUk ? isExpired(vehicle.lastTestDate) : false;
+  const licExpired   = vehicle && !isUk ? isExpired(vehicle.validUntil) : false;
+  const motExpired   = vehicle?.motExpiryDate ? isExpired(vehicle.motExpiryDate) : false;
+  const taxOk        = vehicle?.taxStatus ? vehicle.taxStatus.toLowerCase() === 'taxed' : false;
   const match        = vehicle?.dbMatch;
 
   return (
@@ -132,26 +160,38 @@ export default function PlateSearch({ isHe, navigateOnSearch, initialVehicle, in
         <div style={{
           flex: 1, display: 'flex', alignItems: 'center',
           height: 54, borderRadius: 12,
-          background: '#fefce8',
-          border: '2px solid #ca8a04',
+          background: detectedCountry === 'uk' ? '#fff' : '#fefce8',
+          border: `2px solid ${detectedCountry === 'uk' ? '#f59e0b' : '#ca8a04'}`,
           overflow: 'hidden',
           direction: 'ltr',
+          transition: 'background 0.2s, border-color 0.2s',
         }}>
-          {/* Israeli plate flag strip */}
-          <div style={{
-            width: 28, height: '100%', flexShrink: 0,
-            background: 'linear-gradient(180deg, #003399 33%, #fff 33%, #fff 66%, #cc0000 66%)',
-            display: 'flex', alignItems: 'flex-end', justifyContent: 'center',
-            paddingBottom: 4,
-          }}>
-            <span style={{ fontSize: 8, color: '#fff', fontWeight: 700, lineHeight: 1, letterSpacing: 0 }}>IL</span>
-          </div>
+          {detectedCountry === 'uk' ? (
+            /* UK plate flag strip */
+            <div style={{
+              width: 28, height: '100%', flexShrink: 0,
+              background: '#003399',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+            }}>
+              <span style={{ fontSize: 8, color: '#fff', fontWeight: 700, letterSpacing: 0 }}>🇬🇧</span>
+            </div>
+          ) : (
+            /* Israeli plate flag strip */
+            <div style={{
+              width: 28, height: '100%', flexShrink: 0,
+              background: 'linear-gradient(180deg, #003399 33%, #fff 33%, #fff 66%, #cc0000 66%)',
+              display: 'flex', alignItems: 'flex-end', justifyContent: 'center',
+              paddingBottom: 4,
+            }}>
+              <span style={{ fontSize: 8, color: '#fff', fontWeight: 700, lineHeight: 1, letterSpacing: 0 }}>IL</span>
+            </div>
+          )}
           <input
             ref={inputRef}
             value={plate}
-            onChange={e => setPlate(e.target.value)}
+            onChange={e => setPlate(e.target.value.toUpperCase())}
             placeholder={t.placeholder}
-            inputMode="numeric"
+            inputMode={detectedCountry === 'uk' ? 'text' : 'numeric'}
             maxLength={10}
             style={{
               flex: 1, border: 'none', outline: 'none',
@@ -166,9 +206,9 @@ export default function PlateSearch({ isHe, navigateOnSearch, initialVehicle, in
         </div>
         <button
           type="submit"
-          disabled={loading || plate.replace(/\D/g,'').length < 5}
+          disabled={loading || plate.replace(/[\s\-]/g, '').length < 2}
           className="plate-submit"
-          style={{ opacity: loading || plate.replace(/\D/g,'').length < 5 ? 0.5 : 1 }}
+          style={{ opacity: loading || plate.replace(/[\s\-]/g, '').length < 2 ? 0.5 : 1 }}
         >
           {loading ? t.loading : t.btn}
         </button>
@@ -204,7 +244,8 @@ export default function PlateSearch({ isHe, navigateOnSearch, initialVehicle, in
             </div>
             {/* Plate badge */}
             <div style={{
-              background: '#fefce8', border: '2px solid #ca8a04',
+              background: isUk ? '#fff' : '#fefce8',
+              border: `2px solid ${isUk ? '#f59e0b' : '#ca8a04'}`,
               borderRadius: 6, padding: '4px 10px',
               fontFamily: 'monospace', fontWeight: 800, fontSize: '0.85rem',
               color: '#1a1a1a', letterSpacing: '0.06em', flexShrink: 0,
@@ -215,44 +256,79 @@ export default function PlateSearch({ isHe, navigateOnSearch, initialVehicle, in
           </div>
 
           <div style={{ padding: '14px 18px', display: 'flex', flexDirection: 'column', gap: 8 }}>
-            {/* Test + license row */}
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
-              <div style={{
-                padding: '8px 12px', borderRadius: 8,
-                background: testExpired ? 'rgba(220,38,38,0.08)' : 'rgba(22,163,74,0.08)',
-                border: `1px solid ${testExpired ? 'rgba(220,38,38,0.2)' : 'rgba(22,163,74,0.2)'}`,
-              }}>
-                <div style={{ fontSize: '0.65rem', fontWeight: 700, color: testExpired ? '#dc2626' : '#16a34a', textTransform: 'uppercase', marginBottom: 2 }}>
-                  {testExpired ? '⚠ ' + t.testExpired : '✓ ' + t.testValid}
+            {isUk ? (
+              /* UK: MOT + Tax status */
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+                <div style={{
+                  padding: '8px 12px', borderRadius: 8,
+                  background: motExpired ? 'rgba(220,38,38,0.08)' : 'rgba(22,163,74,0.08)',
+                  border: `1px solid ${motExpired ? 'rgba(220,38,38,0.2)' : 'rgba(22,163,74,0.2)'}`,
+                }}>
+                  <div style={{ fontSize: '0.65rem', fontWeight: 700, color: motExpired ? '#dc2626' : '#16a34a', textTransform: 'uppercase', marginBottom: 2 }}>
+                    {motExpired ? '⚠ ' + t.motExpired : '✓ ' + t.motValid}
+                  </div>
+                  <div style={{ fontSize: '0.82rem', fontWeight: 600, color: 'var(--text)' }}>
+                    {vehicle.motExpiryDate ? fmtDate(vehicle.motExpiryDate, isHe ? 'he' : 'en') : '—'}
+                  </div>
                 </div>
-                <div style={{ fontSize: '0.82rem', fontWeight: 600, color: 'var(--text)' }}>
-                  {fmtDate(vehicle.lastTestDate)}
+                <div style={{
+                  padding: '8px 12px', borderRadius: 8,
+                  background: taxOk ? 'rgba(22,163,74,0.08)' : 'rgba(220,38,38,0.08)',
+                  border: `1px solid ${taxOk ? 'rgba(22,163,74,0.2)' : 'rgba(220,38,38,0.2)'}`,
+                }}>
+                  <div style={{ fontSize: '0.65rem', fontWeight: 700, color: taxOk ? '#16a34a' : '#dc2626', textTransform: 'uppercase', marginBottom: 2 }}>
+                    {taxOk ? '✓ ' + t.taxValid : '⚠ ' + t.taxExpired}
+                  </div>
+                  <div style={{ fontSize: '0.82rem', fontWeight: 600, color: 'var(--text)' }}>
+                    {vehicle.taxDueDate ? fmtDate(vehicle.taxDueDate, isHe ? 'he' : 'en') : (vehicle.taxStatus ?? '—')}
+                  </div>
                 </div>
               </div>
-              <div style={{
-                padding: '8px 12px', borderRadius: 8,
-                background: licExpired ? 'rgba(220,38,38,0.08)' : 'rgba(22,163,74,0.08)',
-                border: `1px solid ${licExpired ? 'rgba(220,38,38,0.2)' : 'rgba(22,163,74,0.2)'}`,
-              }}>
-                <div style={{ fontSize: '0.65rem', fontWeight: 700, color: licExpired ? '#dc2626' : '#16a34a', textTransform: 'uppercase', marginBottom: 2 }}>
-                  {licExpired ? '⚠ ' + t.expired : '✓ ' + t.validUntil}
+            ) : (
+              /* IL: test + license */
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+                <div style={{
+                  padding: '8px 12px', borderRadius: 8,
+                  background: testExpired ? 'rgba(220,38,38,0.08)' : 'rgba(22,163,74,0.08)',
+                  border: `1px solid ${testExpired ? 'rgba(220,38,38,0.2)' : 'rgba(22,163,74,0.2)'}`,
+                }}>
+                  <div style={{ fontSize: '0.65rem', fontWeight: 700, color: testExpired ? '#dc2626' : '#16a34a', textTransform: 'uppercase', marginBottom: 2 }}>
+                    {testExpired ? '⚠ ' + t.testExpired : '✓ ' + t.testValid}
+                  </div>
+                  <div style={{ fontSize: '0.82rem', fontWeight: 600, color: 'var(--text)' }}>
+                    {fmtDate(vehicle.lastTestDate)}
+                  </div>
                 </div>
-                <div style={{ fontSize: '0.82rem', fontWeight: 600, color: 'var(--text)' }}>
-                  {fmtDate(vehicle.validUntil)}
+                <div style={{
+                  padding: '8px 12px', borderRadius: 8,
+                  background: licExpired ? 'rgba(220,38,38,0.08)' : 'rgba(22,163,74,0.08)',
+                  border: `1px solid ${licExpired ? 'rgba(220,38,38,0.2)' : 'rgba(22,163,74,0.2)'}`,
+                }}>
+                  <div style={{ fontSize: '0.65rem', fontWeight: 700, color: licExpired ? '#dc2626' : '#16a34a', textTransform: 'uppercase', marginBottom: 2 }}>
+                    {licExpired ? '⚠ ' + t.expired : '✓ ' + t.validUntil}
+                  </div>
+                  <div style={{ fontSize: '0.82rem', fontWeight: 600, color: 'var(--text)' }}>
+                    {fmtDate(vehicle.validUntil)}
+                  </div>
                 </div>
               </div>
-            </div>
+            )}
 
             {/* Details grid */}
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '4px 12px' }}>
-              {[
+              {(isUk ? [
+                { label: t.color,     value: vehicle.color },
+                { label: t.fuel,      value: vehicle.fuel },
+                { label: t.firstRoad, value: vehicle.firstRoad },
+                { label: t.engine,    value: vehicle.engineCapacity ? `${vehicle.engineCapacity}cc` : '' },
+              ] : [
                 { label: t.color,     value: vehicle.color },
                 { label: t.fuel,      value: vehicle.fuel },
                 { label: t.ownership, value: vehicle.ownership },
                 { label: t.firstRoad, value: vehicle.firstRoad },
                 { label: t.tires,     value: vehicle.frontTire && vehicle.rearTire && vehicle.frontTire !== vehicle.rearTire ? `${vehicle.frontTire} / ${vehicle.rearTire}` : vehicle.frontTire },
                 { label: t.vin,       value: vehicle.vin ? vehicle.vin.slice(-8) : '' },
-              ].filter(r => r.value).map(({ label, value }) => (
+              ]).filter(r => r.value).map(({ label, value }) => (
                 <div key={label} style={{ padding: '5px 0', borderBottom: '1px solid var(--border)' }}>
                   <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em' }}>{label}</div>
                   <div style={{ fontSize: '0.82rem', fontWeight: 600, color: 'var(--text)', marginTop: 1 }}>{value}</div>
@@ -260,8 +336,8 @@ export default function PlateSearch({ isHe, navigateOnSearch, initialVehicle, in
               ))}
             </div>
 
-            {/* Extra data: odometer, damage, repaint, origin */}
-            {(vehicle.odometer !== null || vehicle.hasAccident !== null || vehicle.wasRepainted !== null || vehicle.origin) && (
+            {/* IL extra data: odometer, damage, repaint, origin */}
+            {!isUk && (vehicle.odometer !== null || vehicle.hasAccident !== null || vehicle.wasRepainted !== null || vehicle.origin) && (
               <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
                 {vehicle.odometer !== null && vehicle.odometer > 0 && (
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '6px 10px', borderRadius: 8, background: 'var(--bg-muted)' }}>
@@ -297,22 +373,37 @@ export default function PlateSearch({ isHe, navigateOnSearch, initialVehicle, in
               </div>
             )}
 
-            {/* CTA to model page */}
+            {/* CTA to model/make page */}
             {match && (
               <div style={{ marginTop: 4, display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-                <Link
-                  href={`/cars/${match.makeSlug}/${match.modelSlug}`}
-                  style={{
-                    display: 'inline-flex', alignItems: 'center',
-                    padding: '9px 16px', borderRadius: 9999,
-                    background: 'var(--accent)', color: '#fff',
-                    textDecoration: 'none', fontWeight: 700, fontSize: '0.85rem',
-                    flex: 1, justifyContent: 'center',
-                  }}
-                >
-                  {t.viewModel}
-                </Link>
-                {match.year && (
+                {match.modelSlug ? (
+                  <Link
+                    href={`/cars/${match.makeSlug}/${match.modelSlug}`}
+                    style={{
+                      display: 'inline-flex', alignItems: 'center',
+                      padding: '9px 16px', borderRadius: 9999,
+                      background: 'var(--accent)', color: '#fff',
+                      textDecoration: 'none', fontWeight: 700, fontSize: '0.85rem',
+                      flex: 1, justifyContent: 'center',
+                    }}
+                  >
+                    {t.viewModel}
+                  </Link>
+                ) : (
+                  <Link
+                    href={`/cars/${match.makeSlug}`}
+                    style={{
+                      display: 'inline-flex', alignItems: 'center',
+                      padding: '9px 16px', borderRadius: 9999,
+                      background: 'var(--accent)', color: '#fff',
+                      textDecoration: 'none', fontWeight: 700, fontSize: '0.85rem',
+                      flex: 1, justifyContent: 'center',
+                    }}
+                  >
+                    {t.viewMake} {vehicle.name} →
+                  </Link>
+                )}
+                {match.modelSlug && match.year && (
                   <Link
                     href={`/cars/${match.makeSlug}/${match.modelSlug}/${match.year}`}
                     style={{
@@ -330,7 +421,7 @@ export default function PlateSearch({ isHe, navigateOnSearch, initialVehicle, in
             )}
 
             <div style={{ fontSize: '0.62rem', color: 'var(--text-muted)', textAlign: 'center', marginTop: 2 }}>
-              {t.source}
+              {isUk ? t.sourceUk : t.source}
             </div>
           </div>
         </div>

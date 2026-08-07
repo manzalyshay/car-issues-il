@@ -20,12 +20,16 @@ import RecallsBadge from '@/components/RecallsBadge';
 import CarSidebarLayout from './CarSidebarLayout';
 import RepairCostsSection from '@/components/RepairCostsSection';
 import { getImagesForCar } from '@/lib/carImages';
+import PriceHistoryChart from '@/components/PriceHistoryChart';
+import SellerPriceChart from '@/components/SellerPriceChart';
+import RecallsBarChart from '@/components/RecallsBarChart';
+import GalleryViewer from '@/components/GalleryViewer';
 
 function toTrimSlug(name: string) {
   return name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
 }
 
-export const revalidate = 86400;
+export const dynamic = 'force-dynamic';
 
 interface Props { params: Promise<{ make: string; model: string }> }
 
@@ -55,8 +59,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       : 'Reviews & Common Problems';
     return {
       title: `${make.nameEn} ${model.nameEn} ${yearRange} — ${reviewPart} | Pros & Cons`,
-      description: `${reviews.length > 0 ? `${reviews.length} real owner reviews` : 'Real owner reviews'} for the ${make.nameEn} ${model.nameEn} (${yearRange})${avgRating ? `. Average rating ${avgRating.toFixed(1)}/5` : ''}. Common problems, pros, cons and reliability from real car owners.`,
-      alternates: { canonical: url, languages: { he: `https://carissues.co.il/cars/${make.slug}/${model.slug}`, en: url } },
+      description: `${reviews.length > 0 ? `${reviews.length} real owner reviews` : 'Real owner reviews'} for the ${make.nameEn} ${model.nameEn} (${yearRange})${avgRating ? `. Average rating ${avgRating.toFixed(1)}/5` : ''}. Price history 2016–2026, common problems, pros, cons and reliability from real car owners.`,
+      alternates: { canonical: url, languages: { he: `https://carissues.co.il/cars/${make.slug}/${model.slug}`, en: url, 'x-default': url } },
       openGraph: {
         title: `${make.nameEn} ${model.nameEn}${ratingStr} | CarIssues`,
         description: `Owner reviews & common problems — ${make.nameEn} ${model.nameEn} ${yearRange}`,
@@ -77,12 +81,12 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const trimNames = trims.slice(0, 6).map(t => t.name).join(', ');
   const trimDesc = trimNames ? ` גימורים: ${trimNames}${trims.length > 6 ? ' ועוד' : ''}.` : '';
   const reviewPart = reviews.length > 0
-    ? `${reviews.length} ביקורות אמיתיות${avgRating ? ` ⭐ ${avgRating.toFixed(1)}` : ''}`
-    : 'ביקורות ובעיות נפוצות';
+    ? `${reviews.length} חוות דעת${avgRating ? ` ⭐ ${avgRating.toFixed(1)}` : ''}`
+    : 'חוות דעת ובעיות נפוצות';
   return {
     title: `${make.nameHe} ${model.nameHe} ${yearRange} — ${reviewPart} | יתרונות וחסרונות`,
-    description: `${reviews.length > 0 ? `${reviews.length} ביקורות אמיתיות` : 'ביקורות אמיתיות'} על ${make.nameHe} ${model.nameHe} (${make.nameEn} ${model.nameEn}) שנים ${yearRange}${avgRating ? `. דירוג ממוצע ${avgRating.toFixed(1)}/5` : ''}.${priceDesc}${trimDesc} יתרונות, חסרונות ובעיות נפוצות מבעלי רכב בישראל.`,
-    alternates: { canonical: url, languages: { he: url, en: `https://carissues.net/cars/${make.slug}/${model.slug}` } },
+    description: `${reviews.length > 0 ? `${reviews.length} ביקורות אמיתיות` : 'ביקורות אמיתיות'} על ${make.nameHe} ${model.nameHe} (${make.nameEn} ${model.nameEn}) שנים ${yearRange}${avgRating ? `. דירוג ממוצע ${avgRating.toFixed(1)}/5` : ''}.${priceDesc} היסטוריית מחיר 2016–2026.${trimDesc} יתרונות, חסרונות ובעיות נפוצות מבעלי רכב בישראל.`,
+    alternates: { canonical: url, languages: { he: url, en: `https://carissues.net/cars/${make.slug}/${model.slug}`, 'x-default': `https://carissues.net/cars/${make.slug}/${model.slug}` } },
     openGraph: {
       title: `${make.nameHe} ${model.nameHe}${ratingStr}${countStr} | CarIssues IL`,
       description: `ביקורות ובעיות נפוצות — ${make.nameHe} ${model.nameHe} ${yearRange}`,
@@ -106,8 +110,12 @@ export default async function ModelPage({ params }: Props) {
     getReviewsForModel(makeSlug, modelSlug).catch(() => []),
     getExpertReviews(makeSlug, modelSlug).catch(() => []),
     findCarModel(makeSlug, modelSlug).catch(() => null),
-    getSimilarModels(makeSlug, modelSlug, model.category, 8).catch(() => []),
+    getSimilarModels(makeSlug, modelSlug, model.category, 4).catch(() => []),
     getImagesForCar(makeSlug, modelSlug).catch(() => []),
+  ]);
+  const [similarRatings, similarImages] = await Promise.all([
+    Promise.all(similarModels.map(({ makeSlug: ms, model: m }) => getAverageRating(ms, m.slug).catch(() => null))),
+    Promise.all(similarModels.map(({ makeSlug: ms, model: m }) => getImagesForCar(ms, m.slug).catch(() => []))),
   ]);
   const expertReview = expertReviewsList[0] ?? null;
   const avgRating = allReviews.length
@@ -146,47 +154,14 @@ export default async function ModelPage({ params }: Props) {
 
           {/* Left: gallery */}
           <div>
-            <div className="gallery-main">
-              {sketchfabModel ? (
-                <Car3DViewer uid={sketchfabModel.uid} modelName={`${make.nameHe} ${model.nameHe}`} makeSlug={makeSlug} modelSlug={modelSlug} />
-              ) : carImages.length > 0 ? (
-                /* Real photo as main gallery image */
-                // eslint-disable-next-line @next/next/no-img-element
-                <img
-                  src={carImages[0].thumbnail_url ?? carImages[0].url}
-                  alt={`${make.nameEn} ${model.nameEn}`}
-                  style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
-                />
-              ) : (
-                <div style={{ width: '100%', height: '100%', background: 'linear-gradient(135deg, #dde6f1, #b9c7da)', display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative' }}>
-                  <svg viewBox="0 0 120 60" fill="none" style={{ width: '52%', color: 'rgba(255,255,255,.75)' }}>
-                    <path d="M8 42 L18 26 C20 22 24 20 29 20 L74 20 C80 20 85 22 90 27 L102 39" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"/>
-                    <path d="M6 42 L112 42 C114 42 115 41 115 39 L114 35 C113.5 33 112 32 110 32 L98 32" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"/>
-                    <path d="M30 20 L36 32 L70 32 L72 21" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" opacity="0.8"/>
-                    <circle cx="34" cy="44" r="9" stroke="currentColor" strokeWidth="3"/>
-                    <circle cx="86" cy="44" r="9" stroke="currentColor" strokeWidth="3"/>
-                  </svg>
-                  <span style={{ position: 'absolute', bottom: 10, insetInlineStart: 12, fontSize: 12, fontWeight: 700, letterSpacing: '.04em', textTransform: 'uppercase', color: 'rgba(255,255,255,.85)', background: 'rgba(20,32,46,.28)', padding: '3px 9px', borderRadius: 999, backdropFilter: 'blur(3px)' }}>
-                    {make.nameEn} {model.nameEn}
-                  </span>
-                </div>
-              )}
-            </div>
-            {/* Thumbnail strip — real images or gradient placeholders */}
-            {carImages.length > 1 && (
-              <div className="gallery-thumbs">
-                {carImages.slice(0, 4).map((img, i) => (
-                  <div key={img.id} className={`gallery-thumb${i === 0 ? ' active' : ''}`} style={{ background: '#dde6f1' }}>
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img
-                      src={img.thumbnail_url ?? img.url}
-                      alt=""
-                      style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
-                    />
-                  </div>
-                ))}
-              </div>
-            )}
+            <GalleryViewer
+              sketchfabModel={sketchfabModel}
+              carImages={carImages}
+              makeSlug={makeSlug}
+              modelSlug={modelSlug}
+              makeNameEn={make.nameEn}
+              modelNameEn={model.nameEn}
+            />
           </div>
 
           {/* Right: model summary card */}
@@ -228,6 +203,23 @@ export default async function ModelPage({ params }: Props) {
               </div>
             </div>
 
+            {/* Compact price chart */}
+            <div style={{ marginTop: 12, marginBottom: 4 }}>
+              <div style={{ fontSize: '0.6rem', fontWeight: 800, letterSpacing: '0.08em', color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: 4 }}>
+                {isEn ? 'Used Car Market Value' : 'שווי שוק יד שניה'}
+              </div>
+              <PriceHistoryChart
+                cars={[{
+                  makeSlug, modelSlug,
+                  makeEn: make.nameEn, modelEn: model.nameEn,
+                  name: isEn ? `${make.nameEn} ${model.nameEn}` : `${make.nameHe} ${model.nameHe}`,
+                  color: 'var(--accent)',
+                }]}
+                isEn={isEn}
+                compact
+              />
+            </div>
+
             {/* Year pills */}
             <div style={{ display: 'flex', alignItems: 'center', gap: 5, flexWrap: 'wrap', marginBottom: 14 }}>
               <span style={{ fontSize: 12, color: 'var(--text-muted)', fontWeight: 600 }}>{cp.yearLabel}:</span>
@@ -258,6 +250,8 @@ export default async function ModelPage({ params }: Props) {
         modelSlug={modelSlug}
         makeNameHe={make.nameHe}
         modelNameHe={model.nameHe}
+        makeNameEn={make.nameEn}
+        modelNameEn={model.nameEn}
         defaultYear={model.years[0]}
       >
         {/* Two-column: user reviews left, external sources right */}
@@ -333,6 +327,22 @@ export default async function ModelPage({ params }: Props) {
           category={model.category}
         />
 
+        <div style={{ marginTop: 28, display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: 16 }}>
+          <SellerPriceChart
+            makeSlug={makeSlug}
+            modelSlug={modelSlug}
+            makeEn={make.nameEn}
+            modelEn={model.nameEn}
+            isEn={isEn}
+          />
+          <RecallsBarChart
+            makeEn={make.nameEn}
+            modelEn={model.nameEn}
+            years={model.years}
+            isEn={isEn}
+          />
+        </div>
+
         <div id="recalls" style={{ marginTop: 48 }}>
           <RecallsSection makeEn={make.nameEn} modelEn={model.nameEn} years={model.years} />
         </div>
@@ -340,44 +350,92 @@ export default async function ModelPage({ params }: Props) {
         {/* Similar models */}
         {similarModels.length > 0 && (
           <section style={{ marginTop: 40, paddingTop: 28, borderTop: '1px solid var(--border)' }}>
-            <h2 style={{ fontSize: '1.05rem', fontWeight: 700, marginBottom: 18 }}>
+            <style>{`
+              .sim-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 14px; }
+              @media (max-width: 480px) { .sim-grid { grid-template-columns: repeat(2, 1fr); gap: 10px; } }
+              .sim-card { transition: transform 0.18s, box-shadow 0.18s; cursor: pointer; }
+              .sim-card:hover { transform: translateY(-3px); box-shadow: 0 8px 28px rgba(0,0,0,0.13); }
+            `}</style>
+            <h2 style={{ fontSize: '1.05rem', fontWeight: 700, marginBottom: 16 }}>
               {cp.similarModels}
             </h2>
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 16 }}>
-              {similarModels.map(({ makeSlug: ms, makeNameHe, makeNameEn, model: m }) => (
-                <Link
-                  key={`browse-${ms}/${m.slug}`}
-                  href={`/cars/${ms}/${m.slug}`}
-                  style={{
-                    padding: '7px 14px', borderRadius: 20, fontSize: '0.85rem',
-                    background: 'var(--surface-2)', color: 'var(--text)',
-                    textDecoration: 'none', border: '1px solid var(--border)', whiteSpace: 'nowrap',
-                  }}
-                >
-                  {isEn ? `${makeNameEn} ${m.nameEn}` : `${makeNameHe} ${m.nameHe}`}
-                </Link>
-              ))}
-            </div>
-            <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: 8, fontWeight: 600 }}>
-              {cp.compareWith} {makeName} {modelName} {cp.compareVs}
-            </div>
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
-              {similarModels.slice(0, 6).map(({ makeSlug: ms, makeNameHe, makeNameEn, model: m }) => {
-                const [s1, s2] = [`${makeSlug}/${modelSlug}`, `${ms}/${m.slug}`].sort();
+            <div className="sim-grid">
+              {similarModels.map(({ makeSlug: ms, makeNameHe, makeNameEn, logoUrl, model: m }, idx) => {
+                const rating = similarRatings[idx];
+                const simImg = similarImages[idx]?.[0] ?? null;
+                const yearRange = m.years.length > 1 ? `${m.years[m.years.length - 1]}–${m.years[0]}` : `${m.years[0]}`;
+                const carName = isEn ? `${makeNameEn} ${m.nameEn}` : `${makeNameHe} ${m.nameHe}`;
                 return (
-                  <Link
-                    key={`cmp-${ms}/${m.slug}`}
-                    href={`/cars/compare/${s1}/${s2}`}
-                    style={{
-                      padding: '6px 12px', borderRadius: 20, fontSize: '0.8rem',
-                      background: 'transparent', color: 'var(--accent)',
-                      textDecoration: 'none', border: '1px solid var(--accent)', whiteSpace: 'nowrap',
-                    }}
-                  >
-                    {isEn ? `${makeNameEn} ${m.nameEn}` : `${makeNameHe} ${m.nameHe}`}
+                  <Link key={`${ms}/${m.slug}`} href={`/cars/${ms}/${m.slug}`} style={{ textDecoration: 'none', color: 'inherit', display: 'block' }}>
+                    <div className="card sim-card" style={{ padding: 0, overflow: 'hidden' }}>
+                      {/* Image header */}
+                      <div style={{
+                        background: 'linear-gradient(150deg, var(--surface-2) 0%, var(--bg-muted) 100%)',
+                        height: 90, overflow: 'hidden', position: 'relative',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      }}>
+                        {simImg ? (
+                          // eslint-disable-next-line @next/next/no-img-element
+                          <img src={simImg.thumbnail_url ?? simImg.url} alt={carName} style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
+                        ) : (
+                          <MakeLogo logoUrl={logoUrl} nameEn={makeNameEn} size={52} />
+                        )}
+                      </div>
+                      {/* Info */}
+                      <div style={{ padding: '10px 12px 13px' }}>
+                        <div style={{ fontWeight: 700, fontSize: '0.875rem', marginBottom: 2, lineHeight: 1.3 }}>{carName}</div>
+                        {!isEn && (
+                          <div style={{ fontSize: '0.68rem', color: 'var(--text-muted)', marginBottom: 5 }}>{makeNameEn} {m.nameEn}</div>
+                        )}
+                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4, marginBottom: 7 }}>
+                          <span style={{ fontSize: '0.63rem', fontWeight: 600, background: 'var(--bg-muted)', color: 'var(--text-muted)', padding: '2px 6px', borderRadius: 999 }}>{yearRange}</span>
+                          <span style={{ fontSize: '0.63rem', fontWeight: 600, background: 'var(--bg-muted)', color: 'var(--text-muted)', padding: '2px 6px', borderRadius: 999 }}>{getCategoryLabel(m.category, locale)}</span>
+                        </div>
+                        {rating !== null ? (
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                            <StarRating rating={rating} size={10} />
+                            <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)', fontWeight: 600 }}>{rating.toFixed(1)}</span>
+                          </div>
+                        ) : (
+                          <span style={{ fontSize: '0.67rem', color: 'var(--text-faint)' }}>{isEn ? 'No reviews yet' : 'אין ביקורות'}</span>
+                        )}
+                      </div>
+                    </div>
                   </Link>
                 );
               })}
+            </div>
+
+            {/* View more link */}
+            <div style={{ marginTop: 14, textAlign: 'center' }}>
+              <Link
+                href={`/cars?category=${model.category}`}
+                style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: '0.82rem', color: 'var(--accent)', textDecoration: 'none', fontWeight: 600, padding: '7px 16px', borderRadius: 20, border: '1px solid var(--accent)' }}
+              >
+                {isEn ? 'View all in category' : 'כל הרכבים בקטגוריה'}
+                <span style={{ fontSize: '1rem' }}>→</span>
+              </Link>
+            </div>
+
+            {/* Compare chips */}
+            <div style={{ marginTop: 20 }}>
+              <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: 8, fontWeight: 600 }}>
+                {cp.compareWith} {makeName} {modelName} {cp.compareVs}
+              </div>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+                {similarModels.slice(0, 6).map(({ makeSlug: ms, makeNameHe, makeNameEn, model: m }) => {
+                  const [s1, s2] = [`${makeSlug}/${modelSlug}`, `${ms}/${m.slug}`].sort();
+                  return (
+                    <Link
+                      key={`cmp-${ms}/${m.slug}`}
+                      href={`/cars/compare/${s1}/${s2}`}
+                      style={{ padding: '6px 12px', borderRadius: 20, fontSize: '0.8rem', background: 'transparent', color: 'var(--accent)', textDecoration: 'none', border: '1px solid var(--accent)', whiteSpace: 'nowrap' }}
+                    >
+                      {isEn ? `${makeNameEn} ${m.nameEn}` : `${makeNameHe} ${m.nameHe}`}
+                    </Link>
+                  );
+                })}
+              </div>
             </div>
           </section>
         )}
@@ -386,78 +444,101 @@ export default async function ModelPage({ params }: Props) {
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{
-            __html: JSON.stringify({
-              '@context': 'https://schema.org',
-              '@graph': [
-                // Only emit Product schema when we have the required aggregateRating or review
-                ...(avgRating !== null || expertReview?.topScore != null ? [{
-                  '@type': 'Product',
-                  name: `${make.nameEn} ${model.nameEn}`,
-                  brand: { '@type': 'Brand', name: make.nameEn },
-                  url: `https://carissues.co.il/cars/${make.slug}/${model.slug}`,
-                  ...(avgRating !== null ? {
-                    aggregateRating: {
-                      '@type': 'AggregateRating',
-                      ratingValue: avgRating.toFixed(1),
-                      reviewCount: allReviews.length,
-                      bestRating: 5,
-                      worstRating: 1,
-                    },
-                  } : {
-                    // No user reviews — use expert AI score as a single Review to satisfy Google's requirement
-                    review: {
-                      '@type': 'Review',
-                      author: { '@type': 'Organization', name: 'CarIssues AI' },
-                      reviewRating: {
-                        '@type': 'Rating',
-                        ratingValue: expertReview!.topScore!.toFixed(1),
-                        bestRating: 10,
-                        worstRating: 0,
+            __html: JSON.stringify((() => {
+              const base = getBaseUrl(locale);
+              const faqPros = isEn ? (expertReview?.prosEn ?? []) : (expertReview?.pros ?? []);
+              const faqCons = isEn ? (expertReview?.consEn ?? []) : (expertReview?.cons ?? []);
+              const faqLocalSummary = isEn ? expertReview?.localSummaryEn : expertReview?.localSummaryHe;
+              const faqGlobalSummary = isEn ? expertReview?.globalSummaryEn : expertReview?.globalSummaryHe;
+              const hasFaq = expertReview && (faqPros.length > 0 || faqCons.length > 0);
+              return {
+                '@context': 'https://schema.org',
+                '@graph': [
+                  // Only emit Product schema when we have the required aggregateRating or review
+                  ...(avgRating !== null || expertReview?.topScore != null ? [{
+                    '@type': 'Product',
+                    name: `${make.nameEn} ${model.nameEn}`,
+                    brand: { '@type': 'Brand', name: make.nameEn },
+                    url: `${base}/cars/${make.slug}/${model.slug}`,
+                    ...(avgRating !== null ? {
+                      aggregateRating: {
+                        '@type': 'AggregateRating',
+                        ratingValue: avgRating.toFixed(1),
+                        reviewCount: allReviews.length,
+                        bestRating: 5,
+                        worstRating: 1,
                       },
-                    },
-                  }),
-                }] : []),
-                {
-                  '@type': 'BreadcrumbList',
-                  itemListElement: [
-                    { '@type': 'ListItem', position: 1, name: 'בית', item: 'https://carissues.co.il' },
-                    { '@type': 'ListItem', position: 2, name: 'יצרנים', item: 'https://carissues.co.il/cars' },
-                    { '@type': 'ListItem', position: 3, name: make.nameHe, item: `https://carissues.co.il/cars/${make.slug}` },
-                    { '@type': 'ListItem', position: 4, name: model.nameHe, item: `https://carissues.co.il/cars/${make.slug}/${model.slug}` },
-                  ],
-                },
-                ...(expertReview && (expertReview.pros.length > 0 || expertReview.cons.length > 0) ? [{
-                  '@type': 'FAQPage',
-                  mainEntity: [
-                    expertReview.pros.length > 0 && {
-                      '@type': 'Question',
-                      name: `מה היתרונות של ${make.nameHe} ${model.nameHe}?`,
-                      acceptedAnswer: { '@type': 'Answer', text: expertReview.pros.join('. ') },
-                    },
-                    expertReview.cons.length > 0 && {
-                      '@type': 'Question',
-                      name: `מה החסרונות של ${make.nameHe} ${model.nameHe}?`,
-                      acceptedAnswer: { '@type': 'Answer', text: expertReview.cons.join('. ') },
-                    },
-                    expertReview.localSummaryHe && {
-                      '@type': 'Question',
-                      name: `מה אומרים בעלי ${make.nameHe} ${model.nameHe} בישראל?`,
-                      acceptedAnswer: { '@type': 'Answer', text: expertReview.localSummaryHe },
-                    },
-                    expertReview.globalSummaryHe && {
-                      '@type': 'Question',
-                      name: `מה חוות הדעת הבינלאומית על ${make.nameHe} ${model.nameHe}?`,
-                      acceptedAnswer: { '@type': 'Answer', text: expertReview.globalSummaryHe },
-                    },
-                    expertReview.topScore !== null && {
-                      '@type': 'Question',
-                      name: `מה הציון של ${make.nameHe} ${model.nameHe}?`,
-                      acceptedAnswer: { '@type': 'Answer', text: `${make.nameHe} ${model.nameHe} קיבל ציון ${expertReview.topScore?.toFixed(1)} מתוך 10 בסיכום AI המבוסס על חוות דעת בעלי רכב בישראל ובעולם.` },
-                    },
-                  ].filter(Boolean),
-                }] : []),
-              ],
-            }),
+                    } : {
+                      // No user reviews — use expert AI score as a single Review to satisfy Google's requirement
+                      review: {
+                        '@type': 'Review',
+                        author: { '@type': 'Organization', name: 'CarIssues AI' },
+                        reviewRating: {
+                          '@type': 'Rating',
+                          ratingValue: expertReview!.topScore!.toFixed(1),
+                          bestRating: 10,
+                          worstRating: 0,
+                        },
+                      },
+                    }),
+                  }] : []),
+                  {
+                    '@type': 'BreadcrumbList',
+                    itemListElement: [
+                      { '@type': 'ListItem', position: 1, name: isEn ? 'Home' : 'בית', item: base },
+                      { '@type': 'ListItem', position: 2, name: isEn ? 'Makes' : 'יצרנים', item: `${base}/cars` },
+                      { '@type': 'ListItem', position: 3, name: makeName, item: `${base}/cars/${make.slug}` },
+                      { '@type': 'ListItem', position: 4, name: modelName, item: `${base}/cars/${make.slug}/${model.slug}` },
+                    ],
+                  },
+                  ...(hasFaq ? [{
+                    '@type': 'FAQPage',
+                    mainEntity: [
+                      faqPros.length > 0 && {
+                        '@type': 'Question',
+                        name: isEn
+                          ? `What are the pros of the ${make.nameEn} ${model.nameEn}?`
+                          : `מה היתרונות של ${make.nameHe} ${model.nameHe}?`,
+                        acceptedAnswer: { '@type': 'Answer', text: faqPros.join('. ') },
+                      },
+                      faqCons.length > 0 && {
+                        '@type': 'Question',
+                        name: isEn
+                          ? `What are the cons of the ${make.nameEn} ${model.nameEn}?`
+                          : `מה החסרונות של ${make.nameHe} ${model.nameHe}?`,
+                        acceptedAnswer: { '@type': 'Answer', text: faqCons.join('. ') },
+                      },
+                      faqLocalSummary && {
+                        '@type': 'Question',
+                        name: isEn
+                          ? `What do ${make.nameEn} ${model.nameEn} owners say?`
+                          : `מה אומרים בעלי ${make.nameHe} ${model.nameHe} בישראל?`,
+                        acceptedAnswer: { '@type': 'Answer', text: faqLocalSummary },
+                      },
+                      faqGlobalSummary && {
+                        '@type': 'Question',
+                        name: isEn
+                          ? `What is the global expert opinion on the ${make.nameEn} ${model.nameEn}?`
+                          : `מה חוות הדעת הבינלאומית על ${make.nameHe} ${model.nameHe}?`,
+                        acceptedAnswer: { '@type': 'Answer', text: faqGlobalSummary },
+                      },
+                      expertReview?.topScore !== null && {
+                        '@type': 'Question',
+                        name: isEn
+                          ? `What is the AI score of the ${make.nameEn} ${model.nameEn}?`
+                          : `מה הציון של ${make.nameHe} ${model.nameHe}?`,
+                        acceptedAnswer: {
+                          '@type': 'Answer',
+                          text: isEn
+                            ? `The ${make.nameEn} ${model.nameEn} received an AI score of ${expertReview?.topScore?.toFixed(1)} out of 10, based on owner reviews from Israel and worldwide.`
+                            : `${make.nameHe} ${model.nameHe} קיבל ציון ${expertReview?.topScore?.toFixed(1)} מתוך 10 בסיכום AI המבוסס על חוות דעת בעלי רכב בישראל ובעולם.`,
+                        },
+                      },
+                    ].filter(Boolean),
+                  }] : []),
+                ],
+              };
+            })()),
           }}
         />
       </CarSidebarLayout>

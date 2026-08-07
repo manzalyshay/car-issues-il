@@ -1,0 +1,4360 @@
+[
+  {
+    "make": "volkswagen",
+    "model": "id3",
+    "nameEn": "ID.3",
+    "nameHe": "ID.3",
+    "score": -6,
+    "has3d": false,
+    "images": 57,
+    "expertReviews": 7,
+    "expertEnComplete": 100,
+    "userReviews": 0,
+    "recalls": 0,
+    "issues": [
+      "No 3D model",
+      "No user reviews",
+      "No recalls cached"
+    ],
+    "fixes": [
+      "Add Sketchfab model (search sketchfab.com for ID.3)",
+      "Promote this page to attract reviews",
+      "Trigger recalls fetch: GET /api/recalls?make=ID.3&model=ID.3"
+    ]
+  },
+  {
+    "make": "byd",
+    "model": "sealion7",
+    "nameEn": "Sealion 7",
+    "nameHe": "Sealion 7",
+    "score": -6,
+    "has3d": false,
+    "images": 26,
+    "expertReviews": 4,
+    "expertEnComplete": 100,
+    "userReviews": 0,
+    "recalls": 0,
+    "issues": [
+      "No 3D model",
+      "No user reviews",
+      "No recalls cached"
+    ],
+    "fixes": [
+      "Add Sketchfab model (search sketchfab.com for Sealion 7)",
+      "Promote this page to attract reviews",
+      "Trigger recalls fetch: GET /api/recalls?make=Sealion%207&model=Sealion%207"
+    ]
+  },
+  {
+    "make": "renault",
+    "model": "kadjar",
+    "nameEn": "Kadjar",
+    "nameHe": "קדג'ר",
+    "score": -6,
+    "has3d": false,
+    "images": 58,
+    "expertReviews": 13,
+    "expertEnComplete": 100,
+    "userReviews": 0,
+    "recalls": 0,
+    "issues": [
+      "No 3D model",
+      "No user reviews",
+      "No recalls cached"
+    ],
+    "fixes": [
+      "Add Sketchfab model (search sketchfab.com for Kadjar)",
+      "Promote this page to attract reviews",
+      "Trigger recalls fetch: GET /api/recalls?make=Kadjar&model=Kadjar"
+    ]
+  },
+  {
+    "make": "mg",
+    "model": "hs",
+    "nameEn": "HS",
+    "nameHe": "HS",
+    "score": -6,
+    "has3d": false,
+    "images": 54,
+    "expertReviews": 8,
+    "expertEnComplete": 100,
+    "userReviews": 0,
+    "recalls": 0,
+    "issues": [
+      "No 3D model",
+      "No user reviews",
+      "No recalls cached"
+    ],
+    "fixes": [
+      "Add Sketchfab model (search sketchfab.com for HS)",
+      "Promote this page to attract reviews",
+      "Trigger recalls fetch: GET /api/recalls?make=HS&model=HS"
+    ]
+  },
+  {
+    "make": "seat",
+    "model": "ateca",
+    "nameEn": "Ateca",
+    "nameHe": "אטקה",
+    "score": -6,
+    "has3d": false,
+    "images": 69,
+    "expertReviews": 12,
+    "expertEnComplete": 100,
+    "userReviews": 0,
+    "recalls": 0,
+    "issues": [
+      "No 3D model",
+      "No user reviews",
+      "No recalls cached"
+    ],
+    "fixes": [
+      "Add Sketchfab model (search sketchfab.com for Ateca)",
+      "Promote this page to attract reviews",
+      "Trigger recalls fetch: GET /api/recalls?make=Ateca&model=Ateca"
+    ]
+  },
+  {
+    "make": "mercedes",
+    "model": "a200",
+    "nameEn": "A200",
+    "nameHe": "A200",
+    "score": -6,
+    "has3d": false,
+    "images": 23,
+    "expertReviews": 13,
+    "expertEnComplete": 100,
+    "userReviews": 0,
+    "recalls": 0,
+    "issues": [
+      "No 3D model",
+      "No user reviews",
+      "No recalls cached"
+    ],
+    "fixes": [
+      "Add Sketchfab model (search sketchfab.com for A200)",
+      "Promote this page to attract reviews",
+      "Trigger recalls fetch: GET /api/recalls?make=A200&model=A200"
+    ]
+  },
+  {
+    "make": "mercedes",
+    "model": "a220",
+    "nameEn": "A220",
+    "nameHe": "A220",
+    "score": -6,
+    "has3d": false,
+    "images": 17,
+    "expertReviews": 9,
+    "expertEnComplete": 100,
+    "userReviews": 0,
+    "recalls": 0,
+    "issues": [
+      "No 3D model",
+      "No user reviews",
+      "No recalls cached"
+    ],
+    "fixes": [
+      "Add Sketchfab model (search sketchfab.com for A220)",
+      "Promote this page to attract reviews",
+      "Trigger recalls fetch: GET /api/recalls?make=A220&model=A220"
+    ]
+  },
+  {
+    "make": "land-rover",
+    "model": "range-rover",
+    "nameEn": "Range Rover",
+    "nameHe": "ריינג׳ רובר",
+    "score": -6,
+    "has3d": false,
+    "images": 73,
+    "expertReviews": 15,
+    "expertEnComplete": 100,
+    "userReviews": 0,
+    "recalls": 0,
+    "issues": [
+      "No 3D model",
+      "No user reviews",
+      "No recalls cached"
+    ],
+    "fixes": [
+      "Add Sketchfab model (search sketchfab.com for Range Rover)",
+      "Promote this page to attract reviews",
+      "Trigger recalls fetch: GET /api/recalls?make=Range%20Rover&model=Range%20Rover"
+    ]
+  },
+  {
+    "make": "land-rover",
+    "model": "range-rover-evoque",
+    "nameEn": "Range Rover Evoque",
+    "nameHe": "ריינג׳ רובר אבוק",
+    "score": -6,
+    "has3d": false,
+    "images": 70,
+    "expertReviews": 16,
+    "expertEnComplete": 100,
+    "userReviews": 0,
+    "recalls": 0,
+    "issues": [
+      "No 3D model",
+      "No user reviews",
+      "No recalls cached"
+    ],
+    "fixes": [
+      "Add Sketchfab model (search sketchfab.com for Range Rover Evoque)",
+      "Promote this page to attract reviews",
+      "Trigger recalls fetch: GET /api/recalls?make=Range%20Rover%20Evoque&model=Range%20Rover%20Evoque"
+    ]
+  },
+  {
+    "make": "mg",
+    "model": "ehs",
+    "nameEn": "EHS",
+    "nameHe": "EHS",
+    "score": -5,
+    "has3d": false,
+    "images": 20,
+    "expertReviews": 6,
+    "expertEnComplete": 100,
+    "userReviews": 1,
+    "recalls": 0,
+    "issues": [
+      "No 3D model",
+      "No recalls cached"
+    ],
+    "fixes": [
+      "Add Sketchfab model (search sketchfab.com for EHS)",
+      "Trigger recalls fetch: GET /api/recalls?make=EHS&model=EHS"
+    ]
+  },
+  {
+    "make": "chery",
+    "model": "arrizo6",
+    "nameEn": "Arrizo 6 Pro",
+    "nameHe": "Arrizo 6 Pro",
+    "score": -3,
+    "has3d": true,
+    "images": 1,
+    "expertReviews": 8,
+    "expertEnComplete": 100,
+    "userReviews": 0,
+    "recalls": 0,
+    "issues": [
+      "Only 1 image",
+      "No user reviews",
+      "No recalls cached"
+    ],
+    "fixes": [
+      "Add more images (aim for 3+)",
+      "Promote this page to attract reviews",
+      "Trigger recalls fetch: GET /api/recalls?make=Arrizo%206%20Pro&model=Arrizo%206%20Pro"
+    ]
+  },
+  {
+    "make": "mitsubishi",
+    "model": "space-star",
+    "nameEn": "Space Star",
+    "nameHe": "ספייס סטאר",
+    "score": -2,
+    "has3d": true,
+    "images": 66,
+    "expertReviews": 11,
+    "expertEnComplete": 100,
+    "userReviews": 0,
+    "recalls": 0,
+    "issues": [
+      "No user reviews",
+      "No recalls cached"
+    ],
+    "fixes": [
+      "Promote this page to attract reviews",
+      "Trigger recalls fetch: GET /api/recalls?make=Space%20Star&model=Space%20Star"
+    ]
+  },
+  {
+    "make": "kia",
+    "model": "cerato",
+    "nameEn": "Cerato",
+    "nameHe": "סראטו",
+    "score": -2,
+    "has3d": true,
+    "images": 79,
+    "expertReviews": 14,
+    "expertEnComplete": 100,
+    "userReviews": 0,
+    "recalls": 0,
+    "issues": [
+      "No user reviews",
+      "No recalls cached"
+    ],
+    "fixes": [
+      "Promote this page to attract reviews",
+      "Trigger recalls fetch: GET /api/recalls?make=Cerato&model=Cerato"
+    ]
+  },
+  {
+    "make": "volkswagen",
+    "model": "taigo",
+    "nameEn": "Taigo",
+    "nameHe": "טייגו",
+    "score": -2,
+    "has3d": true,
+    "images": 35,
+    "expertReviews": 6,
+    "expertEnComplete": 100,
+    "userReviews": 0,
+    "recalls": 0,
+    "issues": [
+      "No user reviews",
+      "No recalls cached"
+    ],
+    "fixes": [
+      "Promote this page to attract reviews",
+      "Trigger recalls fetch: GET /api/recalls?make=Taigo&model=Taigo"
+    ]
+  },
+  {
+    "make": "seat",
+    "model": "arona",
+    "nameEn": "Arona",
+    "nameHe": "ארונה",
+    "score": -2,
+    "has3d": true,
+    "images": 56,
+    "expertReviews": 10,
+    "expertEnComplete": 100,
+    "userReviews": 0,
+    "recalls": 0,
+    "issues": [
+      "No user reviews",
+      "No recalls cached"
+    ],
+    "fixes": [
+      "Promote this page to attract reviews",
+      "Trigger recalls fetch: GET /api/recalls?make=Arona&model=Arona"
+    ]
+  },
+  {
+    "make": "peugeot",
+    "model": "e208",
+    "nameEn": "e-208",
+    "nameHe": "e-208",
+    "score": -2,
+    "has3d": true,
+    "images": 54,
+    "expertReviews": 8,
+    "expertEnComplete": 100,
+    "userReviews": 0,
+    "recalls": 0,
+    "issues": [
+      "No user reviews",
+      "No recalls cached"
+    ],
+    "fixes": [
+      "Promote this page to attract reviews",
+      "Trigger recalls fetch: GET /api/recalls?make=e-208&model=e-208"
+    ]
+  },
+  {
+    "make": "fiat",
+    "model": "panda",
+    "nameEn": "Panda",
+    "nameHe": "פנדה",
+    "score": -2,
+    "has3d": true,
+    "images": 82,
+    "expertReviews": 15,
+    "expertEnComplete": 100,
+    "userReviews": 0,
+    "recalls": 0,
+    "issues": [
+      "No user reviews",
+      "No recalls cached"
+    ],
+    "fixes": [
+      "Promote this page to attract reviews",
+      "Trigger recalls fetch: GET /api/recalls?make=Panda&model=Panda"
+    ]
+  },
+  {
+    "make": "mercedes",
+    "model": "c180",
+    "nameEn": "C180",
+    "nameHe": "C180",
+    "score": -2,
+    "has3d": true,
+    "images": 29,
+    "expertReviews": 11,
+    "expertEnComplete": 100,
+    "userReviews": 0,
+    "recalls": 0,
+    "issues": [
+      "No user reviews",
+      "No recalls cached"
+    ],
+    "fixes": [
+      "Promote this page to attract reviews",
+      "Trigger recalls fetch: GET /api/recalls?make=C180&model=C180"
+    ]
+  },
+  {
+    "make": "mercedes",
+    "model": "c220d",
+    "nameEn": "C220d",
+    "nameHe": "C220d",
+    "score": -2,
+    "has3d": true,
+    "images": 26,
+    "expertReviews": 13,
+    "expertEnComplete": 100,
+    "userReviews": 0,
+    "recalls": 0,
+    "issues": [
+      "No user reviews",
+      "No recalls cached"
+    ],
+    "fixes": [
+      "Promote this page to attract reviews",
+      "Trigger recalls fetch: GET /api/recalls?make=C220d&model=C220d"
+    ]
+  },
+  {
+    "make": "mercedes",
+    "model": "a250",
+    "nameEn": "A250",
+    "nameHe": "A250",
+    "score": -2,
+    "has3d": true,
+    "images": 22,
+    "expertReviews": 13,
+    "expertEnComplete": 100,
+    "userReviews": 0,
+    "recalls": 0,
+    "issues": [
+      "No user reviews",
+      "No recalls cached"
+    ],
+    "fixes": [
+      "Promote this page to attract reviews",
+      "Trigger recalls fetch: GET /api/recalls?make=A250&model=A250"
+    ]
+  },
+  {
+    "make": "fiat",
+    "model": "tipo-cross",
+    "nameEn": "Tipo Cross",
+    "nameHe": "טיפו קרוס",
+    "score": -2,
+    "has3d": true,
+    "images": 25,
+    "expertReviews": 7,
+    "expertEnComplete": 100,
+    "userReviews": 0,
+    "recalls": 0,
+    "issues": [
+      "No user reviews",
+      "No recalls cached"
+    ],
+    "fixes": [
+      "Promote this page to attract reviews",
+      "Trigger recalls fetch: GET /api/recalls?make=Tipo%20Cross&model=Tipo%20Cross"
+    ]
+  },
+  {
+    "make": "mercedes",
+    "model": "c200",
+    "nameEn": "C200",
+    "nameHe": "C200",
+    "score": -2,
+    "has3d": true,
+    "images": 44,
+    "expertReviews": 14,
+    "expertEnComplete": 100,
+    "userReviews": 0,
+    "recalls": 0,
+    "issues": [
+      "No user reviews",
+      "No recalls cached"
+    ],
+    "fixes": [
+      "Promote this page to attract reviews",
+      "Trigger recalls fetch: GET /api/recalls?make=C200&model=C200"
+    ]
+  },
+  {
+    "make": "mercedes",
+    "model": "c43-amg",
+    "nameEn": "C43 AMG",
+    "nameHe": "C43 AMG",
+    "score": -2,
+    "has3d": true,
+    "images": 39,
+    "expertReviews": 13,
+    "expertEnComplete": 100,
+    "userReviews": 0,
+    "recalls": 0,
+    "issues": [
+      "No user reviews",
+      "No recalls cached"
+    ],
+    "fixes": [
+      "Promote this page to attract reviews",
+      "Trigger recalls fetch: GET /api/recalls?make=C43%20AMG&model=C43%20AMG"
+    ]
+  },
+  {
+    "make": "fiat",
+    "model": "ducato",
+    "nameEn": "Ducato",
+    "nameHe": "דוקאטו",
+    "score": -2,
+    "has3d": true,
+    "images": 66,
+    "expertReviews": 13,
+    "expertEnComplete": 100,
+    "userReviews": 0,
+    "recalls": 0,
+    "issues": [
+      "No user reviews",
+      "No recalls cached"
+    ],
+    "fixes": [
+      "Promote this page to attract reviews",
+      "Trigger recalls fetch: GET /api/recalls?make=Ducato&model=Ducato"
+    ]
+  },
+  {
+    "make": "mercedes",
+    "model": "c300",
+    "nameEn": "C300",
+    "nameHe": "C300",
+    "score": -2,
+    "has3d": true,
+    "images": 30,
+    "expertReviews": 13,
+    "expertEnComplete": 100,
+    "userReviews": 0,
+    "recalls": 0,
+    "issues": [
+      "No user reviews",
+      "No recalls cached"
+    ],
+    "fixes": [
+      "Promote this page to attract reviews",
+      "Trigger recalls fetch: GET /api/recalls?make=C300&model=C300"
+    ]
+  },
+  {
+    "make": "fiat",
+    "model": "doblo",
+    "nameEn": "Doblò",
+    "nameHe": "דובלו",
+    "score": -2,
+    "has3d": true,
+    "images": 64,
+    "expertReviews": 14,
+    "expertEnComplete": 100,
+    "userReviews": 0,
+    "recalls": 0,
+    "issues": [
+      "No user reviews",
+      "No recalls cached"
+    ],
+    "fixes": [
+      "Promote this page to attract reviews",
+      "Trigger recalls fetch: GET /api/recalls?make=Dobl%C3%B2&model=Dobl%C3%B2"
+    ]
+  },
+  {
+    "make": "mercedes",
+    "model": "a45-amg",
+    "nameEn": "A45 AMG",
+    "nameHe": "A45 AMG",
+    "score": -2,
+    "has3d": true,
+    "images": 30,
+    "expertReviews": 14,
+    "expertEnComplete": 100,
+    "userReviews": 0,
+    "recalls": 0,
+    "issues": [
+      "No user reviews",
+      "No recalls cached"
+    ],
+    "fixes": [
+      "Promote this page to attract reviews",
+      "Trigger recalls fetch: GET /api/recalls?make=A45%20AMG&model=A45%20AMG"
+    ]
+  },
+  {
+    "make": "alfa-romeo",
+    "model": "giulietta",
+    "nameEn": "Giulietta",
+    "nameHe": "ג׳וליאטה",
+    "score": -2,
+    "has3d": true,
+    "images": 71,
+    "expertReviews": 12,
+    "expertEnComplete": 100,
+    "userReviews": 0,
+    "recalls": 0,
+    "issues": [
+      "No user reviews",
+      "No recalls cached"
+    ],
+    "fixes": [
+      "Promote this page to attract reviews",
+      "Trigger recalls fetch: GET /api/recalls?make=Giulietta&model=Giulietta"
+    ]
+  },
+  {
+    "make": "toyota",
+    "model": "hilux",
+    "nameEn": "Hilux",
+    "nameHe": "הילוקס",
+    "score": -2,
+    "has3d": true,
+    "images": 87,
+    "expertReviews": 13,
+    "expertEnComplete": 100,
+    "userReviews": 0,
+    "recalls": 0,
+    "issues": [
+      "No user reviews",
+      "No recalls cached"
+    ],
+    "fixes": [
+      "Promote this page to attract reviews",
+      "Trigger recalls fetch: GET /api/recalls?make=Hilux&model=Hilux"
+    ]
+  },
+  {
+    "make": "skoda",
+    "model": "kodiaq",
+    "nameEn": "Kodiaq",
+    "nameHe": "קודיאק",
+    "score": -2,
+    "has3d": true,
+    "images": 79,
+    "expertReviews": 12,
+    "expertEnComplete": 100,
+    "userReviews": 0,
+    "recalls": 0,
+    "issues": [
+      "No user reviews",
+      "No recalls cached"
+    ],
+    "fixes": [
+      "Promote this page to attract reviews",
+      "Trigger recalls fetch: GET /api/recalls?make=Kodiaq&model=Kodiaq"
+    ]
+  },
+  {
+    "make": "nissan",
+    "model": "x-trail",
+    "nameEn": "X-Trail",
+    "nameHe": "X-Trail",
+    "score": -2,
+    "has3d": true,
+    "images": 96,
+    "expertReviews": 14,
+    "expertEnComplete": 100,
+    "userReviews": 0,
+    "recalls": 0,
+    "issues": [
+      "No user reviews",
+      "No recalls cached"
+    ],
+    "fixes": [
+      "Promote this page to attract reviews",
+      "Trigger recalls fetch: GET /api/recalls?make=X-Trail&model=X-Trail"
+    ]
+  },
+  {
+    "make": "subaru",
+    "model": "xv",
+    "nameEn": "XV",
+    "nameHe": "XV",
+    "score": -2,
+    "has3d": true,
+    "images": 101,
+    "expertReviews": 15,
+    "expertEnComplete": 100,
+    "userReviews": 0,
+    "recalls": 0,
+    "issues": [
+      "No user reviews",
+      "No recalls cached"
+    ],
+    "fixes": [
+      "Promote this page to attract reviews",
+      "Trigger recalls fetch: GET /api/recalls?make=XV&model=XV"
+    ]
+  },
+  {
+    "make": "nissan",
+    "model": "note",
+    "nameEn": "Note",
+    "nameHe": "נוט",
+    "score": -2,
+    "has3d": true,
+    "images": 104,
+    "expertReviews": 14,
+    "expertEnComplete": 100,
+    "userReviews": 0,
+    "recalls": 0,
+    "issues": [
+      "No user reviews",
+      "No recalls cached"
+    ],
+    "fixes": [
+      "Promote this page to attract reviews",
+      "Trigger recalls fetch: GET /api/recalls?make=Note&model=Note"
+    ]
+  },
+  {
+    "make": "nissan",
+    "model": "navara",
+    "nameEn": "Navara",
+    "nameHe": "נאוורה",
+    "score": -2,
+    "has3d": true,
+    "images": 81,
+    "expertReviews": 13,
+    "expertEnComplete": 100,
+    "userReviews": 0,
+    "recalls": 0,
+    "issues": [
+      "No user reviews",
+      "No recalls cached"
+    ],
+    "fixes": [
+      "Promote this page to attract reviews",
+      "Trigger recalls fetch: GET /api/recalls?make=Navara&model=Navara"
+    ]
+  },
+  {
+    "make": "mitsubishi",
+    "model": "pajero-sport",
+    "nameEn": "Pajero Sport",
+    "nameHe": "פג׳רו ספורט",
+    "score": -2,
+    "has3d": true,
+    "images": 73,
+    "expertReviews": 12,
+    "expertEnComplete": 100,
+    "userReviews": 0,
+    "recalls": 0,
+    "issues": [
+      "No user reviews",
+      "No recalls cached"
+    ],
+    "fixes": [
+      "Promote this page to attract reviews",
+      "Trigger recalls fetch: GET /api/recalls?make=Pajero%20Sport&model=Pajero%20Sport"
+    ]
+  },
+  {
+    "make": "hyundai",
+    "model": "i30",
+    "nameEn": "i30",
+    "nameHe": "i30",
+    "score": -2,
+    "has3d": true,
+    "images": 97,
+    "expertReviews": 14,
+    "expertEnComplete": 100,
+    "userReviews": 0,
+    "recalls": 0,
+    "issues": [
+      "No user reviews",
+      "No recalls cached"
+    ],
+    "fixes": [
+      "Promote this page to attract reviews",
+      "Trigger recalls fetch: GET /api/recalls?make=i30&model=i30"
+    ]
+  },
+  {
+    "make": "suzuki",
+    "model": "swift",
+    "nameEn": "Swift",
+    "nameHe": "סוויפט",
+    "score": -2,
+    "has3d": true,
+    "images": 95,
+    "expertReviews": 14,
+    "expertEnComplete": 100,
+    "userReviews": 0,
+    "recalls": 0,
+    "issues": [
+      "No user reviews",
+      "No recalls cached"
+    ],
+    "fixes": [
+      "Promote this page to attract reviews",
+      "Trigger recalls fetch: GET /api/recalls?make=Swift&model=Swift"
+    ]
+  },
+  {
+    "make": "suzuki",
+    "model": "vitara",
+    "nameEn": "Vitara",
+    "nameHe": "ויטארה",
+    "score": -2,
+    "has3d": true,
+    "images": 87,
+    "expertReviews": 13,
+    "expertEnComplete": 100,
+    "userReviews": 0,
+    "recalls": 0,
+    "issues": [
+      "No user reviews",
+      "No recalls cached"
+    ],
+    "fixes": [
+      "Promote this page to attract reviews",
+      "Trigger recalls fetch: GET /api/recalls?make=Vitara&model=Vitara"
+    ]
+  },
+  {
+    "make": "mercedes",
+    "model": "eqb",
+    "nameEn": "EQB",
+    "nameHe": "EQB",
+    "score": -2,
+    "has3d": true,
+    "images": 38,
+    "expertReviews": 6,
+    "expertEnComplete": 100,
+    "userReviews": 0,
+    "recalls": 0,
+    "issues": [
+      "No user reviews",
+      "No recalls cached"
+    ],
+    "fixes": [
+      "Promote this page to attract reviews",
+      "Trigger recalls fetch: GET /api/recalls?make=EQB&model=EQB"
+    ]
+  },
+  {
+    "make": "kia",
+    "model": "stonic",
+    "nameEn": "Stonic",
+    "nameHe": "סטוניק",
+    "score": -2,
+    "has3d": true,
+    "images": 54,
+    "expertReviews": 10,
+    "expertEnComplete": 100,
+    "userReviews": 0,
+    "recalls": 0,
+    "issues": [
+      "No user reviews",
+      "No recalls cached"
+    ],
+    "fixes": [
+      "Promote this page to attract reviews",
+      "Trigger recalls fetch: GET /api/recalls?make=Stonic&model=Stonic"
+    ]
+  },
+  {
+    "make": "volkswagen",
+    "model": "troc",
+    "nameEn": "T-Roc",
+    "nameHe": "T-Roc",
+    "score": -2,
+    "has3d": true,
+    "images": 77,
+    "expertReviews": 10,
+    "expertEnComplete": 100,
+    "userReviews": 0,
+    "recalls": 0,
+    "issues": [
+      "No user reviews",
+      "No recalls cached"
+    ],
+    "fixes": [
+      "Promote this page to attract reviews",
+      "Trigger recalls fetch: GET /api/recalls?make=T-Roc&model=T-Roc"
+    ]
+  },
+  {
+    "make": "volkswagen",
+    "model": "polo",
+    "nameEn": "Polo",
+    "nameHe": "פולו",
+    "score": -2,
+    "has3d": true,
+    "images": 95,
+    "expertReviews": 14,
+    "expertEnComplete": 100,
+    "userReviews": 0,
+    "recalls": 0,
+    "issues": [
+      "No user reviews",
+      "No recalls cached"
+    ],
+    "fixes": [
+      "Promote this page to attract reviews",
+      "Trigger recalls fetch: GET /api/recalls?make=Polo&model=Polo"
+    ]
+  },
+  {
+    "make": "skoda",
+    "model": "superb",
+    "nameEn": "Superb",
+    "nameHe": "סופרב",
+    "score": -2,
+    "has3d": true,
+    "images": 90,
+    "expertReviews": 13,
+    "expertEnComplete": 100,
+    "userReviews": 0,
+    "recalls": 0,
+    "issues": [
+      "No user reviews",
+      "No recalls cached"
+    ],
+    "fixes": [
+      "Promote this page to attract reviews",
+      "Trigger recalls fetch: GET /api/recalls?make=Superb&model=Superb"
+    ]
+  },
+  {
+    "make": "hyundai",
+    "model": "staria",
+    "nameEn": "Staria",
+    "nameHe": "סטריה",
+    "score": -2,
+    "has3d": true,
+    "images": 48,
+    "expertReviews": 6,
+    "expertEnComplete": 100,
+    "userReviews": 0,
+    "recalls": 0,
+    "issues": [
+      "No user reviews",
+      "No recalls cached"
+    ],
+    "fixes": [
+      "Promote this page to attract reviews",
+      "Trigger recalls fetch: GET /api/recalls?make=Staria&model=Staria"
+    ]
+  },
+  {
+    "make": "bmw",
+    "model": "ix3",
+    "nameEn": "iX3",
+    "nameHe": "iX3",
+    "score": -2,
+    "has3d": true,
+    "images": 51,
+    "expertReviews": 7,
+    "expertEnComplete": 100,
+    "userReviews": 0,
+    "recalls": 0,
+    "issues": [
+      "No user reviews",
+      "No recalls cached"
+    ],
+    "fixes": [
+      "Promote this page to attract reviews",
+      "Trigger recalls fetch: GET /api/recalls?make=iX3&model=iX3"
+    ]
+  },
+  {
+    "make": "skoda",
+    "model": "kamiq",
+    "nameEn": "Kamiq",
+    "nameHe": "קאמיק",
+    "score": -2,
+    "has3d": true,
+    "images": 54,
+    "expertReviews": 9,
+    "expertEnComplete": 100,
+    "userReviews": 0,
+    "recalls": 0,
+    "issues": [
+      "No user reviews",
+      "No recalls cached"
+    ],
+    "fixes": [
+      "Promote this page to attract reviews",
+      "Trigger recalls fetch: GET /api/recalls?make=Kamiq&model=Kamiq"
+    ]
+  },
+  {
+    "make": "mercedes",
+    "model": "cla",
+    "nameEn": "CLA",
+    "nameHe": "CLA",
+    "score": -2,
+    "has3d": true,
+    "images": 97,
+    "expertReviews": 14,
+    "expertEnComplete": 100,
+    "userReviews": 0,
+    "recalls": 0,
+    "issues": [
+      "No user reviews",
+      "No recalls cached"
+    ],
+    "fixes": [
+      "Promote this page to attract reviews",
+      "Trigger recalls fetch: GET /api/recalls?make=CLA&model=CLA"
+    ]
+  },
+  {
+    "make": "skoda",
+    "model": "karoq",
+    "nameEn": "Karoq",
+    "nameHe": "קארוק",
+    "score": -2,
+    "has3d": true,
+    "images": 63,
+    "expertReviews": 10,
+    "expertEnComplete": 100,
+    "userReviews": 0,
+    "recalls": 0,
+    "issues": [
+      "No user reviews",
+      "No recalls cached"
+    ],
+    "fixes": [
+      "Promote this page to attract reviews",
+      "Trigger recalls fetch: GET /api/recalls?make=Karoq&model=Karoq"
+    ]
+  },
+  {
+    "make": "mercedes",
+    "model": "glb",
+    "nameEn": "GLB",
+    "nameHe": "GLB",
+    "score": -2,
+    "has3d": true,
+    "images": 61,
+    "expertReviews": 9,
+    "expertEnComplete": 100,
+    "userReviews": 0,
+    "recalls": 0,
+    "issues": [
+      "No user reviews",
+      "No recalls cached"
+    ],
+    "fixes": [
+      "Promote this page to attract reviews",
+      "Trigger recalls fetch: GET /api/recalls?make=GLB&model=GLB"
+    ]
+  },
+  {
+    "make": "mercedes",
+    "model": "gla",
+    "nameEn": "GLA",
+    "nameHe": "GLA",
+    "score": -2,
+    "has3d": true,
+    "images": 98,
+    "expertReviews": 14,
+    "expertEnComplete": 100,
+    "userReviews": 0,
+    "recalls": 0,
+    "issues": [
+      "No user reviews",
+      "No recalls cached"
+    ],
+    "fixes": [
+      "Promote this page to attract reviews",
+      "Trigger recalls fetch: GET /api/recalls?make=GLA&model=GLA"
+    ]
+  },
+  {
+    "make": "bmw",
+    "model": "series1",
+    "nameEn": "Series 1",
+    "nameHe": "סדרה 1",
+    "score": -2,
+    "has3d": true,
+    "images": 88,
+    "expertReviews": 14,
+    "expertEnComplete": 100,
+    "userReviews": 0,
+    "recalls": 0,
+    "issues": [
+      "No user reviews",
+      "No recalls cached"
+    ],
+    "fixes": [
+      "Promote this page to attract reviews",
+      "Trigger recalls fetch: GET /api/recalls?make=Series%201&model=Series%201"
+    ]
+  },
+  {
+    "make": "bmw",
+    "model": "series3",
+    "nameEn": "Series 3",
+    "nameHe": "סדרה 3",
+    "score": -2,
+    "has3d": true,
+    "images": 87,
+    "expertReviews": 15,
+    "expertEnComplete": 100,
+    "userReviews": 0,
+    "recalls": 0,
+    "issues": [
+      "No user reviews",
+      "No recalls cached"
+    ],
+    "fixes": [
+      "Promote this page to attract reviews",
+      "Trigger recalls fetch: GET /api/recalls?make=Series%203&model=Series%203"
+    ]
+  },
+  {
+    "make": "seat",
+    "model": "leon",
+    "nameEn": "Leon",
+    "nameHe": "ליאון",
+    "score": -2,
+    "has3d": true,
+    "images": 102,
+    "expertReviews": 14,
+    "expertEnComplete": 100,
+    "userReviews": 1,
+    "recalls": 0,
+    "issues": [
+      "14/14 expert reviews missing EN pros",
+      "No recalls cached"
+    ],
+    "fixes": [
+      "Re-translate pros_en for expert reviews",
+      "Trigger recalls fetch: GET /api/recalls?make=Leon&model=Leon"
+    ]
+  },
+  {
+    "make": "dacia",
+    "model": "duster",
+    "nameEn": "Duster",
+    "nameHe": "דאסטר",
+    "score": -2,
+    "has3d": true,
+    "images": 91,
+    "expertReviews": 14,
+    "expertEnComplete": 100,
+    "userReviews": 0,
+    "recalls": 0,
+    "issues": [
+      "No user reviews",
+      "No recalls cached"
+    ],
+    "fixes": [
+      "Promote this page to attract reviews",
+      "Trigger recalls fetch: GET /api/recalls?make=Duster&model=Duster"
+    ]
+  },
+  {
+    "make": "cupra",
+    "model": "born",
+    "nameEn": "Born",
+    "nameHe": "בורן",
+    "score": -2,
+    "has3d": true,
+    "images": 41,
+    "expertReviews": 6,
+    "expertEnComplete": 100,
+    "userReviews": 0,
+    "recalls": 0,
+    "issues": [
+      "No user reviews",
+      "No recalls cached"
+    ],
+    "fixes": [
+      "Promote this page to attract reviews",
+      "Trigger recalls fetch: GET /api/recalls?make=Born&model=Born"
+    ]
+  },
+  {
+    "make": "cupra",
+    "model": "formentor",
+    "nameEn": "Formentor",
+    "nameHe": "פורמנטור",
+    "score": -2,
+    "has3d": true,
+    "images": 53,
+    "expertReviews": 8,
+    "expertEnComplete": 100,
+    "userReviews": 0,
+    "recalls": 0,
+    "issues": [
+      "No user reviews",
+      "No recalls cached"
+    ],
+    "fixes": [
+      "Promote this page to attract reviews",
+      "Trigger recalls fetch: GET /api/recalls?make=Formentor&model=Formentor"
+    ]
+  },
+  {
+    "make": "peugeot",
+    "model": "2008",
+    "nameEn": "2008",
+    "nameHe": "2008",
+    "score": -2,
+    "has3d": true,
+    "images": 98,
+    "expertReviews": 15,
+    "expertEnComplete": 100,
+    "userReviews": 0,
+    "recalls": 0,
+    "issues": [
+      "No user reviews",
+      "No recalls cached"
+    ],
+    "fixes": [
+      "Promote this page to attract reviews",
+      "Trigger recalls fetch: GET /api/recalls?make=2008&model=2008"
+    ]
+  },
+  {
+    "make": "opel",
+    "model": "mokka",
+    "nameEn": "Mokka",
+    "nameHe": "מוקה",
+    "score": -2,
+    "has3d": true,
+    "images": 78,
+    "expertReviews": 14,
+    "expertEnComplete": 100,
+    "userReviews": 0,
+    "recalls": 0,
+    "issues": [
+      "No user reviews",
+      "No recalls cached"
+    ],
+    "fixes": [
+      "Promote this page to attract reviews",
+      "Trigger recalls fetch: GET /api/recalls?make=Mokka&model=Mokka"
+    ]
+  },
+  {
+    "make": "peugeot",
+    "model": "208",
+    "nameEn": "208",
+    "nameHe": "208",
+    "score": -2,
+    "has3d": true,
+    "images": 101,
+    "expertReviews": 15,
+    "expertEnComplete": 100,
+    "userReviews": 0,
+    "recalls": 0,
+    "issues": [
+      "No user reviews",
+      "No recalls cached"
+    ],
+    "fixes": [
+      "Promote this page to attract reviews",
+      "Trigger recalls fetch: GET /api/recalls?make=208&model=208"
+    ]
+  },
+  {
+    "make": "peugeot",
+    "model": "5008",
+    "nameEn": "5008",
+    "nameHe": "5008",
+    "score": -2,
+    "has3d": true,
+    "images": 75,
+    "expertReviews": 11,
+    "expertEnComplete": 100,
+    "userReviews": 0,
+    "recalls": 0,
+    "issues": [
+      "No user reviews",
+      "No recalls cached"
+    ],
+    "fixes": [
+      "Promote this page to attract reviews",
+      "Trigger recalls fetch: GET /api/recalls?make=5008&model=5008"
+    ]
+  },
+  {
+    "make": "peugeot",
+    "model": "3008",
+    "nameEn": "3008",
+    "nameHe": "3008",
+    "score": -2,
+    "has3d": true,
+    "images": 86,
+    "expertReviews": 12,
+    "expertEnComplete": 100,
+    "userReviews": 0,
+    "recalls": 0,
+    "issues": [
+      "No user reviews",
+      "No recalls cached"
+    ],
+    "fixes": [
+      "Promote this page to attract reviews",
+      "Trigger recalls fetch: GET /api/recalls?make=3008&model=3008"
+    ]
+  },
+  {
+    "make": "renault",
+    "model": "arkana",
+    "nameEn": "Arkana",
+    "nameHe": "ארקנה",
+    "score": -2,
+    "has3d": true,
+    "images": 48,
+    "expertReviews": 8,
+    "expertEnComplete": 100,
+    "userReviews": 0,
+    "recalls": 0,
+    "issues": [
+      "No user reviews",
+      "No recalls cached"
+    ],
+    "fixes": [
+      "Promote this page to attract reviews",
+      "Trigger recalls fetch: GET /api/recalls?make=Arkana&model=Arkana"
+    ]
+  },
+  {
+    "make": "renault",
+    "model": "clio",
+    "nameEn": "Clio",
+    "nameHe": "קליאו",
+    "score": -2,
+    "has3d": true,
+    "images": 95,
+    "expertReviews": 14,
+    "expertEnComplete": 100,
+    "userReviews": 0,
+    "recalls": 0,
+    "issues": [
+      "No user reviews",
+      "No recalls cached"
+    ],
+    "fixes": [
+      "Promote this page to attract reviews",
+      "Trigger recalls fetch: GET /api/recalls?make=Clio&model=Clio"
+    ]
+  },
+  {
+    "make": "renault",
+    "model": "zoe",
+    "nameEn": "Zoe",
+    "nameHe": "זואי",
+    "score": -2,
+    "has3d": true,
+    "images": 83,
+    "expertReviews": 13,
+    "expertEnComplete": 100,
+    "userReviews": 0,
+    "recalls": 0,
+    "issues": [
+      "No user reviews",
+      "No recalls cached"
+    ],
+    "fixes": [
+      "Promote this page to attract reviews",
+      "Trigger recalls fetch: GET /api/recalls?make=Zoe&model=Zoe"
+    ]
+  },
+  {
+    "make": "ford",
+    "model": "puma",
+    "nameEn": "Puma",
+    "nameHe": "פומה",
+    "score": -2,
+    "has3d": true,
+    "images": 50,
+    "expertReviews": 8,
+    "expertEnComplete": 100,
+    "userReviews": 0,
+    "recalls": 0,
+    "issues": [
+      "No user reviews",
+      "No recalls cached"
+    ],
+    "fixes": [
+      "Promote this page to attract reviews",
+      "Trigger recalls fetch: GET /api/recalls?make=Puma&model=Puma"
+    ]
+  },
+  {
+    "make": "jeep",
+    "model": "avenger",
+    "nameEn": "Avenger",
+    "nameHe": "אוונג׳ר",
+    "score": -2,
+    "has3d": true,
+    "images": 34,
+    "expertReviews": 5,
+    "expertEnComplete": 100,
+    "userReviews": 0,
+    "recalls": 0,
+    "issues": [
+      "No user reviews",
+      "No recalls cached"
+    ],
+    "fixes": [
+      "Promote this page to attract reviews",
+      "Trigger recalls fetch: GET /api/recalls?make=Avenger&model=Avenger"
+    ]
+  },
+  {
+    "make": "opel",
+    "model": "astra",
+    "nameEn": "Astra",
+    "nameHe": "אסטרה",
+    "score": -2,
+    "has3d": true,
+    "images": 104,
+    "expertReviews": 14,
+    "expertEnComplete": 100,
+    "userReviews": 0,
+    "recalls": 0,
+    "issues": [
+      "No user reviews",
+      "No recalls cached"
+    ],
+    "fixes": [
+      "Promote this page to attract reviews",
+      "Trigger recalls fetch: GET /api/recalls?make=Astra&model=Astra"
+    ]
+  },
+  {
+    "make": "cupra",
+    "model": "ateca",
+    "nameEn": "Ateca",
+    "nameHe": "אטקה",
+    "score": -2,
+    "has3d": true,
+    "images": 41,
+    "expertReviews": 9,
+    "expertEnComplete": 100,
+    "userReviews": 0,
+    "recalls": 0,
+    "issues": [
+      "No user reviews",
+      "No recalls cached"
+    ],
+    "fixes": [
+      "Promote this page to attract reviews",
+      "Trigger recalls fetch: GET /api/recalls?make=Ateca&model=Ateca"
+    ]
+  },
+  {
+    "make": "dacia",
+    "model": "spring",
+    "nameEn": "Spring",
+    "nameHe": "ספרינג",
+    "score": -2,
+    "has3d": true,
+    "images": 37,
+    "expertReviews": 6,
+    "expertEnComplete": 100,
+    "userReviews": 0,
+    "recalls": 0,
+    "issues": [
+      "No user reviews",
+      "No recalls cached"
+    ],
+    "fixes": [
+      "Promote this page to attract reviews",
+      "Trigger recalls fetch: GET /api/recalls?make=Spring&model=Spring"
+    ]
+  },
+  {
+    "make": "opel",
+    "model": "grandland",
+    "nameEn": "Grandland",
+    "nameHe": "גרנדלנד",
+    "score": -2,
+    "has3d": true,
+    "images": 57,
+    "expertReviews": 10,
+    "expertEnComplete": 100,
+    "userReviews": 0,
+    "recalls": 0,
+    "issues": [
+      "No user reviews",
+      "No recalls cached"
+    ],
+    "fixes": [
+      "Promote this page to attract reviews",
+      "Trigger recalls fetch: GET /api/recalls?make=Grandland&model=Grandland"
+    ]
+  },
+  {
+    "make": "byd",
+    "model": "dolphin",
+    "nameEn": "Dolphin",
+    "nameHe": "Dolphin",
+    "score": -2,
+    "has3d": true,
+    "images": 29,
+    "expertReviews": 5,
+    "expertEnComplete": 100,
+    "userReviews": 0,
+    "recalls": 0,
+    "issues": [
+      "No user reviews",
+      "No recalls cached"
+    ],
+    "fixes": [
+      "Promote this page to attract reviews",
+      "Trigger recalls fetch: GET /api/recalls?make=Dolphin&model=Dolphin"
+    ]
+  },
+  {
+    "make": "byd",
+    "model": "han",
+    "nameEn": "Han",
+    "nameHe": "Han",
+    "score": -2,
+    "has3d": true,
+    "images": 45,
+    "expertReviews": 5,
+    "expertEnComplete": 100,
+    "userReviews": 0,
+    "recalls": 0,
+    "issues": [
+      "No user reviews",
+      "No recalls cached"
+    ],
+    "fixes": [
+      "Promote this page to attract reviews",
+      "Trigger recalls fetch: GET /api/recalls?make=Han&model=Han"
+    ]
+  },
+  {
+    "make": "byd",
+    "model": "atto3",
+    "nameEn": "Atto 3",
+    "nameHe": "Atto 3",
+    "score": -2,
+    "has3d": true,
+    "images": 38,
+    "expertReviews": 6,
+    "expertEnComplete": 100,
+    "userReviews": 0,
+    "recalls": 0,
+    "issues": [
+      "No user reviews",
+      "No recalls cached"
+    ],
+    "fixes": [
+      "Promote this page to attract reviews",
+      "Trigger recalls fetch: GET /api/recalls?make=Atto%203&model=Atto%203"
+    ]
+  },
+  {
+    "make": "mg",
+    "model": "mg5",
+    "nameEn": "MG5",
+    "nameHe": "MG5",
+    "score": -2,
+    "has3d": true,
+    "images": 31,
+    "expertReviews": 7,
+    "expertEnComplete": 100,
+    "userReviews": 0,
+    "recalls": 0,
+    "issues": [
+      "No user reviews",
+      "No recalls cached"
+    ],
+    "fixes": [
+      "Promote this page to attract reviews",
+      "Trigger recalls fetch: GET /api/recalls?make=MG5&model=MG5"
+    ]
+  },
+  {
+    "make": "chery",
+    "model": "omoda5",
+    "nameEn": "Omoda 5",
+    "nameHe": "Omoda 5",
+    "score": -2,
+    "has3d": true,
+    "images": 27,
+    "expertReviews": 5,
+    "expertEnComplete": 100,
+    "userReviews": 0,
+    "recalls": 0,
+    "issues": [
+      "No user reviews",
+      "No recalls cached"
+    ],
+    "fixes": [
+      "Promote this page to attract reviews",
+      "Trigger recalls fetch: GET /api/recalls?make=Omoda%205&model=Omoda%205"
+    ]
+  },
+  {
+    "make": "chery",
+    "model": "tiggo8",
+    "nameEn": "Tiggo 8 Pro",
+    "nameHe": "Tiggo 8 Pro",
+    "score": -2,
+    "has3d": true,
+    "images": 35,
+    "expertReviews": 7,
+    "expertEnComplete": 100,
+    "userReviews": 0,
+    "recalls": 0,
+    "issues": [
+      "No user reviews",
+      "No recalls cached"
+    ],
+    "fixes": [
+      "Promote this page to attract reviews",
+      "Trigger recalls fetch: GET /api/recalls?make=Tiggo%208%20Pro&model=Tiggo%208%20Pro"
+    ]
+  },
+  {
+    "make": "geely",
+    "model": "emgrand",
+    "nameEn": "Emgrand",
+    "nameHe": "Emgrand",
+    "score": -2,
+    "has3d": true,
+    "images": 72,
+    "expertReviews": 9,
+    "expertEnComplete": 100,
+    "userReviews": 0,
+    "recalls": 0,
+    "issues": [
+      "No user reviews",
+      "No recalls cached"
+    ],
+    "fixes": [
+      "Promote this page to attract reviews",
+      "Trigger recalls fetch: GET /api/recalls?make=Emgrand&model=Emgrand"
+    ]
+  },
+  {
+    "make": "hyundai",
+    "model": "bayon",
+    "nameEn": "Bayon",
+    "nameHe": "ביון",
+    "score": -2,
+    "has3d": true,
+    "images": 42,
+    "expertReviews": 7,
+    "expertEnComplete": 100,
+    "userReviews": 0,
+    "recalls": 0,
+    "issues": [
+      "No user reviews",
+      "No recalls cached"
+    ],
+    "fixes": [
+      "Promote this page to attract reviews",
+      "Trigger recalls fetch: GET /api/recalls?make=Bayon&model=Bayon"
+    ]
+  },
+  {
+    "make": "hyundai",
+    "model": "i20",
+    "nameEn": "i20",
+    "nameHe": "i20",
+    "score": -2,
+    "has3d": true,
+    "images": 94,
+    "expertReviews": 14,
+    "expertEnComplete": 100,
+    "userReviews": 0,
+    "recalls": 0,
+    "issues": [
+      "No user reviews",
+      "No recalls cached"
+    ],
+    "fixes": [
+      "Promote this page to attract reviews",
+      "Trigger recalls fetch: GET /api/recalls?make=i20&model=i20"
+    ]
+  },
+  {
+    "make": "kia",
+    "model": "ceed",
+    "nameEn": "Cee'd",
+    "nameHe": "סיד",
+    "score": -2,
+    "has3d": true,
+    "images": 84,
+    "expertReviews": 14,
+    "expertEnComplete": 100,
+    "userReviews": 0,
+    "recalls": 0,
+    "issues": [
+      "No user reviews",
+      "No recalls cached"
+    ],
+    "fixes": [
+      "Promote this page to attract reviews",
+      "Trigger recalls fetch: GET /api/recalls?make=Cee'd&model=Cee'd"
+    ]
+  },
+  {
+    "make": "mercedes",
+    "model": "b-class",
+    "nameEn": "B-Class",
+    "nameHe": "B-Class",
+    "score": -2,
+    "has3d": true,
+    "images": 94,
+    "expertReviews": 15,
+    "expertEnComplete": 100,
+    "userReviews": 0,
+    "recalls": 0,
+    "issues": [
+      "No user reviews",
+      "No recalls cached"
+    ],
+    "fixes": [
+      "Promote this page to attract reviews",
+      "Trigger recalls fetch: GET /api/recalls?make=B-Class&model=B-Class"
+    ]
+  },
+  {
+    "make": "skoda",
+    "model": "fabia",
+    "nameEn": "Fabia",
+    "nameHe": "פביה",
+    "score": -2,
+    "has3d": true,
+    "images": 94,
+    "expertReviews": 14,
+    "expertEnComplete": 100,
+    "userReviews": 0,
+    "recalls": 0,
+    "issues": [
+      "No user reviews",
+      "No recalls cached"
+    ],
+    "fixes": [
+      "Promote this page to attract reviews",
+      "Trigger recalls fetch: GET /api/recalls?make=Fabia&model=Fabia"
+    ]
+  },
+  {
+    "make": "skoda",
+    "model": "octavia",
+    "nameEn": "Octavia",
+    "nameHe": "אוקטביה",
+    "score": -2,
+    "has3d": true,
+    "images": 97,
+    "expertReviews": 15,
+    "expertEnComplete": 100,
+    "userReviews": 0,
+    "recalls": 0,
+    "issues": [
+      "No user reviews",
+      "No recalls cached"
+    ],
+    "fixes": [
+      "Promote this page to attract reviews",
+      "Trigger recalls fetch: GET /api/recalls?make=Octavia&model=Octavia"
+    ]
+  },
+  {
+    "make": "skoda",
+    "model": "enyaq",
+    "nameEn": "Enyaq",
+    "nameHe": "אניאק",
+    "score": -2,
+    "has3d": true,
+    "images": 49,
+    "expertReviews": 7,
+    "expertEnComplete": 100,
+    "userReviews": 0,
+    "recalls": 0,
+    "issues": [
+      "No user reviews",
+      "No recalls cached"
+    ],
+    "fixes": [
+      "Promote this page to attract reviews",
+      "Trigger recalls fetch: GET /api/recalls?make=Enyaq&model=Enyaq"
+    ]
+  },
+  {
+    "make": "skoda",
+    "model": "scala",
+    "nameEn": "Scala",
+    "nameHe": "סקאלה",
+    "score": -2,
+    "has3d": true,
+    "images": 49,
+    "expertReviews": 9,
+    "expertEnComplete": 100,
+    "userReviews": 0,
+    "recalls": 0,
+    "issues": [
+      "No user reviews",
+      "No recalls cached"
+    ],
+    "fixes": [
+      "Promote this page to attract reviews",
+      "Trigger recalls fetch: GET /api/recalls?make=Scala&model=Scala"
+    ]
+  },
+  {
+    "make": "mg",
+    "model": "mg4",
+    "nameEn": "MG4",
+    "nameHe": "MG4",
+    "score": -2,
+    "has3d": true,
+    "images": 33,
+    "expertReviews": 5,
+    "expertEnComplete": 100,
+    "userReviews": 0,
+    "recalls": 0,
+    "issues": [
+      "No user reviews",
+      "No recalls cached"
+    ],
+    "fixes": [
+      "Promote this page to attract reviews",
+      "Trigger recalls fetch: GET /api/recalls?make=MG4&model=MG4"
+    ]
+  },
+  {
+    "make": "bmw",
+    "model": "series5",
+    "nameEn": "Series 5",
+    "nameHe": "סדרה 5",
+    "score": -2,
+    "has3d": true,
+    "images": 78,
+    "expertReviews": 15,
+    "expertEnComplete": 100,
+    "userReviews": 0,
+    "recalls": 0,
+    "issues": [
+      "No user reviews",
+      "No recalls cached"
+    ],
+    "fixes": [
+      "Promote this page to attract reviews",
+      "Trigger recalls fetch: GET /api/recalls?make=Series%205&model=Series%205"
+    ]
+  },
+  {
+    "make": "mg",
+    "model": "mg-zs",
+    "nameEn": "ZS",
+    "nameHe": "ZS",
+    "score": -2,
+    "has3d": true,
+    "images": 67,
+    "expertReviews": 10,
+    "expertEnComplete": 100,
+    "userReviews": 0,
+    "recalls": 0,
+    "issues": [
+      "No user reviews",
+      "No recalls cached"
+    ],
+    "fixes": [
+      "Promote this page to attract reviews",
+      "Trigger recalls fetch: GET /api/recalls?make=ZS&model=ZS"
+    ]
+  },
+  {
+    "make": "byd",
+    "model": "tang",
+    "nameEn": "Tang",
+    "nameHe": "Tang",
+    "score": -2,
+    "has3d": true,
+    "images": 31,
+    "expertReviews": 5,
+    "expertEnComplete": 100,
+    "userReviews": 0,
+    "recalls": 0,
+    "issues": [
+      "No user reviews",
+      "No recalls cached"
+    ],
+    "fixes": [
+      "Promote this page to attract reviews",
+      "Trigger recalls fetch: GET /api/recalls?make=Tang&model=Tang"
+    ]
+  },
+  {
+    "make": "byd",
+    "model": "sealion6",
+    "nameEn": "Sealion 6",
+    "nameHe": "Sealion 6",
+    "score": -2,
+    "has3d": true,
+    "images": 30,
+    "expertReviews": 4,
+    "expertEnComplete": 100,
+    "userReviews": 0,
+    "recalls": 0,
+    "issues": [
+      "No user reviews",
+      "No recalls cached"
+    ],
+    "fixes": [
+      "Promote this page to attract reviews",
+      "Trigger recalls fetch: GET /api/recalls?make=Sealion%206&model=Sealion%206"
+    ]
+  },
+  {
+    "make": "geely",
+    "model": "coolray",
+    "nameEn": "Coolray",
+    "nameHe": "Coolray",
+    "score": -2,
+    "has3d": true,
+    "images": 46,
+    "expertReviews": 8,
+    "expertEnComplete": 100,
+    "userReviews": 0,
+    "recalls": 0,
+    "issues": [
+      "No user reviews",
+      "No recalls cached"
+    ],
+    "fixes": [
+      "Promote this page to attract reviews",
+      "Trigger recalls fetch: GET /api/recalls?make=Coolray&model=Coolray"
+    ]
+  },
+  {
+    "make": "dacia",
+    "model": "sandero",
+    "nameEn": "Sandero",
+    "nameHe": "סנדרו",
+    "score": -2,
+    "has3d": true,
+    "images": 91,
+    "expertReviews": 14,
+    "expertEnComplete": 100,
+    "userReviews": 0,
+    "recalls": 0,
+    "issues": [
+      "No user reviews",
+      "No recalls cached"
+    ],
+    "fixes": [
+      "Promote this page to attract reviews",
+      "Trigger recalls fetch: GET /api/recalls?make=Sandero&model=Sandero"
+    ]
+  },
+  {
+    "make": "byd",
+    "model": "seal",
+    "nameEn": "Seal",
+    "nameHe": "Seal",
+    "score": -2,
+    "has3d": true,
+    "images": 31,
+    "expertReviews": 5,
+    "expertEnComplete": 100,
+    "userReviews": 0,
+    "recalls": 0,
+    "issues": [
+      "No user reviews",
+      "No recalls cached"
+    ],
+    "fixes": [
+      "Promote this page to attract reviews",
+      "Trigger recalls fetch: GET /api/recalls?make=Seal&model=Seal"
+    ]
+  },
+  {
+    "make": "mercedes",
+    "model": "glc",
+    "nameEn": "GLC",
+    "nameHe": "GLC",
+    "score": -2,
+    "has3d": true,
+    "images": 91,
+    "expertReviews": 13,
+    "expertEnComplete": 100,
+    "userReviews": 0,
+    "recalls": 0,
+    "issues": [
+      "No user reviews",
+      "No recalls cached"
+    ],
+    "fixes": [
+      "Promote this page to attract reviews",
+      "Trigger recalls fetch: GET /api/recalls?make=GLC&model=GLC"
+    ]
+  },
+  {
+    "make": "peugeot",
+    "model": "308",
+    "nameEn": "308",
+    "nameHe": "308",
+    "score": -2,
+    "has3d": true,
+    "images": 89,
+    "expertReviews": 15,
+    "expertEnComplete": 100,
+    "userReviews": 0,
+    "recalls": 0,
+    "issues": [
+      "No user reviews",
+      "No recalls cached"
+    ],
+    "fixes": [
+      "Promote this page to attract reviews",
+      "Trigger recalls fetch: GET /api/recalls?make=308&model=308"
+    ]
+  },
+  {
+    "make": "opel",
+    "model": "crossland",
+    "nameEn": "Crossland",
+    "nameHe": "קרוסלנד",
+    "score": -2,
+    "has3d": true,
+    "images": 48,
+    "expertReviews": 11,
+    "expertEnComplete": 100,
+    "userReviews": 0,
+    "recalls": 0,
+    "issues": [
+      "No user reviews",
+      "No recalls cached"
+    ],
+    "fixes": [
+      "Promote this page to attract reviews",
+      "Trigger recalls fetch: GET /api/recalls?make=Crossland&model=Crossland"
+    ]
+  },
+  {
+    "make": "seat",
+    "model": "ibiza",
+    "nameEn": "Ibiza",
+    "nameHe": "איביזה",
+    "score": -2,
+    "has3d": true,
+    "images": 97,
+    "expertReviews": 14,
+    "expertEnComplete": 100,
+    "userReviews": 0,
+    "recalls": 0,
+    "issues": [
+      "No user reviews",
+      "No recalls cached"
+    ],
+    "fixes": [
+      "Promote this page to attract reviews",
+      "Trigger recalls fetch: GET /api/recalls?make=Ibiza&model=Ibiza"
+    ]
+  },
+  {
+    "make": "lexus",
+    "model": "rx",
+    "nameEn": "RX",
+    "nameHe": "RX",
+    "score": -2,
+    "has3d": true,
+    "images": 96,
+    "expertReviews": 13,
+    "expertEnComplete": 100,
+    "userReviews": 0,
+    "recalls": 0,
+    "issues": [
+      "No user reviews",
+      "No recalls cached"
+    ],
+    "fixes": [
+      "Promote this page to attract reviews",
+      "Trigger recalls fetch: GET /api/recalls?make=RX&model=RX"
+    ]
+  },
+  {
+    "make": "lexus",
+    "model": "ux",
+    "nameEn": "UX",
+    "nameHe": "UX",
+    "score": -2,
+    "has3d": true,
+    "images": 77,
+    "expertReviews": 9,
+    "expertEnComplete": 100,
+    "userReviews": 0,
+    "recalls": 0,
+    "issues": [
+      "No user reviews",
+      "No recalls cached"
+    ],
+    "fixes": [
+      "Promote this page to attract reviews",
+      "Trigger recalls fetch: GET /api/recalls?make=UX&model=UX"
+    ]
+  },
+  {
+    "make": "opel",
+    "model": "corsa",
+    "nameEn": "Corsa",
+    "nameHe": "קורסה",
+    "score": -2,
+    "has3d": true,
+    "images": 102,
+    "expertReviews": 14,
+    "expertEnComplete": 100,
+    "userReviews": 0,
+    "recalls": 0,
+    "issues": [
+      "No user reviews",
+      "No recalls cached"
+    ],
+    "fixes": [
+      "Promote this page to attract reviews",
+      "Trigger recalls fetch: GET /api/recalls?make=Corsa&model=Corsa"
+    ]
+  },
+  {
+    "make": "mitsubishi",
+    "model": "colt",
+    "nameEn": "Colt",
+    "nameHe": "קולט",
+    "score": -2,
+    "has3d": true,
+    "images": 38,
+    "expertReviews": 5,
+    "expertEnComplete": 100,
+    "userReviews": 0,
+    "recalls": 0,
+    "issues": [
+      "No user reviews",
+      "No recalls cached"
+    ],
+    "fixes": [
+      "Promote this page to attract reviews",
+      "Trigger recalls fetch: GET /api/recalls?make=Colt&model=Colt"
+    ]
+  },
+  {
+    "make": "mercedes",
+    "model": "e-class",
+    "nameEn": "E-Class",
+    "nameHe": "E-Class",
+    "score": -2,
+    "has3d": true,
+    "images": 108,
+    "expertReviews": 15,
+    "expertEnComplete": 100,
+    "userReviews": 0,
+    "recalls": 0,
+    "issues": [
+      "No user reviews",
+      "No recalls cached"
+    ],
+    "fixes": [
+      "Promote this page to attract reviews",
+      "Trigger recalls fetch: GET /api/recalls?make=E-Class&model=E-Class"
+    ]
+  },
+  {
+    "make": "mercedes",
+    "model": "eqc",
+    "nameEn": "EQC",
+    "nameHe": "EQC",
+    "score": -2,
+    "has3d": true,
+    "images": 50,
+    "expertReviews": 8,
+    "expertEnComplete": 100,
+    "userReviews": 0,
+    "recalls": 0,
+    "issues": [
+      "No user reviews",
+      "No recalls cached"
+    ],
+    "fixes": [
+      "Promote this page to attract reviews",
+      "Trigger recalls fetch: GET /api/recalls?make=EQC&model=EQC"
+    ]
+  },
+  {
+    "make": "mitsubishi",
+    "model": "l200",
+    "nameEn": "L200",
+    "nameHe": "L200",
+    "score": -2,
+    "has3d": true,
+    "images": 91,
+    "expertReviews": 14,
+    "expertEnComplete": 100,
+    "userReviews": 0,
+    "recalls": 0,
+    "issues": [
+      "No user reviews",
+      "No recalls cached"
+    ],
+    "fixes": [
+      "Promote this page to attract reviews",
+      "Trigger recalls fetch: GET /api/recalls?make=L200&model=L200"
+    ]
+  },
+  {
+    "make": "renault",
+    "model": "megane",
+    "nameEn": "Megane",
+    "nameHe": "מגאן",
+    "score": -2,
+    "has3d": true,
+    "images": 96,
+    "expertReviews": 14,
+    "expertEnComplete": 100,
+    "userReviews": 0,
+    "recalls": 0,
+    "issues": [
+      "No user reviews",
+      "No recalls cached"
+    ],
+    "fixes": [
+      "Promote this page to attract reviews",
+      "Trigger recalls fetch: GET /api/recalls?make=Megane&model=Megane"
+    ]
+  },
+  {
+    "make": "mercedes",
+    "model": "c63-amg",
+    "nameEn": "C63 AMG",
+    "nameHe": "C63 AMG",
+    "score": -2,
+    "has3d": true,
+    "images": 50,
+    "expertReviews": 14,
+    "expertEnComplete": 100,
+    "userReviews": 0,
+    "recalls": 0,
+    "issues": [
+      "No user reviews",
+      "No recalls cached"
+    ],
+    "fixes": [
+      "Promote this page to attract reviews",
+      "Trigger recalls fetch: GET /api/recalls?make=C63%20AMG&model=C63%20AMG"
+    ]
+  },
+  {
+    "make": "mercedes",
+    "model": "a180",
+    "nameEn": "A180",
+    "nameHe": "A180",
+    "score": -2,
+    "has3d": true,
+    "images": 33,
+    "expertReviews": 15,
+    "expertEnComplete": 100,
+    "userReviews": 0,
+    "recalls": 0,
+    "issues": [
+      "No user reviews",
+      "No recalls cached"
+    ],
+    "fixes": [
+      "Promote this page to attract reviews",
+      "Trigger recalls fetch: GET /api/recalls?make=A180&model=A180"
+    ]
+  },
+  {
+    "make": "mercedes",
+    "model": "a35-amg",
+    "nameEn": "A35 AMG",
+    "nameHe": "A35 AMG",
+    "score": -2,
+    "has3d": true,
+    "images": 18,
+    "expertReviews": 9,
+    "expertEnComplete": 100,
+    "userReviews": 0,
+    "recalls": 0,
+    "issues": [
+      "No user reviews",
+      "No recalls cached"
+    ],
+    "fixes": [
+      "Promote this page to attract reviews",
+      "Trigger recalls fetch: GET /api/recalls?make=A35%20AMG&model=A35%20AMG"
+    ]
+  },
+  {
+    "make": "mercedes",
+    "model": "c300d",
+    "nameEn": "C300d",
+    "nameHe": "C300d",
+    "score": -2,
+    "has3d": true,
+    "images": 5,
+    "expertReviews": 10,
+    "expertEnComplete": 100,
+    "userReviews": 0,
+    "recalls": 0,
+    "issues": [
+      "No user reviews",
+      "No recalls cached"
+    ],
+    "fixes": [
+      "Promote this page to attract reviews",
+      "Trigger recalls fetch: GET /api/recalls?make=C300d&model=C300d"
+    ]
+  },
+  {
+    "make": "alfa-romeo",
+    "model": "giulia",
+    "nameEn": "Giulia",
+    "nameHe": "ג׳וליה",
+    "score": -2,
+    "has3d": true,
+    "images": 59,
+    "expertReviews": 12,
+    "expertEnComplete": 100,
+    "userReviews": 0,
+    "recalls": 0,
+    "issues": [
+      "No user reviews",
+      "No recalls cached"
+    ],
+    "fixes": [
+      "Promote this page to attract reviews",
+      "Trigger recalls fetch: GET /api/recalls?make=Giulia&model=Giulia"
+    ]
+  },
+  {
+    "make": "alfa-romeo",
+    "model": "stelvio",
+    "nameEn": "Stelvio",
+    "nameHe": "סטלביו",
+    "score": -2,
+    "has3d": true,
+    "images": 56,
+    "expertReviews": 11,
+    "expertEnComplete": 100,
+    "userReviews": 0,
+    "recalls": 0,
+    "issues": [
+      "No user reviews",
+      "No recalls cached"
+    ],
+    "fixes": [
+      "Promote this page to attract reviews",
+      "Trigger recalls fetch: GET /api/recalls?make=Stelvio&model=Stelvio"
+    ]
+  },
+  {
+    "make": "alfa-romeo",
+    "model": "tonale",
+    "nameEn": "Tonale",
+    "nameHe": "טונאלה",
+    "score": -2,
+    "has3d": true,
+    "images": 36,
+    "expertReviews": 6,
+    "expertEnComplete": 100,
+    "userReviews": 0,
+    "recalls": 0,
+    "issues": [
+      "No user reviews",
+      "No recalls cached"
+    ],
+    "fixes": [
+      "Promote this page to attract reviews",
+      "Trigger recalls fetch: GET /api/recalls?make=Tonale&model=Tonale"
+    ]
+  },
+  {
+    "make": "land-rover",
+    "model": "defender",
+    "nameEn": "Defender",
+    "nameHe": "דיפנדר",
+    "score": -2,
+    "has3d": true,
+    "images": 48,
+    "expertReviews": 8,
+    "expertEnComplete": 100,
+    "userReviews": 0,
+    "recalls": 0,
+    "issues": [
+      "No user reviews",
+      "No recalls cached"
+    ],
+    "fixes": [
+      "Promote this page to attract reviews",
+      "Trigger recalls fetch: GET /api/recalls?make=Defender&model=Defender"
+    ]
+  },
+  {
+    "make": "land-rover",
+    "model": "discovery",
+    "nameEn": "Discovery",
+    "nameHe": "דיסקברי",
+    "score": -2,
+    "has3d": true,
+    "images": 57,
+    "expertReviews": 11,
+    "expertEnComplete": 100,
+    "userReviews": 0,
+    "recalls": 0,
+    "issues": [
+      "No user reviews",
+      "No recalls cached"
+    ],
+    "fixes": [
+      "Promote this page to attract reviews",
+      "Trigger recalls fetch: GET /api/recalls?make=Discovery&model=Discovery"
+    ]
+  },
+  {
+    "make": "land-rover",
+    "model": "discovery-sport",
+    "nameEn": "Discovery Sport",
+    "nameHe": "דיסקברי ספורט",
+    "score": -2,
+    "has3d": true,
+    "images": 50,
+    "expertReviews": 13,
+    "expertEnComplete": 100,
+    "userReviews": 0,
+    "recalls": 0,
+    "issues": [
+      "No user reviews",
+      "No recalls cached"
+    ],
+    "fixes": [
+      "Promote this page to attract reviews",
+      "Trigger recalls fetch: GET /api/recalls?make=Discovery%20Sport&model=Discovery%20Sport"
+    ]
+  },
+  {
+    "make": "land-rover",
+    "model": "range-rover-sport",
+    "nameEn": "Range Rover Sport",
+    "nameHe": "ריינג׳ רובר ספורט",
+    "score": -2,
+    "has3d": true,
+    "images": 75,
+    "expertReviews": 15,
+    "expertEnComplete": 100,
+    "userReviews": 0,
+    "recalls": 0,
+    "issues": [
+      "No user reviews",
+      "No recalls cached"
+    ],
+    "fixes": [
+      "Promote this page to attract reviews",
+      "Trigger recalls fetch: GET /api/recalls?make=Range%20Rover%20Sport&model=Range%20Rover%20Sport"
+    ]
+  },
+  {
+    "make": "land-rover",
+    "model": "range-rover-velar",
+    "nameEn": "Range Rover Velar",
+    "nameHe": "ריינג׳ רובר ולאר",
+    "score": -2,
+    "has3d": true,
+    "images": 40,
+    "expertReviews": 11,
+    "expertEnComplete": 100,
+    "userReviews": 0,
+    "recalls": 0,
+    "issues": [
+      "No user reviews",
+      "No recalls cached"
+    ],
+    "fixes": [
+      "Promote this page to attract reviews",
+      "Trigger recalls fetch: GET /api/recalls?make=Range%20Rover%20Velar&model=Range%20Rover%20Velar"
+    ]
+  },
+  {
+    "make": "kia",
+    "model": "carnival",
+    "nameEn": "Carnival",
+    "nameHe": "קרנבל",
+    "score": -1,
+    "has3d": true,
+    "images": 49,
+    "expertReviews": 7,
+    "expertEnComplete": 100,
+    "userReviews": 0,
+    "recalls": 6,
+    "issues": [
+      "No user reviews"
+    ],
+    "fixes": [
+      "Promote this page to attract reviews"
+    ]
+  },
+  {
+    "make": "ford",
+    "model": "focus",
+    "nameEn": "Focus",
+    "nameHe": "פוקוס",
+    "score": -1,
+    "has3d": true,
+    "images": 79,
+    "expertReviews": 11,
+    "expertEnComplete": 100,
+    "userReviews": 0,
+    "recalls": 21,
+    "issues": [
+      "No user reviews"
+    ],
+    "fixes": [
+      "Promote this page to attract reviews"
+    ]
+  },
+  {
+    "make": "jeep",
+    "model": "cherokee",
+    "nameEn": "Cherokee",
+    "nameHe": "צ'רוקי",
+    "score": -1,
+    "has3d": true,
+    "images": 83,
+    "expertReviews": 11,
+    "expertEnComplete": 100,
+    "userReviews": 0,
+    "recalls": 17,
+    "issues": [
+      "No user reviews"
+    ],
+    "fixes": [
+      "Promote this page to attract reviews"
+    ]
+  },
+  {
+    "make": "nissan",
+    "model": "leaf",
+    "nameEn": "Leaf",
+    "nameHe": "ליף",
+    "score": -1,
+    "has3d": true,
+    "images": 89,
+    "expertReviews": 14,
+    "expertEnComplete": 100,
+    "userReviews": 0,
+    "recalls": 18,
+    "issues": [
+      "No user reviews"
+    ],
+    "fixes": [
+      "Promote this page to attract reviews"
+    ]
+  },
+  {
+    "make": "ford",
+    "model": "fiesta",
+    "nameEn": "Fiesta",
+    "nameHe": "פיאסטה",
+    "score": -1,
+    "has3d": true,
+    "images": 98,
+    "expertReviews": 12,
+    "expertEnComplete": 100,
+    "userReviews": 0,
+    "recalls": 12,
+    "issues": [
+      "No user reviews"
+    ],
+    "fixes": [
+      "Promote this page to attract reviews"
+    ]
+  },
+  {
+    "make": "skoda",
+    "model": "rapid",
+    "nameEn": "Rapid",
+    "nameHe": "ראפיד",
+    "score": -1,
+    "has3d": true,
+    "images": 61,
+    "expertReviews": 10,
+    "expertEnComplete": 100,
+    "userReviews": 1,
+    "recalls": 0,
+    "issues": [
+      "No recalls cached"
+    ],
+    "fixes": [
+      "Trigger recalls fetch: GET /api/recalls?make=Rapid&model=Rapid"
+    ]
+  },
+  {
+    "make": "volkswagen",
+    "model": "passat",
+    "nameEn": "Passat",
+    "nameHe": "פאסאט",
+    "score": -1,
+    "has3d": true,
+    "images": 102,
+    "expertReviews": 14,
+    "expertEnComplete": 100,
+    "userReviews": 0,
+    "recalls": 23,
+    "issues": [
+      "No user reviews"
+    ],
+    "fixes": [
+      "Promote this page to attract reviews"
+    ]
+  },
+  {
+    "make": "chevrolet",
+    "model": "cruze",
+    "nameEn": "Cruze",
+    "nameHe": "קרוז",
+    "score": -1,
+    "has3d": true,
+    "images": 72,
+    "expertReviews": 12,
+    "expertEnComplete": 100,
+    "userReviews": 0,
+    "recalls": 26,
+    "issues": [
+      "No user reviews"
+    ],
+    "fixes": [
+      "Promote this page to attract reviews"
+    ]
+  },
+  {
+    "make": "chevrolet",
+    "model": "captiva",
+    "nameEn": "Captiva",
+    "nameHe": "קפטיבה",
+    "score": -1,
+    "has3d": true,
+    "images": 70,
+    "expertReviews": 13,
+    "expertEnComplete": 100,
+    "userReviews": 0,
+    "recalls": 1,
+    "issues": [
+      "No user reviews"
+    ],
+    "fixes": [
+      "Promote this page to attract reviews"
+    ]
+  },
+  {
+    "make": "chevrolet",
+    "model": "camaro",
+    "nameEn": "Camaro",
+    "nameHe": "קמרו",
+    "score": -1,
+    "has3d": true,
+    "images": 63,
+    "expertReviews": 11,
+    "expertEnComplete": 100,
+    "userReviews": 0,
+    "recalls": 10,
+    "issues": [
+      "No user reviews"
+    ],
+    "fixes": [
+      "Promote this page to attract reviews"
+    ]
+  },
+  {
+    "make": "fiat",
+    "model": "tipo",
+    "nameEn": "Tipo",
+    "nameHe": "טיפו",
+    "score": -1,
+    "has3d": true,
+    "images": 66,
+    "expertReviews": 12,
+    "expertEnComplete": 100,
+    "userReviews": 1,
+    "recalls": 0,
+    "issues": [
+      "No recalls cached"
+    ],
+    "fixes": [
+      "Trigger recalls fetch: GET /api/recalls?make=Tipo&model=Tipo"
+    ]
+  },
+  {
+    "make": "chevrolet",
+    "model": "equinox",
+    "nameEn": "Equinox",
+    "nameHe": "אקוינוקס",
+    "score": -1,
+    "has3d": true,
+    "images": 70,
+    "expertReviews": 13,
+    "expertEnComplete": 100,
+    "userReviews": 0,
+    "recalls": 13,
+    "issues": [
+      "No user reviews"
+    ],
+    "fixes": [
+      "Promote this page to attract reviews"
+    ]
+  },
+  {
+    "make": "chevrolet",
+    "model": "tahoe",
+    "nameEn": "Tahoe",
+    "nameHe": "טאהו",
+    "score": -1,
+    "has3d": true,
+    "images": 67,
+    "expertReviews": 13,
+    "expertEnComplete": 100,
+    "userReviews": 0,
+    "recalls": 38,
+    "issues": [
+      "No user reviews"
+    ],
+    "fixes": [
+      "Promote this page to attract reviews"
+    ]
+  },
+  {
+    "make": "chevrolet",
+    "model": "colorado",
+    "nameEn": "Colorado",
+    "nameHe": "קולורדו",
+    "score": -1,
+    "has3d": true,
+    "images": 65,
+    "expertReviews": 13,
+    "expertEnComplete": 100,
+    "userReviews": 0,
+    "recalls": 17,
+    "issues": [
+      "No user reviews"
+    ],
+    "fixes": [
+      "Promote this page to attract reviews"
+    ]
+  },
+  {
+    "make": "tesla",
+    "model": "model-3",
+    "nameEn": "Model 3",
+    "nameHe": "מודל 3",
+    "score": -1,
+    "has3d": true,
+    "images": 55,
+    "expertReviews": 11,
+    "expertEnComplete": 100,
+    "userReviews": 0,
+    "recalls": 13,
+    "issues": [
+      "No user reviews"
+    ],
+    "fixes": [
+      "Promote this page to attract reviews"
+    ]
+  },
+  {
+    "make": "tesla",
+    "model": "model-x",
+    "nameEn": "Model X",
+    "nameHe": "מודל X",
+    "score": -1,
+    "has3d": true,
+    "images": 64,
+    "expertReviews": 12,
+    "expertEnComplete": 100,
+    "userReviews": 0,
+    "recalls": 29,
+    "issues": [
+      "No user reviews"
+    ],
+    "fixes": [
+      "Promote this page to attract reviews"
+    ]
+  },
+  {
+    "make": "chevrolet",
+    "model": "trailblazer",
+    "nameEn": "Trailblazer",
+    "nameHe": "טרייל בלייזר",
+    "score": -1,
+    "has3d": true,
+    "images": 47,
+    "expertReviews": 8,
+    "expertEnComplete": 100,
+    "userReviews": 0,
+    "recalls": 4,
+    "issues": [
+      "No user reviews"
+    ],
+    "fixes": [
+      "Promote this page to attract reviews"
+    ]
+  },
+  {
+    "make": "tesla",
+    "model": "model-y",
+    "nameEn": "Model Y",
+    "nameHe": "מודל Y",
+    "score": -1,
+    "has3d": true,
+    "images": 41,
+    "expertReviews": 8,
+    "expertEnComplete": 100,
+    "userReviews": 0,
+    "recalls": 24,
+    "issues": [
+      "No user reviews"
+    ],
+    "fixes": [
+      "Promote this page to attract reviews"
+    ]
+  },
+  {
+    "make": "chevrolet",
+    "model": "malibu",
+    "nameEn": "Malibu",
+    "nameHe": "מליבו",
+    "score": -1,
+    "has3d": true,
+    "images": 72,
+    "expertReviews": 12,
+    "expertEnComplete": 100,
+    "userReviews": 0,
+    "recalls": 23,
+    "issues": [
+      "No user reviews"
+    ],
+    "fixes": [
+      "Promote this page to attract reviews"
+    ]
+  },
+  {
+    "make": "honda",
+    "model": "hrv",
+    "nameEn": "HR-V",
+    "nameHe": "HR-V",
+    "score": -1,
+    "has3d": true,
+    "images": 82,
+    "expertReviews": 12,
+    "expertEnComplete": 100,
+    "userReviews": 0,
+    "recalls": 6,
+    "issues": [
+      "No user reviews"
+    ],
+    "fixes": [
+      "Promote this page to attract reviews"
+    ]
+  },
+  {
+    "make": "toyota",
+    "model": "bz4x",
+    "nameEn": "bZ4X",
+    "nameHe": "bZ4X",
+    "score": -1,
+    "has3d": true,
+    "images": 44,
+    "expertReviews": 6,
+    "expertEnComplete": 100,
+    "userReviews": 0,
+    "recalls": 1,
+    "issues": [
+      "No user reviews"
+    ],
+    "fixes": [
+      "Promote this page to attract reviews"
+    ]
+  },
+  {
+    "make": "mitsubishi",
+    "model": "asx",
+    "nameEn": "ASX",
+    "nameHe": "ASX",
+    "score": -1,
+    "has3d": true,
+    "images": 91,
+    "expertReviews": 14,
+    "expertEnComplete": 100,
+    "userReviews": 1,
+    "recalls": 0,
+    "issues": [
+      "No recalls cached"
+    ],
+    "fixes": [
+      "Trigger recalls fetch: GET /api/recalls?make=ASX&model=ASX"
+    ]
+  },
+  {
+    "make": "hyundai",
+    "model": "ioniq-6",
+    "nameEn": "Ioniq 6",
+    "nameHe": "איוניק 6",
+    "score": -1,
+    "has3d": true,
+    "images": 33,
+    "expertReviews": 5,
+    "expertEnComplete": 100,
+    "userReviews": 0,
+    "recalls": 6,
+    "issues": [
+      "No user reviews"
+    ],
+    "fixes": [
+      "Promote this page to attract reviews"
+    ]
+  },
+  {
+    "make": "mazda",
+    "model": "cx5",
+    "nameEn": "CX-5",
+    "nameHe": "CX-5",
+    "score": -1,
+    "has3d": true,
+    "images": 101,
+    "expertReviews": 15,
+    "expertEnComplete": 100,
+    "userReviews": 0,
+    "recalls": 6,
+    "issues": [
+      "No user reviews"
+    ],
+    "fixes": [
+      "Promote this page to attract reviews"
+    ]
+  },
+  {
+    "make": "mazda",
+    "model": "mx5",
+    "nameEn": "MX-5",
+    "nameHe": "MX-5",
+    "score": -1,
+    "has3d": true,
+    "images": 80,
+    "expertReviews": 13,
+    "expertEnComplete": 100,
+    "userReviews": 0,
+    "recalls": 4,
+    "issues": [
+      "No user reviews"
+    ],
+    "fixes": [
+      "Promote this page to attract reviews"
+    ]
+  },
+  {
+    "make": "hyundai",
+    "model": "santa-fe",
+    "nameEn": "Santa Fe",
+    "nameHe": "סנטה פה",
+    "score": -1,
+    "has3d": true,
+    "images": 100,
+    "expertReviews": 15,
+    "expertEnComplete": 100,
+    "userReviews": 0,
+    "recalls": 20,
+    "issues": [
+      "No user reviews"
+    ],
+    "fixes": [
+      "Promote this page to attract reviews"
+    ]
+  },
+  {
+    "make": "subaru",
+    "model": "forester",
+    "nameEn": "Forester",
+    "nameHe": "פורסטר",
+    "score": -1,
+    "has3d": true,
+    "images": 100,
+    "expertReviews": 15,
+    "expertEnComplete": 100,
+    "userReviews": 0,
+    "recalls": 18,
+    "issues": [
+      "No user reviews"
+    ],
+    "fixes": [
+      "Promote this page to attract reviews"
+    ]
+  },
+  {
+    "make": "nissan",
+    "model": "kicks",
+    "nameEn": "Kicks",
+    "nameHe": "קיקס",
+    "score": -1,
+    "has3d": true,
+    "images": 67,
+    "expertReviews": 10,
+    "expertEnComplete": 100,
+    "userReviews": 0,
+    "recalls": 10,
+    "issues": [
+      "No user reviews"
+    ],
+    "fixes": [
+      "Promote this page to attract reviews"
+    ]
+  },
+  {
+    "make": "mitsubishi",
+    "model": "outlander",
+    "nameEn": "Outlander",
+    "nameHe": "אאוטלנדר",
+    "score": -1,
+    "has3d": true,
+    "images": 104,
+    "expertReviews": 15,
+    "expertEnComplete": 100,
+    "userReviews": 0,
+    "recalls": 22,
+    "issues": [
+      "No user reviews"
+    ],
+    "fixes": [
+      "Promote this page to attract reviews"
+    ]
+  },
+  {
+    "make": "mazda",
+    "model": "mazda3",
+    "nameEn": "Mazda3",
+    "nameHe": "מאזדה 3",
+    "score": -1,
+    "has3d": true,
+    "images": 86,
+    "expertReviews": 14,
+    "expertEnComplete": 100,
+    "userReviews": 0,
+    "recalls": 13,
+    "issues": [
+      "No user reviews"
+    ],
+    "fixes": [
+      "Promote this page to attract reviews"
+    ]
+  },
+  {
+    "make": "nissan",
+    "model": "qashqai",
+    "nameEn": "Qashqai",
+    "nameHe": "קשקאי",
+    "score": -1,
+    "has3d": true,
+    "images": 94,
+    "expertReviews": 14,
+    "expertEnComplete": 100,
+    "userReviews": 1,
+    "recalls": 0,
+    "issues": [
+      "No recalls cached"
+    ],
+    "fixes": [
+      "Trigger recalls fetch: GET /api/recalls?make=Qashqai&model=Qashqai"
+    ]
+  },
+  {
+    "make": "suzuki",
+    "model": "jimny",
+    "nameEn": "Jimny",
+    "nameHe": "ג'ימני",
+    "score": -1,
+    "has3d": true,
+    "images": 66,
+    "expertReviews": 10,
+    "expertEnComplete": 100,
+    "userReviews": 1,
+    "recalls": 0,
+    "issues": [
+      "No recalls cached"
+    ],
+    "fixes": [
+      "Trigger recalls fetch: GET /api/recalls?make=Jimny&model=Jimny"
+    ]
+  },
+  {
+    "make": "honda",
+    "model": "jazz",
+    "nameEn": "Jazz",
+    "nameHe": "ג'אז",
+    "score": -1,
+    "has3d": true,
+    "images": 89,
+    "expertReviews": 14,
+    "expertEnComplete": 100,
+    "userReviews": 1,
+    "recalls": 0,
+    "issues": [
+      "No recalls cached"
+    ],
+    "fixes": [
+      "Trigger recalls fetch: GET /api/recalls?make=Jazz&model=Jazz"
+    ]
+  },
+  {
+    "make": "suzuki",
+    "model": "scross",
+    "nameEn": "S-Cross",
+    "nameHe": "S-Cross",
+    "score": -1,
+    "has3d": true,
+    "images": 72,
+    "expertReviews": 14,
+    "expertEnComplete": 100,
+    "userReviews": 1,
+    "recalls": 0,
+    "issues": [
+      "No recalls cached"
+    ],
+    "fixes": [
+      "Trigger recalls fetch: GET /api/recalls?make=S-Cross&model=S-Cross"
+    ]
+  },
+  {
+    "make": "kia",
+    "model": "niro",
+    "nameEn": "Niro",
+    "nameHe": "נירו",
+    "score": -1,
+    "has3d": true,
+    "images": 67,
+    "expertReviews": 11,
+    "expertEnComplete": 100,
+    "userReviews": 0,
+    "recalls": 5,
+    "issues": [
+      "No user reviews"
+    ],
+    "fixes": [
+      "Promote this page to attract reviews"
+    ]
+  },
+  {
+    "make": "kia",
+    "model": "sorento",
+    "nameEn": "Sorento",
+    "nameHe": "סורנטו",
+    "score": -1,
+    "has3d": true,
+    "images": 101,
+    "expertReviews": 14,
+    "expertEnComplete": 100,
+    "userReviews": 0,
+    "recalls": 25,
+    "issues": [
+      "No user reviews"
+    ],
+    "fixes": [
+      "Promote this page to attract reviews"
+    ]
+  },
+  {
+    "make": "audi",
+    "model": "q3",
+    "nameEn": "Q3",
+    "nameHe": "Q3",
+    "score": -1,
+    "has3d": true,
+    "images": 79,
+    "expertReviews": 15,
+    "expertEnComplete": 100,
+    "userReviews": 0,
+    "recalls": 14,
+    "issues": [
+      "No user reviews"
+    ],
+    "fixes": [
+      "Promote this page to attract reviews"
+    ]
+  },
+  {
+    "make": "kia",
+    "model": "ev9",
+    "nameEn": "EV9",
+    "nameHe": "EV9",
+    "score": -1,
+    "has3d": true,
+    "images": 27,
+    "expertReviews": 4,
+    "expertEnComplete": 100,
+    "userReviews": 0,
+    "recalls": 8,
+    "issues": [
+      "No user reviews"
+    ],
+    "fixes": [
+      "Promote this page to attract reviews"
+    ]
+  },
+  {
+    "make": "volkswagen",
+    "model": "id4",
+    "nameEn": "ID.4",
+    "nameHe": "ID.4",
+    "score": -1,
+    "has3d": true,
+    "images": 60,
+    "expertReviews": 7,
+    "expertEnComplete": 100,
+    "userReviews": 0,
+    "recalls": 23,
+    "issues": [
+      "No user reviews"
+    ],
+    "fixes": [
+      "Promote this page to attract reviews"
+    ]
+  },
+  {
+    "make": "bmw",
+    "model": "x3",
+    "nameEn": "X3",
+    "nameHe": "X3",
+    "score": -1,
+    "has3d": true,
+    "images": 95,
+    "expertReviews": 14,
+    "expertEnComplete": 100,
+    "userReviews": 0,
+    "recalls": 24,
+    "issues": [
+      "No user reviews"
+    ],
+    "fixes": [
+      "Promote this page to attract reviews"
+    ]
+  },
+  {
+    "make": "hyundai",
+    "model": "elantra",
+    "nameEn": "Elantra",
+    "nameHe": "אלנטרה",
+    "score": -1,
+    "has3d": true,
+    "images": 96,
+    "expertReviews": 14,
+    "expertEnComplete": 100,
+    "userReviews": 0,
+    "recalls": 14,
+    "issues": [
+      "No user reviews"
+    ],
+    "fixes": [
+      "Promote this page to attract reviews"
+    ]
+  },
+  {
+    "make": "audi",
+    "model": "etron",
+    "nameEn": "e-tron",
+    "nameHe": "e-tron",
+    "score": -1,
+    "has3d": true,
+    "images": 52,
+    "expertReviews": 8,
+    "expertEnComplete": 100,
+    "userReviews": 0,
+    "recalls": 10,
+    "issues": [
+      "No user reviews"
+    ],
+    "fixes": [
+      "Promote this page to attract reviews"
+    ]
+  },
+  {
+    "make": "lexus",
+    "model": "is",
+    "nameEn": "IS",
+    "nameHe": "IS",
+    "score": -1,
+    "has3d": true,
+    "images": 90,
+    "expertReviews": 14,
+    "expertEnComplete": 100,
+    "userReviews": 0,
+    "recalls": 1,
+    "issues": [
+      "No user reviews"
+    ],
+    "fixes": [
+      "Promote this page to attract reviews"
+    ]
+  },
+  {
+    "make": "volvo",
+    "model": "s60",
+    "nameEn": "S60",
+    "nameHe": "S60",
+    "score": -1,
+    "has3d": true,
+    "images": 102,
+    "expertReviews": 15,
+    "expertEnComplete": 100,
+    "userReviews": 0,
+    "recalls": 6,
+    "issues": [
+      "No user reviews"
+    ],
+    "fixes": [
+      "Promote this page to attract reviews"
+    ]
+  },
+  {
+    "make": "ford",
+    "model": "ranger",
+    "nameEn": "Ranger",
+    "nameHe": "ריינג'ר",
+    "score": -1,
+    "has3d": true,
+    "images": 101,
+    "expertReviews": 15,
+    "expertEnComplete": 100,
+    "userReviews": 0,
+    "recalls": 30,
+    "issues": [
+      "No user reviews"
+    ],
+    "fixes": [
+      "Promote this page to attract reviews"
+    ]
+  },
+  {
+    "make": "jeep",
+    "model": "renegade",
+    "nameEn": "Renegade",
+    "nameHe": "רנגייד",
+    "score": -1,
+    "has3d": true,
+    "images": 95,
+    "expertReviews": 13,
+    "expertEnComplete": 100,
+    "userReviews": 0,
+    "recalls": 7,
+    "issues": [
+      "No user reviews"
+    ],
+    "fixes": [
+      "Promote this page to attract reviews"
+    ]
+  },
+  {
+    "make": "lexus",
+    "model": "nx",
+    "nameEn": "NX",
+    "nameHe": "NX",
+    "score": -1,
+    "has3d": true,
+    "images": 103,
+    "expertReviews": 13,
+    "expertEnComplete": 100,
+    "userReviews": 0,
+    "recalls": 6,
+    "issues": [
+      "No user reviews"
+    ],
+    "fixes": [
+      "Promote this page to attract reviews"
+    ]
+  },
+  {
+    "make": "toyota",
+    "model": "yaris-cross",
+    "nameEn": "Yaris Cross",
+    "nameHe": "יאריס קרוס",
+    "score": -1,
+    "has3d": true,
+    "images": 51,
+    "expertReviews": 7,
+    "expertEnComplete": 100,
+    "userReviews": 1,
+    "recalls": 0,
+    "issues": [
+      "No recalls cached"
+    ],
+    "fixes": [
+      "Trigger recalls fetch: GET /api/recalls?make=Yaris%20Cross&model=Yaris%20Cross"
+    ]
+  },
+  {
+    "make": "bmw",
+    "model": "x5",
+    "nameEn": "X5",
+    "nameHe": "X5",
+    "score": -1,
+    "has3d": true,
+    "images": 107,
+    "expertReviews": 14,
+    "expertEnComplete": 100,
+    "userReviews": 0,
+    "recalls": 45,
+    "issues": [
+      "No user reviews"
+    ],
+    "fixes": [
+      "Promote this page to attract reviews"
+    ]
+  },
+  {
+    "make": "hyundai",
+    "model": "ioniq-5",
+    "nameEn": "Ioniq 5",
+    "nameHe": "איוניק 5",
+    "score": -1,
+    "has3d": true,
+    "images": 42,
+    "expertReviews": 7,
+    "expertEnComplete": 100,
+    "userReviews": 0,
+    "recalls": 11,
+    "issues": [
+      "No user reviews"
+    ],
+    "fixes": [
+      "Promote this page to attract reviews"
+    ]
+  },
+  {
+    "make": "hyundai",
+    "model": "venue",
+    "nameEn": "Venue",
+    "nameHe": "וונו",
+    "score": -1,
+    "has3d": true,
+    "images": 50,
+    "expertReviews": 8,
+    "expertEnComplete": 100,
+    "userReviews": 0,
+    "recalls": 2,
+    "issues": [
+      "No user reviews"
+    ],
+    "fixes": [
+      "Promote this page to attract reviews"
+    ]
+  },
+  {
+    "make": "kia",
+    "model": "ev6",
+    "nameEn": "EV6",
+    "nameHe": "EV6",
+    "score": -1,
+    "has3d": true,
+    "images": 50,
+    "expertReviews": 7,
+    "expertEnComplete": 100,
+    "userReviews": 0,
+    "recalls": 4,
+    "issues": [
+      "No user reviews"
+    ],
+    "fixes": [
+      "Promote this page to attract reviews"
+    ]
+  },
+  {
+    "make": "kia",
+    "model": "picanto",
+    "nameEn": "Picanto",
+    "nameHe": "פיקנטו",
+    "score": -1,
+    "has3d": true,
+    "images": 95,
+    "expertReviews": 14,
+    "expertEnComplete": 100,
+    "userReviews": 2,
+    "recalls": 0,
+    "issues": [
+      "No recalls cached"
+    ],
+    "fixes": [
+      "Trigger recalls fetch: GET /api/recalls?make=Picanto&model=Picanto"
+    ]
+  },
+  {
+    "make": "nissan",
+    "model": "juke",
+    "nameEn": "Juke",
+    "nameHe": "ג'וק",
+    "score": -1,
+    "has3d": true,
+    "images": 99,
+    "expertReviews": 14,
+    "expertEnComplete": 100,
+    "userReviews": 0,
+    "recalls": 3,
+    "issues": [
+      "No user reviews"
+    ],
+    "fixes": [
+      "Promote this page to attract reviews"
+    ]
+  },
+  {
+    "make": "toyota",
+    "model": "camry",
+    "nameEn": "Camry",
+    "nameHe": "קאמרי",
+    "score": -1,
+    "has3d": true,
+    "images": 82,
+    "expertReviews": 13,
+    "expertEnComplete": 100,
+    "userReviews": 0,
+    "recalls": 11,
+    "issues": [
+      "No user reviews"
+    ],
+    "fixes": [
+      "Promote this page to attract reviews"
+    ]
+  },
+  {
+    "make": "volkswagen",
+    "model": "golf",
+    "nameEn": "Golf",
+    "nameHe": "גולף",
+    "score": -1,
+    "has3d": true,
+    "images": 94,
+    "expertReviews": 14,
+    "expertEnComplete": 100,
+    "userReviews": 0,
+    "recalls": 13,
+    "issues": [
+      "No user reviews"
+    ],
+    "fixes": [
+      "Promote this page to attract reviews"
+    ]
+  },
+  {
+    "make": "volkswagen",
+    "model": "tiguan",
+    "nameEn": "Tiguan",
+    "nameHe": "טיגואן",
+    "score": -1,
+    "has3d": true,
+    "images": 99,
+    "expertReviews": 14,
+    "expertEnComplete": 100,
+    "userReviews": 0,
+    "recalls": 26,
+    "issues": [
+      "No user reviews"
+    ],
+    "fixes": [
+      "Promote this page to attract reviews"
+    ]
+  },
+  {
+    "make": "chery",
+    "model": "tiggo7",
+    "nameEn": "Tiggo 7 Pro",
+    "nameHe": "Tiggo 7 Pro",
+    "score": -1,
+    "has3d": true,
+    "images": 30,
+    "expertReviews": 7,
+    "expertEnComplete": 100,
+    "userReviews": 1,
+    "recalls": 0,
+    "issues": [
+      "No recalls cached"
+    ],
+    "fixes": [
+      "Trigger recalls fetch: GET /api/recalls?make=Tiggo%207%20Pro&model=Tiggo%207%20Pro"
+    ]
+  },
+  {
+    "make": "ford",
+    "model": "kuga",
+    "nameEn": "Kuga",
+    "nameHe": "קוגה",
+    "score": -1,
+    "has3d": true,
+    "images": 96,
+    "expertReviews": 15,
+    "expertEnComplete": 100,
+    "userReviews": 1,
+    "recalls": 0,
+    "issues": [
+      "No recalls cached"
+    ],
+    "fixes": [
+      "Trigger recalls fetch: GET /api/recalls?make=Kuga&model=Kuga"
+    ]
+  },
+  {
+    "make": "jeep",
+    "model": "compass",
+    "nameEn": "Compass",
+    "nameHe": "קומפס",
+    "score": -1,
+    "has3d": true,
+    "images": 74,
+    "expertReviews": 11,
+    "expertEnComplete": 100,
+    "userReviews": 0,
+    "recalls": 12,
+    "issues": [
+      "No user reviews"
+    ],
+    "fixes": [
+      "Promote this page to attract reviews"
+    ]
+  },
+  {
+    "make": "audi",
+    "model": "a3",
+    "nameEn": "A3",
+    "nameHe": "A3",
+    "score": -1,
+    "has3d": true,
+    "images": 112,
+    "expertReviews": 15,
+    "expertEnComplete": 100,
+    "userReviews": 0,
+    "recalls": 12,
+    "issues": [
+      "No user reviews"
+    ],
+    "fixes": [
+      "Promote this page to attract reviews"
+    ]
+  },
+  {
+    "make": "volvo",
+    "model": "xc40",
+    "nameEn": "XC40",
+    "nameHe": "XC40",
+    "score": -1,
+    "has3d": true,
+    "images": 75,
+    "expertReviews": 10,
+    "expertEnComplete": 100,
+    "userReviews": 0,
+    "recalls": 10,
+    "issues": [
+      "No user reviews"
+    ],
+    "fixes": [
+      "Promote this page to attract reviews"
+    ]
+  },
+  {
+    "make": "subaru",
+    "model": "impreza",
+    "nameEn": "Impreza",
+    "nameHe": "אימפרזה",
+    "score": -1,
+    "has3d": true,
+    "images": 97,
+    "expertReviews": 15,
+    "expertEnComplete": 100,
+    "userReviews": 0,
+    "recalls": 19,
+    "issues": [
+      "No user reviews"
+    ],
+    "fixes": [
+      "Promote this page to attract reviews"
+    ]
+  },
+  {
+    "make": "volvo",
+    "model": "xc90",
+    "nameEn": "XC90",
+    "nameHe": "XC90",
+    "score": -1,
+    "has3d": true,
+    "images": 93,
+    "expertReviews": 13,
+    "expertEnComplete": 100,
+    "userReviews": 0,
+    "recalls": 17,
+    "issues": [
+      "No user reviews"
+    ],
+    "fixes": [
+      "Promote this page to attract reviews"
+    ]
+  },
+  {
+    "make": "honda",
+    "model": "crv",
+    "nameEn": "CR-V",
+    "nameHe": "CR-V",
+    "score": -1,
+    "has3d": true,
+    "images": 95,
+    "expertReviews": 14,
+    "expertEnComplete": 100,
+    "userReviews": 0,
+    "recalls": 18,
+    "issues": [
+      "No user reviews"
+    ],
+    "fixes": [
+      "Promote this page to attract reviews"
+    ]
+  },
+  {
+    "make": "jeep",
+    "model": "grand-cherokee",
+    "nameEn": "Grand Cherokee",
+    "nameHe": "גרנד צ׳רוקי",
+    "score": -1,
+    "has3d": true,
+    "images": 97,
+    "expertReviews": 14,
+    "expertEnComplete": 100,
+    "userReviews": 0,
+    "recalls": 60,
+    "issues": [
+      "No user reviews"
+    ],
+    "fixes": [
+      "Promote this page to attract reviews"
+    ]
+  },
+  {
+    "make": "subaru",
+    "model": "outback",
+    "nameEn": "Outback",
+    "nameHe": "אאוטבק",
+    "score": -1,
+    "has3d": true,
+    "images": 100,
+    "expertReviews": 15,
+    "expertEnComplete": 100,
+    "userReviews": 0,
+    "recalls": 30,
+    "issues": [
+      "No user reviews"
+    ],
+    "fixes": [
+      "Promote this page to attract reviews"
+    ]
+  },
+  {
+    "make": "audi",
+    "model": "a6",
+    "nameEn": "A6",
+    "nameHe": "A6",
+    "score": -1,
+    "has3d": true,
+    "images": 106,
+    "expertReviews": 15,
+    "expertEnComplete": 100,
+    "userReviews": 0,
+    "recalls": 16,
+    "issues": [
+      "No user reviews"
+    ],
+    "fixes": [
+      "Promote this page to attract reviews"
+    ]
+  },
+  {
+    "make": "audi",
+    "model": "q5",
+    "nameEn": "Q5",
+    "nameHe": "Q5",
+    "score": -1,
+    "has3d": true,
+    "images": 97,
+    "expertReviews": 15,
+    "expertEnComplete": 100,
+    "userReviews": 0,
+    "recalls": 18,
+    "issues": [
+      "No user reviews"
+    ],
+    "fixes": [
+      "Promote this page to attract reviews"
+    ]
+  },
+  {
+    "make": "bmw",
+    "model": "x1",
+    "nameEn": "X1",
+    "nameHe": "X1",
+    "score": -1,
+    "has3d": true,
+    "images": 97,
+    "expertReviews": 14,
+    "expertEnComplete": 100,
+    "userReviews": 0,
+    "recalls": 19,
+    "issues": [
+      "No user reviews"
+    ],
+    "fixes": [
+      "Promote this page to attract reviews"
+    ]
+  },
+  {
+    "make": "jeep",
+    "model": "wrangler",
+    "nameEn": "Wrangler",
+    "nameHe": "רנגלר",
+    "score": -1,
+    "has3d": true,
+    "images": 102,
+    "expertReviews": 15,
+    "expertEnComplete": 100,
+    "userReviews": 0,
+    "recalls": 50,
+    "issues": [
+      "No user reviews"
+    ],
+    "fixes": [
+      "Promote this page to attract reviews"
+    ]
+  },
+  {
+    "make": "toyota",
+    "model": "land-cruiser",
+    "nameEn": "Land Cruiser",
+    "nameHe": "לנד קרוזר",
+    "score": -1,
+    "has3d": true,
+    "images": 82,
+    "expertReviews": 12,
+    "expertEnComplete": 100,
+    "userReviews": 0,
+    "recalls": 2,
+    "issues": [
+      "No user reviews"
+    ],
+    "fixes": [
+      "Promote this page to attract reviews"
+    ]
+  },
+  {
+    "make": "lexus",
+    "model": "es",
+    "nameEn": "ES",
+    "nameHe": "ES",
+    "score": -1,
+    "has3d": true,
+    "images": 75,
+    "expertReviews": 9,
+    "expertEnComplete": 100,
+    "userReviews": 0,
+    "recalls": 2,
+    "issues": [
+      "No user reviews"
+    ],
+    "fixes": [
+      "Promote this page to attract reviews"
+    ]
+  },
+  {
+    "make": "lexus",
+    "model": "rz",
+    "nameEn": "RZ",
+    "nameHe": "RZ",
+    "score": -1,
+    "has3d": true,
+    "images": 33,
+    "expertReviews": 5,
+    "expertEnComplete": 100,
+    "userReviews": 0,
+    "recalls": 2,
+    "issues": [
+      "No user reviews"
+    ],
+    "fixes": [
+      "Promote this page to attract reviews"
+    ]
+  },
+  {
+    "make": "volvo",
+    "model": "ex30",
+    "nameEn": "EX30",
+    "nameHe": "EX30",
+    "score": -1,
+    "has3d": true,
+    "images": 38,
+    "expertReviews": 5,
+    "expertEnComplete": 100,
+    "userReviews": 0,
+    "recalls": 3,
+    "issues": [
+      "No user reviews"
+    ],
+    "fixes": [
+      "Promote this page to attract reviews"
+    ]
+  },
+  {
+    "make": "fiat",
+    "model": "500",
+    "nameEn": "500",
+    "nameHe": "500",
+    "score": -1,
+    "has3d": true,
+    "images": 86,
+    "expertReviews": 16,
+    "expertEnComplete": 100,
+    "userReviews": 0,
+    "recalls": 7,
+    "issues": [
+      "No user reviews"
+    ],
+    "fixes": [
+      "Promote this page to attract reviews"
+    ]
+  },
+  {
+    "make": "fiat",
+    "model": "500x",
+    "nameEn": "500X",
+    "nameHe": "500X",
+    "score": -1,
+    "has3d": true,
+    "images": 56,
+    "expertReviews": 13,
+    "expertEnComplete": 100,
+    "userReviews": 0,
+    "recalls": 6,
+    "issues": [
+      "No user reviews"
+    ],
+    "fixes": [
+      "Promote this page to attract reviews"
+    ]
+  },
+  {
+    "make": "tesla",
+    "model": "model-s",
+    "nameEn": "Model S",
+    "nameHe": "מודל S",
+    "score": -1,
+    "has3d": true,
+    "images": 65,
+    "expertReviews": 13,
+    "expertEnComplete": 100,
+    "userReviews": 0,
+    "recalls": 9,
+    "issues": [
+      "No user reviews"
+    ],
+    "fixes": [
+      "Promote this page to attract reviews"
+    ]
+  },
+  {
+    "make": "fiat",
+    "model": "500e",
+    "nameEn": "500e",
+    "nameHe": "500e",
+    "score": -1,
+    "has3d": true,
+    "images": 36,
+    "expertReviews": 7,
+    "expertEnComplete": 100,
+    "userReviews": 0,
+    "recalls": 3,
+    "issues": [
+      "No user reviews"
+    ],
+    "fixes": [
+      "Promote this page to attract reviews"
+    ]
+  },
+  {
+    "make": "porsche",
+    "model": "cayenne",
+    "nameEn": "Cayenne",
+    "nameHe": "קאיין",
+    "score": -1,
+    "has3d": true,
+    "images": 73,
+    "expertReviews": 15,
+    "expertEnComplete": 100,
+    "userReviews": 0,
+    "recalls": 15,
+    "issues": [
+      "No user reviews"
+    ],
+    "fixes": [
+      "Promote this page to attract reviews"
+    ]
+  },
+  {
+    "make": "porsche",
+    "model": "macan",
+    "nameEn": "Macan",
+    "nameHe": "מאקן",
+    "score": -1,
+    "has3d": true,
+    "images": 76,
+    "expertReviews": 14,
+    "expertEnComplete": 100,
+    "userReviews": 0,
+    "recalls": 8,
+    "issues": [
+      "No user reviews"
+    ],
+    "fixes": [
+      "Promote this page to attract reviews"
+    ]
+  },
+  {
+    "make": "porsche",
+    "model": "911",
+    "nameEn": "911",
+    "nameHe": "911",
+    "score": -1,
+    "has3d": true,
+    "images": 80,
+    "expertReviews": 15,
+    "expertEnComplete": 100,
+    "userReviews": 0,
+    "recalls": 14,
+    "issues": [
+      "No user reviews"
+    ],
+    "fixes": [
+      "Promote this page to attract reviews"
+    ]
+  },
+  {
+    "make": "porsche",
+    "model": "panamera",
+    "nameEn": "Panamera",
+    "nameHe": "פנמרה",
+    "score": -1,
+    "has3d": true,
+    "images": 62,
+    "expertReviews": 11,
+    "expertEnComplete": 100,
+    "userReviews": 0,
+    "recalls": 10,
+    "issues": [
+      "No user reviews"
+    ],
+    "fixes": [
+      "Promote this page to attract reviews"
+    ]
+  },
+  {
+    "make": "porsche",
+    "model": "taycan",
+    "nameEn": "Taycan",
+    "nameHe": "טייקן",
+    "score": -1,
+    "has3d": true,
+    "images": 39,
+    "expertReviews": 8,
+    "expertEnComplete": 100,
+    "userReviews": 0,
+    "recalls": 23,
+    "issues": [
+      "No user reviews"
+    ],
+    "fixes": [
+      "Promote this page to attract reviews"
+    ]
+  },
+  {
+    "make": "toyota",
+    "model": "prius",
+    "nameEn": "Prius",
+    "nameHe": "פריוס",
+    "score": 0,
+    "has3d": true,
+    "images": 83,
+    "expertReviews": 12,
+    "expertEnComplete": 100,
+    "userReviews": 1,
+    "recalls": 13,
+    "issues": [],
+    "fixes": []
+  },
+  {
+    "make": "volvo",
+    "model": "xc60",
+    "nameEn": "XC60",
+    "nameHe": "XC60",
+    "score": 0,
+    "has3d": true,
+    "images": 103,
+    "expertReviews": 15,
+    "expertEnComplete": 100,
+    "userReviews": 1,
+    "recalls": 11,
+    "issues": [],
+    "fixes": []
+  },
+  {
+    "make": "mazda",
+    "model": "cx3",
+    "nameEn": "CX-3",
+    "nameHe": "CX-3",
+    "score": 0,
+    "has3d": true,
+    "images": 75,
+    "expertReviews": 10,
+    "expertEnComplete": 100,
+    "userReviews": 1,
+    "recalls": 4,
+    "issues": [],
+    "fixes": []
+  },
+  {
+    "make": "chevrolet",
+    "model": "spark",
+    "nameEn": "Spark",
+    "nameHe": "ספארק",
+    "score": 0,
+    "has3d": true,
+    "images": 69,
+    "expertReviews": 12,
+    "expertEnComplete": 100,
+    "userReviews": 1,
+    "recalls": 9,
+    "issues": [],
+    "fixes": []
+  },
+  {
+    "make": "toyota",
+    "model": "rav4",
+    "nameEn": "RAV4",
+    "nameHe": "RAV4",
+    "score": 0,
+    "has3d": true,
+    "images": 99,
+    "expertReviews": 15,
+    "expertEnComplete": 100,
+    "userReviews": 1,
+    "recalls": 17,
+    "issues": [],
+    "fixes": []
+  },
+  {
+    "make": "hyundai",
+    "model": "sonata",
+    "nameEn": "Sonata",
+    "nameHe": "סונטה",
+    "score": 0,
+    "has3d": true,
+    "images": 92,
+    "expertReviews": 13,
+    "expertEnComplete": 100,
+    "userReviews": 1,
+    "recalls": 13,
+    "issues": [],
+    "fixes": []
+  },
+  {
+    "make": "toyota",
+    "model": "corolla-cross",
+    "nameEn": "Corolla Cross",
+    "nameHe": "קורולה קרוס",
+    "score": 0,
+    "has3d": true,
+    "images": 49,
+    "expertReviews": 6,
+    "expertEnComplete": 100,
+    "userReviews": 2,
+    "recalls": 2,
+    "issues": [],
+    "fixes": []
+  },
+  {
+    "make": "hyundai",
+    "model": "kona",
+    "nameEn": "Kona",
+    "nameHe": "קונה",
+    "score": 0,
+    "has3d": true,
+    "images": 77,
+    "expertReviews": 11,
+    "expertEnComplete": 100,
+    "userReviews": 2,
+    "recalls": 9,
+    "issues": [],
+    "fixes": []
+  },
+  {
+    "make": "kia",
+    "model": "seltos",
+    "nameEn": "Seltos",
+    "nameHe": "סלטוס",
+    "score": 0,
+    "has3d": true,
+    "images": 48,
+    "expertReviews": 8,
+    "expertEnComplete": 100,
+    "userReviews": 2,
+    "recalls": 4,
+    "issues": [],
+    "fixes": []
+  },
+  {
+    "make": "kia",
+    "model": "sportage",
+    "nameEn": "Sportage",
+    "nameHe": "ספורטז'",
+    "score": 0,
+    "has3d": true,
+    "images": 92,
+    "expertReviews": 14,
+    "expertEnComplete": 100,
+    "userReviews": 2,
+    "recalls": 13,
+    "issues": [],
+    "fixes": []
+  },
+  {
+    "make": "mazda",
+    "model": "cx30",
+    "nameEn": "CX-30",
+    "nameHe": "CX-30",
+    "score": 0,
+    "has3d": true,
+    "images": 63,
+    "expertReviews": 9,
+    "expertEnComplete": 100,
+    "userReviews": 1,
+    "recalls": 7,
+    "issues": [],
+    "fixes": []
+  },
+  {
+    "make": "mazda",
+    "model": "mazda6",
+    "nameEn": "Mazda6",
+    "nameHe": "מאזדה 6",
+    "score": 0,
+    "has3d": true,
+    "images": 95,
+    "expertReviews": 14,
+    "expertEnComplete": 100,
+    "userReviews": 1,
+    "recalls": 4,
+    "issues": [],
+    "fixes": []
+  },
+  {
+    "make": "toyota",
+    "model": "chr",
+    "nameEn": "C-HR",
+    "nameHe": "C-HR",
+    "score": 0,
+    "has3d": true,
+    "images": 81,
+    "expertReviews": 11,
+    "expertEnComplete": 100,
+    "userReviews": 1,
+    "recalls": 3,
+    "issues": [],
+    "fixes": []
+  },
+  {
+    "make": "honda",
+    "model": "civic",
+    "nameEn": "Civic",
+    "nameHe": "סיוויק",
+    "score": 0,
+    "has3d": true,
+    "images": 88,
+    "expertReviews": 14,
+    "expertEnComplete": 100,
+    "userReviews": 1,
+    "recalls": 18,
+    "issues": [],
+    "fixes": []
+  },
+  {
+    "make": "audi",
+    "model": "a4",
+    "nameEn": "A4",
+    "nameHe": "A4",
+    "score": 0,
+    "has3d": true,
+    "images": 81,
+    "expertReviews": 15,
+    "expertEnComplete": 100,
+    "userReviews": 1,
+    "recalls": 6,
+    "issues": [],
+    "fixes": []
+  },
+  {
+    "make": "mitsubishi",
+    "model": "eclipse-cross",
+    "nameEn": "Eclipse Cross",
+    "nameHe": "אקליפס קרוס",
+    "score": 0,
+    "has3d": true,
+    "images": 64,
+    "expertReviews": 10,
+    "expertEnComplete": 100,
+    "userReviews": 1,
+    "recalls": 2,
+    "issues": [],
+    "fixes": []
+  },
+  {
+    "make": "hyundai",
+    "model": "tucson",
+    "nameEn": "Tucson",
+    "nameHe": "טוסון",
+    "score": 0,
+    "has3d": true,
+    "images": 94,
+    "expertReviews": 14,
+    "expertEnComplete": 100,
+    "userReviews": 2,
+    "recalls": 17,
+    "issues": [],
+    "fixes": []
+  },
+  {
+    "make": "toyota",
+    "model": "corolla",
+    "nameEn": "Corolla",
+    "nameHe": "קורולה",
+    "score": 0,
+    "has3d": true,
+    "images": 86,
+    "expertReviews": 14,
+    "expertEnComplete": 100,
+    "userReviews": 2,
+    "recalls": 10,
+    "issues": [],
+    "fixes": []
+  },
+  {
+    "make": "toyota",
+    "model": "yaris",
+    "nameEn": "Yaris",
+    "nameHe": "יאריס",
+    "score": 0,
+    "has3d": true,
+    "images": 91,
+    "expertReviews": 14,
+    "expertEnComplete": 100,
+    "userReviews": 1,
+    "recalls": 5,
+    "issues": [],
+    "fixes": []
+  }
+]

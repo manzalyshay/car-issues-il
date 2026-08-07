@@ -20,6 +20,8 @@ interface Props {
   modelSlug: string;
   makeNameHe: string;
   modelNameHe: string;
+  makeNameEn?: string;
+  modelNameEn?: string;
   defaultYear?: number; // year page passes this
 }
 
@@ -43,7 +45,7 @@ function fmtPrice(priceIls: number, locale: string) {
   return `₪${Math.round(priceIls / 1000)}K`;
 }
 
-export default function TrimSpecsTab({ makeSlug, modelSlug, makeNameHe, modelNameHe, defaultYear }: Props) {
+export default function TrimSpecsTab({ makeSlug, modelSlug, makeNameHe, modelNameHe, makeNameEn, modelNameEn, defaultYear }: Props) {
   const { t, locale } = useLocale();
   const ts = t.trimSpecs;
   const [allTrims, setAllTrims] = useState<TrimWithYear[] | null>(null);
@@ -66,11 +68,14 @@ export default function TrimSpecsTab({ makeSlug, modelSlug, makeNameHe, modelNam
     <div style={{ textAlign: 'center', padding: '56px 0', color: 'var(--text-muted)', fontSize: '0.9rem' }}>{ts.loading}</div>
   );
 
+  const displayMakeName = locale === 'en' ? (makeNameEn ?? makeNameHe) : makeNameHe;
+  const displayModelName = locale === 'en' ? (modelNameEn ?? modelNameHe) : modelNameHe;
+
   if (!allTrims || allTrims.length === 0) return (
     <div style={{ textAlign: 'center', padding: '56px 24px', color: 'var(--text-muted)' }}>
       <div style={{ fontSize: '2.5rem', marginBottom: 12 }}>🔧</div>
       <p style={{ fontWeight: 600, color: 'var(--text-muted)', marginBottom: 6 }}>
-        {ts.noData} {makeNameHe} {modelNameHe}{ts.noDataSuffix}
+        {ts.noData} {displayMakeName} {displayModelName}{ts.noDataSuffix}
       </p>
     </div>
   );
@@ -146,7 +151,7 @@ export default function TrimSpecsTab({ makeSlug, modelSlug, makeNameHe, modelNam
           <div>
             <div style={{ fontSize: '1.1rem', fontWeight: 800, color: '#fff' }}>{trim.name}</div>
             <div style={{ fontSize: '0.8rem', color: 'rgba(255,255,255,0.75)', marginTop: 2 }}>
-              {makeNameHe} {modelNameHe}
+              {displayMakeName} {displayModelName}
             </div>
           </div>
           {trim.priceIls && (

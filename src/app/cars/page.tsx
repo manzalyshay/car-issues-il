@@ -8,9 +8,10 @@ import { translations } from '@/lib/translations';
 export async function generateMetadata(): Promise<Metadata> {
   const locale = await getHostLocale();
   const base = getBaseUrl(locale);
+  const langs = { he: 'https://carissues.co.il/cars', en: 'https://carissues.net/cars', 'x-default': 'https://carissues.net/cars' };
   return locale === 'en'
-    ? { title: 'All Car Makes | CarIssues', description: 'Browse all car manufacturers. Select a make to see models, common issues and owner reviews.', alternates: { canonical: `${base}/cars` } }
-    : { title: 'כל יצרני הרכב | CarIssues IL', description: 'רשימת כל יצרני הרכב הנמכרים בישראל.', alternates: { canonical: `${base}/cars` } };
+    ? { title: 'All Car Makes', description: 'Browse all car manufacturers. Select a make to see models, common issues and owner reviews.', alternates: { canonical: `${base}/cars`, languages: langs } }
+    : { title: 'כל יצרני הרכב', description: 'רשימת כל יצרני הרכב הנמכרים בישראל.', alternates: { canonical: `${base}/cars`, languages: langs } };
 }
 
 const COUNTRY_GROUPS = ['יפן', "קוריאה", 'גרמניה', "צרפת", 'שוודיה', 'ארה"ב', "צ'כיה", 'איטליה'];

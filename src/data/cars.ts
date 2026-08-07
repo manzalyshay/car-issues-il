@@ -32,6 +32,13 @@ export interface TrimSpec {
   screenSize?: number;
   features: string[];
   priceIls?: number;
+  // Performance specs
+  acceleration?: number;    // 0-100 km/h in seconds
+  topSpeedKmh?: number;     // km/h
+  torqueNm?: number;        // Nm
+  fuelConsumption?: number; // L/100km combined
+  cargoLiters?: number;     // boot/trunk in liters
+  curbWeightKg?: number;    // kg
 }
 
 /** All feature keys used in TrimSpec.features */

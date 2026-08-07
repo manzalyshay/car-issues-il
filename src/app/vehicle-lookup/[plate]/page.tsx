@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import { getHostLocale, getBaseUrl } from '@/lib/hostLocale';
-import { lookupVehicle } from '@/lib/vehicleLookup';
+import { lookupVehicle, detectCountry } from '@/lib/vehicleLookup';
+import { lookupUkVehicle } from '@/lib/vehicleLookupUk';
 import PlateSearch from '@/components/PlateSearch';
 import Link from 'next/link';
 
@@ -8,9 +9,16 @@ interface Props { params: Promise<{ plate: string }> }
 
 function fmtPlate(raw: string): string {
   const p = raw.replace(/\D/g, '');
+  if (!p) return raw.toUpperCase(); // UK plate — return as-is
   return p.length === 7
     ? `${p.slice(0, 3)}-${p.slice(3, 5)}-${p.slice(5)}`
     : `${p.slice(0, 2)}-${p.slice(2, 5)}-${p.slice(5)}`;
+}
+
+async function lookupByPlate(plate: string) {
+  const country = detectCountry(plate);
+  if (country === 'uk') return lookupUkVehicle(plate);
+  return lookupVehicle(plate);
 }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
@@ -18,7 +26,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const locale = await getHostLocale();
   const base = getBaseUrl(locale);
   const displayPlate = fmtPlate(plate);
-  const result = await lookupVehicle(plate);
+  const result = await lookupByPlate(plate);
   const isHe = locale === 'he';
 
   if (result.status !== 'found') {
@@ -51,7 +59,7 @@ export default async function VehiclePlatePage({ params }: Props) {
   const { plate } = await params;
   const locale = await getHostLocale();
   const isHe = locale === 'he';
-  const result = await lookupVehicle(plate);
+  const result = await lookupByPlate(plate);
   const displayPlate = fmtPlate(plate);
 
   const jsonLd = result.status === 'found' ? {

@@ -13,6 +13,7 @@ interface UserAgg {
 interface RepairOption {
   repair_key: string;
   repair_name_he: string;
+  repair_name_en?: string;
 }
 
 interface Props {
@@ -73,16 +74,19 @@ export default function RepairCostSubmit({ makeSlug, modelSlug, makeNameHe, mode
       {Object.keys(userAgg).length > 0 && (
         <div style={{ marginBottom: 16, padding: '10px 14px', background: 'rgba(22,163,74,0.07)', borderRadius: 8, border: '1px solid rgba(22,163,74,0.2)' }}>
           <div style={{ fontSize: '0.78rem', fontWeight: 700, color: '#16a34a', marginBottom: 8 }}>
-            🇮🇱 {rc.ownersOf} {carName}
+            {!isEn && '🇮🇱 '}{rc.ownersOf} {carName}
           </div>
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
             {Object.entries(userAgg).map(([key, agg]) => {
               if (agg.count < 1) return null;
               const opt = repairOptions.find(r => r.repair_key === key);
               if (!opt) return null;
+              const optName = isEn ? (opt.repair_name_en ?? opt.repair_name_he) : opt.repair_name_he;
+              if (isEn && optName === opt.repair_name_he && /[\u0590-\u05FF]/.test(optName)) return null;
+              const fmtCost = (v: number) => isEn ? `$${Math.round(v / 3.65).toLocaleString('en-US')}` : `₪${Math.round(v).toLocaleString()}`;
               return (
                 <div key={key} style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>
-                  <strong>{opt.repair_name_he}:</strong> ₪{Math.round(agg.min).toLocaleString()}–₪{Math.round(agg.max).toLocaleString()}
+                  <strong>{optName}:</strong> {fmtCost(agg.min)}–{fmtCost(agg.max)}
                   {agg.count >= 2 && <span style={{ color: 'var(--text-muted)' }}> ({agg.count})</span>}
                 </div>
               );
@@ -116,8 +120,8 @@ export default function RepairCostSubmit({ makeSlug, modelSlug, makeNameHe, mode
                   }}
                   style={{ width: '100%', height: 40, padding: '0 10px', border: '1.5px solid var(--border)', borderRadius: 8, background: 'var(--bg)', color: 'var(--text)', fontSize: '0.875rem' }}>
                   <option value="">{rc.selectRepair}</option>
-                  {[...new Map(repairOptions.map(r => [r.repair_key, r])).values()].map(r => (
-                    <option key={r.repair_key} value={r.repair_key}>{r.repair_name_he}</option>
+                  {[...new Map(repairOptions.map(r => [r.repair_key, r])).values()].filter(r => !isEn || r.repair_name_en).map(r => (
+                    <option key={r.repair_key} value={r.repair_key}>{isEn ? (r.repair_name_en ?? r.repair_name_he) : r.repair_name_he}</option>
                   ))}
                   <option value="other">{rc.other}</option>
                 </select>

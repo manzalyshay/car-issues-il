@@ -18,8 +18,10 @@ import RecallsSection from '@/components/RecallsSection';
 import RecallsBadge from '@/components/RecallsBadge';
 import RepairCostsSection from '@/components/RepairCostsSection';
 import Car3DViewer from '@/components/Car3DViewer';
+import GalleryViewer from '@/components/GalleryViewer';
 import CarSidebarLayout from '../CarSidebarLayout';
 import FirstReviewCta from '../FirstReviewCta';
+import { getRecallsFromCache } from '@/lib/recallsDb';
 
 export const revalidate = 86400;
 
@@ -37,11 +39,12 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const base = getBaseUrl(locale);
   const url = `${base}/cars/${make.slug}/${model.slug}/${year}`;
 
-  const [avgRating, reviews, trims, { review: metaExpertReview }] = await Promise.all([
+  const [avgRating, reviews, trims, { review: metaExpertReview }, metaRecalls] = await Promise.all([
     getAverageRating(makeSlug, modelSlug),
     getReviewsForCar(makeSlug, modelSlug, yearNum),
     getTrimSpecs(makeSlug, modelSlug, yearNum),
     getExpertReviewsForYear(makeSlug, modelSlug, yearNum),
+    getRecallsFromCache(make.nameEn, model.nameEn),
   ]);
 
   const trimsWithPrice = trims.filter(t => t.priceIls);
@@ -60,14 +63,25 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       })()
     : '';
 
+  const hasContent = reviews.length > 0 || !!metaExpertReview || metaRecalls.length > 0;
+
   if (locale === 'en') {
     const reviewPart = reviews.length > 0
       ? `${reviews.length} reviews${avgRating ? ` ⭐ ${avgRating.toFixed(1)}` : ''}`
       : 'Reviews & Common Problems';
+    const expertPart = metaExpertReview
+      ? ` Expert score: ${metaExpertReview.topScore?.toFixed(1) ?? '—'}/10.`
+      : '';
+    const recallPart = metaRecalls.length > 0
+      ? ` ${metaRecalls.length} NHTSA recall${metaRecalls.length > 1 ? 's' : ''}.`
+      : '';
+    const prosPart = metaExpertReview?.prosEn?.[0] ? ` Pros: ${metaExpertReview.prosEn[0]}.` : '';
+    const consPart = metaExpertReview?.consEn?.[0] ? ` Cons: ${metaExpertReview.consEn[0]}.` : '';
     return {
       title: `${make.nameEn} ${model.nameEn} ${year} — ${reviewPart} | Pros & Cons`,
-      description: `${reviews.length > 0 ? `${reviews.length} real owner reviews` : 'Real owner reviews'} for the ${make.nameEn} ${model.nameEn} ${year}${avgRating ? `. Average rating ${avgRating.toFixed(1)}/5` : ''}. Common problems, pros, cons and reliability.`,
-      alternates: { canonical: url, languages: { he: `https://carissues.co.il/cars/${make.slug}/${model.slug}/${year}`, en: url } },
+      description: `${reviews.length > 0 ? `${reviews.length} real owner reviews` : 'Real owner reviews'} for the ${make.nameEn} ${model.nameEn} ${year}${avgRating ? `. Average rating ${avgRating.toFixed(1)}/5` : ''}.${expertPart}${prosPart}${consPart}${recallPart} Common problems and reliability.`,
+      robots: hasContent ? { index: true, follow: true } : { index: false, follow: true },
+      alternates: { canonical: url, languages: { he: `https://carissues.co.il/cars/${make.slug}/${model.slug}/${year}`, en: url, 'x-default': url } },
       openGraph: {
         title: `${make.nameEn} ${model.nameEn} ${year} | CarIssues`,
         description: `Owner reviews & common problems — ${make.nameEn} ${model.nameEn} ${year}`,
@@ -79,12 +93,14 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
   const ratingStr = avgRating ? ` · ${avgRating.toFixed(1)}★` : '';
   const reviewPart = reviews.length > 0
-    ? `${reviews.length} ביקורות אמיתיות${avgRating ? ` ⭐ ${avgRating.toFixed(1)}` : ''}`
-    : 'ביקורות ובעיות נפוצות';
+    ? `${reviews.length} חוות דעת${avgRating ? ` ⭐ ${avgRating.toFixed(1)}` : ''}`
+    : 'חוות דעת ובעיות נפוצות';
+  const recallPartHe = metaRecalls.length > 0 ? ` ${metaRecalls.length} ריקולים.` : '';
   return {
     title: `${make.nameHe} ${model.nameHe} ${year} — ${reviewPart} | יתרונות וחסרונות`,
-    description: `${reviews.length > 0 ? `${reviews.length} ביקורות אמיתיות על` : 'חוות דעת על'} ${make.nameHe} ${model.nameHe} ${year} (${make.nameEn} ${model.nameEn})${avgRating ? ` — דירוג ממוצע ${avgRating.toFixed(1)}/5` : ''}.${expertDesc}${priceDesc}${trimDesc} יתרונות, חסרונות ובעיות נפוצות מבעלי רכב בישראל.`,
-    alternates: { canonical: url, languages: { he: url, en: `https://carissues.net/cars/${make.slug}/${model.slug}/${year}` } },
+    description: `${reviews.length > 0 ? `${reviews.length} ביקורות אמיתיות על` : 'חוות דעת על'} ${make.nameHe} ${model.nameHe} ${year} (${make.nameEn} ${model.nameEn})${avgRating ? ` — דירוג ממוצע ${avgRating.toFixed(1)}/5` : ''}.${expertDesc}${priceDesc}${trimDesc}${recallPartHe} יתרונות, חסרונות ובעיות נפוצות מבעלי רכב בישראל.`,
+    robots: hasContent ? { index: true, follow: true } : { index: false, follow: true },
+    alternates: { canonical: url, languages: { he: url, en: `https://carissues.net/cars/${make.slug}/${model.slug}/${year}`, 'x-default': `https://carissues.net/cars/${make.slug}/${model.slug}/${year}` } },
     openGraph: {
       title: `${make.nameHe} ${model.nameHe} ${year}${ratingStr} | CarIssues IL`,
       description: `ביקורות ובעיות נפוצות — ${make.nameHe} ${model.nameHe} ${year}`,
@@ -105,12 +121,13 @@ export default async function CarYearPage({ params }: Props) {
   const yearNum = parseInt(year);
   if (!model.years.includes(yearNum)) notFound();
 
-  const [reviews, { review: yearReview, isYearSpecific }, sketchfabModel, similarModels, carImages] = await Promise.all([
+  const [reviews, { review: yearReview, isYearSpecific }, sketchfabModel, similarModels, carImages, cachedRecalls] = await Promise.all([
     getReviewsForCar(makeSlug, modelSlug, yearNum),
     getExpertReviewsForYear(makeSlug, modelSlug, yearNum),
     findCarModel(makeSlug, modelSlug).catch(() => null),
     getSimilarModels(makeSlug, modelSlug, model.category, 8).catch(() => []),
     getImagesForCar(makeSlug, modelSlug).catch(() => []),
+    getRecallsFromCache(make.nameEn, model.nameEn),
   ]);
 
   const avgRating = reviews.length
@@ -118,10 +135,43 @@ export default async function CarYearPage({ params }: Props) {
     : null;
 
   const isEn = locale === 'en';
+  const base = getBaseUrl(locale);
   const cp = translations[locale].carPage;
   const yp = translations[locale].yearPage;
   const makeName = isEn ? make.nameEn : make.nameHe;
   const modelName = isEn ? model.nameEn : model.nameHe;
+
+  // ── Server-rendered intro paragraph (crawlable by Google) ──────────────────
+  const introParts: string[] = [];
+  if (isEn) {
+    const category = getCategoryLabel(model.category, 'en');
+    introParts.push(`The ${yearNum} ${make.nameEn} ${model.nameEn} is a ${category}.`);
+    if (yearReview?.topScore != null) introParts.push(`Expert analysis gives it a score of ${yearReview.topScore.toFixed(1)}/10.`);
+    if (avgRating !== null) introParts.push(`Owner-rated ${avgRating.toFixed(1)}/5 based on ${reviews.length} review${reviews.length !== 1 ? 's' : ''}.`);
+    if (yearReview?.prosEn?.length) introParts.push(`Pros: ${yearReview.prosEn.slice(0, 3).join('; ')}.`);
+    if (yearReview?.consEn?.length) introParts.push(`Common concerns: ${yearReview.consEn.slice(0, 3).join('; ')}.`);
+    if (yearReview?.localSummaryEn) introParts.push(yearReview.localSummaryEn);
+    else if (yearReview?.globalSummaryEn) introParts.push(yearReview.globalSummaryEn);
+    if (cachedRecalls.length > 0) introParts.push(`There ${cachedRecalls.length === 1 ? 'is' : 'are'} ${cachedRecalls.length} NHTSA recall${cachedRecalls.length > 1 ? 's' : ''} associated with this model.`);
+  } else {
+    const category = getCategoryLabel(model.category, 'he');
+    introParts.push(`${make.nameHe} ${model.nameHe} ${yearNum} הוא ${category}.`);
+    if (yearReview?.topScore != null) introParts.push(`ניתוח מומחים מעניק לו ציון ${yearReview.topScore.toFixed(1)}/10.`);
+    if (avgRating !== null) introParts.push(`דירוג בעלים ${avgRating.toFixed(1)}/5 על בסיס ${reviews.length} ביקורות.`);
+    if (yearReview?.pros?.length) introParts.push(`יתרונות: ${yearReview.pros.slice(0, 3).join('; ')}.`);
+    if (yearReview?.cons?.length) introParts.push(`חסרונות: ${yearReview.cons.slice(0, 3).join('; ')}.`);
+    if (yearReview?.localSummaryHe) introParts.push(yearReview.localSummaryHe);
+    if (cachedRecalls.length > 0) introParts.push(`קיימים ${cachedRecalls.length} ריקולים (NHTSA) המשויכים לדגם זה.`);
+  }
+  const introText = introParts.join(' ');
+
+  // Cached recalls filtered to this year (or recalls without a specific year)
+  const yearRecalls = cachedRecalls.filter(r => r.recall_year === yearNum || r.recall_year === null);
+
+  const faqPros = isEn ? (yearReview?.prosEn ?? []) : (yearReview?.pros ?? []);
+  const faqCons = isEn ? (yearReview?.consEn ?? []) : (yearReview?.cons ?? []);
+  const faqLocalSummary = isEn ? yearReview?.localSummaryEn : yearReview?.localSummaryHe;
+  const hasFaq = yearReview && (faqPros.length > 0 || faqCons.length > 0);
 
   const jsonLd = {
     '@context': 'https://schema.org',
@@ -130,7 +180,7 @@ export default async function CarYearPage({ params }: Props) {
         '@type': 'Product',
         name: `${make.nameEn} ${model.nameEn} ${year}`,
         brand: { '@type': 'Brand', name: make.nameEn },
-        url: `${getBaseUrl(locale)}/cars/${make.slug}/${model.slug}/${year}`,
+        url: `${base}/cars/${make.slug}/${model.slug}/${year}`,
         ...(avgRating !== null && {
           aggregateRating: {
             '@type': 'AggregateRating',
@@ -143,8 +193,8 @@ export default async function CarYearPage({ params }: Props) {
         review: reviews.slice(0, 5).map((r) => ({
           '@type': 'Review',
           reviewRating: { '@type': 'Rating', ratingValue: r.rating, bestRating: 5 },
-          name: r.title,
-          reviewBody: r.body,
+          name: isEn ? (r.titleEn ?? r.title) : r.title,
+          reviewBody: isEn ? (r.bodyEn ?? r.body) : r.body,
           author: { '@type': 'Person', name: r.authorName },
           datePublished: r.createdAt.split('T')[0],
         })),
@@ -152,35 +202,48 @@ export default async function CarYearPage({ params }: Props) {
       {
         '@type': 'BreadcrumbList',
         itemListElement: [
-          { '@type': 'ListItem', position: 1, name: 'בית', item: 'https://carissues.co.il' },
-          { '@type': 'ListItem', position: 2, name: 'יצרנים', item: 'https://carissues.co.il/cars' },
-          { '@type': 'ListItem', position: 3, name: make.nameHe, item: `https://carissues.co.il/cars/${make.slug}` },
-          { '@type': 'ListItem', position: 4, name: model.nameHe, item: `https://carissues.co.il/cars/${make.slug}/${model.slug}` },
-          { '@type': 'ListItem', position: 5, name: String(year), item: `https://carissues.co.il/cars/${make.slug}/${model.slug}/${year}` },
+          { '@type': 'ListItem', position: 1, name: isEn ? 'Home' : 'בית', item: base },
+          { '@type': 'ListItem', position: 2, name: isEn ? 'Makes' : 'יצרנים', item: `${base}/cars` },
+          { '@type': 'ListItem', position: 3, name: makeName, item: `${base}/cars/${make.slug}` },
+          { '@type': 'ListItem', position: 4, name: modelName, item: `${base}/cars/${make.slug}/${model.slug}` },
+          { '@type': 'ListItem', position: 5, name: String(year), item: `${base}/cars/${make.slug}/${model.slug}/${year}` },
         ],
       },
-      ...(yearReview && (yearReview.pros.length > 0 || yearReview.cons.length > 0) ? [{
+      ...(hasFaq ? [{
         '@type': 'FAQPage',
         mainEntity: [
-          yearReview.pros.length > 0 && {
+          faqPros.length > 0 && {
             '@type': 'Question',
-            name: `מה היתרונות של ${make.nameHe} ${model.nameHe} ${year}?`,
-            acceptedAnswer: { '@type': 'Answer', text: yearReview.pros.join('. ') },
+            name: isEn
+              ? `What are the pros of the ${make.nameEn} ${model.nameEn} ${year}?`
+              : `מה היתרונות של ${make.nameHe} ${model.nameHe} ${year}?`,
+            acceptedAnswer: { '@type': 'Answer', text: faqPros.join('. ') },
           },
-          yearReview.cons.length > 0 && {
+          faqCons.length > 0 && {
             '@type': 'Question',
-            name: `מה החסרונות של ${make.nameHe} ${model.nameHe} ${year}?`,
-            acceptedAnswer: { '@type': 'Answer', text: yearReview.cons.join('. ') },
+            name: isEn
+              ? `What are the cons of the ${make.nameEn} ${model.nameEn} ${year}?`
+              : `מה החסרונות של ${make.nameHe} ${model.nameHe} ${year}?`,
+            acceptedAnswer: { '@type': 'Answer', text: faqCons.join('. ') },
           },
-          yearReview.localSummaryHe && {
+          faqLocalSummary && {
             '@type': 'Question',
-            name: `מה אומרים בעלי ${make.nameHe} ${model.nameHe} ${year} בישראל?`,
-            acceptedAnswer: { '@type': 'Answer', text: yearReview.localSummaryHe },
+            name: isEn
+              ? `What do ${make.nameEn} ${model.nameEn} ${year} owners say?`
+              : `מה אומרים בעלי ${make.nameHe} ${model.nameHe} ${year} בישראל?`,
+            acceptedAnswer: { '@type': 'Answer', text: faqLocalSummary },
           },
           avgRating !== null && reviews.length > 0 && {
             '@type': 'Question',
-            name: `מה הדירוג של ${make.nameHe} ${model.nameHe} ${year}?`,
-            acceptedAnswer: { '@type': 'Answer', text: `${make.nameHe} ${model.nameHe} ${year} מקבל דירוג ממוצע של ${avgRating.toFixed(1)} מתוך 5 על בסיס ${reviews.length} ביקורות.` },
+            name: isEn
+              ? `What is the owner rating of the ${make.nameEn} ${model.nameEn} ${year}?`
+              : `מה הדירוג של ${make.nameHe} ${model.nameHe} ${year}?`,
+            acceptedAnswer: {
+              '@type': 'Answer',
+              text: isEn
+                ? `The ${make.nameEn} ${model.nameEn} ${year} has an average owner rating of ${avgRating.toFixed(1)} out of 5 based on ${reviews.length} reviews.`
+                : `${make.nameHe} ${model.nameHe} ${year} מקבל דירוג ממוצע של ${avgRating.toFixed(1)} מתוך 5 על בסיס ${reviews.length} ביקורות.`,
+            },
           },
         ].filter(Boolean),
       }] : []),
@@ -211,45 +274,14 @@ export default async function CarYearPage({ params }: Props) {
 
           {/* Left: gallery */}
           <div>
-            <div className="gallery-main">
-              {sketchfabModel ? (
-                <Car3DViewer uid={sketchfabModel.uid} modelName={`${make.nameHe} ${model.nameHe}`} makeSlug={makeSlug} modelSlug={modelSlug} />
-              ) : carImages.length > 0 ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img
-                  src={carImages[0].thumbnail_url ?? carImages[0].url}
-                  alt={`${make.nameEn} ${model.nameEn} ${year}`}
-                  style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
-                />
-              ) : (
-                <div style={{ width: '100%', height: '100%', background: 'linear-gradient(135deg, #dde6f1, #b9c7da)', display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative' }}>
-                  <svg viewBox="0 0 120 60" fill="none" style={{ width: '52%', color: 'rgba(255,255,255,.75)' }}>
-                    <path d="M8 42 L18 26 C20 22 24 20 29 20 L74 20 C80 20 85 22 90 27 L102 39" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"/>
-                    <path d="M6 42 L112 42 C114 42 115 41 115 39 L114 35 C113.5 33 112 32 110 32 L98 32" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"/>
-                    <path d="M30 20 L36 32 L70 32 L72 21" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" opacity="0.8"/>
-                    <circle cx="34" cy="44" r="9" stroke="currentColor" strokeWidth="3"/>
-                    <circle cx="86" cy="44" r="9" stroke="currentColor" strokeWidth="3"/>
-                  </svg>
-                  <span style={{ position: 'absolute', bottom: 10, insetInlineStart: 12, fontSize: 12, fontWeight: 700, letterSpacing: '.04em', textTransform: 'uppercase', color: 'rgba(255,255,255,.85)', background: 'rgba(20,32,46,.28)', padding: '3px 9px', borderRadius: 999, backdropFilter: 'blur(3px)' }}>
-                    {make.nameEn} {model.nameEn} {year}
-                  </span>
-                </div>
-              )}
-            </div>
-            {carImages.length > 1 && (
-              <div className="gallery-thumbs">
-                {carImages.slice(0, 4).map((img, i) => (
-                  <div key={img.id} className={`gallery-thumb${i === 0 ? ' active' : ''}`} style={{ background: '#dde6f1' }}>
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img
-                      src={img.thumbnail_url ?? img.url}
-                      alt=""
-                      style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
-                    />
-                  </div>
-                ))}
-              </div>
-            )}
+            <GalleryViewer
+              sketchfabModel={sketchfabModel}
+              carImages={carImages}
+              makeSlug={makeSlug}
+              modelSlug={modelSlug}
+              makeNameEn={make.nameEn}
+              modelNameEn={model.nameEn}
+            />
           </div>
 
           {/* Right: summary card */}
@@ -318,12 +350,45 @@ export default async function CarYearPage({ params }: Props) {
         </div>
       </div>
 
+      {/* ── SERVER-RENDERED INTRO (crawlable text for Google) ── */}
+      {introText && (
+        <div className="wrap" style={{ paddingBottom: 0 }}>
+          <p style={{ fontSize: '0.92rem', color: 'var(--text-muted)', lineHeight: 1.7, marginBottom: 8, maxWidth: 780 }}>
+            {introText}
+          </p>
+        </div>
+      )}
+
+      {/* ── SERVER-RENDERED RECALLS SUMMARY (Google sees this; client RecallsSection adds interactivity) ── */}
+      {yearRecalls.length > 0 && (
+        <div className="wrap" style={{ paddingBottom: 8 }}>
+          <details style={{ fontSize: '0.82rem', color: 'var(--text-muted)' }}>
+            <summary style={{ cursor: 'pointer', fontWeight: 600, marginBottom: 6 }}>
+              {isEn
+                ? `${yearRecalls.length} NHTSA recall${yearRecalls.length > 1 ? 's' : ''} for ${make.nameEn} ${model.nameEn} ${yearNum}`
+                : `${yearRecalls.length} ריקול${yearRecalls.length > 1 ? 'ים' : ''} (NHTSA) עבור ${make.nameHe} ${model.nameHe} ${yearNum}`}
+            </summary>
+            <ul style={{ margin: '6px 0 0 16px', lineHeight: 1.6 }}>
+              {yearRecalls.map(r => (
+                <li key={r.id}>
+                  <strong>{isEn ? (r.component_en ?? '') : (r.component_he ?? r.component_en ?? '')}</strong>
+                  {' — '}
+                  {isEn ? (r.summary_en ?? '') : (r.summary_he ?? r.summary_en ?? '')}
+                </li>
+              ))}
+            </ul>
+          </details>
+        </div>
+      )}
+
       {/* ── SIDEBAR + CONTENT ── */}
       <CarSidebarLayout
         makeSlug={makeSlug}
         modelSlug={modelSlug}
         makeNameHe={make.nameHe}
         modelNameHe={model.nameHe}
+        makeNameEn={make.nameEn}
+        modelNameEn={model.nameEn}
         defaultYear={yearNum}
       >
         <style>{`

@@ -48,7 +48,7 @@ function CarSelector({ value, onChange, options, label }: {
   }, [make, model]);
 
   return (
-    <div className="card" style={{ padding: 24, flex: '1 1 280px' }}>
+    <div className="card cmp-selector-card" style={{ padding: 24, flex: '1 1 0', minWidth: 0 }}>
       <div style={{ fontWeight: 700, fontSize: '0.875rem', color: 'var(--text-muted)', marginBottom: 16, textTransform: 'uppercase', letterSpacing: '0.06em' }}>{label}</div>
       <select
         value={make}
@@ -191,22 +191,29 @@ function ComparePageInner() {
   const showComparison = data1 && data2;
 
   return (
-    <div style={{ padding: '48px 0 80px' }}>
+    <div style={{ padding: '32px 0 80px' }}>
+      <style>{`
+        @media (max-width: 640px) {
+          .cmp-selector-row { flex-direction: column !important; }
+          .cmp-vs-label { width: 100% !important; padding: 8px 0 !important; font-size: 1rem !important; }
+          .cmp-selector-card { flex: unset !important; width: 100% !important; box-sizing: border-box; }
+        }
+      `}</style>
       <div className="container">
         {/* Breadcrumb */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: 'var(--text-muted)', fontSize: '0.875rem', marginBottom: 24 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: 'var(--text-muted)', fontSize: '0.875rem', marginBottom: 20, flexWrap: 'wrap' }}>
           <Link href="/" style={{ color: 'var(--text-muted)', textDecoration: 'none' }}>{t.carsPage.home}</Link>
           <span>›</span>
           <span style={{ color: 'var(--text)' }}>{cmp.breadcrumb}</span>
         </div>
 
-        <h1 style={{ fontSize: 'clamp(1.5rem, 4vw, 2.25rem)', fontWeight: 900, marginBottom: 8 }}>{cmp.title}</h1>
-        <p style={{ color: 'var(--text-muted)', marginBottom: 40 }}>{cmp.subtitle}</p>
+        <h1 style={{ fontSize: 'clamp(1.3rem, 4vw, 2rem)', fontWeight: 900, marginBottom: 6 }}>{cmp.title}</h1>
+        <p style={{ color: 'var(--text-muted)', marginBottom: 28, fontSize: '0.9375rem' }}>{cmp.subtitle}</p>
 
         {/* Selectors */}
-        <div style={{ display: 'flex', gap: 20, flexWrap: 'wrap', marginBottom: 40 }}>
+        <div className="cmp-selector-row" style={{ display: 'flex', gap: 16, flexWrap: 'nowrap', marginBottom: 32, alignItems: 'stretch' }}>
           <CarSelector value={car1} onChange={setCar1} options={options} label={cmp.car1Label} />
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.5rem', fontWeight: 900, color: 'var(--text-muted)', padding: '0 4px' }}>VS</div>
+          <div className="cmp-vs-label" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.1rem', fontWeight: 900, color: 'var(--text-muted)', flexShrink: 0, minWidth: 36 }}>VS</div>
           <CarSelector value={car2} onChange={setCar2} options={options} label={cmp.car2Label} />
         </div>
 

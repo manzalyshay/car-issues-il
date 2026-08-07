@@ -23,9 +23,14 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOi
 # GEMINI_API_KEY and MISTRAL_API_KEY are set as Worker secrets via:
 #   wrangler secret put GEMINI_API_KEY
 #   wrangler secret put MISTRAL_API_KEY
+# UK DVLA vehicle lookup API key (register free at https://developer-portal.driver-vehicle-licensing.api.gov.uk/):
+#   wrangler secret put DVLA_API_KEY
 
 # D1 database binding — replace REPLACE_WITH_D1_DATABASE_ID with the actual ID from CF dashboard
 [[d1_databases]]
 binding = "DB"
 database_name = "car-issues-db"
 database_id = "090762ad-b029-4883-b827-9376cdee1ed2"
+
+[ai]
+binding = "AI"

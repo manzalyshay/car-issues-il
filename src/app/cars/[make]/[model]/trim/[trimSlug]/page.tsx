@@ -61,12 +61,13 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     ? `https://carissues.net/cars/${makeSlug}/${modelSlug}/trim/${trimSlug}`
     : `https://carissues.co.il/cars/${makeSlug}/${modelSlug}/trim/${trimSlug}`;
 
+  const trimLangs = { he: `https://carissues.co.il/cars/${makeSlug}/${modelSlug}/trim/${trimSlug}`, en: `https://carissues.net/cars/${makeSlug}/${modelSlug}/trim/${trimSlug}`, 'x-default': `https://carissues.net/cars/${makeSlug}/${modelSlug}/trim/${trimSlug}` };
   if (isEn) {
     const hpStr = trim.engineHp ? ` · ${trim.engineHp} hp` : '';
     return {
       title: `${make.nameEn} ${model.nameEn} ${trim.name} ${year} — Specs & Features`,
       description: `Full specs for ${make.nameEn} ${model.nameEn} ${trim.name} ${year}.${hpStr} Technology, safety, and comfort features.`,
-      alternates: { canonical: url },
+      alternates: { canonical: url, languages: trimLangs },
       openGraph: {
         title: `${make.nameEn} ${model.nameEn} ${trim.name} | CarIssues`,
         description: `${make.nameEn} ${model.nameEn} ${trim.name} ${year}${hpStr}`,
@@ -80,7 +81,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   return {
     title: `${make.nameHe} ${model.nameHe} ${trim.name} ${year} – מפרט, ציוד ומחיר`,
     description: `מפרט מלא של ${make.nameHe} ${model.nameHe} גימור ${trim.name} ${year}.${hpStr}${priceStr}. ציוד, בטיחות, נוחות וטכנולוגיה.`,
-    alternates: { canonical: url },
+    alternates: { canonical: url, languages: trimLangs },
     openGraph: {
       title: `${make.nameHe} ${model.nameHe} ${trim.name} | CarIssues IL`,
       description: `${make.nameHe} ${model.nameHe} ${trim.name} ${year}${priceStr}`,

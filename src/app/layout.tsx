@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import { headers } from 'next/headers';
+import Script from 'next/script';
 import './globals.css';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
@@ -7,6 +8,9 @@ import { AuthProvider } from '@/lib/authContext';
 import { LocaleProvider } from '@/lib/localeContext';
 import NavigationProgress from '@/components/NavigationProgress';
 import PageViewTracker from '@/components/PageViewTracker';
+
+const GA4_HE = 'G-5YR8RTYL8T';
+const GA4_EN = 'G-QE080JL7Z0';
 
 const HE_URL = 'https://carissues.co.il';
 const EN_URL = 'https://carissues.net';
@@ -45,7 +49,7 @@ export async function generateMetadata(): Promise<Metadata> {
     twitter: { card: 'summary_large_image' },
     alternates: {
       canonical: baseUrl,
-      languages: { 'he': HE_URL, 'en': EN_URL },
+      languages: { 'he': HE_URL, 'en': EN_URL, 'x-default': EN_URL },
     },
     robots: {
       index: true,
@@ -59,6 +63,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   const host = (await headers()).get('host') ?? '';
   const isEn = isEnglishHost(host);
   const baseUrl = isEn ? EN_URL : HE_URL;
+  const isEmbed = (await headers()).get('x-is-embed') === '1';
 
   const orgJsonLd = {
     '@context': 'https://schema.org',
@@ -92,9 +97,6 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   return (
     <html lang={isEn ? 'en' : 'he'} dir={isEn ? 'ltr' : 'rtl'}>
       <head>
-        <link rel="alternate" hrefLang="he" href={HE_URL} />
-        <link rel="alternate" hrefLang="en" href={EN_URL} />
-        <link rel="alternate" hrefLang="x-default" href={HE_URL} />
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link
@@ -104,13 +106,20 @@ export default async function RootLayout({ children }: { children: React.ReactNo
       </head>
       <body className="flex flex-col min-h-screen">
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(orgJsonLd) }} />
-        <LocaleProvider>
+        <Script src={`https://www.googletagmanager.com/gtag/js?id=${isEn ? GA4_EN : GA4_HE}`} strategy="afterInteractive" />
+        <Script id="ga4-init" strategy="afterInteractive">{`
+          window.dataLayer = window.dataLayer || [];
+          function gtag(){dataLayer.push(arguments);}
+          gtag('js', new Date());
+          gtag('config', '${isEn ? GA4_EN : GA4_HE}');
+        `}</Script>
+        <LocaleProvider initialLocale={isEn ? 'en' : 'he'}>
           <AuthProvider>
-            <NavigationProgress />
-            <PageViewTracker />
-            <Header />
-            <main className="flex-1">{children}</main>
-            <Footer />
+            {!isEmbed && <NavigationProgress />}
+            {!isEmbed && <PageViewTracker />}
+            {!isEmbed && <Header />}
+            <main className={isEmbed ? '' : 'flex-1'}>{children}</main>
+            {!isEmbed && <Footer />}
           </AuthProvider>
         </LocaleProvider>
       </body>

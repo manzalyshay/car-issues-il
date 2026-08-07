@@ -33,6 +33,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       languages: {
         he: `https://carissues.co.il/cars/${make.slug}`,
         en: `https://carissues.net/cars/${make.slug}`,
+        'x-default': `https://carissues.net/cars/${make.slug}`,
       },
     },
     openGraph: {

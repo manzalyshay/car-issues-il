@@ -87,14 +87,14 @@ export async function getSimilarModels(
   modelSlug: string,
   category: CarModel['category'],
   limit = 8,
-): Promise<{ makeSlug: string; makeNameHe: string; makeNameEn: string; model: CarModel }[]> {
+): Promise<{ makeSlug: string; makeNameHe: string; makeNameEn: string; logoUrl: string; model: CarModel }[]> {
   const makes = await fetchAllMakes();
-  const results: { makeSlug: string; makeNameHe: string; makeNameEn: string; model: CarModel }[] = [];
+  const results: { makeSlug: string; makeNameHe: string; makeNameEn: string; logoUrl: string; model: CarModel }[] = [];
   for (const make of makes) {
     for (const model of make.models) {
       if (make.slug === makeSlug && model.slug === modelSlug) continue;
       if (model.category === category) {
-        results.push({ makeSlug: make.slug, makeNameHe: make.nameHe, makeNameEn: make.nameEn, model });
+        results.push({ makeSlug: make.slug, makeNameHe: make.nameHe, makeNameEn: make.nameEn, logoUrl: make.logoUrl, model });
       }
     }
   }

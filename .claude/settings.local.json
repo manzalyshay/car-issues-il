@@ -1,5 +1,6 @@
 {
   "permissions": {
+    "defaultMode": "bypassPermissions",
     "allow": [
       "Bash(npm run:*)",
       "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:3000/api/og/fb-cover)",
@@ -13,7 +14,10 @@
       "Bash(npx tsc:*)",
       "Bash(git commit -m 'Fix syntax error in fb-cover route \\(extra closing brace\\):*)",
       "Bash(grep -E \"\\\\.\\(ts|tsx\\)$\")",
-      "Bash(ls -la /workspace/car-issues-il/src/app/cars/[make]/[model]/)"
+      "Bash(ls -la /workspace/car-issues-il/src/app/cars/[make]/[model]/)",
+      "Bash(npx vercel:*)",
+      "Bash(node:*)",
+      "Skill(update-config)"
     ]
   }
 }

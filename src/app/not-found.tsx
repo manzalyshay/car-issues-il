@@ -7,7 +7,7 @@ export async function generateMetadata(): Promise<Metadata> {
   const host = (await headers()).get('host') ?? '';
   const isEn = host.includes('.net') || host.startsWith('en.');
   return {
-    title: isEn ? 'Page Not Found — CarIssues' : 'דף לא נמצא — CarIssues',
+    title: isEn ? 'Page Not Found' : 'דף לא נמצא',
     robots: { index: false },
   };
 }
