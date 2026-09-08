@@ -1,25 +1,20 @@
 /**
  * GET /api/cron/translate-expert-reviews
- * Translates Hebrew pros/cons/summaries to English using Claude (Anthropic SDK).
- * Processes 5 rows per call. Protected by CRON_SECRET.
+ * Translates Hebrew pros/cons/summaries to English using Cloudflare Workers AI
+ * (no API key needed — covered by the Workers Paid plan). Processes 5 rows
+ * per call. Protected by CRON_SECRET.
  */
 import { NextRequest, NextResponse } from 'next/server';
 import { dbAll, dbRun } from '@/lib/db';
-import Anthropic from '@anthropic-ai/sdk';
+import { runWorkersAI } from '@/lib/workersAi';
 
 export const dynamic = 'force-dynamic';
 
 async function ai_translate(text: string): Promise<string> {
-  const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY! });
-  const msg = await client.messages.create({
-    model: 'claude-haiku-4-5-20251001',
-    max_tokens: 600,
-    messages: [
-      { role: 'user', content: `Translate the following Hebrew text to natural English. Return only the translated text, nothing else.\n\n${text}` },
-    ],
-  });
-  const block = msg.content[0];
-  return block.type === 'text' ? block.text.trim() : '';
+  const result = await runWorkersAI([
+    { role: 'user', content: `Translate the following Hebrew text to natural English. Return only the translated text, nothing else.\n\n${text}` },
+  ], { max_tokens: 600, temperature: 0.2 });
+  return result?.trim() ?? '';
 }
 
 async function translateArray(jsonStr: string | null): Promise<string> {
@@ -37,10 +32,6 @@ export async function GET(req: NextRequest) {
   if (secret && req.headers.get('authorization') !== `Bearer ${secret}`) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
-  if (!process.env.ANTHROPIC_API_KEY) {
-    return NextResponse.json({ error: 'ANTHROPIC_API_KEY not set' }, { status: 500 });
-  }
-
   const rows = await dbAll<{ id: string; pros: string | null; cons: string | null; local_summary_he: string | null; global_summary_he: string | null }>(
     `SELECT id, pros, cons, local_summary_he, global_summary_he FROM expert_reviews
      WHERE year IS NULL AND (local_summary_en IS NULL OR pros_en IS NULL) LIMIT 5`,

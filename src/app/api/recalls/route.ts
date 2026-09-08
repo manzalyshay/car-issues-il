@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { dbAll, dbRun } from '@/lib/db';
-import Anthropic from '@anthropic-ai/sdk';
+import { runWorkersAI } from '@/lib/workersAi';
 
 export interface Recall {
   id: string;
@@ -54,54 +54,44 @@ function extractYear(raw: string): number | null {
   return null;
 }
 
-// ── Translation via Claude ────────────────────────────────────────────────────
+// ── Translation via Cloudflare Workers AI ───────────────────────────────────
 
 interface RecallFields { component: string; summary: string; consequence: string; remedy: string; }
 
-function parseTranslationResponse(content: string, recalls: RecallFields[]): RecallFields[] {
-  try {
-    const json = content.replace(/```[a-z]*\n?/g, '').replace(/```/g, '').trim();
-    let parsed = JSON.parse(json) as RecallFields[] | string[];
-    if (!Array.isArray(parsed) || parsed.length === 0) return recalls;
-    parsed = parsed.map(item => {
-      if (typeof item === 'string') {
-        try { return JSON.parse(item) as RecallFields; } catch { return item as unknown as RecallFields; }
-      }
-      return item;
-    });
-    return (parsed as RecallFields[]).map((p, i) => ({
-      component:   p?.component   || recalls[i]?.component   || '',
-      summary:     p?.summary     || recalls[i]?.summary     || '',
-      consequence: p?.consequence || recalls[i]?.consequence || '',
-      remedy:      p?.remedy      || recalls[i]?.remedy      || '',
-    }));
-  } catch {
-    return recalls;
-  }
-}
-
 async function translateRecalls(recalls: RecallFields[]): Promise<RecallFields[]> {
   if (recalls.length === 0) return recalls;
-  const apiKey = process.env.ANTHROPIC_API_KEY;
-  if (!apiKey) return recalls;
 
-  const input = JSON.stringify(recalls.map(r => ({
-    component: r.component, summary: r.summary, consequence: r.consequence, remedy: r.remedy,
-  })));
-  const prompt = 'Translate these car recall entries from English to Hebrew. Keep automotive technical terms accurate. Return ONLY a JSON array with the same structure. No markdown, no explanation.\n\n' + input;
+  const input = recalls.map((r, i) =>
+    `[${i + 1}]\ncomponent: ${r.component}\nsummary: ${r.summary}\nconsequence: ${r.consequence}\nremedy: ${r.remedy}`
+  ).join('\n\n');
 
-  try {
-    const client = new Anthropic({ apiKey });
-    const msg = await client.messages.create({
-      model: 'claude-haiku-4-5-20251001',
-      max_tokens: 4000,
-      messages: [{ role: 'user', content: prompt }],
-    });
-    const block = msg.content[0];
-    const raw = block.type === 'text' ? block.text.trim() : null;
-    if (!raw) return recalls;
-    return parseTranslationResponse(raw, recalls);
-  } catch { return recalls; }
+  const content = await runWorkersAI(
+    [
+      { role: 'system', content: 'Translate each numbered recall from English to Hebrew. Keep technical automotive terms accurate. Reply ONLY in this exact format:\n[N]\ncomponent: ...\nsummary: ...\nconsequence: ...\nremedy: ...' },
+      { role: 'user', content: input },
+    ],
+    { max_tokens: 4000, temperature: 0 },
+  );
+  if (!content) return recalls;
+
+  const out = recalls.map(r => ({ ...r }));
+  const blocks = content.split(/\n(?=\[\d+\])/);
+  for (const block of blocks) {
+    const idxMatch = block.match(/^\[(\d+)\]/);
+    if (!idxMatch) continue;
+    const idx = parseInt(idxMatch[1]) - 1;
+    if (idx < 0 || idx >= out.length) continue;
+    const get = (field: string) => {
+      const m = block.match(new RegExp(`${field}:\\s*([\\s\\S]*?)(?=\\n(?:component|summary|consequence|remedy):|$)`));
+      return m?.[1]?.trim() || '';
+    };
+    const c = get('component'), s = get('summary'), con = get('consequence'), rem = get('remedy');
+    if (c)   out[idx].component   = c;
+    if (s)   out[idx].summary     = s;
+    if (con) out[idx].consequence = con;
+    if (rem) out[idx].remedy      = rem;
+  }
+  return out;
 }
 
 // ── Main handler ──────────────────────────────────────────────────────────────

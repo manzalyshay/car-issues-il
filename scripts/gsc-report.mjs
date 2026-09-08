@@ -1,6 +1,6 @@
 /**
  * Fetches SEO data from Google Search Console.
- * Run: node scripts/gsc-report.mjs
+ * Run: node scripts/gsc-report.mjs [co.il|net]
  */
 import { readFileSync, writeFileSync } from 'fs';
 import { resolve, dirname } from 'path';
@@ -10,7 +10,9 @@ const __dir = dirname(fileURLToPath(import.meta.url));
 const creds = JSON.parse(readFileSync(resolve(__dir, 'gsc-oauth-client.json'), 'utf8')).installed;
 const tokenData = JSON.parse(readFileSync(resolve(__dir, 'gsc-token.json'), 'utf8'));
 
-const SITE = 'sc-domain:carissues.co.il';
+const DOMAIN = process.argv[2] === 'net' ? 'carissues.net' : 'carissues.co.il';
+const SITE = `sc-domain:${DOMAIN}`;
+const BASE = `https://${DOMAIN}`;
 
 async function getAccessToken() {
   // Refresh if needed
@@ -61,7 +63,7 @@ async function run() {
     orderBy: [{ fieldName: 'clicks', sortOrder: 'DESCENDING' }],
   });
   printTable(pages.rows ?? [], r => ({
-    page: r.keys[0].replace('https://carissues.co.il', ''),
+    page: r.keys[0].replace(BASE, ''),
     clicks: r.clicks, impressions: r.impressions, ctr: pct(r.ctr), position: pos(r.position),
   }));
 
@@ -87,7 +89,7 @@ async function run() {
     .sort((a, b) => b.impressions - a.impressions)
     .slice(0, 20);
   printTable(opportunities, r => ({
-    page: r.keys[0].replace('https://carissues.co.il', ''),
+    page: r.keys[0].replace(BASE, ''),
     impressions: r.impressions, clicks: r.clicks, ctr: pct(r.ctr), position: pos(r.position),
   }));
 
@@ -98,7 +100,7 @@ async function run() {
     .sort((a, b) => b.impressions - a.impressions)
     .slice(0, 20);
   printTable(ranked, r => ({
-    page: r.keys[0].replace('https://carissues.co.il', ''),
+    page: r.keys[0].replace(BASE, ''),
     position: pos(r.position), impressions: r.impressions, clicks: r.clicks, ctr: pct(r.ctr),
   }));
 

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { dbAll, dbRun } from '@/lib/db';
-import Anthropic from '@anthropic-ai/sdk';
+import { runWorkersAI } from '@/lib/workersAi';
 
 function canonicalKey(m1: string, mo1: string, m2: string, mo2: string) {
   const [a, b] = [`${m1}/${mo1}`, `${m2}/${mo2}`].sort();
@@ -12,8 +12,6 @@ async function generateComparison(
   nameA_en: string, nameB_en: string,
   locale: 'he' | 'en',
 ): Promise<string | null> {
-  if (!process.env.ANTHROPIC_API_KEY) return null;
-
   const prompt = locale === 'he'
     ? `כתוב השוואה קצרה ומרוכזת בעברית בין ${nameA_he} לבין ${nameB_he}.
 כלול:
@@ -31,14 +29,7 @@ Include:
 2-3 paragraphs only. Professional but accessible tone. No headings.`;
 
   try {
-    const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
-    const msg = await anthropic.messages.create({
-      model: 'claude-haiku-4-5-20251001',
-      max_tokens: 500,
-      messages: [{ role: 'user', content: prompt }],
-    });
-    const block = msg.content[0];
-    return block.type === 'text' ? block.text.trim() : null;
+    return await runWorkersAI([{ role: 'user', content: prompt }], { max_tokens: 500, temperature: 0.4 });
   } catch { return null; }
 }
 

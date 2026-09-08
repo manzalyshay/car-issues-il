@@ -1,6 +1,6 @@
 /**
  * Checks which sitemap URLs are not indexed in Google Search Console.
- * Run: node scripts/gsc-indexing.mjs
+ * Run: node scripts/gsc-indexing.mjs [co.il|net]
  */
 import { readFileSync, writeFileSync } from 'fs';
 import { resolve, dirname } from 'path';
@@ -9,6 +9,10 @@ import { fileURLToPath } from 'url';
 const __dir = dirname(fileURLToPath(import.meta.url));
 const creds = JSON.parse(readFileSync(resolve(__dir, 'gsc-oauth-client.json'), 'utf8')).installed;
 const tokenData = JSON.parse(readFileSync(resolve(__dir, 'gsc-token.json'), 'utf8'));
+
+const DOMAIN = process.argv[2] === 'net' ? 'carissues.net' : 'carissues.co.il';
+const SITE = `sc-domain:${DOMAIN}`;
+const BASE = `https://${DOMAIN}`;
 
 async function getAccessToken() {
   const res = await fetch('https://oauth2.googleapis.com/token', {
@@ -31,7 +35,7 @@ async function inspectUrl(token, url) {
   const res = await fetch('https://searchconsole.googleapis.com/v1/urlInspection/index:inspect', {
     method: 'POST',
     headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
-    body: JSON.stringify({ inspectionUrl: url, siteUrl: 'sc-domain:carissues.co.il' }),
+    body: JSON.stringify({ inspectionUrl: url, siteUrl: SITE }),
   });
   return res.json();
 }
@@ -42,7 +46,7 @@ async function run() {
 
   // Fetch the live sitemap
   console.log('📋 Fetching sitemap...');
-  const sitemapRes = await fetch('https://carissues.co.il/sitemap.xml');
+  const sitemapRes = await fetch(`${BASE}/sitemap.xml`);
   const sitemapText = await sitemapRes.text();
   const urls = [...sitemapText.matchAll(/<loc>(.*?)<\/loc>/g)].map(m => m[1]);
   console.log(`   Found ${urls.length} URLs in sitemap\n`);
@@ -79,7 +83,7 @@ async function run() {
       const robotsTxtState = result.indexStatusResult?.robotsTxtState;
       const indexingState = result.indexStatusResult?.indexingState;
 
-      const path = url.replace('https://carissues.co.il', '') || '/';
+      const path = url.replace(BASE, '') || '/';
 
       if (verdict === 'PASS') {
         results.indexed.push({ url: path });
@@ -119,7 +123,7 @@ async function run() {
   }
 
   // Save full results
-  const outFile = resolve(__dir, 'gsc-indexing-report.json');
+  const outFile = resolve(__dir, `gsc-indexing-report-${DOMAIN}.json`);
   writeFileSync(outFile, JSON.stringify(results, null, 2));
   console.log(`\n📄 Full report saved to scripts/gsc-indexing-report.json\n`);
 }
