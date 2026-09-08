@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 import { useLocale } from '@/lib/localeContext';
 
 function LogoMark() {
@@ -22,6 +23,8 @@ function LogoMark() {
 }
 
 function LangSwitch({ isEn }: { isEn: boolean }) {
+  const pathname = usePathname();
+
   function handleClick(e: React.MouseEvent) {
     if (typeof window !== 'undefined') {
       const host = window.location.hostname;
@@ -36,9 +39,16 @@ function LangSwitch({ isEn }: { isEn: boolean }) {
       // On production domains — let the href navigate normally
     }
   }
+
+  // Preserve the current page — not just the other domain's homepage — so
+  // the switcher works as a real internal link into every deep page on the
+  // other domain (crawl/discovery signal, not just a UX nicety).
+  const targetOrigin = isEn ? 'https://carissues.co.il' : 'https://carissues.net';
+  const href = `${targetOrigin}${pathname && pathname !== '/' ? pathname : ''}`;
+
   return (
     <a
-      href={isEn ? 'https://carissues.co.il' : 'https://carissues.net'}
+      href={href}
       onClick={handleClick}
       style={{
         display: 'inline-flex', alignItems: 'center', gap: 6,
