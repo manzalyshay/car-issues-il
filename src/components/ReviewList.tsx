@@ -452,26 +452,6 @@ export default function ReviewList({ reviews, onHelpful, onDislike }: Props) {
                 {rl[v]}
               </button>
             ))}
-            {availableYears.length > 1 && (
-              <>
-                <span style={{ width: 1, background: 'var(--border)', alignSelf: 'stretch', margin: '4px 2px' }} />
-                {availableYears.map((y) => (
-                  <button
-                    key={y}
-                    onClick={() => setYearFilter(yearFilter === y ? 'all' : y)}
-                    style={{
-                      height: 32, padding: '0 14px', borderRadius: 9999, border: '1.5px solid',
-                      borderColor: yearFilter === y ? '#2563eb' : 'var(--border)',
-                      background: yearFilter === y ? 'rgba(37,99,235,.08)' : 'transparent',
-                      color: yearFilter === y ? '#2563eb' : 'var(--text-muted)',
-                      fontSize: '0.8125rem', fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit', transition: 'all 0.15s',
-                    }}
-                  >
-                    {y}
-                  </button>
-                ))}
-              </>
-            )}
             {availableSubModels.length > 0 && (
               <>
                 <span style={{ width: 1, background: 'var(--border)', alignSelf: 'stretch', margin: '4px 2px' }} />
@@ -522,46 +502,44 @@ export default function ReviewList({ reviews, onHelpful, onDislike }: Props) {
               // On EN site: skip reviews with no English translation
               if (locale === 'en' && !review.bodyEn) return null;
               const showEn = locale === 'en' && Boolean(review.bodyEn);
-              const displayTitle = showEn ? (review.titleEn || review.title) : review.title;
+              const displayTitle = showEn ? review.titleEn : review.title;
               const displayBody  = showEn ? (review.bodyEn  || review.body)  : review.body;
+              const starsFull = Math.min(5, Math.round(review.rating));
+              const starsStr = '★'.repeat(starsFull) + '☆'.repeat(5 - starsFull);
+              const initial = safeDisplayName(review.authorName, locale).charAt(0).toUpperCase() || '?';
+              const dateStr = new Date(review.createdAt).toLocaleDateString(locale === 'en' ? 'en-US' : 'he-IL', { year: 'numeric', month: 'short', day: 'numeric' });
               return (
-                <article key={review.id} id={`review-${review.id}`} className="card" style={{ padding: 24 }}>
-                  {/* Header */}
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12, flexWrap: 'wrap', gap: 8 }}>
-                    <div>
-                      {displayTitle && <h3 style={{ fontWeight: 700, fontSize: '1rem', marginBottom: 6 }}>{displayTitle}</h3>}
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
-                        <StarRating rating={review.rating} size={15} />
-                        <span className="badge badge-blue">{review.year}</span>
-                        {review.subModel && (locale !== 'en' || !hasHebrew(review.subModel)) && <span className="badge badge-gray" style={{ background: 'rgba(37,99,235,.08)', color: '#2563eb', border: '1px solid rgba(37,99,235,.2)' }}>{review.subModel}</span>}
-                        <span className="badge badge-gray">{t.reviewForm.categories[review.category]}</span>
-                        {review.mileage && (
-                          <span style={{ color: 'var(--text-muted)', fontSize: '0.8125rem' }}>
-                            📍 {review.mileage.toLocaleString(locale === 'en' ? 'en-US' : 'he-IL')} {rl.km}
-                          </span>
-                        )}
-                        {showEn ? (
-                          <span
-                            title="AI-translated from Hebrew"
-                            style={{ display: 'inline-flex', alignItems: 'center', gap: 4, padding: '3px 8px', borderRadius: 4, background: 'rgba(251,191,36,0.1)', border: '1px solid rgba(251,191,36,0.35)', fontSize: '0.7rem', fontWeight: 700, letterSpacing: '0.05em', color: '#d97706', cursor: 'default', whiteSpace: 'nowrap' }}
-                          >
-                            🌐 Translated
-                          </span>
-                        ) : null}
-                      </div>
-                    </div>
-                    <div style={{ textAlign: 'left', flexShrink: 0 }}>
-                      <div style={{ fontWeight: 700, fontSize: '0.875rem', color: 'var(--text)' }}>{safeDisplayName(review.authorName, locale)}</div>
-                      <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
-                        {new Date(review.createdAt).toLocaleDateString(locale === 'en' ? 'en-US' : 'he-IL', { year: 'numeric', month: 'long', day: 'numeric' })}
-                      </div>
-                    </div>
+                <article key={review.id} id={`review-${review.id}`} style={{ background: '#ffffff', border: '1px solid #e3e8ee', borderRadius: 13, padding: '15px 17px' }}>
+                  {/* Header row: avatar + author/meta + stars */}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 11, marginBottom: 9, flexWrap: 'wrap' }}>
+                    <span style={{ width: 32, height: 32, borderRadius: '50%', background: '#eef3f9', display: 'grid', placeItems: 'center', fontSize: 13, fontWeight: 800, color: '#1b4f8a', flexShrink: 0 }}>
+                      {initial}
+                    </span>
+                    <span style={{ flex: '1 1 120px', minWidth: 0 }}>
+                      <span style={{ display: 'block', fontSize: 13.5, fontWeight: 700, color: '#1c2733' }}>{safeDisplayName(review.authorName, locale)}</span>
+                      <span style={{ display: 'block', fontFamily: 'monospace', fontSize: 9.5, color: '#a8b5c4' }}>
+                        {dateStr}{review.year ? ` · ${review.year}` : ''}
+                        {review.mileage ? ` · ${review.mileage.toLocaleString(locale === 'en' ? 'en-US' : 'he-IL')} ${rl.km}` : ''}
+                      </span>
+                    </span>
+                    <span style={{ fontSize: 12.5, color: '#e8a33d', letterSpacing: 1, flexShrink: 0 }}>{starsStr}</span>
                   </div>
 
+                  {/* Title */}
+                  {displayTitle && <h3 style={{ fontWeight: 700, fontSize: '0.9375rem', marginBottom: 6, color: '#1c2733', direction: showEn ? 'ltr' : 'rtl', textAlign: showEn ? 'left' : 'right' }}>{displayTitle}</h3>}
+
                   {/* Body */}
-                  <p style={{ color: 'var(--text-muted)', lineHeight: 1.7, fontSize: '0.9375rem', marginBottom: review.images?.length ? 12 : 16, direction: showEn ? 'ltr' : 'rtl', textAlign: showEn ? 'left' : 'right' }}>
+                  <p style={{ color: '#3d4c5c', lineHeight: 1.65, fontSize: 13.5, marginBottom: 10, direction: showEn ? 'ltr' : 'rtl', textAlign: showEn ? 'left' : 'right' }}>
                     {displayBody}
                   </p>
+
+                  {/* Tags row */}
+                  <div style={{ display: 'flex', gap: 7, flexWrap: 'wrap', marginBottom: 10 }}>
+                    {review.year && <span style={{ fontSize: 11, fontWeight: 700, color: '#4a5b6d', background: '#f2f5f8', borderRadius: 999, padding: '3px 9px' }}>{review.year}</span>}
+                    {review.subModel && (locale !== 'en' || !hasHebrew(review.subModel)) && <span style={{ fontSize: 11, fontWeight: 700, color: '#4a5b6d', background: '#f2f5f8', borderRadius: 999, padding: '3px 9px' }}>{review.subModel}</span>}
+                    <span style={{ fontSize: 11, fontWeight: 700, color: '#4a5b6d', background: '#f2f5f8', borderRadius: 999, padding: '3px 9px' }}>{t.reviewForm.categories[review.category]}</span>
+                    {showEn && <span style={{ fontSize: 11, fontWeight: 700, color: '#d97706', background: 'rgba(251,191,36,0.1)', border: '1px solid rgba(251,191,36,0.35)', borderRadius: 999, padding: '3px 9px' }}>🌐 Translated</span>}
+                  </div>
 
                   {/* Images */}
                   {review.images && review.images.length > 0 && (

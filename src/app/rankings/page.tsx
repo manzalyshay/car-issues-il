@@ -7,7 +7,7 @@ import { translations } from '@/lib/translations';
 import StarRating from '@/components/StarRating';
 import MakeLogo from '@/components/MakeLogo';
 
-export const dynamic = 'force-dynamic';
+export const revalidate = 3600; // cache 1 hour
 
 export async function generateMetadata(): Promise<Metadata> {
   const locale = await getHostLocale();

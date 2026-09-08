@@ -8,29 +8,22 @@ import AuthModal from './AuthModal';
 import { useAuth, displayName } from '@/lib/authContext';
 import { useLocale, EN_SITE, HE_SITE } from '@/lib/localeContext';
 
-/* ── Car SVG icon (for logo-mark) ── */
-function CarIcon({ size = 20, color = '#fff' }: { size?: number; color?: string }) {
+/* ── License plate logo mark (from design) ── */
+function LogoMark() {
   return (
-    <svg width={size} height={size * 0.6} viewBox="0 0 24 14" fill="none" stroke={color}
-      strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-      <path d="M2 9l2-5a2 2 0 0 1 1.9-1.3h10.2a2 2 0 0 1 1.9 1.3L20 9" />
-      <path d="M1 9h22a.7.7 0 0 1 .7.7v3a.7.7 0 0 1-.7.7H19v.6a.7.7 0 0 1-.7.7h-1a.7.7 0 0 1-.7-.7v-.6H7.4v.6a.7.7 0 0 1-.7.7h-1a.7.7 0 0 1-.7-.7v-.6H1a.7.7 0 0 1-.7-.7v-3A.7.7 0 0 1 1 9z" />
-      <circle cx="6" cy="11" r=".8" />
-      <circle cx="18" cy="11" r=".8" />
+    <svg viewBox="0 0 44 30" width="41" height="28" style={{ display: 'block', flexShrink: 0 }} aria-hidden>
+      <defs>
+        <linearGradient id="ciPlate" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor="#25628f" />
+          <stop offset="100%" stopColor="#123a68" />
+        </linearGradient>
+      </defs>
+      <rect x="0.9" y="0.9" width="42.2" height="28.2" rx="5.4" fill="url(#ciPlate)" />
+      <path d="M0.9 6.3A5.4 5.4 0 0 1 6.3 0.9H9.4V29.1H6.3A5.4 5.4 0 0 1 0.9 23.7Z" fill="#f7d117" />
+      <rect x="13.1" y="13.6" width="5.2" height="2.6" rx="1.3" fill="#ffffff" opacity="0.34" />
+      <circle cx="28.4" cy="14.1" r="6.5" fill="none" stroke="#ffffff" strokeWidth="2.3" />
+      <path d="M33.3 19.1 36.9 22.6" stroke="#ffffff" strokeWidth="2.3" strokeLinecap="round" />
     </svg>
-  );
-}
-
-/* ── Gradient logo-mark square ── */
-function LogoMark({ size = 34 }: { size?: number }) {
-  return (
-    <span style={{
-      width: size, height: size, borderRadius: 9, flexShrink: 0,
-      background: 'linear-gradient(135deg, var(--accent), var(--accent-2))',
-      display: 'grid', placeItems: 'center',
-    }}>
-      <CarIcon size={size * 0.55} color="#fff" />
-    </span>
   );
 }
 
@@ -116,18 +109,14 @@ export default function Header() {
 
   const logoText = (
     <Link href="/" style={{ textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 10, flexShrink: 0 }}>
-      <LogoMark size={34} />
-      <span style={{
-        fontFamily: 'var(--font-display)',
-        fontSize: 19,
-        fontWeight: 800,
-        color: 'var(--text)',
-        letterSpacing: '-0.01em',
-      }}>
-        {locale === 'en'
-          ? <>Car<b style={{ color: 'var(--accent)' }}>Issues</b><span style={{ color: 'var(--text-faint)', fontWeight: 500, fontSize: '0.78em' }}>.net</span></>
-          : <>קאר<b style={{ color: 'var(--accent)' }}>אישוז</b></>
-        }
+      <LogoMark />
+      <span style={{ display: 'block' }}>
+        <span style={{ display: 'block', fontSize: 17.5, fontWeight: 900, letterSpacing: '-0.02em', color: '#12232f', lineHeight: 1 }}>
+          {locale === 'en' ? 'Car' : 'קאר'}<span style={{ color: '#1b4f8a' }}>{locale === 'en' ? 'Issues' : 'אישוז'}</span>
+        </span>
+        <span style={{ display: 'block', fontFamily: 'monospace', fontSize: 8, fontWeight: 700, letterSpacing: locale === 'en' ? '0.12em' : '0.05em', color: '#8595a6', marginTop: 2 }}>
+          {locale === 'en' ? 'USED CAR DATA' : 'מדד רכב יד שנייה'}
+        </span>
       </span>
     </Link>
   );

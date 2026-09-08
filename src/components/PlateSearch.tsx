@@ -236,7 +236,7 @@ export default function PlateSearch({ isHe, navigateOnSearch, initialVehicle, in
           }}>
             <div>
               <div style={{ color: '#f1f5f9', fontWeight: 800, fontSize: '1.05rem', lineHeight: 1.2 }}>
-                {vehicle.name || vehicle.makeHe}
+                {[vehicle.makeHe, vehicle.name].filter(Boolean).join(' ') || vehicle.makeHe}
               </div>
               {vehicle.year && (
                 <div style={{ color: '#94a3b8', fontSize: '0.8rem', marginTop: 2 }}>{vehicle.year}</div>

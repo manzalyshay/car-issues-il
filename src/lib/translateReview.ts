@@ -1,31 +1,11 @@
 /**
- * Hebrew → English review translation.
- * Tries providers in order: Cloudflare AI → Gemini → Mistral → null
- * Used for both on-write translation (new reviews) and batch backfill.
+ * Hebrew → English review translation using Claude.
  */
-import { getCloudflareContext } from '@opennextjs/cloudflare';
-
-const GEMINI_KEY   = process.env.GEMINI_API_KEY;
-const MISTRAL_KEY  = process.env.MISTRAL_API_KEY;
+import Anthropic from '@anthropic-ai/sdk';
 
 interface TranslationResult {
   titleEn: string | null;
   bodyEn: string | null;
-}
-
-async function tryCloudflareAI(prompt: string): Promise<string | null> {
-  try {
-    const ctx = await getCloudflareContext({ async: true });
-    const ai = (ctx.env as Record<string, unknown>).AI as { run: (model: string, opts: unknown) => Promise<Record<string, unknown>> } | undefined;
-    if (!ai) return null;
-    const result = await ai.run('@cf/meta/llama-4-scout-17b-16e-instruct', {
-      messages: [{ role: 'user', content: prompt }],
-      max_tokens: 1200,
-      temperature: 0.1,
-    });
-    return (typeof result?.response === 'string' ? result.response :
-      (result?.choices as Array<{message?: {content?: string}}>)?.[0]?.message?.content)?.trim() ?? null;
-  } catch { return null; }
 }
 
 function parseJson(raw: string): { title?: string; body?: string } | null {
@@ -35,53 +15,16 @@ function parseJson(raw: string): { title?: string; body?: string } | null {
   } catch { return null; }
 }
 
-async function tryGemini(prompt: string): Promise<string | null> {
-  if (!GEMINI_KEY) return null;
-  try {
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${GEMINI_KEY}`;
-    const res = await fetch(url, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        contents: [{ parts: [{ text: prompt }] }],
-        generationConfig: { temperature: 0.1, maxOutputTokens: 1200 },
-      }),
-      signal: AbortSignal.timeout(25000),
-    });
-    if (!res.ok) return null;
-    const json = await res.json() as { candidates?: { content?: { parts?: { text?: string }[] } }[] };
-    return json?.candidates?.[0]?.content?.parts?.[0]?.text?.trim() ?? null;
-  } catch { return null; }
-}
-
-async function tryMistral(prompt: string): Promise<string | null> {
-  if (!MISTRAL_KEY) return null;
-  try {
-    const res = await fetch('https://api.mistral.ai/v1/chat/completions', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${MISTRAL_KEY}` },
-      body: JSON.stringify({
-        model: 'mistral-small-latest',
-        temperature: 0.1,
-        max_tokens: 1200,
-        messages: [{ role: 'user', content: prompt }],
-      }),
-      signal: AbortSignal.timeout(25000),
-    });
-    if (!res.ok) return null;
-    const json = await res.json() as { choices?: { message?: { content?: string } }[] };
-    return json?.choices?.[0]?.message?.content?.trim() ?? null;
-  } catch { return null; }
-}
-
 /**
- * Translates a Hebrew car review title and body to English.
- * Tries Gemini first, falls back to Mistral. Returns null fields if all fail.
+ * Translates a Hebrew car review title and body to English using Claude.
  */
 export async function translateReview(
   title: string,
   body: string,
 ): Promise<TranslationResult> {
+  const apiKey = process.env.ANTHROPIC_API_KEY;
+  if (!apiKey) return { titleEn: null, bodyEn: null };
+
   const prompt = `You are a professional automotive translator. Translate the following Hebrew car review to natural, fluent English. Keep technical terms accurate. Preserve the reviewer's tone (casual, frustrated, enthusiastic, etc.). Do NOT add any commentary or explanation.
 
 Return ONLY a JSON object with this exact structure:
@@ -90,12 +33,20 @@ Return ONLY a JSON object with this exact structure:
 Hebrew title: ${title || '(no title)'}
 Hebrew body: ${body}`;
 
-  const raw = await tryCloudflareAI(prompt) ?? await tryGemini(prompt) ?? await tryMistral(prompt);
-  if (!raw) return { titleEn: null, bodyEn: null };
-
-  const parsed = parseJson(raw);
-  return {
-    titleEn: parsed?.title?.trim() || null,
-    bodyEn:  parsed?.body?.trim()  || null,
-  };
+  try {
+    const client = new Anthropic({ apiKey });
+    const msg = await client.messages.create({
+      model: 'claude-haiku-4-5-20251001',
+      max_tokens: 1200,
+      messages: [{ role: 'user', content: prompt }],
+    });
+    const block = msg.content[0];
+    const raw = block.type === 'text' ? block.text.trim() : null;
+    if (!raw) return { titleEn: null, bodyEn: null };
+    const parsed = parseJson(raw);
+    return {
+      titleEn: parsed?.title?.trim() || null,
+      bodyEn:  parsed?.body?.trim()  || null,
+    };
+  } catch { return { titleEn: null, bodyEn: null }; }
 }

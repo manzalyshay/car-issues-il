@@ -85,17 +85,28 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     priority: 0.75,
   }));
 
-  // Compare pages: include on Hebrew site (established authority); skip on English
-  // site where 7k thin compare pages waste crawl budget and dilute quality signals.
+  // Compare pages: include on Hebrew site always; on English site include only pairs
+  // where at least one model has an expert review (ensures content quality, not thin stubs).
   const compareUrls: MetadataRoute.Sitemap = [];
-  if (!isEn) {
+  {
+    const expertRows = isEn
+      ? await dbAll<{ make_slug: string; model_slug: string }>(
+          'SELECT DISTINCT make_slug, model_slug FROM expert_reviews',
+        ).catch(() => [])
+      : [];
+    const expertSet = new Set(expertRows.map((r) => `${r.make_slug}/${r.model_slug}`));
+
     const flat = makes.flatMap((m) =>
       m.models.map((mo) => ({ make: m.slug, model: mo.slug, category: mo.category }))
     );
     for (let i = 0; i < flat.length; i++) {
       for (let j = i + 1; j < flat.length; j++) {
         if (flat[i].category !== flat[j].category) continue;
-        const [c1, c2] = [`${flat[i].make}/${flat[i].model}`, `${flat[j].make}/${flat[j].model}`].sort();
+        const key1 = `${flat[i].make}/${flat[i].model}`;
+        const key2 = `${flat[j].make}/${flat[j].model}`;
+        // On English site, only include if at least one car has an expert review
+        if (isEn && !expertSet.has(key1) && !expertSet.has(key2)) continue;
+        const [c1, c2] = [key1, key2].sort();
         compareUrls.push({
           url: `${BASE}/cars/compare/${c1}/${c2}`,
           changeFrequency: 'weekly' as const,

@@ -26,9 +26,17 @@ function titleYearOk(title: string | null, requestedYear: number): boolean {
 }
 
 export async function getImagesForCar(makeSlug: string, modelSlug: string): Promise<CarImage[]> {
+  // Include recent year-tagged images (last 3 years) + null-year images, newest year first.
+  // Exclude old year-specific photos (>3 years ago) which show outdated designs.
+  const recentThreshold = new Date().getFullYear() - 3;
   return dbAll<CarImage>(
-    `SELECT * FROM car_images WHERE make_slug = ? AND model_slug = ? AND year IS NULL AND (hidden IS NULL OR hidden != 1) ORDER BY created_at ASC LIMIT 20`,
-    makeSlug, modelSlug,
+    `SELECT * FROM car_images
+     WHERE make_slug = ? AND model_slug = ?
+       AND (year IS NULL OR year >= ?)
+       AND (hidden IS NULL OR hidden != 1)
+     ORDER BY year DESC NULLS LAST, created_at ASC
+     LIMIT 20`,
+    makeSlug, modelSlug, recentThreshold,
   );
 }
 

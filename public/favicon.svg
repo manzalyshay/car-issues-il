@@ -1,10 +1,13 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
-  <!-- Background -->
-  <rect width="32" height="32" rx="7" fill="#15202e"/>
-  <!-- Blue accent bar -->
-  <rect x="4" y="6" width="3" height="20" rx="1.5" fill="#1b4f8a"/>
-  <!-- "C" letter -->
-  <text x="20" y="23" font-family="Arial Black, sans-serif" font-size="20" font-weight="900" text-anchor="middle" fill="#f4f6fa">C</text>
-  <!-- Blue dot -->
-  <circle cx="28" cy="22" r="2.5" fill="#2f6fb0"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 44 30">
+  <defs>
+    <linearGradient id="ciPlate" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#25628f"/>
+      <stop offset="100%" stop-color="#123a68"/>
+    </linearGradient>
+  </defs>
+  <rect x="0.9" y="0.9" width="42.2" height="28.2" rx="5.4" fill="url(#ciPlate)"/>
+  <path d="M0.9 6.3A5.4 5.4 0 0 1 6.3 0.9H9.4V29.1H6.3A5.4 5.4 0 0 1 0.9 23.7Z" fill="#f7d117"/>
+  <rect x="13.1" y="13.6" width="5.2" height="2.6" rx="1.3" fill="#ffffff" opacity="0.34"/>
+  <circle cx="28.4" cy="14.1" r="6.5" fill="none" stroke="#ffffff" stroke-width="2.3"/>
+  <path d="M33.3 19.1 36.9 22.6" stroke="#ffffff" stroke-width="2.3" stroke-linecap="round"/>
 </svg>

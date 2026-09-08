@@ -179,6 +179,35 @@ const [{ data: allMakes }, { data: allCarModels }, { data: all3d }] = await Prom
 const makeMap  = Object.fromEntries(allMakes.map(m => [m.slug, m.name_en]));
 const modelMap = Object.fromEntries(allCarModels.map(m => [`${m.make_slug}/${m.slug}`, m.name_en]));
 
+// ── 0. Validate existing models (auto-detect deleted Sketchfab UIDs) ──────────
+
+const VALIDATE_DELAY_MS = 250;
+const active3d = all3d.filter(r => !r.hidden);
+console.log(`\n🔍 Validating ${active3d.length} active 3D model(s) against Sketchfab…\n`);
+
+let autoHidden = 0;
+for (const row of active3d) {
+  try {
+    const res = await fetch(`https://api.sketchfab.com/v3/models/${row.sketchfab_uid}`, {
+      headers: { 'Accept': 'application/json', 'Authorization': `Token ${SKETCHFAB_TOKEN}` },
+      signal: AbortSignal.timeout(8000),
+    });
+    if (res.status === 404 || res.status === 410) {
+      console.log(`  ⚠ ${row.make_slug}/${row.model_slug} (${row.sketchfab_uid}): deleted on Sketchfab → marking hidden`);
+      await sb.from('car_3d_models')
+        .update({ hidden: true, hidden_reason: 'deleted-on-sketchfab' })
+        .eq('make_slug', row.make_slug)
+        .eq('model_slug', row.model_slug);
+      // Update in-memory so the replacement loop picks it up
+      row.hidden = true;
+      row.hidden_reason = 'deleted-on-sketchfab';
+      autoHidden++;
+    }
+  } catch { /* network error — skip */ }
+  await new Promise(r => setTimeout(r, VALIDATE_DELAY_MS));
+}
+console.log(`  → ${autoHidden} auto-hidden\n`);
+
 // ── 1. Replace hidden models ──────────────────────────────────────────────────
 
 const hidden = all3d.filter(r => r.hidden);
@@ -220,5 +249,5 @@ for (const car of missing) {
 
 // ── Summary ───────────────────────────────────────────────────────────────────
 
-console.log(`\n✅ Done — ${replaced} hidden replaced, ${fillAdded} new filled, ${skipped} skipped\n`);
+console.log(`\n✅ Done — ${autoHidden} auto-hidden, ${replaced} hidden replaced, ${fillAdded} new filled, ${skipped} skipped\n`);
 if (replaced + fillAdded === 0) process.exit(1);

@@ -26,7 +26,7 @@ const TYPE_CATEGORIES: Record<string, string[]> = {
   hybrid:   [],
 };
 
-export const dynamic = 'force-dynamic';
+export const revalidate = 3600; // cache 1 hour
 
 interface Props { searchParams: Promise<{ type?: string }> }
 

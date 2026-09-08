@@ -19,7 +19,8 @@ export default function GalleryViewer({ sketchfabModel, carImages, makeSlug, mod
   const hasImages = carImages.length > 0;
 
   // active: 'fab' | image index (0-based)
-  const [active, setActive] = useState<'fab' | number>(hasFab ? 'fab' : hasImages ? 0 : 'fab');
+  // 3D model is default when available, otherwise fall back to first image
+  const [active, setActive] = useState<'fab' | number>(hasFab ? 'fab' : 0);
 
   const altText = `${makeNameEn} ${modelNameEn}`;
 
@@ -40,8 +41,9 @@ export default function GalleryViewer({ sketchfabModel, carImages, makeSlug, mod
         ) : active !== 'fab' && hasImages ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img
-            src={carImages[active as number].url}
+            src={carImages[active as number].thumbnail_url ?? carImages[active as number].url}
             alt={altText}
+            loading="lazy"
             style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
           />
         ) : (
@@ -97,6 +99,7 @@ export default function GalleryViewer({ sketchfabModel, carImages, makeSlug, mod
                 <img
                   src={item.img.thumbnail_url ?? item.img.url}
                   alt=""
+                  loading="lazy"
                   style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
                 />
               </button>

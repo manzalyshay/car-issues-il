@@ -47,15 +47,22 @@ export function LocaleProvider({ children, initialLocale }: { children: React.Re
       setIsDomainLocked(true);
       return;
     }
+    // Unknown host (localhost/dev) — read from localStorage and sync to cookie
     try {
       const stored = localStorage.getItem('locale') as Locale | null;
-      if (stored === 'en' || stored === 'he') setLocaleState(stored);
+      if (stored === 'en' || stored === 'he') {
+        document.cookie = `clang=${stored};path=/;max-age=31536000;samesite=lax`;
+        setLocaleState(stored);
+      }
     } catch {}
   }, []);
 
   const setLocale = useCallback((l: Locale) => {
     setLocaleState(l);
-    try { localStorage.setItem('locale', l); } catch {}
+    try {
+      localStorage.setItem('locale', l);
+      document.cookie = `clang=${l};path=/;max-age=31536000;samesite=lax`;
+    } catch {}
   }, []);
 
   const dir = locale === 'he' ? 'rtl' : 'ltr';

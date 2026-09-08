@@ -21,6 +21,39 @@ function LogoMark() {
   );
 }
 
+function LangSwitch({ isEn }: { isEn: boolean }) {
+  function handleClick(e: React.MouseEvent) {
+    if (typeof window !== 'undefined') {
+      const host = window.location.hostname;
+      const isLocalhost = host === 'localhost' || host === '127.0.0.1';
+      if (isLocalhost) {
+        e.preventDefault();
+        const next = isEn ? 'he' : 'en';
+        document.cookie = `clang=${next};path=/;max-age=31536000;samesite=lax`;
+        try { localStorage.setItem('locale', next); } catch {}
+        window.location.reload();
+      }
+      // On production domains — let the href navigate normally
+    }
+  }
+  return (
+    <a
+      href={isEn ? 'https://carissues.co.il' : 'https://carissues.net'}
+      onClick={handleClick}
+      style={{
+        display: 'inline-flex', alignItems: 'center', gap: 6,
+        fontSize: '0.75rem', fontWeight: 700,
+        color: 'var(--text-muted)', textDecoration: 'none',
+        border: '1.5px solid var(--border)', borderRadius: 8,
+        padding: '5px 12px', transition: 'all 0.15s',
+      }}
+      className="lang-switch"
+    >
+      🌐 {isEn ? 'עב' : 'EN'}
+    </a>
+  );
+}
+
 export default function Footer() {
   const { t, locale } = useLocale();
   const isEn = locale === 'en';
@@ -88,19 +121,7 @@ export default function Footer() {
               {t.footer.about}
             </p>
             {/* Language switcher */}
-            <a
-              href={isEn ? 'https://carissues.co.il?clang=1' : 'https://carissues.net?clang=1'}
-              style={{
-                display: 'inline-flex', alignItems: 'center', gap: 6,
-                fontSize: '0.75rem', fontWeight: 700,
-                color: 'var(--text-muted)', textDecoration: 'none',
-                border: '1.5px solid var(--border)', borderRadius: 8,
-                padding: '5px 12px', transition: 'all 0.15s',
-              }}
-              className="lang-switch"
-            >
-              🌐 {isEn ? 'עב' : 'EN'}
-            </a>
+            <LangSwitch isEn={isEn} />
           </div>
 
           {/* Link columns */}

@@ -5,7 +5,7 @@ import { getAllMakes } from '@/lib/carsDb';
 import { getHostLocale, getBaseUrl } from '@/lib/hostLocale';
 import { translations } from '@/lib/translations';
 
-export const dynamic = 'force-dynamic';
+export const revalidate = 3600; // cache 1 hour
 
 export async function generateMetadata(): Promise<Metadata> {
   const locale = await getHostLocale();

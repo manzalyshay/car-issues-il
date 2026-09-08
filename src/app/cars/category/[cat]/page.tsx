@@ -7,7 +7,7 @@ import { dbAll } from '@/lib/db';
 import { notFound } from 'next/navigation';
 import CategoryGrid, { type GridModel } from './CategoryGrid';
 
-export const dynamic = 'force-dynamic';
+export const revalidate = 3600; // cache 1 hour
 
 interface Props { params: Promise<{ cat: string }> }
 
@@ -64,17 +64,14 @@ export default async function CategoryPage({ params }: Props) {
   const dbCategories = CAT_DB_CATEGORIES[cat]!;
   const cp = translations[locale].carsPage;
 
-  // Fetch review counts, expert scores, car images and 3D models in parallel
-  const [reviewCounts, expertScores, imageData, models3d] = await Promise.all([
+  // Fetch review counts, expert scores and 3D models in parallel
+  const [reviewCounts, expertScores, models3d] = await Promise.all([
     dbAll<{ make_slug: string; model_slug: string; cnt: number; avg_rating: number }>(
       'SELECT make_slug, model_slug, COUNT(*) as cnt, AVG(rating) as avg_rating FROM reviews GROUP BY make_slug, model_slug',
     ).catch(() => [] as { make_slug: string; model_slug: string; cnt: number; avg_rating: number }[]),
     dbAll<{ make_slug: string; model_slug: string; top_score: number }>(
       'SELECT make_slug, model_slug, top_score FROM expert_reviews WHERE year IS NULL AND top_score IS NOT NULL',
     ).catch(() => [] as { make_slug: string; model_slug: string; top_score: number }[]),
-    dbAll<{ make_slug: string; model_slug: string; thumbnail_url: string | null; url: string }>(
-      'SELECT make_slug, model_slug, thumbnail_url, url FROM car_images WHERE (hidden IS NULL OR hidden != 1) GROUP BY make_slug, model_slug LIMIT 500',
-    ).catch(() => [] as { make_slug: string; model_slug: string; thumbnail_url: string | null; url: string }[]),
     dbAll<{ make_slug: string; model_slug: string; sketchfab_uid: string; sketchfab_name: string; sketchfab_author: string }>(
       'SELECT make_slug, model_slug, sketchfab_uid, sketchfab_name, sketchfab_author FROM car_3d_models WHERE hidden IS NOT 1',
     ).catch(() => [] as { make_slug: string; model_slug: string; sketchfab_uid: string; sketchfab_name: string; sketchfab_author: string }[]),
@@ -88,8 +85,6 @@ export default async function CategoryPage({ params }: Props) {
   }
   const scoreMap: Record<string, number> = {};
   for (const r of expertScores) scoreMap[`${r.make_slug}/${r.model_slug}`] = r.top_score;
-  const imageMap: Record<string, string> = {};
-  for (const r of imageData) imageMap[`${r.make_slug}/${r.model_slug}`] = r.thumbnail_url ?? r.url;
   const model3dMap: Record<string, { uid: string; name: string; author: string }> = {};
   for (const r of models3d) model3dMap[`${r.make_slug}/${r.model_slug}`] = { uid: r.sketchfab_uid, name: r.sketchfab_name, author: r.sketchfab_author };
 
@@ -107,7 +102,7 @@ export default async function CategoryPage({ params }: Props) {
         modelNameHe: model.nameHe,
         modelNameEn: model.nameEn,
         logoUrl: make.logoUrl,
-        imageUrl: imageMap[key] ?? null,
+        imageUrl: model.leadingImageUrl ?? null,
         sketchfab: model3dMap[key] ?? null,
         expertScore: scoreMap[key] ?? null,
         avgRating: ratingMap[key] ?? null,

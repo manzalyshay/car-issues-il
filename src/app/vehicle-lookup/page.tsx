@@ -40,19 +40,19 @@ export default async function VehicleLookupPage() {
   const base = getBaseUrl(locale);
 
   const features = isHe ? [
-    { icon: '📋', title: 'פרטי רכב מלאים', desc: 'יצרן, דגם, שנת ייצור, צבע, סוג דלק, גודל מנוע' },
+    { icon: '📋', title: 'פרטי רכב מלאים', desc: 'יצרן, דגם, שנת ייצור, צבע, סוג דלק' },
     { icon: '🔧', title: 'תוקף טסט ורישיון', desc: 'תאריך הטסט האחרון ותאריך פקיעת הרישיון' },
-    { icon: '⚠️', title: 'היסטוריית נזק', desc: 'האם הרכב עבר תאונה רשומה? האם צובע מחדש?' },
-    { icon: '🔢', title: 'קילומטראז׳', desc: 'מד-האוץ בטסט האחרון מתוך רשומות משרד התחבורה' },
-    { icon: '🪪', title: 'מסגרת ובעלות', desc: 'מספר שלדה (VIN) ומספר הבעלים הקודמים' },
-    { icon: '🌍', title: 'מקור הרכב', desc: 'כלי רכב מקורי, מיובא מאירופה, ארה"ב או אחר' },
+    { icon: '⚠️', title: 'נזק וצביעה', desc: 'האם נרשמה תאונה? האם הרכב צובע מחדש? (כשהמידע קיים ברשומות)' },
+    { icon: '🔢', title: 'קילומטראז׳', desc: 'מד-האוץ בטסט האחרון — כשקיים במאגר משרד התחבורה' },
+    { icon: '🪪', title: 'מספר שלדה ובעלות', desc: 'מספר שלדה (VIN) וסוג הבעלות (פרטי / עסקי)' },
+    { icon: '🌍', title: 'מקור הרכב', desc: 'רכב מקורי, מיובא מאירופה, ארה"ב או אחר — כשקיים' },
   ] : [
-    { icon: '📋', title: 'Full Vehicle Details', desc: 'Make, model, year, color, fuel type, engine size' },
-    { icon: '🔧', title: 'MOT & License Status', desc: 'Last test date and license expiry — instantly' },
-    { icon: '⚠️', title: 'Damage History', desc: 'Was the vehicle in a recorded accident? Was it repainted?' },
-    { icon: '🔢', title: 'Odometer Reading', desc: 'Mileage at last MOT test from Ministry of Transport records' },
-    { icon: '🪪', title: 'VIN & Ownership', desc: 'Vehicle frame number and number of previous owners' },
-    { icon: '🌍', title: 'Vehicle Origin', desc: 'Original, European import, US import or other' },
+    { icon: '📋', title: 'Full Vehicle Details', desc: 'Make, model, year, color, fuel type' },
+    { icon: '🔧', title: 'Test & License Status', desc: 'Last test date and license expiry — instantly' },
+    { icon: '⚠️', title: 'Damage & Repaint', desc: 'Recorded accident or repaint — when available in Ministry records' },
+    { icon: '🔢', title: 'Odometer Reading', desc: 'Mileage at last test — when available in Ministry of Transport records' },
+    { icon: '🪪', title: 'VIN & Ownership Type', desc: 'Vehicle frame number and ownership type (private / business)' },
+    { icon: '🌍', title: 'Vehicle Origin', desc: 'Original, European import, US or other — when recorded' },
   ];
 
   const steps = isHe ? [

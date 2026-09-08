@@ -18,7 +18,6 @@ export default function RecallsSection({ makeEn, modelEn, year, years }: Props) 
   const [loading, setLoading]     = useState(false);
   const [expanded, setExpanded]   = useState<string | null>(null);
   const [filterYear, setFilterYear] = useState<number | 'all'>('all');
-  const [isOpen, setIsOpen]       = useState(false);
 
   useEffect(() => {
     setLoading(true);
@@ -44,12 +43,9 @@ export default function RecallsSection({ makeEn, modelEn, year, years }: Props) 
   [recalls, filterYear]);
 
   return (
-    <div id="recalls" style={{ marginBottom: 48 }}>
-      {/* Section header — clickable toggle */}
-      <div
-        onClick={() => setIsOpen(o => !o)}
-        style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: isOpen ? 16 : 0, flexWrap: 'wrap', cursor: 'pointer', userSelect: 'none' }}
-      >
+    <div style={{ marginBottom: 48 }}>
+      {/* Section header */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16, flexWrap: 'wrap' }}>
         <div style={{ width: 4, height: 24, borderRadius: 2, background: 'var(--accent)', flexShrink: 0 }} />
         <h2 style={{ fontSize: '1.25rem', fontWeight: 800, margin: 0 }}>{rc.title}</h2>
         {!loading && recalls.length > 0 && (
@@ -65,16 +61,12 @@ export default function RecallsSection({ makeEn, modelEn, year, years }: Props) 
             {rc.source}
           </span>
         )}
-        <span style={{ marginRight: 'auto', fontSize: '0.875rem', color: 'var(--text-muted)' }}>
-          {isOpen ? '▲' : '▼'}
-        </span>
         {!loading && recalls.length > 0 && (
           <a
             href={`/embed?make=${encodeURIComponent(makeEn)}&model=${encodeURIComponent(modelEn)}${year ? `&year=${year}` : ''}`}
             target="_blank"
             rel="noopener noreferrer"
-            onClick={e => e.stopPropagation()}
-            style={{ fontSize: '0.7rem', color: 'var(--text-muted)', textDecoration: 'none', border: '1px solid var(--border)', borderRadius: 6, padding: '2px 8px', whiteSpace: 'nowrap', flexShrink: 0 }}
+            style={{ fontSize: '0.7rem', color: 'var(--text-muted)', textDecoration: 'none', border: '1px solid var(--border)', borderRadius: 6, padding: '2px 8px', whiteSpace: 'nowrap', flexShrink: 0, marginInlineStart: 'auto' }}
           >
             {locale === 'he' ? '‹/› הטמע' : '‹/› Embed'}
           </a>
@@ -82,7 +74,7 @@ export default function RecallsSection({ makeEn, modelEn, year, years }: Props) 
       </div>
 
       {/* Year filter tabs — only when we have multiple years */}
-      {isOpen && !loading && !year && availableYears.length > 1 && (
+      {!loading && !year && availableYears.length > 1 && (
         <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 16 }}>
           <button
             onClick={() => setFilterYear('all')}
@@ -113,12 +105,12 @@ export default function RecallsSection({ makeEn, modelEn, year, years }: Props) 
       )}
 
       {/* Content */}
-      {isOpen && loading ? (
+      {loading ? (
         <div className="card" style={{ padding: 32, textAlign: 'center', color: 'var(--text-muted)' }}>
           <div style={{ fontSize: '1.5rem', marginBottom: 8 }}>🔍</div>
           {rc.loading}
         </div>
-      ) : isOpen && filtered.length === 0 ? (
+      ) : filtered.length === 0 ? (
         <div className="card" style={{ padding: 32, textAlign: 'center', color: 'var(--text-muted)' }}>
           <div style={{ fontSize: 36, marginBottom: 12 }}>✅</div>
           <p style={{ margin: 0 }}>
@@ -127,7 +119,7 @@ export default function RecallsSection({ makeEn, modelEn, year, years }: Props) 
               : rc.noneFound}
           </p>
         </div>
-      ) : isOpen ? (
+      ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
           {filtered.map(r => (
             <div key={r.id} className="card" style={{ padding: '16px 20px' }}>
@@ -219,7 +211,7 @@ export default function RecallsSection({ makeEn, modelEn, year, years }: Props) 
             </div>
           ))}
         </div>
-      ) : null}
+      )}
     </div>
   );
 }

@@ -54,9 +54,9 @@ export default function RecallsBarChart({ makeEn, modelEn, years, isEn }: Props)
 
   if (loading) {
     return (
-      <div ref={containerRef} style={{ overflow: 'hidden', borderRadius: 12, border: '1px solid var(--border)', background: 'var(--surface)', width: '100%', height: '100%' }}>
+      <div ref={containerRef} style={{ overflow: 'hidden', borderRadius: 16, border: '1px solid #e3e8ee', background: '#fff', width: '100%', height: '100%' }}>
         {header(isEn)}
-        <div style={{ textAlign: 'center', color: 'var(--text-muted)', fontSize: '0.875rem', padding: '32px 20px' }}>
+        <div style={{ textAlign: 'center', color: '#8595a6', fontSize: '0.875rem', padding: '32px 20px' }}>
           {isEn ? 'Loading recall data...' : 'טוען נתוני ריקולים...'}
         </div>
       </div>
@@ -69,20 +69,7 @@ export default function RecallsBarChart({ makeEn, modelEn, years, isEn }: Props)
     if (r.year) countByYear.set(r.year, (countByYear.get(r.year) ?? 0) + 1);
   }
 
-  if (countByYear.size === 0) {
-    return (
-      <div ref={containerRef} style={{ overflow: 'hidden', borderRadius: 12, border: '1px solid var(--border)', background: 'var(--surface)', width: '100%', height: '100%' }}>
-        {header(isEn)}
-        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '32px 20px', color: 'var(--text-muted)', textAlign: 'center', gap: 8 }}>
-          <div style={{ fontSize: '2rem' }}>✅</div>
-          <div style={{ fontSize: '0.875rem' }}>
-            {isEn ? 'No NHTSA recall data found for this model' : 'לא נמצאו נתוני ריקולים עבור דגם זה'}
-          </div>
-          <div style={{ fontSize: '0.7rem', opacity: 0.6 }}>Source: NHTSA</div>
-        </div>
-      </div>
-    );
-  }
+  if (countByYear.size === 0) return null;
 
   const allYears = Array.from(countByYear.keys()).sort((a, b) => a - b);
   const maxCount = Math.max(...Array.from(countByYear.values()));
@@ -113,27 +100,23 @@ export default function RecallsBarChart({ makeEn, modelEn, years, isEn }: Props)
   const worstYear = allYears.reduce((a, b) => (countByYear.get(b)! > countByYear.get(a)! ? b : a));
 
   return (
-    <div ref={containerRef} style={{ overflow: 'hidden', borderRadius: 12, border: '1px solid var(--border)', background: 'var(--surface)', width: '100%', height: '100%' }}>
+    <div ref={containerRef} style={{ overflow: 'hidden', borderRadius: 16, border: '1px solid #e3e8ee', background: '#fff', width: '100%', height: '100%' }}>
       {header(isEn)}
 
       <div style={{ padding: '16px 20px 12px' }}>
         <svg viewBox={`0 0 ${W} ${H}`} style={{ width: '100%', display: 'block', overflow: 'visible' }} dir="ltr">
           <defs>
             <filter id="rbc-shadow" x="-25%" y="-25%" width="150%" height="150%">
-              <feDropShadow dx="0" dy="2" stdDeviation="4" floodColor="rgba(0,0,0,0.5)" />
+              <feDropShadow dx="0" dy="1" stdDeviation="3" floodColor="rgba(0,0,0,0.12)" />
             </filter>
           </defs>
           <g transform={`translate(${PAD.left},${PAD.top})`}>
-            {/* Background */}
-            <rect x={0} y={0} width={cW} height={cH} fill="rgba(255,255,255,0.018)" rx={3} />
-
             {/* Y grid + labels */}
             {yTicks.map(({ y, label }, i) => (
               <g key={i}>
                 <line x1={0} x2={cW} y1={y} y2={y}
-                  stroke="var(--border)" strokeWidth={i === 0 ? 1 : 0.5}
-                  strokeDasharray={i === 0 ? undefined : '4 3'} />
-                <text x={-6} y={y + 4} textAnchor="end" fontSize={compact ? 9 : 10} fill="var(--text-muted)" fontFamily="system-ui,sans-serif">
+                  stroke="#eef1f5" strokeWidth={1} />
+                <text x={-6} y={y + 4} textAnchor="end" fontSize={compact ? 9 : 10} fill="#a8b5c4" fontFamily="system-ui,sans-serif">
                   {label}
                 </text>
               </g>
@@ -215,7 +198,7 @@ export default function RecallsBarChart({ makeEn, modelEn, years, isEn }: Props)
               return (
                 <g pointerEvents="none" filter="url(#rbc-shadow)">
                   <rect x={ttX} y={ttY} width={ttW} height={ttH} rx={7}
-                    fill="#1a2540" stroke="var(--border)" strokeWidth={1} />
+                    fill="#1b2c4a" stroke="#e3e8ee" strokeWidth={1} />
                   <text x={ttX + ttW / 2} y={ttY + 15} textAnchor="middle"
                     fontSize={12} fontWeight={700} fill="#f1f5f9" fontFamily="system-ui,sans-serif">
                     {hoveredYear}
@@ -231,14 +214,14 @@ export default function RecallsBarChart({ makeEn, modelEn, years, isEn }: Props)
         </svg>
 
         {/* Legend */}
-        <div style={{ display: 'flex', gap: 16, justifyContent: 'center', flexWrap: 'wrap', marginTop: 6, fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+        <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap', marginTop: 10, fontSize: 11.5, color: '#66788c' }}>
           {[
-            { color: '#f59e0b', label: isEn ? '1–2' : '1–2' },
+            { color: '#f59e0b', label: isEn ? '1–2 recalls' : '1–2 ריקולים' },
             { color: '#f97316', label: isEn ? '3–4' : '3–4' },
             { color: '#dc2626', label: isEn ? '5+' : '5+' },
           ].map(({ color, label }) => (
             <div key={label} style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
-              <div style={{ width: 10, height: 10, background: color, borderRadius: 2 }} />
+              <div style={{ width: 10, height: 10, background: color, borderRadius: 3 }} />
               <span>{label}</span>
             </div>
           ))}
@@ -246,18 +229,13 @@ export default function RecallsBarChart({ makeEn, modelEn, years, isEn }: Props)
 
         {/* Summary */}
         <div style={{
-          marginTop: 10, padding: '8px 14px',
-          background: 'rgba(249,115,22,0.08)', borderRadius: 8,
-          border: '1px solid rgba(249,115,22,0.2)',
-          textAlign: 'center', fontSize: '0.8rem', color: 'var(--text-muted)',
+          marginTop: 12, padding: '10px 12px',
+          background: '#fdf6ee', borderRadius: 9,
+          fontSize: 13, color: '#4a5b6d',
         }}>
           {isEn
             ? `${totalRecalls} total recall${totalRecalls !== 1 ? 's' : ''} · most in ${worstYear} (${countByYear.get(worstYear)})`
-            : `סה"כ ${totalRecalls} ריקולים · השנה עם הכי הרבה: ${worstYear} (${countByYear.get(worstYear)})`}
-        </div>
-
-        <div style={{ textAlign: 'center', fontSize: '0.65rem', color: 'var(--text-muted)', marginTop: 8 }}>
-          {isEn ? 'Source: NHTSA' : 'מקור: NHTSA'}
+            : `סה"כ ${totalRecalls} ריקולים · שנה עם הכי הרבה: ${worstYear} (${countByYear.get(worstYear)})`}
         </div>
       </div>
     </div>
@@ -267,14 +245,14 @@ export default function RecallsBarChart({ makeEn, modelEn, years, isEn }: Props)
 function header(isEn: boolean) {
   return (
     <div style={{
-      padding: '14px 20px',
-      background: 'linear-gradient(135deg, #0f172a 0%, #1e293b 100%)',
-      display: 'flex', alignItems: 'center', gap: 10,
+      padding: '16px 18px',
+      display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 10,
+      borderBottom: '1px solid #eef1f5',
     }}>
-      <span style={{ fontSize: '1.1rem' }}>⚠️</span>
-      <h2 style={{ margin: 0, color: '#f1f5f9', fontWeight: 800, fontSize: '1rem' }}>
+      <span style={{ fontSize: 15, fontWeight: 700, color: '#1c2733' }}>
         {isEn ? 'Recalls by Model Year' : 'ריקולים לפי שנת דגם'}
-      </h2>
+      </span>
+      <span style={{ fontSize: 12, color: '#8595a6' }}>NHTSA</span>
     </div>
   );
 }

@@ -9,9 +9,10 @@ import PlateSearch from '@/components/PlateSearch';
 import { useLocale } from '@/lib/localeContext';
 
 interface Make { slug: string; nameHe: string; nameEn: string; logoUrl: string; country: string; models: { slug: string; nameHe: string; nameEn: string }[]; }
-interface TopCar { makeSlug: string; modelSlug: string; makeHe: string; modelHe: string; makeEn: string; modelEn: string; logoUrl: string; combined: number; avgRating: number | null; imageUrl?: string | null; }
+interface TopCar { makeSlug: string; modelSlug: string; makeHe: string; modelHe: string; makeEn: string; modelEn: string; logoUrl: string; combined: number; avgRating: number | null; imageUrl?: string | null; sketchfabUid?: string | null; }
 interface Review { id: string; make_slug: string; model_slug: string; year: number | null; rating: number; title: string; body: string; title_en?: string | null; body_en?: string | null; author: string; created_at: string; makeHe: string; modelHe: string; makeEn: string; modelEn: string; logoUrl: string; }
-interface Props { popularMakes: Make[]; allMakes: Make[]; topRanked: TopCar[]; recentReviews: Review[]; }
+interface TickerItem { code: string; textHe: string; textEn: string; color: string; }
+interface Props { popularMakes: Make[]; allMakes: Make[]; topRanked: TopCar[]; recentReviews: Review[]; tickerItems?: TickerItem[]; }
 
 function timeAgo(dateStr: string, locale: 'he' | 'en') {
   const diff = Date.now() - new Date(dateStr).getTime();
@@ -41,11 +42,21 @@ function CarGhost() {
   );
 }
 
+/* Ticker items — fallback shown when server provides no real data */
+const TICKER_FALLBACK: TickerItem[] = [
+  { code: 'תיקון', textHe: 'סובארו XV · גיר CVT דווח ב-84,000 ק"מ', textEn: 'Subaru XV · CVT gearbox reported at 84,000 km', color: '#ff9b8d' },
+  { code: 'תיקון', textHe: 'טויוטה RAV4 · דיסקיות הוחלפו ב-₪1,120', textEn: 'Toyota RAV4 · discs replaced for ₪1,120', color: '#6fd9a0' },
+  { code: 'ריקול', textHe: 'ריקול חדש · מערכת דלק, דגמי 2019', textEn: 'New recall · fuel system, 2019 models', color: '#ff9b8d' },
+  { code: 'ביקורת', textHe: 'יונדאי טוסון 2021 · 4/5 ★', textEn: 'Hyundai Tucson 2021 · 4/5 ★', color: '#9dc4e8' },
+  { code: 'תיקון', textHe: 'מאזדה CX-5 · מתלים קדמיים ב-92,000 ק"מ', textEn: 'Mazda CX-5 · front suspension at 92,000 km', color: '#9dc4e8' },
+  { code: 'ריקול', textHe: "קיה ספורטז' · כרית אוויר, 2018–2020", textEn: 'Kia Sportage · airbag, 2018–2020', color: '#ff9b8d' },
+];
+
 /* Car card matching design handoff */
 function CarCard({ car, isHe }: { car: TopCar; isHe: boolean }) {
   const name  = isHe ? `${car.makeHe} ${car.modelHe}` : `${car.makeEn} ${car.modelEn}`;
   const score = Math.round(car.combined * 10) / 10;
-  const tier  = scoreTier(score);
+  const scoreBg = score >= 8.2 ? '#1b9e5f' : '#1b4f8a';
   // Gradient fallback for cards without real photos
   const idx   = (car.makeSlug.charCodeAt(0) + car.modelSlug.charCodeAt(0)) % 6;
   const grads = [
@@ -55,44 +66,43 @@ function CarCard({ car, isHe }: { car: TopCar; isHe: boolean }) {
   const [g1, g2] = grads[idx];
 
   return (
-    <Link href={`/cars/${car.makeSlug}/${car.modelSlug}`} className="ci-car-card">
-      {/* Photo — real image if available, gradient placeholder otherwise */}
-      <div className="ci-photo" style={car.imageUrl ? undefined : ({ '--ci-g1': g1, '--ci-g2': g2 } as React.CSSProperties)}>
-        {car.imageUrl ? (
-          /* eslint-disable-next-line @next/next/no-img-element */
-          <img
-            src={car.imageUrl}
-            alt={`${car.makeEn} ${car.modelEn}`}
-            style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
-            onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
-          />
-        ) : (
-          <CarGhost />
-        )}
-        <span className="photo-label">{car.makeEn} {car.modelEn}</span>
-      </div>
-      <div className="body">
-        <div className="titles">
-          <div>
-            <h3>{name}</h3>
-          </div>
-          <span className={`score-badge sm score-tier-${tier}`}>
-            <span className="n">{score.toFixed(1)}</span>
-            <span className="of">{isHe ? 'מתוך 10' : '/10'}</span>
-          </span>
-        </div>
-        <div className="foot" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-          {car.avgRating != null && (
-            <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
-              <StarRating rating={car.avgRating * 2} size={12} />
-              <span style={{ fontSize: 12, color: 'var(--text-faint)', fontWeight: 600 }}>
-                {car.avgRating.toFixed(1)}
-              </span>
+    <Link href={`/cars/${car.makeSlug}/${car.modelSlug}`} style={{ textDecoration: 'none', color: 'inherit', display: 'block' }}>
+      <div style={{ background: '#fff', border: '1px solid #e3e8ee', borderRadius: 13, overflow: 'hidden' }} className="ci-car-card-new">
+        {/* Photo with score badge overlay */}
+        <div style={{ position: 'relative', aspectRatio: '16/10', background: car.imageUrl ? '#f8fafc' : `linear-gradient(150deg, ${g1}, ${g2})` }}>
+          {car.imageUrl ? (
+            /* eslint-disable-next-line @next/next/no-img-element */
+            <img
+              src={car.imageUrl}
+              alt={`${car.makeEn} ${car.modelEn}`}
+              loading="lazy"
+              style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
+              onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
+            />
+          ) : (
+            <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'rgba(27,79,138,0.25)' }}>
+              <CarGhost />
             </div>
           )}
-          <span style={{ color: 'var(--accent)', fontSize: 13, fontWeight: 700, marginInlineStart: 'auto' }}>
-            {isHe ? 'ראה ביקורות ←' : 'See reviews →'}
+          {/* Score badge — top-right overlay */}
+          <span style={{
+            position: 'absolute', top: 9, insetInlineEnd: 9,
+            fontFamily: 'monospace', fontSize: 11.5, fontWeight: 700,
+            color: '#f8fafc', background: scoreBg,
+            borderRadius: 4, padding: '2px 7px',
+          }}>
+            {score.toFixed(1)}
           </span>
+        </div>
+        {/* Info */}
+        <div style={{ padding: '12px 14px 14px' }}>
+          <div style={{ fontSize: 14.5, fontWeight: 800, letterSpacing: '-0.01em', marginBottom: 4 }}>{name}</div>
+          {car.avgRating != null && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+              <StarRating rating={car.avgRating * 2} size={11} />
+              <span style={{ fontSize: 11, color: '#8595a6', fontWeight: 600 }}>{car.avgRating.toFixed(1)}</span>
+            </div>
+          )}
         </div>
       </div>
     </Link>
@@ -104,7 +114,7 @@ type CatModel = { makeSlug: string; modelSlug: string; makeEn: string; modelEn: 
 const CATEGORY_MODELS: Record<string, CatModel[]> = {
   suv: [
     { makeSlug: 'toyota',   modelSlug: 'rav4',       makeEn: 'Toyota',   modelEn: 'RAV4',        makeHe: 'טויוטה',  modelHe: 'RAV4' },
-    { makeSlug: 'hyundai',  modelSlug: 'tucson',     makeEn: 'Hyundai',  modelEn: 'Tucson',       makeHe: 'יונדאי',  modelHe: 'טוקסון' },
+    { makeSlug: 'hyundai',  modelSlug: 'tucson',     makeEn: 'Hyundai',  modelEn: 'Tucson',       makeHe: 'יונדאי',  modelHe: 'טוסון' },
     { makeSlug: 'kia',      modelSlug: 'sportage',   makeEn: 'Kia',      modelEn: 'Sportage',     makeHe: 'קיה',     modelHe: "ספורטז'" },
     { makeSlug: 'mazda',    modelSlug: 'cx5',        makeEn: 'Mazda',    modelEn: 'CX-5',         makeHe: 'מאזדה',   modelHe: 'CX-5' },
     { makeSlug: 'hyundai',  modelSlug: 'santa-fe',   makeEn: 'Hyundai',  modelEn: 'Santa Fe',     makeHe: 'יונדאי',  modelHe: 'סנטה פה' },
@@ -144,7 +154,7 @@ const CATEGORY_MODELS: Record<string, CatModel[]> = {
   ],
 };
 
-export default function HomeClient({ popularMakes, allMakes, topRanked, recentReviews }: Props) {
+export default function HomeClient({ popularMakes, allMakes, topRanked, recentReviews, tickerItems: tickerItemsProp }: Props) {
   const { locale, t } = useLocale();
   const isHe = locale === 'he';
   const makeName = (m: Make) => isHe ? m.nameHe : m.nameEn;
@@ -172,78 +182,192 @@ export default function HomeClient({ popularMakes, allMakes, topRanked, recentRe
         { key: 'hatchback', label: 'Hatchback' },
       ];
 
+  const tickerItems = (tickerItemsProp && tickerItemsProp.length > 0 ? tickerItemsProp : TICKER_FALLBACK);
+  const topCar = topRanked[0] ?? null;
+
   return (
-    <div style={{ background: 'var(--bg)', minHeight: '100vh', direction: isHe ? 'rtl' : 'ltr' }}>
+    <div style={{ background: '#f5f7fa', minHeight: '100vh', direction: isHe ? 'rtl' : 'ltr' }}>
+
+      {/* ── Live ticker ── */}
+      <div style={{ background: '#0f2c4d', borderBottom: '1px solid #16395e', overflow: 'hidden', height: 32, display: 'flex', alignItems: 'center' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 7, padding: '0 clamp(14px,3vw,24px)', flexShrink: 0, borderInlineEnd: '1px solid #2a5680', height: '100%' }}>
+          <span style={{ width: 5, height: 5, borderRadius: '50%', background: '#1b9e5f', animation: 'ci-pulse 1.8s ease-in-out infinite', flexShrink: 0 }} />
+          <span style={{ fontFamily: 'monospace', fontSize: 9.5, fontWeight: 700, letterSpacing: '0.16em', color: '#8fb3d6', whiteSpace: 'nowrap' }}>
+            {isHe ? 'דיווחים חיים' : 'LIVE REPORTS'}
+          </span>
+        </div>
+        <div dir="ltr" style={{ flex: 1, overflow: 'hidden', minWidth: 0 }}>
+          <div style={{ display: 'flex', width: 'max-content', animation: 'ci-ticker 52s linear infinite' }}>
+            {[...tickerItems, ...tickerItems].map((item, i) => (
+              <span key={i} style={{ display: 'flex', alignItems: 'center', gap: 9, paddingInline: 16, fontSize: 11.5, color: '#c3d6ea', whiteSpace: 'nowrap' }}>
+                <span style={{ fontFamily: 'monospace', fontSize: 10, fontWeight: 700, color: item.color }}>
+                  {isHe ? item.code : ({ 'ביקורת': 'REVIEW', 'תיקון': 'REPAIR', 'ריקול': 'RECALL' }[item.code] ?? item.code)}
+                </span>
+                <span>{isHe ? item.textHe : item.textEn}</span>
+                <span style={{ color: '#2a4b6f' }}>◆</span>
+              </span>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* ═══════════════════════════════════════════════════
+          HERO — light 2-column layout
+          ═══════════════════════════════════════════════════ */}
+      <section style={{ position: 'relative', overflow: 'hidden', borderBottom: '1px solid #eef1f5', background: '#fff' }}>
+        <div style={{ position: 'absolute', inset: 0, background: 'radial-gradient(900px 340px at 80% -10%, rgba(27,79,138,0.07), transparent 62%)', pointerEvents: 'none' }} />
+        <div style={{ position: 'relative', maxWidth: 1240, marginInline: 'auto', padding: '28px clamp(14px,3vw,30px) 32px', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: 28, alignItems: 'end' }}>
+
+          {/* Left: text + search */}
+          <div style={{ minWidth: 0 }}>
+            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 7, border: '1px solid #b8e0c9', background: 'rgba(46,230,168,0.07)', borderRadius: 5, padding: '4px 10px', marginBottom: 12 }}>
+              <span style={{ width: 4, height: 4, borderRadius: '50%', background: '#1b9e5f', flexShrink: 0 }} />
+              <span style={{ fontFamily: 'monospace', fontSize: 9.5, fontWeight: 700, letterSpacing: '0.14em', color: '#1b9e5f', whiteSpace: 'nowrap' }}>
+                {isHe ? `${allMakes.length}+ יצרנים · ${totalModels}+ דגמים` : `${allMakes.length}+ makes · ${totalModels}+ models`}
+              </span>
+            </span>
+            <h1 style={{ margin: '0 0 10px', fontSize: 'clamp(24px,3.2vw,36px)', fontWeight: 900, letterSpacing: '-0.03em', lineHeight: 1.1, color: '#1c2733' }}>
+              {isHe
+                ? 'כל תקלה, כל ריקול, כל עלות — לפני שאתם קונים.'
+                : 'Every fault, every recall, every cost — before you buy.'}
+            </h1>
+            <p style={{ margin: '0 0 18px', fontSize: 14.5, color: '#66788c', maxWidth: '44ch' }}>
+              {isHe
+                ? 'ביקורות בעלים, ניתוחי AI, ריקולים ועלויות תיקון — לכל דגם בשוק הישראלי.'
+                : 'Owner reviews, AI analysis, recalls and repair costs — every model in Israel.'}
+            </p>
+
+            {/* Search card */}
+            <div style={{ background: '#fff', border: '1px solid #e3e8ee', borderRadius: 12, padding: 11, boxShadow: '0 2px 12px rgba(27,79,138,0.08)' }}>
+              <div style={{ display: 'flex', gap: 4, marginBottom: 9, direction: isHe ? 'rtl' : 'ltr' }}>
+                {[
+                  { key: 'model', label: isHe ? 'לפי דגם' : 'By model' },
+                  { key: 'plate', label: isHe ? 'לפי מספר רכב' : 'By plate' },
+                ].map(({ key, label }) => (
+                  <button
+                    key={key}
+                    onClick={() => setSearchMode(key as 'model' | 'plate')}
+                    style={{
+                      border: 'none', borderRadius: 6, padding: '6px 13px', fontSize: 12, fontWeight: 700, cursor: 'pointer',
+                      background: searchMode === key ? '#1b4f8a' : '#f0f3f7',
+                      color: searchMode === key ? '#fff' : '#66788c',
+                    }}
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
+              <div style={{ direction: isHe ? 'rtl' : 'ltr' }}>
+                {searchMode === 'model' ? <HeroSearch /> : <PlateSearch isHe={isHe} />}
+              </div>
+              {/* Trending chips */}
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, alignItems: 'center', marginTop: 10, paddingTop: 10, borderTop: '1px solid #eef1f5' }}>
+                <span style={{ fontFamily: 'monospace', fontSize: 9, fontWeight: 700, letterSpacing: '0.14em', color: '#a8b5c4', whiteSpace: 'nowrap' }}>
+                  {isHe ? 'נבדק הרבה' : 'TRENDING'}
+                </span>
+                {(isHe ? [
+                  { label: 'סובארו XV', href: '/cars/subaru/xv' },
+                  { label: 'טויוטה RAV4', href: '/cars/toyota/rav4' },
+                  { label: 'יונדאי טוסון', href: '/cars/hyundai/tucson' },
+                  { label: "קיה ספורטז'", href: '/cars/kia/sportage' },
+                ] : [
+                  { label: 'Subaru XV', href: '/cars/subaru/xv' },
+                  { label: 'Toyota RAV4', href: '/cars/toyota/rav4' },
+                  { label: 'Hyundai Tucson', href: '/cars/hyundai/tucson' },
+                  { label: 'Kia Sportage', href: '/cars/kia/sportage' },
+                ]).map(chip => (
+                  <Link key={chip.label} href={chip.href} style={{ border: '1px solid #dde3ea', borderRadius: 5, padding: '4px 10px', fontSize: 11.5, fontWeight: 600, color: '#4a5b6d', textDecoration: 'none', cursor: 'pointer' }}
+                    onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = '#1b4f8a'; (e.currentTarget as HTMLElement).style.color = '#1b4f8a'; }}
+                    onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = '#dde3ea'; (e.currentTarget as HTMLElement).style.color = '#4a5b6d'; }}
+                  >
+                    {chip.label}
+                  </Link>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          {/* Right: featured model stats panel */}
+          {topCar && (
+            <div style={{ minWidth: 0 }}>
+              <div style={{ background: '#f8fafc', border: '1px solid #e3e8ee', borderRadius: 16, overflow: 'hidden' }}>
+                <div style={{ padding: '14px 18px', borderBottom: '1px solid #eef1f5', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, flexWrap: 'wrap' }}>
+                  <div style={{ minWidth: 0, flex: 1 }}>
+                    <div style={{ fontFamily: 'monospace', fontSize: 9, fontWeight: 700, letterSpacing: '0.18em', color: '#a8b5c4', marginBottom: 4 }}>
+                      {isHe ? 'דגם מוביל' : 'TOP MODEL'}
+                    </div>
+                    <div style={{ fontSize: 17, fontWeight: 800, letterSpacing: '-0.015em', color: '#1c2733' }}>
+                      {isHe ? `${topCar.makeHe} ${topCar.modelHe}` : `${topCar.makeEn} ${topCar.modelEn}`}
+                    </div>
+                  </div>
+                  <span style={{ fontFamily: 'monospace', fontSize: 9.5, fontWeight: 700, color: '#1b9e5f', border: '1px solid #b8e0c9', background: 'rgba(46,230,168,0.07)', borderRadius: 5, padding: '4px 8px', whiteSpace: 'nowrap' }}>
+                    {isHe ? 'מומלץ' : 'RECOMMENDED'}
+                  </span>
+                </div>
+                {/* Score display */}
+                <div style={{ padding: '20px 18px', display: 'flex', alignItems: 'center', gap: 20, flexWrap: 'wrap' }}>
+                  <div style={{ display: 'flex', alignItems: 'baseline', gap: 4, flexShrink: 0 }}>
+                    <span style={{ fontFamily: 'monospace', fontSize: 48, fontWeight: 700, color: '#1b4f8a', lineHeight: 1, letterSpacing: '-0.02em' }}>
+                      {(Math.round(topCar.combined * 10) / 10).toFixed(1)}
+                    </span>
+                    <span style={{ fontSize: 14, color: '#8595a6' }}>/10</span>
+                  </div>
+                  <div style={{ flex: 1, minWidth: 140, display: 'flex', flexDirection: 'column', gap: 10 }}>
+                    {[
+                      { label: isHe ? 'אמינות' : 'Reliability', pct: '88%', color: '#1b9e5f' },
+                      { label: isHe ? 'נוחות' : 'Comfort', pct: '82%', color: '#1b4f8a' },
+                      { label: isHe ? 'בטיחות' : 'Safety', pct: '90%', color: '#1b9e5f' },
+                    ].map(s => (
+                      <div key={s.label}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 3 }}>
+                          <span style={{ fontSize: 12, color: '#66788c', fontWeight: 600 }}>{s.label}</span>
+                          <span style={{ fontFamily: 'monospace', fontSize: 11, fontWeight: 700, color: s.color }}>{s.pct}</span>
+                        </div>
+                        <div style={{ height: 4, borderRadius: 999, background: '#e3e8ee', overflow: 'hidden' }}>
+                          <div style={{ width: s.pct, height: '100%', background: s.color }} />
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+                <div style={{ padding: '0 18px 18px' }}>
+                  <Link href={`/cars/${topCar.makeSlug}/${topCar.modelSlug}`}
+                    style={{ display: 'block', width: '100%', height: 40, lineHeight: '40px', textAlign: 'center', border: '1px solid #dde3ea', background: '#fff', color: '#1c2733', borderRadius: 8, fontSize: 12.5, fontWeight: 700, textDecoration: 'none' }}
+                  >
+                    {isHe ? 'לדוח המלא ←' : 'Full report →'}
+                  </Link>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+      </section>
+
+      {/* ── Stat strip ── */}
+      <div style={{ borderBottom: '1px solid #eef1f5', background: '#f8fafc' }}>
+        <div style={{ maxWidth: 1240, marginInline: 'auto', padding: '0 clamp(14px,3vw,30px)', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))' }}>
+          {[
+            { value: `${allMakes.length}+`, label: isHe ? 'יצרנים' : 'Makes' },
+            { value: `${totalModels}+`, label: isHe ? 'דגמים' : 'Models' },
+            { value: '2,400+', label: isHe ? 'ביקורות בעלים' : 'Owner reviews' },
+            { value: '13K+', label: isHe ? 'ריקולים' : 'Recalls' },
+          ].map((s, i) => (
+            <div key={i} style={{ padding: '14px 10px', borderInlineEnd: '1px solid #f0f3f7' }}>
+              <div style={{ fontFamily: 'monospace', fontSize: 20, fontWeight: 700, color: '#1c2733', letterSpacing: '-0.02em' }}>{s.value}</div>
+              <div style={{ fontSize: 11.5, color: '#8595a6', fontWeight: 500, marginTop: 2 }}>{s.label}</div>
+            </div>
+          ))}
+        </div>
+      </div>
 
       <div className="wrap">
 
-        {/* ═══════════════════════════════════════════════════
-            HERO — radial gradient card + 3D car split
-            ═══════════════════════════════════════════════════ */}
-        <section className="ci-hero">
-            <h1 style={{
-              fontFamily: 'var(--font-display)',
-              fontSize: 'clamp(2rem,4vw,2.875rem)',
-              fontWeight: 800, lineHeight: 1.08,
-              color: 'var(--text)', marginBottom: 14,
-              letterSpacing: '-0.02em',
-            }}>
-              {isHe
-                ? 'כל מה שצריך לדעת לפני שקונים רכב'
-                : 'Everything you need to know before buying a car'}
-            </h1>
-
-            <p style={{ fontSize: '1.0625rem', color: 'var(--text-muted)', maxWidth: '48ch', lineHeight: 1.65, marginBottom: 28 }}>
-              {isHe
-                ? 'ביקורות מומחים, דירוגים מבעלי רכב אמיתיים ותקלות נפוצות — לכל דגם בשוק הישראלי.'
-                : 'Expert reviews, real owner ratings and common issues — for every model and make.'}
-            </p>
-
-            {/* Search mode tabs */}
-            <div style={{ display: 'flex', gap: 6, marginBottom: 12 }}>
-              {[
-                { key: 'model', label: isHe ? '🔍 חיפוש דגם' : '🔍 Search by model' },
-                { key: 'plate', label: isHe ? '🚗 בדוק לפי מספר רכב' : '🚗 Check by plate' },
-              ].map(({ key, label }) => (
-                <button
-                  key={key}
-                  onClick={() => setSearchMode(key as 'model' | 'plate')}
-                  style={{
-                    padding: '6px 14px', borderRadius: 9999, fontSize: '0.82rem', fontWeight: 700,
-                    border: 'none', cursor: 'pointer',
-                    background: searchMode === key ? 'var(--accent)' : 'var(--surface)',
-                    color: searchMode === key ? '#fff' : 'var(--text-muted)',
-                    transition: 'background 0.15s, color 0.15s',
-                  }}
-                >
-                  {label}
-                </button>
-              ))}
-            </div>
-
-            {/* Search */}
-            <div style={{ marginBottom: 34 }}>
-              {searchMode === 'model' ? <HeroSearch /> : <PlateSearch isHe={isHe} />}
-            </div>
-
-            {/* Stats row */}
-            <div className="ci-hero-stats">
-              {[
-                { n: `${allMakes.length}+`,   l: isHe ? 'יצרנים' : 'Makes' },
-                { n: `${totalModels}+`,        l: isHe ? 'דגמים' : 'Models' },
-                { n: '2,400+',                  l: isHe ? 'ביקורות' : 'Reviews' },
-              ].map((s, i) => (
-                <div key={i} className="s">
-                  <b>{s.n}</b>
-                  <span>{s.l}</span>
-                </div>
-              ))}
-            </div>
-        </section>
-
-        {/* Category chips — separate section below hero */}
-        <section style={{ margin: '24px 0' }}>
-          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+        {/* Trending category chips */}
+        <section style={{ margin: '24px 0 8px' }}>
+          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
+            <span style={{ fontSize: '0.72rem', fontWeight: 700, color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>
+              {isHe ? 'פופולרי:' : 'Trending:'}
+            </span>
             {cats.map(c => (
               <button
                 key={c.key}
@@ -308,8 +432,8 @@ export default function HomeClient({ popularMakes, allMakes, topRanked, recentRe
           <section className="ci-section">
             <div className="ci-section-head">
               <div>
-                <h2>{isHe ? 'הדגמים המדורגים ביותר' : 'Top Rated Models'}</h2>
-                <p>{isHe ? 'לפי ציון המומחים שלנו' : 'By our expert score'}</p>
+                <h2>{isHe ? 'גלו דגמים' : 'Explore Models'}</h2>
+                <p>{isHe ? 'רכבים פופולריים באתר' : 'Popular models on the site'}</p>
               </div>
               <Link href="/rankings" className="ci-section-link">
                 {isHe ? 'לכל הדירוגים ←' : 'All rankings →'}
@@ -322,6 +446,88 @@ export default function HomeClient({ popularMakes, allMakes, topRanked, recentRe
             </div>
           </section>
         )}
+
+        {/* ═══════════════════════════════════════════════════
+            HEAD TO HEAD
+            ═══════════════════════════════════════════════════ */}
+        <section style={{ margin: '8px 0 32px' }}>
+          <h2 style={{ margin: '0 0 4px', fontSize: 20, fontWeight: 800, letterSpacing: '-0.02em' }}>
+            {isHe ? 'ראש בראש' : 'Head to Head'}
+          </h2>
+          <p style={{ margin: '0 0 14px', fontSize: 13, color: '#8595a6' }}>
+            {isHe ? 'ההשוואות שנבדקות הכי הרבה' : 'The comparisons people run most'}
+          </p>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 12 }}>
+            {[
+              { aHe: 'טויוטה RAV4',   bHe: 'יונדאי טוסון', aEn: 'Toyota RAV4',     bEn: 'Hyundai Tucson', aScore: '8.7', bScore: '8.3', aW: '51%', bW: '49%', aC: '#1b9e5f', bC: '#1b4f8a', metaHe: '2,340 השוואות', metaEn: '2,340 comparisons', href: '/cars/compare/toyota/rav4/hyundai/tucson' },
+              { aHe: 'מאזדה CX-5',    bHe: 'קיה ספורטז׳',   aEn: 'Mazda CX-5',      bEn: 'Kia Sportage',   aScore: '8.9', bScore: '8.1', aW: '52%', bW: '48%', aC: '#1b9e5f', bC: '#1b4f8a', metaHe: '1,820 השוואות', metaEn: '1,820 comparisons', href: '/cars/compare/mazda/cx5/kia/sportage' },
+              { aHe: 'יונדאי אלנטרה', bHe: 'קיה סראטו',     aEn: 'Hyundai Elantra', bEn: 'Kia Cerato',     aScore: '8.2', bScore: '8.0', aW: '51%', bW: '49%', aC: '#1b9e5f', bC: '#1b4f8a', metaHe: '1,550 השוואות', metaEn: '1,550 comparisons', href: '/cars/compare/hyundai/elantra/kia/cerato' },
+              { aHe: 'טויוטה קורולה', bHe: 'הונדה סיוויק',  aEn: 'Toyota Corolla',  bEn: 'Honda Civic',    aScore: '8.5', bScore: '8.3', aW: '51%', bW: '49%', aC: '#1b9e5f', bC: '#1b4f8a', metaHe: '1,210 השוואות', metaEn: '1,210 comparisons', href: '/cars/compare/toyota/corolla/honda/civic' },
+            ].map((vs, i) => (
+              <Link key={i} href={vs.href} style={{ background: '#fff', border: '1px solid #e3e8ee', borderRadius: 12, padding: '14px 16px', textDecoration: 'none', color: 'inherit', display: 'block' }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, marginBottom: 10 }}>
+                  <span style={{ fontSize: 13.5, fontWeight: 700 }}>{isHe ? vs.aHe : vs.aEn}</span>
+                  <span style={{ fontFamily: 'monospace', fontSize: 9, fontWeight: 700, letterSpacing: '0.12em', color: '#a8b5c4' }}>VS</span>
+                  <span style={{ fontSize: 13.5, fontWeight: 700 }}>{isHe ? vs.bHe : vs.bEn}</span>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <span style={{ fontFamily: 'monospace', fontSize: 12.5, fontWeight: 700, color: vs.aC }}>{vs.aScore}</span>
+                  <span style={{ flex: 1, display: 'flex', height: 4, borderRadius: 999, overflow: 'hidden', background: '#eef1f5' }}>
+                    <span style={{ width: vs.aW, background: vs.aC }} />
+                    <span style={{ width: vs.bW, background: vs.bC }} />
+                  </span>
+                  <span style={{ fontFamily: 'monospace', fontSize: 12.5, fontWeight: 700, color: vs.bC }}>{vs.bScore}</span>
+                </div>
+                <div style={{ fontFamily: 'monospace', fontSize: 9.5, color: '#a8b5c4', marginTop: 8 }}>{isHe ? vs.metaHe : vs.metaEn}</div>
+              </Link>
+            ))}
+          </div>
+        </section>
+
+        {/* ═══════════════════════════════════════════════════
+            BUYING CHECKLIST CTA
+            ═══════════════════════════════════════════════════ */}
+        <section style={{ margin: '8px 0 32px' }}>
+          <div style={{ border: '1px solid #e3e8ee', borderRadius: 16, overflow: 'hidden', background: '#fff' }}>
+            <div style={{ height: 7, backgroundImage: 'repeating-linear-gradient(135deg, #1b4f8a 0 10px, #dce9f6 10px 20px)' }} />
+            <div style={{ padding: '24px clamp(16px,3vw,26px)', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(255px, 1fr))', gap: 22, alignItems: 'center' }}>
+              <div style={{ minWidth: 0 }}>
+                <span style={{ fontFamily: 'monospace', fontSize: 9, fontWeight: 700, letterSpacing: '0.18em', color: '#1b4f8a' }}>
+                  {isHe ? 'כלי חדש' : 'NEW TOOL'}
+                </span>
+                <h2 style={{ margin: '8px 0 6px', fontSize: 22, fontWeight: 900, letterSpacing: '-0.02em' }}>
+                  {isHe ? 'צ׳קליסט קנייה שמותאם לרכב' : 'A buying checklist built around your car'}
+                </h2>
+                <p style={{ margin: 0, fontSize: 13, color: '#4a5b6d', maxWidth: '42ch' }}>
+                  {isHe ? '22 בדיקות לפי סדר ביצוע — לפני שאתם חותמים' : '22 checks in running order — before you sign'}
+                </p>
+                <Link href="/checklist"
+                  style={{ display: 'inline-block', marginTop: 16, height: 42, lineHeight: '42px', padding: '0 20px', border: 'none', borderRadius: 8, background: '#1b4f8a', color: '#fff', fontSize: 13, fontWeight: 800, textDecoration: 'none' }}
+                >
+                  {isHe ? 'התחילו צ׳קליסט ←' : 'Start the checklist →'}
+                </Link>
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 7 }}>
+                {(isHe ? [
+                  { num: '01', label: 'בדיקת היסטוריית רכב', bg: '#eef3fb', color: '#1b4f8a' },
+                  { num: '02', label: 'מבחן נסיעה', bg: '#e7f5ed', color: '#1b7a4b' },
+                  { num: '03', label: 'בדיקת מכונאי', bg: '#fef3cd', color: '#92620a' },
+                  { num: '04', label: 'בדיקת ריקולים פתוחים', bg: '#fde8e8', color: '#b23b2e' },
+                ] : [
+                  { num: '01', label: 'Vehicle history check', bg: '#eef3fb', color: '#1b4f8a' },
+                  { num: '02', label: 'Test drive', bg: '#e7f5ed', color: '#1b7a4b' },
+                  { num: '03', label: 'Mechanic inspection', bg: '#fef3cd', color: '#92620a' },
+                  { num: '04', label: 'Open recall check', bg: '#fde8e8', color: '#b23b2e' },
+                ]).map(step => (
+                  <div key={step.num} style={{ display: 'flex', alignItems: 'center', gap: 10, background: '#f8fafc', border: '1px solid #e3e8ee', borderRadius: 8, padding: '10px 12px' }}>
+                    <span style={{ width: 21, height: 21, borderRadius: 5, background: step.bg, color: step.color, display: 'grid', placeItems: 'center', fontFamily: 'monospace', fontSize: 9.5, fontWeight: 700, flexShrink: 0 }}>{step.num}</span>
+                    <span style={{ flex: 1, fontSize: 12.5, color: '#3d4c5c', fontWeight: 600 }}>{step.label}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </section>
 
         {/* ═══════════════════════════════════════════════════
             MAIN CONTENT + SIDEBAR

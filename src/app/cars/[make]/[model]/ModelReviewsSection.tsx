@@ -6,6 +6,7 @@ import ReviewForm from '@/components/ReviewForm';
 import { useLocale } from '@/lib/localeContext';
 import type { Review } from '@/data/reviews';
 
+const INITIAL_VISIBLE = 1;
 const PAGE_SIZE = 6;
 
 interface Props {
@@ -22,11 +23,17 @@ export default function ModelReviewsSection({ makeSlug, modelSlug, years, trims,
   const [reviews, setReviews] = useState<Review[]>(initialReviews);
   const [selectedYear, setSelectedYear] = useState<number | null>(null);
   const [showForm, setShowForm] = useState(false);
+  const [starHover, setStarHover] = useState(0);
+  const [starRating, setStarRating] = useState<number | null>(null);
+  const [expanded, setExpanded] = useState(false);
   const [page, setPage] = useState(1);
 
   const filtered = selectedYear ? reviews.filter((r) => r.year === selectedYear) : reviews;
-  const visible = filtered.slice(0, page * PAGE_SIZE);
-  const hasMore = visible.length < filtered.length;
+  const collapsedCount = INITIAL_VISIBLE;
+  const visible = expanded ? filtered.slice(0, page * PAGE_SIZE) : filtered.slice(0, collapsedCount);
+  const hasMore = expanded && visible.length < filtered.length;
+  const canExpand = !expanded && filtered.length > collapsedCount;
+  const canCollapse = expanded && filtered.length > collapsedCount;
 
   const yearsWithReviews = years.filter((y) => reviews.some((r) => r.year === y));
 
@@ -35,6 +42,7 @@ export default function ModelReviewsSection({ makeSlug, modelSlug, years, trims,
     setShowForm(false);
     setSelectedYear(review.year);
     setPage(1);
+    setExpanded(true);
   };
 
   const handleHelpful = (id: string, delta: number) => {
@@ -51,100 +59,134 @@ export default function ModelReviewsSection({ makeSlug, modelSlug, years, trims,
 
   return (
     <div>
-      {/* Section header */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12, flexWrap: 'wrap', marginBottom: 20 }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          <div style={{ width: 4, height: 24, borderRadius: 2, background: 'var(--accent)', flexShrink: 0 }} />
-          <h2 style={{ fontSize: '1.25rem', fontWeight: 800, margin: 0 }}>
-            {cp.ownerReviewsTitle}
-          </h2>
-          {reviews.length > 0 && (
-            <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', background: 'var(--bg-muted)', padding: '2px 10px', borderRadius: 999 }}>
-              {reviews.length}
+      {/* Section header: title + stars */}
+      <div style={{ display: 'flex', alignItems: 'baseline', gap: 11, flexWrap: 'wrap', marginBottom: 14 }}>
+        <h2 style={{ fontSize: 18, fontWeight: 800, letterSpacing: '-0.02em', margin: 0 }}>
+          {cp.ownerReviewsTitle}
+        </h2>
+        {reviews.length > 0 && (() => {
+          const avg = reviews.reduce((s, r) => s + r.rating, 0) / reviews.length;
+          const starsFull = Math.min(5, Math.round(avg));
+          const stars = '★'.repeat(starsFull) + '☆'.repeat(5 - starsFull);
+          return (
+            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 7 }}>
+              <span style={{ fontSize: 12.5, color: '#e8a33d', letterSpacing: 1 }}>{stars}</span>
+              <span style={{ fontFamily: 'monospace', fontSize: 12.5, fontWeight: 700, color: '#1c2733' }}>{avg.toFixed(1)}</span>
+              <span style={{ fontSize: 12, color: '#a8b5c4' }}>({reviews.length})</span>
             </span>
-          )}
-        </div>
-        <button
-          id="open-review-form"
-          className="btn btn-primary"
-          onClick={() => setShowForm((v) => !v)}
-          style={{ height: 38, padding: '0 20px', fontSize: '0.875rem' }}
-        >
-          {showForm ? cp.closeForm : cp.writeReview}
-        </button>
+          );
+        })()}
       </div>
 
-      {/* Write review form */}
+      {/* Stars — always visible */}
+      <div style={{ textAlign: 'center', marginBottom: 20 }}>
+        <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: 6, fontWeight: 600 }}>
+          {locale === 'en' ? 'Rate this car' : 'דרגו את הרכב'}
+        </div>
+        <div style={{ display: 'flex', justifyContent: 'center', gap: 2 }}>
+          {[1, 2, 3, 4, 5].map(star => (
+            <button
+              key={star}
+              type="button"
+              onMouseEnter={() => setStarHover(star)}
+              onMouseLeave={() => setStarHover(0)}
+              onClick={() => { setStarRating(star); setShowForm(true); }}
+              style={{
+                background: 'none', border: 'none', cursor: 'pointer', padding: '2px 4px',
+                fontSize: 32, lineHeight: 1,
+                color: star <= (starHover || 0) ? '#f59e0b' : '#d1d5db',
+                transition: 'color 0.1s, transform 0.1s',
+                transform: star <= (starHover || 0) ? 'scale(1.18)' : 'scale(1)',
+              }}
+            >★</button>
+          ))}
+        </div>
+      </div>
+
+      {/* Inline compact form — appears after star click */}
       {showForm && (
-        <div style={{ marginBottom: 28 }}>
+        <div style={{ border: '1px solid var(--border)', borderRadius: 10, background: 'var(--surface)', marginBottom: 16, overflow: 'hidden' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 14px', borderBottom: '1px solid var(--border)', background: 'var(--bg)' }}>
+            <span style={{ fontWeight: 700, fontSize: '0.85rem' }}>
+              {locale === 'en' ? 'Write a review' : 'כתבו ביקורת'}
+            </span>
+            <button
+              onClick={() => { setShowForm(false); setStarRating(null); }}
+              style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 18, color: 'var(--text-muted)', lineHeight: 1, padding: '2px 6px' }}
+            >×</button>
+          </div>
           <ReviewForm
             makeSlug={makeSlug}
             modelSlug={modelSlug}
             years={years}
             trims={trims}
+            initialRating={starRating ?? 5}
             onSuccess={handleNewReview}
           />
         </div>
       )}
 
-      {/* Year filter pills */}
-      {yearsWithReviews.length > 1 && (
-        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 20 }}>
-          <button
-            onClick={() => { setSelectedYear(null); setPage(1); }}
+      {/* Year filter combobox */}
+      {reviews.length > 0 && yearsWithReviews.length > 1 && (
+        <div style={{ marginBottom: 16 }}>
+          <select
+            value={selectedYear ?? ''}
+            onChange={(e) => { setSelectedYear(e.target.value ? Number(e.target.value) : null); setPage(1); }}
             style={{
-              height: 32, padding: '0 14px', borderRadius: 9999, fontSize: '0.8125rem', fontWeight: 600, cursor: 'pointer',
-              background: selectedYear === null ? 'var(--accent)' : 'var(--bg-muted)',
-              color: selectedYear === null ? '#fff' : 'var(--text-muted)',
-              border: 'none',
+              height: 32, padding: '0 10px', borderRadius: 7, fontSize: '0.8125rem', fontWeight: 600,
+              border: '1px solid var(--border)', background: 'var(--surface)', color: 'var(--text)',
+              cursor: 'pointer', outline: 'none',
             }}
           >
-            {cp.allYears}
-          </button>
-          {yearsWithReviews.map((y) => (
-            <button
-              key={y}
-              onClick={() => { setSelectedYear(y); setPage(1); }}
-              style={{
-                height: 32, padding: '0 14px', borderRadius: 9999, fontSize: '0.8125rem', fontWeight: 600, cursor: 'pointer',
-                background: selectedYear === y ? 'var(--accent)' : 'var(--bg-muted)',
-                color: selectedYear === y ? '#fff' : 'var(--text-muted)',
-                border: 'none',
-              }}
-            >
-              {y}
-              <span style={{ marginRight: 6, opacity: 0.7, fontSize: '0.75rem' }}>
-                ({reviews.filter((r) => r.year === y).length})
-              </span>
-            </button>
-          ))}
+            <option value="">{cp.allYears}</option>
+            {yearsWithReviews.map((y) => (
+              <option key={y} value={y}>
+                {y} ({reviews.filter((r) => r.year === y).length})
+              </option>
+            ))}
+          </select>
         </div>
       )}
 
       {/* Reviews list */}
       {filtered.length === 0 ? (
-        <div className="card" style={{ padding: 48, textAlign: 'center', color: 'var(--text-muted)' }}>
-          <div style={{ fontSize: 48, marginBottom: 16 }}>🚗</div>
-          <p style={{ marginBottom: 20 }}>
-            {selectedYear
-              ? `${cp.noReviewsForYearPrefix} ${selectedYear}.`
-              : cp.noReviewsBeFirstModel}
-          </p>
-          <button className="btn btn-primary" onClick={() => setShowForm(true)}>
-            {cp.writeReview}
-          </button>
-        </div>
+        selectedYear ? (
+          <div style={{ padding: '20px 0', color: 'var(--text-muted)', fontSize: '0.875rem' }}>
+            {cp.noReviewsForYearPrefix} {selectedYear}.
+          </div>
+        ) : null
       ) : (
         <>
           <ReviewList reviews={visible} onHelpful={handleHelpful} onDislike={handleDislike} />
+          {canExpand && (
+            <div style={{ textAlign: 'center', marginTop: 20 }}>
+              <button
+                className="btn btn-outline"
+                onClick={() => setExpanded(true)}
+                style={{ height: 40, padding: '0 28px' }}
+              >
+                {locale === 'en' ? `Show all ${filtered.length} reviews` : `הצג עוד ביקורות (${filtered.length - visible.length})`}
+              </button>
+            </div>
+          )}
           {hasMore && (
-            <div style={{ textAlign: 'center', marginTop: 24 }}>
+            <div style={{ textAlign: 'center', marginTop: 20 }}>
               <button
                 className="btn btn-outline"
                 onClick={() => setPage((p) => p + 1)}
                 style={{ height: 40, padding: '0 28px' }}
               >
                 {cp.loadMore} ({filtered.length - visible.length})
+              </button>
+            </div>
+          )}
+          {canCollapse && (
+            <div style={{ textAlign: 'center', marginTop: 16 }}>
+              <button
+                style={{ background: 'none', border: 'none', color: 'var(--text-muted)', fontSize: '0.8rem', cursor: 'pointer', padding: '4px 12px', fontFamily: 'inherit', textDecoration: 'underline' }}
+                onClick={() => { setExpanded(false); setPage(1); }}
+              >
+                {locale === 'en' ? 'Show less' : 'הצג פחות'}
               </button>
             </div>
           )}

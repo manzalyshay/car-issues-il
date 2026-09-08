@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { revalidatePath } from 'next/cache';
 import { addReview, getReviewsForModel, translateAndSaveReview } from '@/lib/reviewsDb';
+import { dbAll } from '@/lib/db';
+import { sendEmail } from '@/lib/sendEmail';
 
 function purgeCloudflarePaths(urls: string[]) {
   const zone = process.env.CLOUDFLARE_ZONE_ID;
@@ -34,6 +36,51 @@ async function verifyTurnstile(token: string, ip: string): Promise<boolean> {
   });
   const data = await res.json();
   return data.success === true;
+}
+
+async function notifyFollowers({
+  makeSlug, modelSlug, authorName, rating, title, body,
+}: { makeSlug: string; modelSlug: string; authorName: string; rating: number; title: string; body: string }) {
+  const followers = await dbAll<{ user_email: string }>(
+    'SELECT user_email FROM model_follows WHERE make_slug = ? AND model_slug = ?',
+    makeSlug, modelSlug,
+  ).catch(() => []);
+  if (!followers.length) return;
+
+  const carName = `${makeSlug} ${modelSlug}`.replace(/-/g, ' ');
+  const stars = '★'.repeat(rating) + '☆'.repeat(5 - rating);
+  const preview = body.slice(0, 200) + (body.length > 200 ? '…' : '');
+  const url = `https://carissues.co.il/cars/${makeSlug}/${modelSlug}`;
+
+  const html = `
+<div dir="rtl" style="font-family:sans-serif;max-width:520px;margin:0 auto;color:#1c2733">
+  <div style="background:#0f2c4d;padding:20px 24px;border-radius:8px 8px 0 0">
+    <span style="color:#60a5fa;font-size:13px;font-weight:700;letter-spacing:.1em">CARISSUES.CO.IL</span>
+  </div>
+  <div style="background:#fff;padding:24px;border:1px solid #e3e8ee;border-top:none;border-radius:0 0 8px 8px">
+    <h2 style="margin:0 0 4px;font-size:18px">ביקורת חדשה על ${carName}</h2>
+    <p style="margin:0 0 16px;color:#66788c;font-size:13px">מאת ${authorName} · ${stars}</p>
+    ${title ? `<p style="font-weight:700;margin:0 0 8px">${title}</p>` : ''}
+    <p style="margin:0 0 20px;line-height:1.6;color:#4a5b6d">${preview}</p>
+    <a href="${url}" style="display:inline-block;background:#1b4f8a;color:#fff;text-decoration:none;padding:10px 20px;border-radius:8px;font-weight:700;font-size:14px">
+      לביקורת המלאה ←
+    </a>
+    <p style="margin:24px 0 0;font-size:11px;color:#a8b5c4">
+      קיבלת מייל זה כי אתה עוקב אחר ${carName} באתר CarIssues.
+      <a href="${url}" style="color:#a8b5c4">הסרה מרשימת העוקבים</a>
+    </p>
+  </div>
+</div>`;
+
+  // Send to each follower (Resend supports up to 50 recipients per call, batch if needed)
+  const emails = followers.map(f => f.user_email);
+  for (let i = 0; i < emails.length; i += 50) {
+    await sendEmail({
+      to: emails.slice(i, i + 50),
+      subject: `ביקורת חדשה על ${carName} · ${stars}`,
+      html,
+    });
+  }
 }
 
 export async function POST(req: NextRequest) {
@@ -72,6 +119,9 @@ export async function POST(req: NextRequest) {
 
     // Translate inline — after() loses the CF async context so getCloudflareContext fails inside it
     await translateAndSaveReview(review.id, review.title, review.body).catch(() => {});
+
+    // Notify followers — fire-and-forget
+    notifyFollowers({ makeSlug, modelSlug, authorName, rating, title, body: reviewBody }).catch(() => {});
 
     revalidatePath(`/cars/${makeSlug}/${modelSlug}`);
     revalidatePath(`/cars/${makeSlug}/${modelSlug}/issues`);

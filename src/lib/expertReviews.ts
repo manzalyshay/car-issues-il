@@ -17,6 +17,7 @@ import { randomUUID as _uuid } from 'crypto';
  *  - Full source attribution with link is always shown
  */
 
+import { cache } from 'react';
 import { dbAll, dbFirst, dbRun } from './db';
 import { getMakeBySlug, getModelBySlug } from '@/lib/carsDb';
 
@@ -1069,8 +1070,12 @@ function mapRow(r: any): ExpertReview {
   };
 }
 
-/** General model summary (year = null). Auto-generates from LLM if DB is empty. */
-export async function getExpertReviews(makeSlug: string, modelSlug: string): Promise<ExpertReview[]> {
+/**
+ * General model summary (year = null). Auto-generates from LLM if DB is empty.
+ * Cached per-request — generateMetadata and the page component both call this for
+ * the same model, so this avoids issuing the same D1 query twice per render.
+ */
+export const getExpertReviews = cache(async (makeSlug: string, modelSlug: string): Promise<ExpertReview[]> => {
   try {
     const data = await dbAll(
       'SELECT * FROM expert_reviews WHERE make_slug = ? AND model_slug = ? AND year IS NULL ORDER BY scraped_at DESC LIMIT 1',
@@ -1083,7 +1088,7 @@ export async function getExpertReviews(makeSlug: string, modelSlug: string): Pro
   } catch {
     return [];
   }
-}
+});
 
 /** Year-specific summary — falls back to general if not found */
 export async function getExpertReviewsForYear(

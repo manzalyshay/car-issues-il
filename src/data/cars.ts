@@ -11,6 +11,7 @@ export interface CarModel {
   years: number[];
   category: 'sedan' | 'suv' | 'hatchback' | 'pickup' | 'van' | 'coupe' | 'electric';
   trims?: string[];
+  leadingImageUrl?: string | null;
 }
 
 export type EngineType = 'petrol' | 'hybrid' | 'phev' | 'electric' | 'diesel';

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { dbAll, dbRun } from '@/lib/db';
-import { getCloudflareContext } from '@opennextjs/cloudflare';
+import Anthropic from '@anthropic-ai/sdk';
 
 function canonicalKey(m1: string, mo1: string, m2: string, mo2: string) {
   const [a, b] = [`${m1}/${mo1}`, `${m2}/${mo2}`].sort();
@@ -12,11 +12,7 @@ async function generateComparison(
   nameA_en: string, nameB_en: string,
   locale: 'he' | 'en',
 ): Promise<string | null> {
-  const ctx = await getCloudflareContext({ async: true });
-  const ai = (ctx.env as Record<string, unknown>).AI as {
-    run: (model: string, opts: unknown) => Promise<{ response?: unknown }>;
-  } | undefined;
-  if (!ai) return null;
+  if (!process.env.ANTHROPIC_API_KEY) return null;
 
   const prompt = locale === 'he'
     ? `כתוב השוואה קצרה ומרוכזת בעברית בין ${nameA_he} לבין ${nameB_he}.
@@ -35,15 +31,14 @@ Include:
 2-3 paragraphs only. Professional but accessible tone. No headings.`;
 
   try {
-    const result = await ai.run('@cf/meta/llama-4-scout-17b-16e-instruct', {
-      messages: [{ role: 'user', content: prompt }],
+    const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+    const msg = await anthropic.messages.create({
+      model: 'claude-haiku-4-5-20251001',
       max_tokens: 500,
-      temperature: 0.4,
+      messages: [{ role: 'user', content: prompt }],
     });
-    const raw = typeof result.response === 'string'
-      ? result.response
-      : JSON.stringify(result.response);
-    return raw?.trim() || null;
+    const block = msg.content[0];
+    return block.type === 'text' ? block.text.trim() : null;
   } catch { return null; }
 }
 

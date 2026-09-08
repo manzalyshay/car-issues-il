@@ -8,28 +8,26 @@ import { getExpertReviews } from '@/lib/expertReviews';
 import { getTrimSpecs } from '@/lib/trimSpecsDb';
 import { getHostLocale, getBaseUrl } from '@/lib/hostLocale';
 import { translations } from '@/lib/translations';
+import { getModelRepairCosts } from '@/lib/repairCostsDb';
 import StarRating from '@/components/StarRating';
 import MakeLogo from '@/components/MakeLogo';
-import Car3DViewer from '@/components/Car3DViewer';
-import ExpertReviewsSection from '@/components/ExpertReviewsSection';
 import ModelReviewsSection from './ModelReviewsSection';
-import FirstReviewCta from './FirstReviewCta';
 import SharePopup from '@/components/SharePopup';
-import RecallsSection from '@/components/RecallsSection';
 import RecallsBadge from '@/components/RecallsBadge';
 import CarSidebarLayout from './CarSidebarLayout';
 import RepairCostsSection from '@/components/RepairCostsSection';
 import { getImagesForCar } from '@/lib/carImages';
-import PriceHistoryChart from '@/components/PriceHistoryChart';
 import SellerPriceChart from '@/components/SellerPriceChart';
 import RecallsBarChart from '@/components/RecallsBarChart';
 import GalleryViewer from '@/components/GalleryViewer';
+import VerdictCard from '@/components/VerdictCard';
+import FollowButton from '@/components/FollowButton';
 
 function toTrimSlug(name: string) {
   return name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
 }
 
-export const dynamic = 'force-dynamic';
+export const revalidate = 900; // cache 15 minutes
 
 interface Props { params: Promise<{ make: string; model: string }> }
 
@@ -106,12 +104,14 @@ export default async function ModelPage({ params }: Props) {
   if (!make) notFound();
   if (!model) notFound();
 
-  const [allReviews, expertReviewsList, sketchfabModel, similarModels, carImages] = await Promise.all([
+  const [allReviews, expertReviewsList, sketchfabModel, similarModels, carImages, modelRepairCosts, trimSpecs] = await Promise.all([
     getReviewsForModel(makeSlug, modelSlug).catch(() => []),
     getExpertReviews(makeSlug, modelSlug).catch(() => []),
     findCarModel(makeSlug, modelSlug).catch(() => null),
     getSimilarModels(makeSlug, modelSlug, model.category, 4).catch(() => []),
     getImagesForCar(makeSlug, modelSlug).catch(() => []),
+    getModelRepairCosts(makeSlug, modelSlug).catch(() => []),
+    getTrimSpecs(makeSlug, modelSlug).catch(() => []),
   ]);
   const [similarRatings, similarImages] = await Promise.all([
     Promise.all(similarModels.map(({ makeSlug: ms, model: m }) => getAverageRating(ms, m.slug).catch(() => null))),
@@ -124,11 +124,7 @@ export default async function ModelPage({ params }: Props) {
 
   const isEn = locale === 'en';
   const cp = translations[locale].carPage;
-  const cpOwners = cp.ownersLabel;
-  const cpYearLabel = cp.yearLabel;
   const cpNoReviews = cp.noReviewsBeFirst;
-  const cpOwnerSuffix = cp.ownerReviewsSuffix;
-  const cpExternalReviews = cp.externalReviews;
   const makeName = isEn ? make.nameEn : make.nameHe;
   const modelName = isEn ? model.nameEn : model.nameHe;
 
@@ -149,11 +145,11 @@ export default async function ModelPage({ params }: Props) {
           <span style={{ color: 'var(--text)', fontWeight: 600 }}>{modelName}</span>
         </nav>
 
-        {/* Gallery + summary grid */}
+        {/* Gallery + info grid */}
         <div className="model-hero">
 
           {/* Left: gallery */}
-          <div>
+          <div style={{ minWidth: 0 }}>
             <GalleryViewer
               sketchfabModel={sketchfabModel}
               carImages={carImages}
@@ -164,82 +160,46 @@ export default async function ModelPage({ params }: Props) {
             />
           </div>
 
-          {/* Right: model summary card */}
+          {/* Right: info column — flat, no card border */}
           <div className="model-summary">
-            <div className="yr">
+            <span className="yr">
               {model.years.length > 1 ? `${model.years[model.years.length - 1]}–${model.years[0]}` : `${model.years[0]}`}
               {' · '}{getCategoryLabel(model.category, locale)}
-            </div>
+              {' · '}{translations[locale].carsPage.countryNames[make.country] ?? make.country}
+            </span>
             <h1>{isEn ? `${make.nameEn} ${model.nameEn}` : `${make.nameHe} ${model.nameHe}`}</h1>
-            {!isEn && <p style={{ fontSize: 14, color: 'var(--text-faint)', marginTop: 2 }}>{make.nameEn} {model.nameEn}</p>}
+            {!isEn && <p style={{ margin: 0, fontSize: 14, color: '#66788c' }}>{make.nameEn} {model.nameEn}</p>}
 
-            {/* Make logo + meta */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 12, flexWrap: 'wrap' }}>
-              <div style={{ width: 28, height: 28, background: 'var(--surface-2)', border: '1px solid var(--border)', borderRadius: 6, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                <MakeLogo logoUrl={make.logoUrl} nameEn={make.nameEn} size={20} />
+            {/* Owner rating inline */}
+            {avgRating !== null && (
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, color: '#66788c' }}>
+                <StarRating rating={avgRating} size={13} />
+                <span>{avgRating.toFixed(1)}/5 · {allReviews.length} {isEn ? 'owner reviews' : 'ביקורות בעלים'}</span>
               </div>
-              <span style={{ fontSize: 13, color: 'var(--text-muted)', fontWeight: 600 }}>{translations[locale].carsPage.countryNames[make.country] ?? make.country}</span>
-              <RecallsBadge makeEn={make.nameEn} modelEn={model.nameEn} years={model.years} />
+            )}
+
+            {/* Action buttons — matching design exact style */}
+            <div className="model-hero-actions">
+              <FollowButton makeSlug={make.slug} modelSlug={model.slug} isEn={isEn} />
+              <Link
+                href={`/cars/compare?car1=${make.slug}/${model.slug}`}
+                style={{
+                  border: '1px solid #dde3ea', background: '#fff', color: '#1c2733',
+                  borderRadius: 9, padding: '10px 16px', fontSize: 13.5, fontWeight: 600,
+                  textDecoration: 'none', cursor: 'pointer', display: 'inline-flex',
+                  alignItems: 'center', gap: 6, whiteSpace: 'nowrap',
+                }}
+              >
+                ⚖️ {isEn ? 'Compare' : 'השוואה'}
+              </Link>
               <SharePopup title={`${makeName} ${modelName} — ${cp.shareTitle}`} url={`${getBaseUrl(locale)}/cars/${make.slug}/${model.slug}`} />
             </div>
 
-            {/* Score columns */}
-            <div className="score-cols">
-              <div className="score-col">
-                <div className="cap">{isEn ? 'Expert Score' : 'ציון מומחה'}</div>
-                <div className="big" style={{ color: expertReview?.topScore != null ? 'var(--accent)' : 'var(--text-faint)' }}>
-                  {expertReview?.topScore != null ? expertReview.topScore.toFixed(1) : '—'}
-                </div>
-                <div className="cnt">{isEn ? 'out of 10' : 'מתוך 10'}</div>
-              </div>
-              <div className="score-col">
-                <div className="cap">{isEn ? 'Owner Rating' : 'דירוג בעלים'}</div>
-                <div className="big">{avgRating !== null ? avgRating.toFixed(1) : '—'}</div>
-                <div className="cnt">
-                  {avgRating !== null
-                    ? <><StarRating rating={avgRating} size={11} />{` · ${allReviews.length} ${isEn ? 'reviews' : 'ביקורות'}`}</>
-                    : (isEn ? 'No reviews yet' : 'עדיין אין ביקורות')}
-                </div>
-              </div>
+            {/* Badges row */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+              <RecallsBadge makeEn={make.nameEn} modelEn={model.nameEn} years={model.years} />
             </div>
 
-            {/* Compact price chart */}
-            <div style={{ marginTop: 12, marginBottom: 4 }}>
-              <div style={{ fontSize: '0.6rem', fontWeight: 800, letterSpacing: '0.08em', color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: 4 }}>
-                {isEn ? 'Used Car Market Value' : 'שווי שוק יד שניה'}
-              </div>
-              <PriceHistoryChart
-                cars={[{
-                  makeSlug, modelSlug,
-                  makeEn: make.nameEn, modelEn: model.nameEn,
-                  name: isEn ? `${make.nameEn} ${model.nameEn}` : `${make.nameHe} ${model.nameHe}`,
-                  color: 'var(--accent)',
-                }]}
-                isEn={isEn}
-                compact
-              />
-            </div>
-
-            {/* Year pills */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: 5, flexWrap: 'wrap', marginBottom: 14 }}>
-              <span style={{ fontSize: 12, color: 'var(--text-muted)', fontWeight: 600 }}>{cp.yearLabel}:</span>
-              {model.years.slice(0, 8).map(y => (
-                <Link key={y} href={`/cars/${make.slug}/${model.slug}/${y}`} className="year-pill" style={{ fontSize: '0.65rem', padding: '2px 8px', minWidth: 'auto' }}>{y}</Link>
-              ))}
-            </div>
-
-            {/* Action buttons */}
-            <div className="model-hero-actions" style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-              <Link href={`/cars/compare?car1=${make.slug}/${model.slug}`} className="btn btn-primary" style={{ flex: 1, justifyContent: 'center', height: 40, fontSize: 14 }}>
-                {isEn ? 'Compare' : '⚖️ השוואה'}
-              </Link>
-              <a href="#reviews" className="btn btn-outline" style={{ flex: 1, justifyContent: 'center', height: 40, fontSize: 14 }}>
-                {isEn ? 'Reviews' : 'ביקורות'}
-              </a>
-              <Link href={`/cars/${make.slug}/${model.slug}/issues`} className="btn btn-outline" style={{ flex: 1, justifyContent: 'center', height: 40, fontSize: 14 }}>
-                {cp.issuesLink}
-              </Link>
-            </div>
           </div>
         </div>
       </div>
@@ -252,82 +212,44 @@ export default async function ModelPage({ params }: Props) {
         modelNameHe={model.nameHe}
         makeNameEn={make.nameEn}
         modelNameEn={model.nameEn}
+        makeEn={make.nameEn}
+        modelEn={model.nameEn}
+        modelYears={model.years}
         defaultYear={model.years[0]}
+        hasSpecs={trimSpecs.length > 0}
+        hasImages={carImages.length > 0 || sketchfabModel !== null}
+        hasRepairCosts={modelRepairCosts.length > 0}
       >
-        {/* Two-column: user reviews left, external sources right */}
-        <style>{`
-          .model-reviews-split { display: grid; grid-template-columns: 1fr 340px; gap: 24px; align-items: start; margin-bottom: 40px; }
-          @media (max-width: 800px) { .model-reviews-split { grid-template-columns: 1fr !important; gap: 16px; } }
-        `}</style>
-        <div className="model-reviews-split">
-          {/* Left: user reviews */}
-          <div id="reviews">
-            {/* Owner score summary */}
-            <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 12, padding: '14px 16px', marginBottom: 14 }}>
-              <div style={{ fontSize: '0.58rem', fontWeight: 800, letterSpacing: '0.1em', color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: 8 }}>
-                {cpOwners}
-              </div>
-              {avgRating !== null ? (
-                <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
-                  <div style={{ fontSize: '2.2rem', fontWeight: 900, color: 'var(--accent)', lineHeight: 1, fontFamily: "var(--font-display)" }}>{avgRating.toFixed(1)}</div>
-                  <div>
-                    <StarRating rating={avgRating} size={15} />
-                    <div style={{ fontSize: '0.68rem', color: 'var(--text-muted)', marginTop: 4 }}>{allReviews.length} {cpOwnerSuffix}</div>
-                  </div>
-                </div>
-              ) : (
-                <div style={{ fontSize: '0.82rem', color: 'var(--text-muted)' }}>{cpNoReviews}</div>
-              )}
-              {/* Compact year selector */}
-              <div style={{ marginTop: 10, display: 'flex', alignItems: 'center', gap: 5, flexWrap: 'wrap' }}>
-                <span style={{ fontSize: '0.58rem', fontWeight: 700, color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>{cpYearLabel}</span>
-                {model.years.map((y) => (
-                  <Link key={y} href={`/cars/${make.slug}/${model.slug}/${y}`} className="year-pill" style={{ fontSize: '0.68rem', padding: '1px 7px' }}>{y}</Link>
-                ))}
-              </div>
-            </div>
-
-            {allReviews.length === 0 && (
-              <FirstReviewCta makeNameHe={make.nameHe} modelNameHe={model.nameHe} makeNameEn={make.nameEn} modelNameEn={model.nameEn} />
-            )}
-            <ModelReviewsSection
-              makeSlug={makeSlug}
-              modelSlug={modelSlug}
-              years={model.years}
-              trims={isEn ? undefined : model.trims}
-              initialReviews={allReviews}
-            />
-          </div>
-
-          {/* Right: external source summaries */}
-          <div id="expert">
-            <ExpertReviewsSection
-              review={expertReview}
-              makeNameHe={make.nameHe}
-              modelNameHe={model.nameHe}
-              makeNameEn={make.nameEn}
-              modelNameEn={model.nameEn}
-              userAvgRating={avgRating}
-              userReviewCount={allReviews.length}
-              inline={!!sketchfabModel}
-              label={cpExternalReviews}
-              hideTitle
-            />
-          </div>
+        {/* ── Owner reviews — write review at top ── */}
+        <div id="reviews" style={{ paddingTop: 0 }}>
+          <ModelReviewsSection
+            makeSlug={makeSlug}
+            modelSlug={modelSlug}
+            years={model.years}
+            trims={isEn ? undefined : model.trims}
+            initialReviews={allReviews}
+          />
         </div>
 
-        <div id="repair" />
-        <RepairCostsSection
-          makeSlug={makeSlug}
-          modelSlug={modelSlug}
-          makeNameHe={make.nameHe}
-          modelNameHe={model.nameHe}
-          makeNameEn={make.nameEn}
-          modelNameEn={model.nameEn}
-          category={model.category}
-        />
+        {/* ── AI Verdict Card ── */}
+        <div style={{ marginTop: 28 }}>
+          <VerdictCard
+            expertReview={expertReview}
+            repairCosts={modelRepairCosts}
+            makeSlug={makeSlug}
+            modelSlug={modelSlug}
+            makeNameHe={make.nameHe}
+            modelNameHe={model.nameHe}
+            makeNameEn={make.nameEn}
+            modelNameEn={model.nameEn}
+            isEn={isEn}
+            avgRating={avgRating}
+            reviewCount={allReviews.length}
+          />
+        </div>
 
-        <div style={{ marginTop: 28, display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: 16 }}>
+        {/* ── Market value + Recalls bar charts ── */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 480px))', gap: 16, marginTop: 40, marginBottom: 28 }}>
           <SellerPriceChart
             makeSlug={makeSlug}
             modelSlug={modelSlug}
@@ -343,9 +265,17 @@ export default async function ModelPage({ params }: Props) {
           />
         </div>
 
-        <div id="recalls" style={{ marginTop: 48 }}>
-          <RecallsSection makeEn={make.nameEn} modelEn={model.nameEn} years={model.years} />
-        </div>
+        {/* ── Repair costs ── */}
+        <div id="repair" />
+        <RepairCostsSection
+          makeSlug={makeSlug}
+          modelSlug={modelSlug}
+          makeNameHe={make.nameHe}
+          modelNameHe={model.nameHe}
+          makeNameEn={make.nameEn}
+          modelNameEn={model.nameEn}
+          category={model.category}
+        />
 
         {/* Similar models */}
         {similarModels.length > 0 && (
@@ -376,7 +306,7 @@ export default async function ModelPage({ params }: Props) {
                       }}>
                         {simImg ? (
                           // eslint-disable-next-line @next/next/no-img-element
-                          <img src={simImg.thumbnail_url ?? simImg.url} alt={carName} style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
+                          <img src={simImg.thumbnail_url ?? simImg.url} alt={carName} loading="lazy" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
                         ) : (
                           <MakeLogo logoUrl={logoUrl} nameEn={makeNameEn} size={52} />
                         )}

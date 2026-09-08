@@ -31,12 +31,36 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const canonical = `${base}/cars/compare/${c1}/${c2}`;
   const nameA = isEn ? `${mA.nameEn} ${modA.nameEn}` : `${mA.nameHe} ${modA.nameHe}`;
   const nameB = isEn ? `${mB.nameEn} ${modB.nameEn}` : `${mB.nameHe} ${modB.nameHe}`;
+
+  // Pull real ratings into the snippet — matches the Product/AggregateRating schema
+  // on the page itself, and gives the SERP something concrete instead of generic copy.
+  const [reviewsA, reviewsB, expertA, expertB] = await Promise.all([
+    getReviewsForModel(make1, model1).catch(() => []),
+    getReviewsForModel(make2, model2).catch(() => []),
+    getExpertReviews(make1, model1).catch(() => []),
+    getExpertReviews(make2, model2).catch(() => []),
+  ]);
+  const avgA = reviewsA.length ? reviewsA.reduce((s, r) => s + r.rating, 0) / reviewsA.length : null;
+  const avgB = reviewsB.length ? reviewsB.reduce((s, r) => s + r.rating, 0) / reviewsB.length : null;
+  const scoreA = expertA[0]?.topScore ?? null;
+  const scoreB = expertB[0]?.topScore ?? null;
+  const hasStats = avgA !== null || avgB !== null;
+
+  const statTag = (avg: number | null, count: number, score: number | null) =>
+    avg !== null ? `${avg.toFixed(1)}★ (${count})` : score !== null ? (isEn ? `AI ${score.toFixed(1)}/10` : `ציון AI ${score.toFixed(1)}/10`) : null;
+  const tagA = statTag(avgA, reviewsA.length, scoreA);
+  const tagB = statTag(avgB, reviewsB.length, scoreB);
+
   const title = isEn
-    ? `${nameA} vs ${nameB} — Full Comparison & Reviews`
-    : `${nameA} מול ${nameB} — השוואה מלאה וחוות דעת`;
-  const description = isEn
-    ? `${nameA} or ${nameB}? Full comparison: AI scores, owner reviews, pros & cons, price history 2016–2026 — CarIssues`
-    : `${nameA} או ${nameB}? השוואה מלאה: ציונים, ביקורות בעלי רכב, יתרונות וחסרונות, היסטוריית מחיר 2016–2026 — CarIssues IL`;
+    ? `${nameA} vs ${nameB}: Which Is Better? (2026)`
+    : `${nameA} מול ${nameB} — מי עדיף? השוואה 2026`;
+  const description = hasStats
+    ? isEn
+      ? `${nameA}${tagA ? ` (${tagA})` : ''} vs ${nameB}${tagB ? ` (${tagB})` : ''} — full comparison: pros & cons, reliability, price history 2016–2026. See who wins.`
+      : `${nameA}${tagA ? ` (${tagA})` : ''} מול ${nameB}${tagB ? ` (${tagB})` : ''} — השוואה מלאה: יתרונות וחסרונות, אמינות, היסטוריית מחיר 2016–2026. מי מנצח?`
+    : isEn
+      ? `${nameA} or ${nameB}? Full comparison: AI scores, owner reviews, pros & cons, price history 2016–2026 — CarIssues`
+      : `${nameA} או ${nameB}? השוואה מלאה: ציונים, ביקורות בעלי רכב, יתרונות וחסרונות, היסטוריית מחיר 2016–2026 — CarIssues IL`;
   return {
     title,
     description,
@@ -52,7 +76,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   };
 }
 
-export const dynamic = 'force-dynamic';
+export const revalidate = 3600; // cache 1 hour
 
 
 function Score({ label, value, best }: { label: string; value: number | null; best: 'a' | 'b' | 'tie' | null }) {
@@ -245,6 +269,9 @@ export default async function ComparePage({ params }: Props) {
             <Link href={`/cars/${make1}/${model1}`} style={{ fontSize: '0.8125rem', color: 'var(--accent)', textDecoration: 'none', display: 'block', marginTop: 8 }}>
               {sp.modelPageLink}
             </Link>
+            <Link href={`/cars/${make1}/${model1}/issues`} style={{ fontSize: '0.8125rem', color: 'var(--accent)', textDecoration: 'none', display: 'block', marginTop: 4 }}>
+              {sp.issuesLink}
+            </Link>
           </div>
           <div style={{ fontWeight: 900, fontSize: '1.2rem', color: 'var(--text-muted)', flexShrink: 0 }}>VS</div>
           <div style={{ ...col }}>
@@ -255,6 +282,9 @@ export default async function ComparePage({ params }: Props) {
             {!isEn && <div style={{ color: 'var(--text-muted)', fontSize: '0.875rem' }}>{mB.nameEn} {modB.nameEn}</div>}
             <Link href={`/cars/${make2}/${model2}`} style={{ fontSize: '0.8125rem', color: 'var(--accent)', textDecoration: 'none', display: 'block', marginTop: 8 }}>
               {sp.modelPageLink}
+            </Link>
+            <Link href={`/cars/${make2}/${model2}/issues`} style={{ fontSize: '0.8125rem', color: 'var(--accent)', textDecoration: 'none', display: 'block', marginTop: 4 }}>
+              {sp.issuesLink}
             </Link>
           </div>
         </div>
@@ -540,6 +570,11 @@ export default async function ComparePage({ params }: Props) {
                     <span style={{ color: 'var(--text-muted)' }}>{c}</span>
                   </div>
                 ))}
+                {consA.length > 0 && (
+                  <Link href={`/cars/${make1}/${model1}/issues`} style={{ fontSize: '0.8125rem', color: 'var(--accent)', textDecoration: 'none', display: 'block', marginTop: 8 }}>
+                    {nameA} — {sp.issuesLink}
+                  </Link>
+                )}
               </div>
               <div className="cmp-proscons-vdiv" style={{ width: 1, background: 'var(--border)', flexShrink: 0 }} />
               <div style={{ flex: 1, minWidth: 200 }}>
@@ -556,6 +591,11 @@ export default async function ComparePage({ params }: Props) {
                     <span style={{ color: 'var(--text-muted)' }}>{c}</span>
                   </div>
                 ))}
+                {consB.length > 0 && (
+                  <Link href={`/cars/${make2}/${model2}/issues`} style={{ fontSize: '0.8125rem', color: 'var(--accent)', textDecoration: 'none', display: 'block', marginTop: 8 }}>
+                    {nameB} — {sp.issuesLink}
+                  </Link>
+                )}
               </div>
             </div>
           </div>
@@ -669,13 +709,68 @@ export default async function ComparePage({ params }: Props) {
         )}
 
         {/* JSON-LD */}
-        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify({
-          '@context': 'https://schema.org',
-          '@type': 'WebPage',
-          name: `${nameA} ${sp.vsWord} ${nameB}`,
-          url: `${getBaseUrl(locale)}/cars/compare/${make1}/${model1}/${make2}/${model2}`,
-          description: `${nameA} ${sp.vsWord} ${nameB}`,
-        })}} />
+        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify((() => {
+          const base = getBaseUrl(locale);
+          const pageUrl = `${base}/cars/compare/${make1}/${model1}/${make2}/${model2}`;
+
+          // Same pattern as the model page: emit Product+AggregateRating when we have
+          // real owner reviews, otherwise fall back to the AI expert score as a Review
+          // so Google's rich-result requirement (rating OR review) is still satisfied.
+          const productFor = (
+            name: string, makeEn: string, url: string,
+            avg: number | null, reviewCount: number, topScore: number | null,
+          ) => {
+            if (avg === null && topScore == null) return [];
+            return [{
+              '@type': 'Product',
+              name,
+              brand: { '@type': 'Brand', name: makeEn },
+              url,
+              ...(avg !== null ? {
+                aggregateRating: {
+                  '@type': 'AggregateRating',
+                  ratingValue: avg.toFixed(1),
+                  reviewCount,
+                  bestRating: 5,
+                  worstRating: 1,
+                },
+              } : {
+                review: {
+                  '@type': 'Review',
+                  author: { '@type': 'Organization', name: 'CarIssues AI' },
+                  reviewRating: {
+                    '@type': 'Rating',
+                    ratingValue: topScore!.toFixed(1),
+                    bestRating: 10,
+                    worstRating: 0,
+                  },
+                },
+              }),
+            }];
+          };
+
+          return {
+            '@context': 'https://schema.org',
+            '@graph': [
+              ...productFor(nameA, mA.nameEn, `${base}/cars/${make1}/${model1}`, avgA, reviewsA.length, scoreA),
+              ...productFor(nameB, mB.nameEn, `${base}/cars/${make2}/${model2}`, avgB, reviewsB.length, scoreB),
+              {
+                '@type': 'WebPage',
+                name: `${nameA} ${sp.vsWord} ${nameB}`,
+                url: pageUrl,
+                description: `${nameA} ${sp.vsWord} ${nameB}`,
+              },
+              {
+                '@type': 'BreadcrumbList',
+                itemListElement: [
+                  { '@type': 'ListItem', position: 1, name: sp.breadcrumbHome, item: base },
+                  { '@type': 'ListItem', position: 2, name: sp.breadcrumbCompare, item: `${base}/cars/compare` },
+                  { '@type': 'ListItem', position: 3, name: `${nameA} ${sp.vsWord} ${nameB}`, item: pageUrl },
+                ],
+              },
+            ],
+          };
+        })())}} />
       </div>
     </div>
   );

@@ -24,6 +24,7 @@ interface Props {
   year?: number;           // if omitted, a year selector is shown
   years?: number[];        // available years for selector
   trims?: string[];        // sub-model options from DB
+  initialRating?: number;  // pre-selected star rating (from star picker before form)
   onSuccess: (review: Review) => void;
 }
 
@@ -43,14 +44,14 @@ async function uploadToCloudinary(file: File): Promise<string> {
   return data.secure_url as string;
 }
 
-export default function ReviewForm({ makeSlug, modelSlug, year: yearProp, years, trims, onSuccess }: Props) {
+export default function ReviewForm({ makeSlug, modelSlug, year: yearProp, years, trims, initialRating, onSuccess }: Props) {
   const { user } = useAuth();
   const { t, locale } = useLocale();
   const rf = t.reviewForm;
 
   const [authorName, setAuthorName] = useState('');
   const [selectedYear, setSelectedYear] = useState<number | ''>(yearProp ?? '');
-  const [rating, setRating]         = useState(5);
+  const [rating, setRating]         = useState(initialRating ?? 5);
   const [title, setTitle]           = useState('');
   const [body, setBody]             = useState('');
   const [category, setCategory]     = useState<Review['category']>('general');
@@ -183,8 +184,8 @@ export default function ReviewForm({ makeSlug, modelSlug, year: yearProp, years,
   }
 
   return (
-    <form onSubmit={handleSubmit} className="card" style={{ padding: 28 }}>
-      <h3 style={{ fontWeight: 700, fontSize: '1.1rem', marginBottom: 20 }}>{rf.title}</h3>
+    <form onSubmit={handleSubmit} className="card" style={{ padding: '18px 20px' }}>
+      <h3 style={{ fontWeight: 700, fontSize: '1rem', marginBottom: 16 }}>{rf.title}</h3>
 
       {/* Year selector — only when year not fixed by page */}
       {!yearProp && years && years.length > 0 && (
@@ -217,7 +218,7 @@ export default function ReviewForm({ makeSlug, modelSlug, year: yearProp, years,
         </div>
       )}
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 16, marginBottom: 16 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: 12, marginBottom: 14 }}>
         {/* Author — shown only for guests */}
         {!user && (
           <div>
@@ -256,12 +257,12 @@ export default function ReviewForm({ makeSlug, modelSlug, year: yearProp, years,
         </div>
       </div>
 
-      {/* Rating */}
-      <div style={{ marginBottom: 16 }}>
-        <label style={labelStyle}>{rf.ratingLabel} <span style={{ color: 'var(--accent)' }}>{rf.required}</span></label>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-          <StarRating rating={rating} size={28} interactive onChange={setRating} />
-          <span style={{ color: 'var(--text-muted)', fontSize: '0.875rem' }}>{rf.ratingLabels[rating as keyof typeof rf.ratingLabels]}</span>
+      {/* Rating — compact, since star was already picked before opening the form */}
+      <div style={{ marginBottom: 14 }}>
+        <label style={labelStyle}>{rf.ratingLabel}</label>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          <StarRating rating={rating} size={22} interactive onChange={setRating} />
+          <span style={{ color: 'var(--text-muted)', fontSize: '0.8rem' }}>{rf.ratingLabels[rating as keyof typeof rf.ratingLabels]}</span>
         </div>
       </div>
 
@@ -288,7 +289,7 @@ export default function ReviewForm({ makeSlug, modelSlug, year: yearProp, years,
           onChange={(e) => setBody(e.target.value)}
           placeholder={rf.bodyPlaceholder}
           maxLength={2000}
-          rows={5}
+          rows={3}
           style={{ ...inputStyle, resize: 'vertical', height: 'auto', paddingTop: 10, paddingBottom: 10 }}
           required
         />
@@ -358,7 +359,7 @@ export default function ReviewForm({ makeSlug, modelSlug, year: yearProp, years,
         type="submit"
         className="btn btn-primary"
         disabled={loading || uploading}
-        style={{ width: '100%', height: 48, fontSize: '1rem' }}
+        style={{ width: '100%', height: 42, fontSize: '0.9rem' }}
       >
         {loading ? rf.saving : rf.submitLabel}
       </button>

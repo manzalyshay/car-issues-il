@@ -50,6 +50,8 @@ export default async function RepairCostsSection({ makeSlug, modelSlug, makeName
 
   const hasModelData = grouped.size > 0;
 
+  if (!hasModelData) return null;
+
   return (
     <section style={{ marginTop: 40, paddingTop: 28, borderTop: '1px solid var(--border)' }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 8, marginBottom: 16 }}>

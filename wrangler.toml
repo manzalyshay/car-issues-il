@@ -1,7 +1,11 @@
 name = "car-issues-il"
-main = ".open-next/worker.js"
+main = "worker-entry.js"
 compatibility_date = "2025-04-01"
 compatibility_flags = ["nodejs_compat"]
+
+# Cloudflare Cron Triggers — dispatched in worker-entry.js's scheduled() handler
+[triggers]
+crons = ["0 3 * * *"]
 
 # Static assets served via ASSETS binding (Next.js static + public/ files)
 [assets]

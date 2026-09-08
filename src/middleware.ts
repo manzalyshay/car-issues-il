@@ -81,7 +81,13 @@ export function middleware(req: NextRequest) {
     return NextResponse.redirect(`https://${HE_HOST}${pathname}${req.nextUrl.search}`, { status: 302 });
   }
 
-  // Geo-detect via Cloudflare header
+  // Geo-detect via Cloudflare header — only ever applied on the bare homepage.
+  // A visitor who reaches a specific page (hreflang link, shared URL, typed deep link)
+  // has already told us which site they want; bouncing them off it by IP guess broke
+  // carissues.net for the ~98% Israeli audience, since every non-homepage link back to
+  // it (hreflang, sitemap, direct nav) was immediately redirected to .co.il.
+  if (pathname !== '/') return NextResponse.next();
+
   const country = req.headers.get('cf-ipcountry') ?? '';
   const isIsrael = country === 'IL';
 

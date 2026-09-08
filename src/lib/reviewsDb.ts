@@ -1,3 +1,4 @@
+import { cache } from 'react';
 import { dbAll, dbFirst, dbRun } from './db';
 import type { Review } from '@/data/reviews';
 import { translateReview } from './translateReview';
@@ -10,13 +11,15 @@ export async function getAllReviews(): Promise<Review[]> {
   return rows.map(dbToReview);
 }
 
-export async function getReviewsForModel(makeSlug: string, modelSlug: string): Promise<Review[]> {
+// Cached per-request — generateMetadata and the page component both call this for
+// the same model, so this avoids issuing the same D1 query twice per render.
+export const getReviewsForModel = cache(async (makeSlug: string, modelSlug: string): Promise<Review[]> => {
   const rows = await dbAll(
     'SELECT * FROM reviews WHERE make_slug = ? AND model_slug = ? ORDER BY created_at DESC',
     makeSlug, modelSlug,
   );
   return rows.map(dbToReview);
-}
+});
 
 export async function getReviewsForCar(makeSlug: string, modelSlug: string, year: number): Promise<Review[]> {
   const rows = await dbAll(

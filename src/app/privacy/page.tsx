@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { getHostLocale, getBaseUrl } from '@/lib/hostLocale';
 
-export const dynamic = 'force-dynamic';
+export const revalidate = 3600; // cache 1 hour
 
 export async function generateMetadata(): Promise<Metadata> {
   const locale = await getHostLocale();

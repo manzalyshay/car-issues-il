@@ -7,6 +7,7 @@
  */
 import { NextRequest, NextResponse } from 'next/server';
 import { dbAll, dbRun } from '@/lib/db';
+import { runWorkersAI } from '@/lib/workersAi';
 
 function formatDate(raw: string): string {
   if (!raw) return '';
@@ -28,49 +29,39 @@ function extractYear(raw: string): number | null {
 
 interface RecallFields { component: string; summary: string; consequence: string; remedy: string; }
 
-async function translateChunk(recalls: RecallFields[], apiKey: string): Promise<RecallFields[]> {
+async function translateChunk(recalls: RecallFields[]): Promise<RecallFields[]> {
   if (recalls.length === 0) return recalls;
   const input = recalls.map((r, i) =>
     `[${i + 1}]\ncomponent: ${r.component}\nsummary: ${r.summary}\nconsequence: ${r.consequence}\nremedy: ${r.remedy}`
   ).join('\n\n');
 
-  try {
-    const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${apiKey}` },
-      body: JSON.stringify({
-        model: 'llama-3.3-70b-versatile',
-        temperature: 0,
-        max_tokens: 8000,
-        messages: [
-          { role: 'system', content: 'Translate each numbered recall from English to Hebrew. Keep technical automotive terms accurate. Reply ONLY in this exact format:\n[N]\ncomponent: ...\nsummary: ...\nconsequence: ...\nremedy: ...' },
-          { role: 'user', content: input },
-        ],
-      }),
-      signal: AbortSignal.timeout(30000),
-    });
-    if (!res.ok) return recalls;
-    const data = await res.json();
-    const content: string = data.choices?.[0]?.message?.content ?? '';
-    const out = recalls.map(r => ({ ...r }));
-    const blocks = content.split(/\n(?=\[\d+\])/);
-    for (const block of blocks) {
-      const idxMatch = block.match(/^\[(\d+)\]/);
-      if (!idxMatch) continue;
-      const idx = parseInt(idxMatch[1]) - 1;
-      if (idx < 0 || idx >= out.length) continue;
-      const get = (field: string) => {
-        const m = block.match(new RegExp(`${field}:\\s*([\\s\\S]*?)(?=\\n(?:component|summary|consequence|remedy):|$)`));
-        return m?.[1]?.trim() || '';
-      };
-      const c = get('component'), s = get('summary'), con = get('consequence'), rem = get('remedy');
-      if (c)   out[idx].component   = c;
-      if (s)   out[idx].summary     = s;
-      if (con) out[idx].consequence = con;
-      if (rem) out[idx].remedy      = rem;
-    }
-    return out;
-  } catch { return recalls; }
+  const content = await runWorkersAI(
+    [
+      { role: 'system', content: 'Translate each numbered recall from English to Hebrew. Keep technical automotive terms accurate. Reply ONLY in this exact format:\n[N]\ncomponent: ...\nsummary: ...\nconsequence: ...\nremedy: ...' },
+      { role: 'user', content: input },
+    ],
+    { max_tokens: 4000, temperature: 0 },
+  );
+  if (!content) return recalls;
+
+  const out = recalls.map(r => ({ ...r }));
+  const blocks = content.split(/\n(?=\[\d+\])/);
+  for (const block of blocks) {
+    const idxMatch = block.match(/^\[(\d+)\]/);
+    if (!idxMatch) continue;
+    const idx = parseInt(idxMatch[1]) - 1;
+    if (idx < 0 || idx >= out.length) continue;
+    const get = (field: string) => {
+      const m = block.match(new RegExp(`${field}:\\s*([\\s\\S]*?)(?=\\n(?:component|summary|consequence|remedy):|$)`));
+      return m?.[1]?.trim() || '';
+    };
+    const c = get('component'), s = get('summary'), con = get('consequence'), rem = get('remedy');
+    if (c)   out[idx].component   = c;
+    if (s)   out[idx].summary     = s;
+    if (con) out[idx].consequence = con;
+    if (rem) out[idx].remedy      = rem;
+  }
+  return out;
 }
 
 export async function GET(req: NextRequest) {
@@ -78,8 +69,6 @@ export async function GET(req: NextRequest) {
   if (secret && req.headers.get('authorization') !== `Bearer ${secret}`) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
-
-  const apiKey = process.env.GROQ_API_KEY ?? '';
 
   const [makes, models, existing] = await Promise.all([
     dbAll<{ slug: string; name_en: string }>('SELECT slug, name_en FROM car_makes'),
@@ -127,7 +116,7 @@ export async function GET(req: NextRequest) {
         component: r.Component ?? '', summary: r.Summary ?? '',
         consequence: r.Consequence ?? '', remedy: r.Remedy ?? '',
       }));
-      const translated = apiKey ? await translateChunk(fields, apiKey) : fields;
+      const translated = await translateChunk(fields);
       for (let j = 0; j < chunk.length; j++) {
         const r = chunk[j]; const t = translated[j];
         rows.push({

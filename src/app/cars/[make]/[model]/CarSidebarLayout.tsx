@@ -5,11 +5,12 @@ import Link from 'next/link';
 import CarVideosTab from '@/components/CarVideosTab';
 import CarImagesTab from '@/components/CarImagesTab';
 import TrimSpecsTab from '@/components/TrimSpecsTab';
+import RecallsSection from '@/components/RecallsSection';
 import { useLocale } from '@/lib/localeContext';
 import type { CarVideo } from '@/lib/youtubeVideos';
 import type { CarImage } from '@/lib/carImages';
 
-type Tab = 'reviews' | 'specs' | 'videos' | 'images';
+type Tab = 'reviews' | 'specs' | 'videos' | 'images' | 'recalls';
 
 interface Props {
   makeSlug: string;
@@ -18,14 +19,21 @@ interface Props {
   modelNameHe: string;
   makeNameEn?: string;
   modelNameEn?: string;
+  makeEn?: string;
+  modelEn?: string;
+  modelYears?: number[];
   defaultYear?: number;
+  hasSpecs?: boolean;
+  hasImages?: boolean;
+  hasVideos?: boolean;
+  hasRepairCosts?: boolean;
   children: React.ReactNode;
 }
 
 /* ── Section anchor IDs used by the main content ── */
-const ANCHORS = ['reviews', 'specs', 'trims', 'recalls', 'repair', 'compare'] as const;
+const ANCHORS = ['reviews', 'specs', 'trims', 'repair', 'compare'] as const;
 
-export default function CarSidebarLayout({ makeSlug, modelSlug, makeNameHe, modelNameHe, makeNameEn, modelNameEn, defaultYear, children }: Props) {
+export default function CarSidebarLayout({ makeSlug, modelSlug, makeNameHe, modelNameHe, makeNameEn, modelNameEn, makeEn, modelEn, modelYears, defaultYear, hasSpecs = true, hasImages = true, hasVideos = false, hasRepairCosts = true, children }: Props) {
   const { t } = useLocale();
   const s = t.sidebar;
   const [tab, setTab] = useState<Tab>('reviews');
@@ -80,11 +88,11 @@ export default function CarSidebarLayout({ makeSlug, modelSlug, makeNameHe, mode
   /* ── Subnav items — sections that scroll + media tabs ── */
   const subnavItems: { id: string; label: string; icon: string; isTab?: Tab; isAnchor?: boolean }[] = [
     { id: 'reviews', label: s.reviews, icon: '⭐', isAnchor: true },
-    { id: 'specs',   label: s.specs,   icon: '📋', isTab: 'specs' },
-    { id: 'repair',  label: s.tco,     icon: '🔧', isAnchor: true },
-    { id: 'recalls', label: s.issues,  icon: '⚠️', isAnchor: true },
-    { id: 'videos',  label: s.videos,  icon: '🎬', isTab: 'videos' },
-    { id: 'images',  label: s.images,  icon: '📷', isTab: 'images' },
+    ...(hasSpecs ? [{ id: 'specs', label: s.specs, icon: '📋', isTab: 'specs' as Tab }] : []),
+    ...(hasRepairCosts ? [{ id: 'repair', label: s.tco, icon: '🔧', isAnchor: true }] : []),
+    { id: 'recalls', label: s.issues, icon: '⚠️', isTab: 'recalls' as Tab },
+    ...(hasVideos ? [{ id: 'videos', label: s.videos, icon: '🎬', isTab: 'videos' as Tab }] : []),
+    ...(hasImages ? [{ id: 'images', label: s.images, icon: '📷', isTab: 'images' as Tab }] : []),
   ];
 
   const scrollToSection = (id: string) => {
@@ -103,9 +111,8 @@ export default function CarSidebarLayout({ makeSlug, modelSlug, makeNameHe, mode
       <div className="car-subnav">
         <div className="car-subnav-inner container" ref={navRef}>
           {subnavItems.map(item => {
-            // Anchor items only active when on reviews tab; tab items only active when that tab is selected
             const isActive = item.isTab
-              ? (tab === item.isTab && !item.isAnchor)
+              ? tab === item.isTab
               : (tab === 'reviews' && activeSection === item.id);
             return (
               <button
@@ -170,6 +177,13 @@ export default function CarSidebarLayout({ makeSlug, modelSlug, makeNameHe, mode
           {tab === 'images' && (
             <div>
               {imagesLoading ? loadingPlaceholder : <CarImagesTab images={images || []} makeNameHe={makeNameHe} modelNameHe={modelNameHe} />}
+            </div>
+          )}
+
+          {/* Recalls tab */}
+          {tab === 'recalls' && makeEn && modelEn && (
+            <div>
+              <RecallsSection makeEn={makeEn} modelEn={modelEn} years={modelYears} />
             </div>
           )}
         </div>

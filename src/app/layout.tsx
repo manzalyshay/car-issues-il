@@ -1,5 +1,5 @@
 import type { Metadata } from 'next';
-import { headers } from 'next/headers';
+import { headers, cookies } from 'next/headers';
 import Script from 'next/script';
 import './globals.css';
 import Header from '@/components/Header';
@@ -61,9 +61,19 @@ export async function generateMetadata(): Promise<Metadata> {
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
   const host = (await headers()).get('host') ?? '';
-  const isEn = isEnglishHost(host);
+  const isEnHost = isEnglishHost(host);
+  const isHeHost = host === 'carissues.co.il' || host === 'www.carissues.co.il';
+  // On unknown hosts (localhost/dev), fall back to the clang preference cookie
+  let isEn = isEnHost;
+  if (!isEnHost && !isHeHost) {
+    const cookieStore = await cookies();
+    const pref = cookieStore.get('clang')?.value;
+    if (pref === 'en') isEn = true;
+  }
   const baseUrl = isEn ? EN_URL : HE_URL;
   const isEmbed = (await headers()).get('x-is-embed') === '1';
+  // Only fire GA4 on real production hosts — keeps localhost/dev traffic out of Analytics
+  const isProdHost = isEnHost || isHeHost;
 
   const orgJsonLd = {
     '@context': 'https://schema.org',
@@ -106,13 +116,17 @@ export default async function RootLayout({ children }: { children: React.ReactNo
       </head>
       <body className="flex flex-col min-h-screen">
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(orgJsonLd) }} />
-        <Script src={`https://www.googletagmanager.com/gtag/js?id=${isEn ? GA4_EN : GA4_HE}`} strategy="afterInteractive" />
-        <Script id="ga4-init" strategy="afterInteractive">{`
-          window.dataLayer = window.dataLayer || [];
-          function gtag(){dataLayer.push(arguments);}
-          gtag('js', new Date());
-          gtag('config', '${isEn ? GA4_EN : GA4_HE}');
-        `}</Script>
+        {isProdHost && (
+          <>
+            <Script src={`https://www.googletagmanager.com/gtag/js?id=${isEn ? GA4_EN : GA4_HE}`} strategy="afterInteractive" />
+            <Script id="ga4-init" strategy="afterInteractive">{`
+              window.dataLayer = window.dataLayer || [];
+              function gtag(){dataLayer.push(arguments);}
+              gtag('js', new Date());
+              gtag('config', '${isEn ? GA4_EN : GA4_HE}');
+            `}</Script>
+          </>
+        )}
         <LocaleProvider initialLocale={isEn ? 'en' : 'he'}>
           <AuthProvider>
             {!isEmbed && <NavigationProgress />}

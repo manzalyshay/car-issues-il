@@ -1,8 +1,11 @@
-import { dbAll } from './db';
+import { dbAll, dbFirst, dbRun } from './db';
 
-const DATA_GOV_URL  = 'https://data.gov.il/api/3/action/datastore_search';
-const RESOURCE_ID   = '053cea08-09bc-40ec-8f7a-156f0677aff3';
-const EXTRA_RESOURCE = '56063a99-8a3e-4ff4-912e-5966c0279bad';
+const DATA_GOV_URL       = 'https://data.gov.il/api/3/action/datastore_search';
+const RESOURCE_ID        = '053cea08-09bc-40ec-8f7a-156f0677aff3';
+const EXTRA_RESOURCE     = '56063a99-8a3e-4ff4-912e-5966c0279bad';
+const OWNERSHIP_RESOURCE = 'bb2355dc-9ec7-4f06-9c3f-3344672171da';
+
+const CACHE_TTL_MS = 24 * 60 * 60 * 1000; // 24 hours
 
 const HE_MAKE_MAP: Record<string, string> = {
   'קיה':         'kia',
@@ -92,6 +95,28 @@ const EN_MULTI_WORD_MAKES = ['ALFA ROMEO', 'LAND ROVER', 'MERCEDES BENZ', 'MERCE
 
 export interface DbMatch { makeSlug: string; modelSlug: string; year: number | null; }
 
+/** One ownership period from the Ministry of Transport history dataset */
+export interface OwnershipRecord {
+  /** YYYYMM as a number, e.g. 202202 = Feb 2022 */
+  date: number;
+  /** Human-readable month/year string, e.g. "02/2022" */
+  dateLabel: string;
+  /** Ownership type in Hebrew, e.g. "פרטי", "סוחר", "ליסינג" */
+  ownershipType: string;
+}
+
+/** Derived analysis of ownership history */
+export interface OwnershipAnalysis {
+  /** Total number of recorded ownership periods */
+  periodCount: number;
+  /** Types that appeared (deduplicated) */
+  typesSeen: string[];
+  /** True if vehicle was ever registered as commercial/dealer/leasing */
+  wasCommercial: boolean;
+  /** Current ownership type from active registry */
+  currentType: string;
+}
+
 export interface Vehicle {
   country?: 'il' | 'uk';
   plate: number;
@@ -113,6 +138,16 @@ export interface Vehicle {
   hasAccident: boolean | null;
   wasRepainted: boolean | null;
   origin: string | null;
+  structuralChange: boolean | null;
+  tireChange: boolean | null;
+  firstRegistrationDate: string | null;
+  /** Ownership history from dataset 3 */
+  ownershipHistory: OwnershipRecord[];
+  ownershipAnalysis: OwnershipAnalysis | null;
+  dataAvailability: {
+    extraData: boolean;
+    ownershipHistory: boolean;
+  };
   // UK-specific fields
   motStatus?: string | null;
   motExpiryDate?: string | null;
@@ -136,6 +171,7 @@ export type LookupResult =
   | { status: 'error' };
 
 interface DbModel { make_slug: string; slug: string; name_en: string; years: string; }
+interface CacheRow { ownership_json: string; extra_json: string | null; cached_at: number; }
 
 function resolveSlugFromHebrew(tozetNm: string): string | null {
   const firstWord = tozetNm.trim().split(/\s+/)[0];
@@ -210,16 +246,97 @@ function fmtPlate(plate: string): string {
     : `${plate.slice(0, 2)}-${plate.slice(2, 5)}-${plate.slice(5)}`;
 }
 
+/** Convert YYYYMM number to a "MM/YYYY" display label */
+function fmtOwnershipDate(yyyymm: number): string {
+  const s = String(yyyymm).padStart(6, '0');
+  return `${s.slice(4, 6)}/${s.slice(0, 4)}`;
+}
+
+/** Fetch and analyse ownership history, with D1 caching */
+async function fetchOwnershipHistory(plateNum: number): Promise<{ records: OwnershipRecord[]; fromCache: boolean }> {
+  const cacheKey = `ownership:${plateNum}`;
+
+  // Try cache first
+  try {
+    const cached = await dbFirst<CacheRow>(
+      'SELECT ownership_json, cached_at FROM vehicle_history_cache WHERE plate = ?',
+      cacheKey,
+    );
+    if (cached && Date.now() - cached.cached_at < CACHE_TTL_MS) {
+      const records = JSON.parse(cached.ownership_json) as OwnershipRecord[];
+      return { records, fromCache: true };
+    }
+  } catch { /* cache miss is fine */ }
+
+  // Fetch from data.gov.il
+  const url = `${DATA_GOV_URL}?resource_id=${OWNERSHIP_RESOURCE}&filters=${encodeURIComponent(JSON.stringify({ mispar_rechev: plateNum }))}&limit=100`;
+  const res = await fetch(url, { signal: AbortSignal.timeout(8000) }).catch(() => null);
+  if (!res?.ok) return { records: [], fromCache: false };
+
+  const data = await res.json().catch(() => null) as { success: boolean; result: { records: Array<{ mispar_rechev: number; baalut_dt: number; baalut: string }> } } | null;
+  const raw = data?.result?.records ?? [];
+
+  const records: OwnershipRecord[] = raw
+    .filter(r => r.baalut_dt && r.baalut)
+    .map(r => ({
+      date: Number(r.baalut_dt),
+      dateLabel: fmtOwnershipDate(Number(r.baalut_dt)),
+      ownershipType: String(r.baalut),
+    }))
+    .sort((a, b) => a.date - b.date);
+
+  // Deduplicate consecutive identical entries (dataset sometimes has duplicates)
+  const deduped = records.filter((r, i) =>
+    i === 0 || r.date !== records[i - 1].date || r.ownershipType !== records[i - 1].ownershipType
+  );
+
+  // Store in cache (fire-and-forget is fine here — reading the next time will miss cache if this fails)
+  try {
+    await dbRun(
+      'INSERT OR REPLACE INTO vehicle_history_cache (plate, ownership_json, cached_at) VALUES (?, ?, ?)',
+      cacheKey,
+      JSON.stringify(deduped),
+      Date.now(),
+    );
+  } catch { /* non-fatal */ }
+
+  return { records: deduped, fromCache: false };
+}
+
+/** Derive analysis from ownership history */
+function analyseOwnership(history: OwnershipRecord[], currentType: string): OwnershipAnalysis | null {
+  if (history.length === 0) return null;
+
+  const commercialTypes = ['סוחר', 'ליסינג', 'השכרה', 'חברה', 'מדינה', 'עירייה'];
+  const typesSeen = [...new Set(history.map(r => r.ownershipType))];
+  const wasCommercial = typesSeen.some(t => commercialTypes.some(c => t.includes(c)));
+
+  return {
+    periodCount: history.length,
+    typesSeen,
+    wasCommercial,
+    currentType,
+  };
+}
+
 export async function lookupVehicle(rawPlate: string): Promise<LookupResult> {
   const plate = rawPlate.replace(/\D/g, '');
   if (plate.length < 5 || plate.length > 8) return { status: 'not_found' };
 
   try {
-    const url = `${DATA_GOV_URL}?resource_id=${RESOURCE_ID}&filters=${encodeURIComponent(JSON.stringify({ mispar_rechev: parseInt(plate, 10) }))}&limit=1`;
-    const res = await fetch(url, { signal: AbortSignal.timeout(8000) });
-    if (!res.ok) return { status: 'error' };
+    const plateNum = parseInt(plate, 10);
+    const filters = encodeURIComponent(JSON.stringify({ mispar_rechev: plateNum }));
 
-    const data = await res.json() as { success: boolean; result: { records: Record<string, unknown>[] } };
+    // Fetch primary + extra + ownership in parallel
+    const [mainRes, extraRes, ownershipResult] = await Promise.all([
+      fetch(`${DATA_GOV_URL}?resource_id=${RESOURCE_ID}&filters=${filters}&limit=1`, { signal: AbortSignal.timeout(8000) }),
+      fetch(`${DATA_GOV_URL}?resource_id=${EXTRA_RESOURCE}&filters=${filters}&limit=1`, { signal: AbortSignal.timeout(6000) }).catch(() => null),
+      fetchOwnershipHistory(plateNum).catch(() => ({ records: [], fromCache: false })),
+    ]);
+
+    if (!mainRes.ok) return { status: 'error' };
+
+    const data = await mainRes.json() as { success: boolean; result: { records: Record<string, unknown>[] } };
     const record = data?.result?.records?.[0];
     if (!record) return { status: 'not_found' };
 
@@ -228,23 +345,25 @@ export async function lookupVehicle(rawPlate: string): Promise<LookupResult> {
     const shnat  = record.shnat_yitzur ? Number(record.shnat_yitzur) : null;
     const dbMatch = await matchToDb(tozet, kinuy, shnat);
 
-    const extraUrl = `${DATA_GOV_URL}?resource_id=${EXTRA_RESOURCE}&filters=${encodeURIComponent(JSON.stringify({ mispar_rechev: parseInt(plate, 10) }))}&limit=1`;
-    const extraRes = await fetch(extraUrl, { signal: AbortSignal.timeout(5000) }).catch(() => null);
     const extraData = extraRes?.ok ? await extraRes.json().catch(() => null) : null;
     const extra = extraData?.result?.records?.[0] ?? null;
+
+    const ownershipHistory = ownershipResult.records;
+    const currentOwnershipType = String(record.baalut ?? '');
+    const ownershipAnalysis = analyseOwnership(ownershipHistory, currentOwnershipType);
 
     return {
       status: 'found',
       vehicle: {
         country:       'il',
-        plate:         parseInt(plate, 10),
+        plate:         plateNum,
         displayPlate:  fmtPlate(plate),
         name:          kinuy,
         makeHe:        tozet,
         year:          shnat,
         color:         String(record.tzeva_rechev ?? ''),
         fuel:          String(record.sug_delek_nm ?? ''),
-        ownership:     String(record.baalut ?? ''),
+        ownership:     currentOwnershipType,
         vin:           String(record.misgeret ?? ''),
         lastTestDate:  String(record.mivchan_acharon_dt ?? ''),
         validUntil:    String(record.tokef_dt ?? ''),
@@ -256,6 +375,15 @@ export async function lookupVehicle(rawPlate: string): Promise<LookupResult> {
         hasAccident:   extra ? Number(extra.gapam_ind) === 1 : null,
         wasRepainted:  extra ? Number(extra.shnui_zeva_ind) === 1 : null,
         origin:        extra?.mkoriut_nm ? String(extra.mkoriut_nm) : null,
+        structuralChange: extra ? Number(extra.shinui_mivne_ind) === 1 : null,
+        tireChange:       extra ? Number(extra.shinui_zmig_ind) === 1 : null,
+        firstRegistrationDate: extra?.rishum_rishon_dt ? String(extra.rishum_rishon_dt).split(' ')[0] : null,
+        ownershipHistory,
+        ownershipAnalysis,
+        dataAvailability: {
+          extraData: extra !== null,
+          ownershipHistory: ownershipHistory.length > 0,
+        },
         dbMatch,
       },
     };

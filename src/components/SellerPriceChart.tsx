@@ -24,7 +24,7 @@ function fmtK(n: number, isEn = false) {
   return `₪${Math.round(n / 1000)}K`;
 }
 
-const PRIVATE_COLOR = '#22d3ee';  // cyan
+const PRIVATE_COLOR = '#1b4f8a';  // blue
 const DEALER_COLOR  = '#f97316';  // orange
 
 export default function SellerPriceChart({ makeSlug, modelSlug, makeEn, modelEn, isEn }: Props) {
@@ -61,9 +61,9 @@ export default function SellerPriceChart({ makeSlug, modelSlug, makeEn, modelEn,
 
   if (loading) {
     return (
-      <div ref={containerRef} style={{ overflow: 'hidden', borderRadius: 12, border: '1px solid var(--border)', background: 'var(--surface)', width: '100%', height: '100%' }}>
+      <div ref={containerRef} style={{ overflow: 'hidden', borderRadius: 16, border: '1px solid #e3e8ee', background: '#fff', width: '100%', height: '100%' }}>
         {header(isEn)}
-        <div style={{ textAlign: 'center', color: 'var(--text-muted)', fontSize: '0.875rem', padding: '32px 20px' }}>
+        <div style={{ textAlign: 'center', color: '#8595a6', fontSize: '0.875rem', padding: '32px 20px' }}>
           {isEn ? 'Loading seller comparison...' : 'טוען השוואת מחירים...'}
         </div>
       </div>
@@ -113,27 +113,27 @@ export default function SellerPriceChart({ makeSlug, modelSlug, makeEn, modelEn,
   );
 
   return (
-    <div ref={containerRef} style={{ overflow: 'hidden', borderRadius: 12, border: '1px solid var(--border)', background: 'var(--surface)', width: '100%', height: '100%' }}>
+    <div ref={containerRef} style={{ overflow: 'hidden', borderRadius: 16, border: '1px solid #e3e8ee', background: '#fff', width: '100%', height: '100%' }}>
       {header(isEn)}
 
       <div style={{ padding: '16px 20px 12px' }}>
         <svg viewBox={`0 0 ${W} ${H}`} style={{ width: '100%', display: 'block', overflow: 'visible' }} dir="ltr">
           <defs>
             <filter id="spc-shadow" x="-25%" y="-25%" width="150%" height="150%">
-              <feDropShadow dx="0" dy="2" stdDeviation="4" floodColor="rgba(0,0,0,0.5)" />
+              <feDropShadow dx="0" dy="1" stdDeviation="3" floodColor="rgba(0,0,0,0.15)" />
             </filter>
+            <linearGradient id="privFill" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor={PRIVATE_COLOR} stopOpacity="0.18" />
+              <stop offset="100%" stopColor={PRIVATE_COLOR} stopOpacity="0.02" />
+            </linearGradient>
           </defs>
           <g transform={`translate(${PAD.left},${PAD.top})`}>
-            {/* Background */}
-            <rect x={0} y={0} width={cW} height={cH} fill="rgba(255,255,255,0.018)" rx={3} />
-
             {/* Y grid + labels */}
             {yTicks.map(({ y, label }, i) => (
               <g key={i}>
                 <line x1={0} x2={cW} y1={y} y2={y}
-                  stroke="var(--border)" strokeWidth={i === 0 ? 1 : 0.5}
-                  strokeDasharray={i === 0 ? undefined : '4 3'} />
-                <text x={-8} y={y + 4} textAnchor="end" fontSize={compact ? 10 : 11} fill="var(--text-muted)" fontFamily="system-ui,sans-serif">
+                  stroke="#eef1f5" strokeWidth={1} />
+                <text x={-8} y={y + 4} textAnchor="end" fontSize={compact ? 10 : 10.5} fill="#a8b5c4" fontFamily="system-ui,sans-serif">
                   {label}
                 </text>
               </g>
@@ -142,19 +142,20 @@ export default function SellerPriceChart({ makeSlug, modelSlug, makeEn, modelEn,
             {/* X labels */}
             {xLabels.map(year => (
               <text key={year} x={xOf(year)} y={cH + 20} textAnchor="middle"
-                fontSize={compact ? 10 : 11} fill="var(--text-muted)" fontFamily="system-ui,sans-serif">
+                fontSize={compact ? 10 : 10.5} fill="#a8b5c4" fontFamily="system-ui,sans-serif">
                 {year}
               </text>
             ))}
 
-            {/* Gap shading between private and dealer */}
+            {/* Fill area under private line */}
             {rows.length > 1 && (() => {
-              const topPts = rows.map(r => `${xOf(r.year)},${yOf(r.dealer_avg!)}`).join(' ');
-              const botPts = [...rows].reverse().map(r => `${xOf(r.year)},${yOf(r.private_avg!)}`).join(' ');
+              const lastX = xOf(rows[rows.length - 1].year);
+              const firstX = xOf(rows[0].year);
+              const linePts = rows.map(r => `${xOf(r.year)},${yOf(r.private_avg!)}`).join(' ');
               return (
                 <polygon
-                  points={`${topPts} ${botPts}`}
-                  fill={DEALER_COLOR} fillOpacity={0.08}
+                  points={`${firstX},${cH} ${linePts} ${lastX},${cH}`}
+                  fill="url(#privFill)"
                 />
               );
             })()}
@@ -164,6 +165,7 @@ export default function SellerPriceChart({ makeSlug, modelSlug, makeEn, modelEn,
               points={rows.map(r => `${xOf(r.year)},${yOf(r.private_avg!)}`).join(' ')}
               fill="none" stroke={PRIVATE_COLOR} strokeWidth={2.5}
               strokeLinejoin="round" strokeLinecap="round"
+              vectorEffect="non-scaling-stroke"
             />
 
             {/* Dealer line */}
@@ -171,6 +173,7 @@ export default function SellerPriceChart({ makeSlug, modelSlug, makeEn, modelEn,
               points={rows.map(r => `${xOf(r.year)},${yOf(r.dealer_avg!)}`).join(' ')}
               fill="none" stroke={DEALER_COLOR} strokeWidth={2.5}
               strokeLinejoin="round" strokeLinecap="round" strokeDasharray="6 3"
+              vectorEffect="non-scaling-stroke"
             />
 
             {/* Dots — private */}
@@ -178,7 +181,7 @@ export default function SellerPriceChart({ makeSlug, modelSlug, makeEn, modelEn,
               <circle key={`p-${r.year}`}
                 cx={xOf(r.year)} cy={yOf(r.private_avg!)}
                 r={hoveredYear === r.year ? 6 : 3.5}
-                fill={PRIVATE_COLOR} stroke="var(--surface)" strokeWidth={2}
+                fill={PRIVATE_COLOR} stroke="#fff" strokeWidth={2}
                 style={{ transition: 'r 0.08s' }}
               />
             ))}
@@ -188,7 +191,7 @@ export default function SellerPriceChart({ makeSlug, modelSlug, makeEn, modelEn,
               <circle key={`d-${r.year}`}
                 cx={xOf(r.year)} cy={yOf(r.dealer_avg!)}
                 r={hoveredYear === r.year ? 6 : 3.5}
-                fill={DEALER_COLOR} stroke="var(--surface)" strokeWidth={2}
+                fill={DEALER_COLOR} stroke="#fff" strokeWidth={2}
                 style={{ transition: 'r 0.08s' }}
               />
             ))}
@@ -234,10 +237,10 @@ export default function SellerPriceChart({ makeSlug, modelSlug, makeEn, modelEn,
               return (
                 <>
                   <line x1={hovX} x2={hovX} y1={0} y2={cH}
-                    stroke="var(--text-muted)" strokeWidth={1} strokeDasharray="4 3" pointerEvents="none" />
+                    stroke="#a8b5c4" strokeWidth={1} strokeDasharray="4 3" pointerEvents="none" />
                   <g pointerEvents="none" filter="url(#spc-shadow)">
                     <rect x={ttX} y={ttY} width={ttW} height={ttH} rx={7}
-                      fill="#1a2540" stroke="var(--border)" strokeWidth={1} />
+                      fill="#1b2c4a" stroke="#e3e8ee" strokeWidth={1} />
                     <text x={ttX + ttW / 2} y={ttY + 15} textAnchor="middle"
                       fontSize={12} fontWeight={700} fill="#f1f5f9" fontFamily="system-ui,sans-serif" direction="ltr">
                       {hoveredYear}
@@ -265,35 +268,28 @@ export default function SellerPriceChart({ makeSlug, modelSlug, makeEn, modelEn,
         </svg>
 
         {/* Legend */}
-        <div style={{ display: 'flex', gap: 24, justifyContent: 'center', flexWrap: 'wrap', marginTop: 6 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 7, fontSize: '0.8rem', color: 'var(--text-muted)' }}>
-            <div style={{ width: 24, height: 3, background: PRIVATE_COLOR, borderRadius: 2 }} />
-            <span>{isEn ? 'Private seller' : 'פרטי (יד2)'}</span>
+        <div style={{ display: 'flex', gap: 20, flexWrap: 'wrap', marginTop: 10 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 11.5, color: '#66788c' }}>
+            <div style={{ width: 14, height: 2.5, background: PRIVATE_COLOR, borderRadius: 2 }} />
+            <span>{isEn ? 'Private seller' : 'מוכר פרטי'}</span>
           </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 7, fontSize: '0.8rem', color: 'var(--text-muted)' }}>
-            <svg width={24} height={6} style={{ flexShrink: 0 }}>
-              <line x1={0} y1={3} x2={24} y2={3} stroke={DEALER_COLOR} strokeWidth={3} strokeDasharray="6 3" />
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 11.5, color: '#66788c' }}>
+            <svg width={14} height={6} style={{ flexShrink: 0 }}>
+              <line x1={0} y1={3} x2={14} y2={3} stroke={DEALER_COLOR} strokeWidth={2.5} strokeDasharray="5 2.5" />
             </svg>
-            <span>{isEn ? 'Car dealership' : 'סוכנות'}</span>
+            <span>{isEn ? 'Dealership' : 'סוכנות'}</span>
           </div>
         </div>
 
         {/* Summary stat */}
         <div style={{
-          marginTop: 10, padding: '8px 14px',
-          background: 'rgba(249,115,22,0.08)', borderRadius: 8,
-          border: '1px solid rgba(249,115,22,0.2)',
-          textAlign: 'center', fontSize: '0.8rem', color: 'var(--text-muted)',
+          marginTop: 12, padding: '10px 12px',
+          background: '#f8fafc', borderRadius: 9,
+          fontSize: 13, color: '#4a5b6d',
         }}>
           {isEn
-            ? `On average, dealers charge ~${avgGapPct}% more than private sellers for this model`
-            : `בממוצע, סוכנויות גובות ~${avgGapPct}% יותר ממוכרים פרטיים עבור דגם זה`}
-        </div>
-
-        <div style={{ textAlign: 'center', fontSize: '0.65rem', color: 'var(--text-muted)', marginTop: 8 }}>
-          {isEn
-            ? 'Estimated used car prices in Israel (ILS)'
-            : 'מחירי יד שניה משוערים בישראל'}
+            ? `On average, dealers charge ~${avgGapPct}% more than private sellers`
+            : `בממוצע, סוכנויות גובות ~${avgGapPct}% יותר ממוכרים פרטיים`}
         </div>
       </div>
     </div>
@@ -303,14 +299,16 @@ export default function SellerPriceChart({ makeSlug, modelSlug, makeEn, modelEn,
 function header(isEn: boolean) {
   return (
     <div style={{
-      padding: '14px 20px',
-      background: 'linear-gradient(135deg, #0f172a 0%, #1e293b 100%)',
-      display: 'flex', alignItems: 'center', gap: 10,
+      padding: '16px 18px',
+      display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 10,
+      borderBottom: '1px solid #eef1f5',
     }}>
-      <span style={{ fontSize: '1.1rem' }}>🏷️</span>
-      <h2 style={{ margin: 0, color: '#f1f5f9', fontWeight: 800, fontSize: '1rem' }}>
-        {isEn ? 'Dealer vs Private Seller Prices' : 'השוואת מחירים: סוכנות מול פרטי'}
-      </h2>
+      <span style={{ fontSize: 15, fontWeight: 700, color: '#1c2733' }}>
+        {isEn ? 'Market Value' : 'שווי שוק יד שניה'}
+      </span>
+      <span style={{ fontSize: 12, color: '#8595a6' }}>
+        {isEn ? 'ILS · Private vs Dealer' : 'פרטי מול סוכנות'}
+      </span>
     </div>
   );
 }

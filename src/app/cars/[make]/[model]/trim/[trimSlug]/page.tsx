@@ -6,8 +6,7 @@ import { getTrimSpecs } from '@/lib/trimSpecsDb';
 import { TRIM_FEATURES } from '@/data/cars';
 import { getHostLocale } from '@/lib/hostLocale';
 
-export const dynamic = 'force-static';
-export const revalidate = 86400;
+export const revalidate = 900; // cache 15 minutes
 
 interface Props { params: Promise<{ make: string; model: string; trimSlug: string }> }
 
@@ -88,11 +87,6 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       url,
     },
   };
-}
-
-export async function generateStaticParams() {
-  // Avoid running at build time without DB credentials
-  return [];
 }
 
 export default async function TrimPage({ params }: Props) {

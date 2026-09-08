@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { dbAll, dbRun } from '@/lib/db';
-import { getCloudflareContext } from '@opennextjs/cloudflare';
+import Anthropic from '@anthropic-ai/sdk';
 
 export interface Recall {
   id: string;
@@ -54,24 +54,15 @@ function extractYear(raw: string): number | null {
   return null;
 }
 
-// ── Translation (Groq → Gemini → Mistral fallback chain) ─────────────────────
+// ── Translation via Claude ────────────────────────────────────────────────────
 
 interface RecallFields { component: string; summary: string; consequence: string; remedy: string; }
-
-function buildPrompt(jsonInput: string): string {
-  return (
-    'Translate these car recall entries from English to Hebrew. Keep automotive technical terms accurate. ' +
-    'Return ONLY a JSON array with the same structure. No markdown, no explanation.\n\n' +
-    jsonInput
-  );
-}
 
 function parseTranslationResponse(content: string, recalls: RecallFields[]): RecallFields[] {
   try {
     const json = content.replace(/```[a-z]*\n?/g, '').replace(/```/g, '').trim();
     let parsed = JSON.parse(json) as RecallFields[] | string[];
     if (!Array.isArray(parsed) || parsed.length === 0) return recalls;
-    // Handle double-encoded: array of JSON strings instead of array of objects
     parsed = parsed.map(item => {
       if (typeof item === 'string') {
         try { return JSON.parse(item) as RecallFields; } catch { return item as unknown as RecallFields; }
@@ -89,85 +80,28 @@ function parseTranslationResponse(content: string, recalls: RecallFields[]): Rec
   }
 }
 
-async function translateWithCloudflareAI(input: string): Promise<string | null> {
-  try {
-    const ctx = await getCloudflareContext({ async: true });
-    const ai = (ctx.env as Record<string, unknown>).AI as { run: (model: string, opts: unknown) => Promise<Record<string, unknown>> } | undefined;
-    if (!ai) return null;
-    const result = await ai.run('@cf/meta/llama-4-scout-17b-16e-instruct', {
-      messages: [{ role: 'user', content: buildPrompt(input) }],
-      max_tokens: 4000,
-      temperature: 0,
-    });
-    if (typeof result?.response === 'string') return result.response.trim();
-    if (Array.isArray(result?.response)) return JSON.stringify(result.response);
-    return (result?.choices as Array<{message?: {content?: string}}>)?.[0]?.message?.content?.trim() ?? null;
-  } catch { return null; }
-}
-
-async function translateWithGroq(input: string, apiKey: string): Promise<string | null> {
-  try {
-    const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${apiKey}` },
-      body: JSON.stringify({
-        model: 'llama-3.3-70b-versatile', temperature: 0, max_tokens: 8000,
-        messages: [{ role: 'user', content: buildPrompt(input) }],
-      }),
-      signal: AbortSignal.timeout(30000),
-    });
-    if (!res.ok) return null;
-    const data = await res.json();
-    return data.choices?.[0]?.message?.content?.trim() ?? null;
-  } catch { return null; }
-}
-
-async function translateWithGemini(input: string, apiKey: string): Promise<string | null> {
-  try {
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
-    const res = await fetch(url, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ contents: [{ parts: [{ text: buildPrompt(input) }] }], generationConfig: { temperature: 0, maxOutputTokens: 4000 } }),
-      signal: AbortSignal.timeout(30000),
-    });
-    if (!res.ok) return null;
-    const data = await res.json();
-    return data?.candidates?.[0]?.content?.parts?.[0]?.text?.trim() ?? null;
-  } catch { return null; }
-}
-
-async function translateWithMistral(input: string, apiKey: string): Promise<string | null> {
-  try {
-    const res = await fetch('https://api.mistral.ai/v1/chat/completions', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${apiKey}` },
-      body: JSON.stringify({ model: 'mistral-small-latest', temperature: 0, max_tokens: 4000, messages: [{ role: 'user', content: buildPrompt(input) }] }),
-      signal: AbortSignal.timeout(30000),
-    });
-    if (!res.ok) return null;
-    const data = await res.json();
-    return data?.choices?.[0]?.message?.content?.trim() ?? null;
-  } catch { return null; }
-}
-
 async function translateRecalls(recalls: RecallFields[]): Promise<RecallFields[]> {
   if (recalls.length === 0) return recalls;
+  const apiKey = process.env.ANTHROPIC_API_KEY;
+  if (!apiKey) return recalls;
+
   const input = JSON.stringify(recalls.map(r => ({
     component: r.component, summary: r.summary, consequence: r.consequence, remedy: r.remedy,
   })));
+  const prompt = 'Translate these car recall entries from English to Hebrew. Keep automotive technical terms accurate. Return ONLY a JSON array with the same structure. No markdown, no explanation.\n\n' + input;
 
-  const groqKey   = process.env.GROQ_API_KEY;
-  const geminiKey = process.env.GEMINI_API_KEY;
-  const mistralKey= process.env.MISTRAL_API_KEY;
-
-  const raw = await translateWithCloudflareAI(input)
-           ?? (groqKey    ? await translateWithGroq(input, groqKey)       : null)
-           ?? (geminiKey  ? await translateWithGemini(input, geminiKey)   : null)
-           ?? (mistralKey ? await translateWithMistral(input, mistralKey) : null);
-
-  if (!raw) return recalls;
-  return parseTranslationResponse(raw, recalls);
+  try {
+    const client = new Anthropic({ apiKey });
+    const msg = await client.messages.create({
+      model: 'claude-haiku-4-5-20251001',
+      max_tokens: 4000,
+      messages: [{ role: 'user', content: prompt }],
+    });
+    const block = msg.content[0];
+    const raw = block.type === 'text' ? block.text.trim() : null;
+    if (!raw) return recalls;
+    return parseTranslationResponse(raw, recalls);
+  } catch { return recalls; }
 }
 
 // ── Main handler ──────────────────────────────────────────────────────────────
@@ -285,12 +219,10 @@ export async function GET(req: NextRequest) {
       });
     }
 
-    // 3. Hebrew locale — identify which recalls need translation
+    // 3. Hebrew locale — translate only truly uncached recalls (not in DB at all)
     const toTranslate = unique.filter(r => {
       const id = r.NHTSACampaignNumber ?? '';
-      const cached = id ? cacheMap.get(id) : null;
-      // Re-translate if component_he is missing (even if summary_he has Hebrew)
-      return id && !hasHebrew(cached?.component_he);
+      return id && !cacheMap.has(id);
     });
 
     // 4. Translate new ones in chunks of 6 and save to DB (with English fields too)
@@ -327,12 +259,10 @@ export async function GET(req: NextRequest) {
             manufacturer:  r.Manufacturer ?? '',
             recall_year:   r.ModelYear ? parseInt(r.ModelYear) : extractYear(r.ReportReceivedDate ?? ''),
           };
-          // Only cache if translation actually produced Hebrew
-          const translationHasHebrew = /[\u0590-\u05FF]/.test(t.component + t.summary);
-          if (translationHasHebrew) {
-            rows.push(row);
-            cacheMap.set(row.id, row);
-          }
+          // Always cache — even if translation failed (stores English as fallback)
+          // This prevents retrying failed translations on every request
+          rows.push(row);
+          cacheMap.set(row.id, row);
         }
       }
 

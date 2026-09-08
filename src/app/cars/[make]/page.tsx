@@ -8,11 +8,7 @@ import { translations } from '@/lib/translations';
 
 interface Props { params: Promise<{ make: string }> }
 
-export const dynamic = 'force-dynamic';
-
-export async function generateStaticParams() {
-  return []; // Render on demand — DB not available at build time
-}
+export const revalidate = 3600; // cache 1 hour
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { make: makeSlug } = await params;
