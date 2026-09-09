@@ -1,8 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getLatestNews } from '@/lib/carNews';
 
-export const runtime = 'edge';
-
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
   const limit  = Math.min(parseInt(searchParams.get('limit')  ?? '20'), 50);
