@@ -2,9 +2,9 @@
 // Updates leading_image_url on car_models to the most recent available image.
 // Usage: node scripts/update-leading-images.mjs
 
-const ACCOUNT_ID = 'da4220321e156152ca7f02ca93059557';
-const DB_ID = '090762ad-b029-4883-b827-9376cdee1ed2';
-const API_TOKEN = 'cfut_k8gH6SsELikWi1LOuZOVuZM4fPz29z8XdqA2NUKU18d3ebe1';
+const ACCOUNT_ID = process.env.CLOUDFLARE_ACCOUNT_ID || 'da4220321e156152ca7f02ca93059557';
+const DB_ID = process.env.D1_DATABASE_ID || '090762ad-b029-4883-b827-9376cdee1ed2';
+const API_TOKEN = process.env.CLOUDFLARE_API_TOKEN;
 const RECENT_THRESHOLD = new Date().getFullYear() - 3;
 
 async function d1(sql, params = []) {
