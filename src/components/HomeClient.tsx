@@ -622,6 +622,9 @@ export default function HomeClient({ popularMakes, allMakes, topRanked, recentRe
               </div>
             </div>
 
+            {/* Car News */}
+            <NewsWidget isHe={isHe} />
+
             {/* Latest Recalls */}
             <RecallsWidget isHe={isHe} />
 
@@ -693,6 +696,45 @@ function VideosFeed({ locale, isHe }: { locale: string; isHe: boolean }) {
   return (
     <div className="videos-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 10 }}>
       {videos.map((v, i) => <VideoCard key={i} v={v} />)}
+    </div>
+  );
+}
+
+/* ── News widget ── */
+interface NewsItem { id: string; title_he: string | null; title_en: string | null; image_url: string | null; published_at: string | null; original_url: string; source: string; }
+function NewsWidget({ isHe }: { isHe: boolean }) {
+  const [news, setNews] = useState<NewsItem[] | null>(null);
+  useEffect(() => {
+    fetch('/api/car-news?limit=4').then(r => r.json()).then((d: { news?: NewsItem[] }) => setNews(d.news ?? [])).catch(() => setNews([]));
+  }, []);
+  if (!news || news.length === 0) return null;
+  return (
+    <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 'var(--r)', overflow: 'hidden', boxShadow: 'var(--shadow)' }}>
+      <div style={{ padding: '12px 16px', borderBottom: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <span style={{ fontSize: '0.72rem', fontWeight: 800, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--text-muted)' }}>
+          {isHe ? 'חדשות רכב' : 'Car News'}
+        </span>
+        <Link href="/news" style={{ fontSize: '0.72rem', fontWeight: 700, color: 'var(--accent)', textDecoration: 'none' }}>
+          {isHe ? 'כל החדשות' : 'All news'}
+        </Link>
+      </div>
+      <div>
+        {news.map((item, i) => (
+          <a key={item.id} href={item.original_url} target="_blank" rel="noopener noreferrer"
+            style={{ display: 'flex', gap: 10, padding: '10px 16px', borderBottom: i < news.length - 1 ? '1px solid var(--border)' : 'none', alignItems: 'flex-start', textDecoration: 'none', color: 'inherit' }}
+          >
+            {item.image_url && (
+              /* eslint-disable-next-line @next/next/no-img-element */
+              <img src={item.image_url} alt="" style={{ width: 52, height: 40, objectFit: 'cover', borderRadius: 5, flexShrink: 0 }} loading="lazy" />
+            )}
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ fontSize: '0.78rem', fontWeight: 700, color: 'var(--text)', lineHeight: 1.35, overflow: 'hidden', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' }}>
+                {isHe ? (item.title_he ?? item.title_en) : (item.title_en ?? item.title_he)}
+              </div>
+            </div>
+          </a>
+        ))}
+      </div>
     </div>
   );
 }

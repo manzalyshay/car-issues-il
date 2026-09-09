@@ -105,6 +105,8 @@ export default function Header() {
     { href: '/repairs',           label: t.nav.repairs },
     { href: '/tco',               label: t.nav.tco },
     ...(locale === 'he' ? [{ href: '/vehicle-lookup', label: t.nav.vehicleLookup }] : []),
+    { href: '/news',   label: t.nav.news },
+    { href: '/sales',  label: t.nav.sales },
   ];
 
   const logoText = (

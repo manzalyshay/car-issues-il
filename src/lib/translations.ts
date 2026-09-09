@@ -10,6 +10,8 @@ export const translations = {
       repairs: 'עלויות תיקון',
       tco: 'עלות החזקה',
       vehicleLookup: 'בדיקת רכב',
+      news: 'חדשות',
+      sales: 'מבצעים',
       admin: 'ניהול',
       login: 'התחברות',
       loginRegister: 'התחברות / הרשמה',
@@ -525,6 +527,8 @@ export const translations = {
       repairs: 'Repair Costs',
       tco: 'Ownership Cost',
       vehicleLookup: 'Vehicle Check',
+      news: 'News',
+      sales: 'Deals',
       admin: 'Admin',
       login: 'Sign In',
       loginRegister: 'Sign In / Register',
@@ -1039,7 +1043,7 @@ export const translations = {
 
 // Structural type — works for both locales
 export type Translations = {
-  nav: { allMakes: string; popularModels: string; compare: string; rankings: string; repairs: string; tco: string; vehicleLookup: string; admin: string; login: string; loginRegister: string; logout: string; search: string };
+  nav: { allMakes: string; popularModels: string; compare: string; rankings: string; repairs: string; tco: string; vehicleLookup: string; news: string; sales: string; admin: string; login: string; loginRegister: string; logout: string; search: string };
   hero: { badge: string; headline1: string; headline2: string; sub: string; makes: string; models: string; aiPowered: string };
   home: { popularMakes: string; popularSub: string; allMakes: string; models: string; topRanked: string; allRankings: string; recentReviews: string; howTitle: string; steps: readonly { icon: string; title: string; desc: string }[] };
   footer: { tagline: string; about: string; quickNav: string; links: readonly { href: string; label: string }[]; disclaimer: string; disclaimerText: string; copyright: string; builtWith: string; legal: string };
