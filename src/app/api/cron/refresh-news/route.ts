@@ -1,7 +1,7 @@
 /**
  * GET /api/cron/refresh-news
  * Fetches global car news, AI-rewrites in Hebrew, saves to D1.
- * Protected by CRON_SECRET. Called by Cloudflare Cron Trigger (every 6h) or GitHub Actions.
+ * Protected by CRON_SECRET. Called by Cloudflare Cron Trigger (daily at 06:00 UTC).
  */
 import { NextRequest, NextResponse } from 'next/server';
 import { refreshCarNews } from '@/lib/carNews';
@@ -13,7 +13,7 @@ export async function GET(req: NextRequest) {
   }
 
   try {
-    const newArticles = await refreshCarNews(15);
+    const newArticles = await refreshCarNews(5);
     return NextResponse.json({ ok: true, newArticles });
   } catch (err) {
     console.error('[refresh-news]', err);

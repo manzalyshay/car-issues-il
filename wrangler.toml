@@ -5,7 +5,7 @@ compatibility_flags = ["nodejs_compat"]
 
 # Cloudflare Cron Triggers — dispatched in worker-entry.js's scheduled() handler
 [triggers]
-crons = ["0 3 * * *", "0 */6 * * *"]
+crons = ["0 3 * * *", "0 6 * * *"]
 
 # Static assets served via ASSETS binding (Next.js static + public/ files)
 [assets]
