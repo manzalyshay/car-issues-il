@@ -7,7 +7,8 @@ export { DOQueueHandler, DOShardedTagCache, BucketCachePurge };
 
 // Maps the exact cron string (from wrangler.toml [triggers]) to the internal route it runs.
 const CRON_ROUTES = {
-  "0 3 * * *": "/api/cron/refresh-recalls",
+  "0 3 * * *":  "/api/cron/refresh-recalls",
+  "0 */6 * * *": "/api/cron/refresh-news",
 };
 
 export default {
