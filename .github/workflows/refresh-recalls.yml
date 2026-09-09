@@ -12,8 +12,11 @@ jobs:
 
     steps:
       - name: Trigger refresh-recalls cron endpoint
+        env:
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
         run: |
           response=$(curl -s -o /dev/null -w "%{http_code}" \
+            -H "Authorization: Bearer $CRON_SECRET" \
             "https://carissues.co.il/api/cron/refresh-recalls")
           echo "HTTP status: $response"
           if [ "$response" != "200" ]; then
