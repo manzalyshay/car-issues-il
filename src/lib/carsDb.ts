@@ -11,7 +11,7 @@ export { getCategoryLabel } from '@/data/cars';
 
 // In-memory cache per isolate
 const CACHE_TTL_MS = 60 * 60 * 1000; // 1 hour
-const EDGE_CACHE_URL = 'https://cache.internal/allMakes-v5';
+const EDGE_CACHE_URL = 'https://cache.internal/allMakes-v6';
 const g = globalThis as typeof globalThis & {
   _carsCache?: { data: CarMake[]; ts: number };
 };
