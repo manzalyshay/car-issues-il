@@ -221,14 +221,30 @@ export default function Header() {
             )}
           </div>
 
-          {/* Mobile hamburger */}
-          <button
-            className="mobile-menu-btn"
-            onClick={() => setMobileOpen(!mobileOpen)}
-            style={{ display: 'none', background: 'transparent', border: '1.5px solid var(--border)', borderRadius: 8, cursor: 'pointer', padding: '7px 10px', color: 'var(--text-muted)' }}
-          >
-            {mobileOpen ? '✕' : '☰'}
-          </button>
+          {/* Mobile: login/avatar + hamburger */}
+          <div className="mobile-menu-btn" style={{ display: 'none', alignItems: 'center', gap: 8 }}>
+            {!loading && !user && (
+              <button
+                onClick={() => setAuthOpen(true)}
+                style={{ height: 34, padding: '0 14px', fontSize: '0.8rem', fontWeight: 700, background: 'var(--accent)', color: '#fff', border: 'none', borderRadius: 9, cursor: 'pointer', whiteSpace: 'nowrap' }}
+              >
+                {locale === 'he' ? 'התחברות' : 'Login'}
+              </button>
+            )}
+            {!loading && user && (
+              <Link href="/profile" style={{ display: 'flex', alignItems: 'center', textDecoration: 'none' }}>
+                <div style={{ width: 32, height: 32, borderRadius: '50%', background: 'var(--accent)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.8rem', fontWeight: 800, color: '#fff' }}>
+                  {displayName(user).charAt(0).toUpperCase()}
+                </div>
+              </Link>
+            )}
+            <button
+              onClick={() => setMobileOpen(!mobileOpen)}
+              style={{ background: 'transparent', border: '1.5px solid var(--border)', borderRadius: 8, cursor: 'pointer', padding: '7px 10px', color: 'var(--text-muted)' }}
+            >
+              {mobileOpen ? '✕' : '☰'}
+            </button>
+          </div>
         </div>
 
         {/* Category bar (home + /cars only) */}
@@ -273,7 +289,7 @@ export default function Header() {
           @media (max-width: 768px) {
             .desktop-nav  { display: none !important; }
             .desktop-auth { display: none !important; }
-            .mobile-menu-btn { display: block !important; }
+            .mobile-menu-btn { display: flex !important; }
           }
         `}</style>
       </header>
