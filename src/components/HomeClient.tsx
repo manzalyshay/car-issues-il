@@ -427,7 +427,7 @@ export default function HomeClient({ allMakes, topRanked, recentReviews, tickerI
                       <div>
                         <h3 style={{ fontFamily: 'Heebo,sans-serif', fontWeight: 700, fontSize: 17, margin: 0 }}>{cName}{r.year ? ` ${r.year}` : ''}</h3>
                         <div style={{ fontSize: 13, color: '#a06a00', marginTop: 5 }}>
-                          {'★'.repeat(Math.round(r.rating / 2))}{'☆'.repeat(5 - Math.round(r.rating / 2))}
+                          {'★'.repeat(Math.round(r.rating))}{'☆'.repeat(5 - Math.round(r.rating))}
                           <span style={{ color: '#5b6a86' }}> · {ago}</span>
                         </div>
                       </div>
