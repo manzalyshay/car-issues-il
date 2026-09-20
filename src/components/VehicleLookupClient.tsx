@@ -520,7 +520,7 @@ export default function VehicleLookupClient({ initialPlate, initialVehicle, init
                         </span>
                         {v.ownershipAnalysis.wasCommercial && (
                           <span style={{ padding: '3px 10px', borderRadius: 20, background: 'rgba(234,179,8,0.1)', border: '1px solid rgba(234,179,8,0.3)', fontSize: '0.75rem', fontWeight: 600, color: '#92400e' }}>
-                            ! {L.wasCommercial}
+                            {L.wasCommercial} !
                           </span>
                         )}
                       </div>
