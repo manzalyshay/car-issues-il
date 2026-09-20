@@ -1185,7 +1185,7 @@ async function saveKnowledgeReview(
   } catch { /* non-critical */ }
 }
 
-// ── Israeli knowledge-based summary (guaranteed, AI-generated with Israeli framing) ──
+// ── Local knowledge-based summary (neutral framing — no country/location mentions in output) ──
 async function generateIsraeliKnowledgeSummary(
   makeNameHe: string,
   modelNameHe: string,
@@ -1195,16 +1195,17 @@ async function generateIsraeliKnowledgeSummary(
 ): Promise<SummarizeOutput | null> {
   const yearNote = year ? ` ${year}` : '';
   const yearInstr = year
-    ? `\nהתמקד על ${year} ספציפית — תקלות ידועות, מה שבעלים ישראלים מציינים לאותה שנה.`
+    ? `\nהתמקד על ${year} ספציפית — תקלות ידועות, מה שבעלים מציינים לאותה שנה.`
     : '';
-  const prompt = `אתה עוזר לאתר ביקורות רכב ישראלי. כתוב סיכום מנקודת מבט של נהגים ישראלים בפועל.
+  const prompt = `אתה עוזר לאתר ביקורות רכב. כתוב סיכום מנקודת מבט של בעלי רכב בפועל.
 
-כתוב 2-3 משפטים בעברית שמשקפים מה בעלי ${makeNameHe} ${modelNameHe}${yearNote} (${makeNameEn} ${modelNameEn}) בישראל בדרך כלל מדווחים — בהתחשב בתנאי הנהיגה, האקלים, ורמת השירות בישראל.${yearInstr}
+כתוב 2-3 משפטים בעברית שמשקפים מה בעלי ${makeNameHe} ${modelNameHe}${yearNote} (${makeNameEn} ${modelNameEn}) בדרך כלל מדווחים — חוויית נהיגה יומיומית, אמינות, תחזוקה, שירות.${yearInstr}
 
 חוקים:
-- כתוב בגוף שלישי: "בעלי הרכב בישראל מדווחים ש...", "נהגים ישראלים מציינים...", "תלונה נפוצה בישראל היא..."
-- התמקד בחוויה ישראלית: תנאי נהיגה עירוניים, חום, שירות, אמינות
-- אל תכתוב תיאור כללי של הרכב — כתוב מה הנהגים אומרים
+- כתוב בגוף שלישי: "בעלי הרכב מדווחים ש...", "נהגים מציינים...", "תלונה נפוצה היא..."
+- אסור לציין מדינה, עיר, מקום, או שוק ספציפי — הסיכום כללי לבעלי הרכב
+- התמקד בחוויית נהיגה יומיומית ועירונית, תקלות שחוזרות, עלויות תחזוקה, מה אוהבים ומה לא
+- אל תכתוב תיאור כללי של הרכב (מנוע, גודל, עיצוב) — כתוב מה הנהגים אומרים
 - אל תשתמש במילה "סלון" — השתמש בסדאן/SUV/האצ'בק
 - אסור לציין גדלי מנוע או נתונים טכניים ספציפיים — שמור על רמה כללית
 - ציון: 9-10 ממליצים בחום, 7-8 שביעות רצון כללית, 5-6 מעורב, 3-4 תלונות רבות

@@ -19,7 +19,7 @@ import RepairCostsSection from '@/components/RepairCostsSection';
 import { getImagesForCar } from '@/lib/carImages';
 import SellerPriceChart from '@/components/SellerPriceChart';
 import RecallsBarChart from '@/components/RecallsBarChart';
-import GalleryViewer from '@/components/GalleryViewer';
+import Car3DViewer from '@/components/Car3DViewer';
 import VerdictCard from '@/components/VerdictCard';
 import FollowButton from '@/components/FollowButton';
 
@@ -128,81 +128,110 @@ export default async function ModelPage({ params }: Props) {
   const makeName = isEn ? make.nameEn : make.nameHe;
   const modelName = isEn ? model.nameEn : model.nameHe;
 
+  const yearRange = model.years.length > 1
+    ? `${model.years[model.years.length - 1]}–${model.years[0]}`
+    : `${model.years[0]}`;
+
   return (
     <div style={{ background: 'var(--bg)', minHeight: '100vh' }}>
 
-      {/* ── MODEL HERO — light layout matching handoff ─── */}
-      <div className="wrap" style={{ paddingBottom: 32 }}>
+      {/* ── MODEL HERO — dark navy ─── */}
+      <section style={{
+        position: 'relative',
+        background: 'linear-gradient(180deg,#0d1b2f,#12294a)',
+        color: '#fff',
+        padding: '8px clamp(16px,3vw,32px) 14px',
+        overflow: 'hidden',
+      }}>
+        <div aria-hidden style={{ position: 'absolute', inset: 0, opacity: .5, background: 'radial-gradient(60% 70% at 82% 0%, rgba(23,64,143,.9), transparent 70%)', pointerEvents: 'none' }} />
+        <div style={{ position: 'relative', maxWidth: 1280, margin: '0 auto' }}>
 
-        {/* Breadcrumb */}
-        <nav className="model-breadcrumb">
-          <Link href="/">{translations[locale].carsPage.home}</Link>
-          <span>›</span>
-          <Link href="/cars">{translations[locale].carsPage.makes}</Link>
-          <span>›</span>
-          <Link href={`/cars/${make.slug}`}>{makeName}</Link>
-          <span>›</span>
-          <span style={{ color: 'var(--text)', fontWeight: 600 }}>{modelName}</span>
-        </nav>
+          {/* Breadcrumb inside hero */}
+          <nav style={{ display: 'flex', alignItems: 'center', gap: 7, fontSize: 12, color: '#9db1d4', paddingBottom: 8, flexWrap: 'wrap', direction: isEn ? 'ltr' : 'rtl' }}>
+            <Link href="/" style={{ color: '#9db1d4', textDecoration: 'none' }}>{translations[locale].carsPage.home}</Link>
+            <span>›</span>
+            <Link href="/cars" style={{ color: '#9db1d4', textDecoration: 'none' }}>{translations[locale].carsPage.makes}</Link>
+            <span>›</span>
+            <Link href={`/cars/${make.slug}`} style={{ color: '#9db1d4', textDecoration: 'none' }}>{makeName}</Link>
+            <span>›</span>
+            <span style={{ color: '#fff', fontWeight: 600 }}>{modelName}</span>
+          </nav>
 
-        {/* Gallery + info grid */}
-        <div className="model-hero">
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(240px,1fr))', gap: 'clamp(14px,2vw,26px)', alignItems: 'center' }}>
 
-          {/* Left: gallery */}
-          <div style={{ minWidth: 0 }}>
-            <GalleryViewer
-              sketchfabModel={sketchfabModel}
-              carImages={carImages}
-              makeSlug={makeSlug}
-              modelSlug={modelSlug}
-              makeNameEn={make.nameEn}
-              modelNameEn={model.nameEn}
-            />
-          </div>
-
-          {/* Right: info column — flat, no card border */}
-          <div className="model-summary">
-            <span className="yr">
-              {model.years.length > 1 ? `${model.years[model.years.length - 1]}–${model.years[0]}` : `${model.years[0]}`}
-              {' · '}{getCategoryLabel(model.category, locale)}
-              {' · '}{translations[locale].carsPage.countryNames[make.country] ?? make.country}
-            </span>
-            <h1>{isEn ? `${make.nameEn} ${model.nameEn}` : `${make.nameHe} ${model.nameHe}`}</h1>
-            {!isEn && <p style={{ margin: 0, fontSize: 14, color: '#66788c' }}>{make.nameEn} {model.nameEn}</p>}
-
-            {/* Owner rating inline */}
-            {avgRating !== null && (
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, color: '#66788c' }}>
-                <StarRating rating={avgRating} size={13} />
-                <span>{avgRating.toFixed(1)}/5 · {allReviews.length} {isEn ? 'owner reviews' : 'ביקורות בעלים'}</span>
+            {/* Info column */}
+            <div>
+              <div style={{ fontSize: 12.5, color: '#9db1d4', fontWeight: 600 }}>
+                {yearRange} · {getCategoryLabel(model.category, locale)} · {translations[locale].carsPage.countryNames[make.country] ?? make.country}
               </div>
-            )}
+              <h1 style={{ fontFamily: 'Heebo,sans-serif', fontWeight: 900, fontSize: 'clamp(21px,2.2vw,30px)', lineHeight: 1.1, letterSpacing: '-.04em', margin: '4px 0 2px', color: '#fff' }}>
+                {isEn ? `${make.nameEn} ${model.nameEn}` : `${make.nameHe} ${model.nameHe}`}
+              </h1>
+              {!isEn && <div style={{ fontSize: 13.5, color: '#9db1d4' }}>{make.nameEn} {model.nameEn}</div>}
 
-            {/* Action buttons — matching design exact style */}
-            <div className="model-hero-actions">
-              <FollowButton makeSlug={make.slug} modelSlug={model.slug} isEn={isEn} />
-              <Link
-                href={`/cars/compare?car1=${make.slug}/${model.slug}`}
-                style={{
-                  border: '1px solid #dde3ea', background: '#fff', color: '#1c2733',
-                  borderRadius: 9, padding: '10px 16px', fontSize: 13.5, fontWeight: 600,
-                  textDecoration: 'none', cursor: 'pointer', display: 'inline-flex',
-                  alignItems: 'center', gap: 6, whiteSpace: 'nowrap',
-                }}
-              >
-                ⚖️ {isEn ? 'Compare' : 'השוואה'}
-              </Link>
-              <SharePopup title={`${makeName} ${modelName} — ${cp.shareTitle}`} url={`${getBaseUrl(locale)}/cars/${make.slug}/${model.slug}`} />
+              <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginTop: 9, flexWrap: 'wrap' }}>
+                {avgRating !== null && (
+                  <span style={{ display: 'flex', alignItems: 'baseline', gap: 3 }}>
+                    <span style={{ fontFamily: 'Heebo,sans-serif', fontWeight: 900, fontSize: 27, letterSpacing: '-.05em', lineHeight: 1, color: '#fff' }}>
+                      {(avgRating * 2).toFixed(1)}
+                    </span>
+                    <span style={{ fontSize: 12.5, color: '#9db1d4', fontWeight: 700 }}>/10</span>
+                  </span>
+                )}
+                {avgRating !== null && avgRating >= 4 && (
+                  <span style={{ fontSize: 12, fontWeight: 700, color: '#0d1b2f', background: '#3ddc84', padding: '4px 11px', borderRadius: 999 }}>
+                    {isEn ? 'Recommended' : 'מומלץ'}
+                  </span>
+                )}
+                <span style={{ fontSize: 12.5, color: '#9db1d4' }}>
+                  {allReviews.length} {isEn ? 'owner reviews' : 'ביקורות בעלים'}
+                </span>
+              </div>
+
+              <div style={{ display: 'flex', gap: 8, marginTop: 11, flexWrap: 'wrap' }}>
+                <FollowButton makeSlug={make.slug} modelSlug={model.slug} isEn={isEn} dark />
+                <Link
+                  href={`/cars/compare?car1=${make.slug}/${model.slug}`}
+                  style={{ border: '1px solid rgba(255,255,255,.28)', background: 'rgba(255,255,255,.08)', color: '#fff', fontWeight: 700, fontSize: 13.5, padding: '8px 14px', borderRadius: 10, textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: 6, whiteSpace: 'nowrap' }}
+                >
+                  {isEn ? 'Compare' : 'השוואה'}
+                </Link>
+                <SharePopup title={`${makeName} ${modelName} — ${cp.shareTitle}`} url={`${getBaseUrl(locale)}/cars/${make.slug}/${model.slug}`} dark />
+              </div>
             </div>
 
-            {/* Badges row */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-              <RecallsBadge makeEn={make.nameEn} modelEn={model.nameEn} years={model.years} />
+            {/* Hero media — 3D viewer if available, else photo */}
+            <div style={{ display: 'grid', gap: 6, justifySelf: 'end', width: '100%', maxWidth: 380 }}>
+              <div style={{ position: 'relative', aspectRatio: '16/9', borderRadius: 14, overflow: 'hidden', background: '#1a3055', boxShadow: '0 20px 46px -28px rgba(0,0,0,.9)' }}>
+                {sketchfabModel ? (
+                  <Car3DViewer uid={sketchfabModel.uid} modelName={sketchfabModel.name} author={sketchfabModel.author} makeSlug={make.slug} modelSlug={model.slug} carImageUrl={carImages[0]?.url} />
+                ) : carImages[0]?.url ? (
+                  /* eslint-disable-next-line @next/next/no-img-element */
+                  <img src={carImages[0].url} alt={`${make.nameEn} ${model.nameEn}`} style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
+                ) : (
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%' }}>
+                    <span style={{ fontSize: 12, color: '#7ba0e8', letterSpacing: '.1em', fontWeight: 600 }}>
+                      {isEn ? `${make.nameEn} ${model.nameEn}` : `${make.nameHe} ${model.nameHe}`}
+                    </span>
+                  </div>
+                )}
+              </div>
+              {!sketchfabModel && carImages.length > 1 && (
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5,1fr)', gap: 5 }}>
+                  {carImages.slice(0, 5).map((img, i) => (
+                    /* eslint-disable-next-line @next/next/no-img-element */
+                    <img key={i} src={img.url} alt="" style={{ aspectRatio: '4/3', width: '100%', borderRadius: 8, objectFit: 'cover', display: 'block', opacity: i === 0 ? 1 : 0.72, outline: i === 0 ? '2px solid #7ba0e8' : 'none' }} />
+                  ))}
+                  {[...Array(Math.max(0, 5 - carImages.slice(0,5).length))].map((_, i) => (
+                    <span key={`ph-${i}`} style={{ aspectRatio: '4/3', borderRadius: 8, background: 'linear-gradient(140deg,#24406b,#1a3055)', display: 'block', opacity: 0.5 }} />
+                  ))}
+                </div>
+              )}
             </div>
-
           </div>
         </div>
-      </div>
+      </section>
+
 
       {/* ── SIDEBAR + CONTENT ────────── */}
       <CarSidebarLayout
@@ -219,6 +248,7 @@ export default async function ModelPage({ params }: Props) {
         hasSpecs={trimSpecs.length > 0}
         hasImages={carImages.length > 0 || sketchfabModel !== null}
         hasRepairCosts={modelRepairCosts.length > 0}
+        sketchfabModel={sketchfabModel}
       >
         {/* ── Owner reviews — write review at top ── */}
         <div id="reviews" style={{ paddingTop: 0 }}>
@@ -236,6 +266,7 @@ export default async function ModelPage({ params }: Props) {
           <VerdictCard
             expertReview={expertReview}
             repairCosts={modelRepairCosts}
+            trimSpecs={trimSpecs}
             makeSlug={makeSlug}
             modelSlug={modelSlug}
             makeNameHe={make.nameHe}

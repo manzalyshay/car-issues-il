@@ -1,10 +1,12 @@
 import type { ExpertReview } from '@/lib/expertReviews';
 import type { ModelRepairCost } from '@/lib/repairCostsDb';
+import type { TrimSpecWithYear } from '@/lib/trimSpecsDb';
 import VerdictCardClient from './VerdictCardClient';
 
 interface Props {
   expertReview: ExpertReview | null;
   repairCosts: ModelRepairCost[];
+  trimSpecs: TrimSpecWithYear[];
   makeSlug: string;
   modelSlug: string;
   makeNameHe: string;
@@ -34,7 +36,7 @@ function scoreColor(score: number) {
 }
 
 export default function VerdictCard({
-  expertReview, repairCosts, makeSlug, modelSlug,
+  expertReview, repairCosts, trimSpecs, makeSlug, modelSlug,
   makeNameHe, modelNameHe, makeNameEn, modelNameEn,
   isEn, avgRating, reviewCount,
 }: Props) {
@@ -137,6 +139,36 @@ export default function VerdictCard({
 
   const leadSummary = localSummary ?? globalSummary ?? null;
 
+  // ── Performance stats from trims ──
+  const hpVals = trimSpecs.map(t => t.engineHp).filter((v): v is number => v != null);
+  const accVals = trimSpecs.map(t => t.acceleration).filter((v): v is number => v != null);
+  const topVals = trimSpecs.map(t => t.topSpeedKmh).filter((v): v is number => v != null);
+  const fcVals = trimSpecs.map(t => t.fuelConsumption).filter((v): v is number => v != null && v > 0);
+  const priceVals = trimSpecs.map(t => t.priceIls).filter((v): v is number => v != null && v > 0);
+
+  const perfStats: { labelHe: string; labelEn: string; value: string; unit: string }[] = [];
+  if (hpVals.length) {
+    const mn = Math.min(...hpVals), mx = Math.max(...hpVals);
+    perfStats.push({ labelHe: 'כוח סוס', labelEn: 'Horsepower', value: mn === mx ? `${mn}` : `${mn}–${mx}`, unit: 'HP' });
+  }
+  if (accVals.length) {
+    const best = Math.min(...accVals);
+    perfStats.push({ labelHe: '0–100', labelEn: '0–100 km/h', value: `${best.toFixed(1)}`, unit: 'שנ׳' });
+  }
+  if (topVals.length) {
+    const best = Math.max(...topVals);
+    perfStats.push({ labelHe: 'מהירות מקס׳', labelEn: 'Top Speed', value: `${best}`, unit: 'קמ"ש' });
+  }
+  if (fcVals.length) {
+    const avg = fcVals.reduce((a, b) => a + b, 0) / fcVals.length;
+    perfStats.push({ labelHe: 'צריכת דלק', labelEn: 'Fuel Avg', value: `${avg.toFixed(1)}`, unit: 'ל/100' });
+  }
+  if (priceVals.length) {
+    const mn = Math.min(...priceVals), mx = Math.max(...priceVals);
+    const fmt = (v: number) => `₪${Math.round(v / 1000)}K`;
+    perfStats.push({ labelHe: 'מחיר', labelEn: 'Price', value: mn === mx ? fmt(mn) : `${fmt(mn)}–${fmt(mx)}`, unit: '' });
+  }
+
   return (
     <section style={{
       background: '#fff', border: '1px solid #e3e8ee', borderRadius: 18,
@@ -167,7 +199,7 @@ export default function VerdictCard({
               {isEn ? 'CarIssues Intelligence' : 'CarIssues Intelligence'}
             </div>
             <div style={{ fontSize: 12, color: '#66788c' }}>
-              {isEn ? 'Israel & global owner forums · AI summarized' : 'פורומים ישראלים ועולמיים · סיכום AI'}
+              {isEn ? 'Owner reviews & expert data · AI summarized' : 'ביקורות בעלים ונתוני מומחים · סיכום AI'}
             </div>
           </div>
         </div>
@@ -240,6 +272,32 @@ export default function VerdictCard({
         </div>
       )}
 
+      {/* ── Performance strip ── */}
+      {perfStats.length > 0 && (
+        <div style={{ padding: '12px clamp(16px,3vw,28px)', borderBottom: '1px solid #eef1f5', background: '#fafbfc' }}>
+          <div style={{ fontSize: 11.5, fontWeight: 700, color: '#8595a6', letterSpacing: '.06em', textTransform: 'uppercase', marginBottom: 10 }}>
+            {isEn ? 'Performance' : 'נתוני ביצועים'}
+          </div>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+            {perfStats.map(({ labelHe, labelEn, value, unit }) => (
+              <div key={labelHe} style={{
+                display: 'flex', flexDirection: 'column', alignItems: 'center',
+                background: '#fff', border: '1px solid #e3e8ee', borderRadius: 10,
+                padding: '8px 14px', minWidth: 72,
+              }}>
+                <span style={{ fontSize: 11, color: '#8595a6', fontWeight: 600, marginBottom: 2 }}>
+                  {isEn ? labelEn : labelHe}
+                </span>
+                <span style={{ fontSize: 15, fontWeight: 800, color: '#1c2733', lineHeight: 1.1 }}>
+                  {value}
+                </span>
+                {unit && <span style={{ fontSize: 10.5, color: '#a0adb8', marginTop: 1 }}>{unit}</span>}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* ── Pros / Cons ── */}
       {(pros.length > 0 || cons.length > 0) && (
         <div style={{ padding: '8px clamp(16px,3vw,28px) 4px', borderBottom: '1px solid #eef1f5' }}>
@@ -280,7 +338,7 @@ export default function VerdictCard({
         makeSlug={makeSlug}
         modelSlug={modelSlug}
         isEn={isEn}
-        verdictText={globalSummary !== leadSummary ? globalSummary : null}
+        verdictText={null}
         makeNameHe={makeNameHe}
         modelNameHe={modelNameHe}
         makeNameEn={makeNameEn}
