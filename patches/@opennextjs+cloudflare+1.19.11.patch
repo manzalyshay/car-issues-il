@@ -1,0 +1,108 @@
+diff --git a/node_modules/@opennextjs/cloudflare/dist/cli/build/bundle-server.js b/node_modules/@opennextjs/cloudflare/dist/cli/build/bundle-server.js
+index be3f893..f6aa00a 100644
+--- a/node_modules/@opennextjs/cloudflare/dist/cli/build/bundle-server.js
++++ b/node_modules/@opennextjs/cloudflare/dist/cli/build/bundle-server.js
+@@ -1,11 +1,13 @@
+ import fs from "node:fs";
++import os from "node:os";
+ import { readFile, writeFile } from "node:fs/promises";
++import { execSync } from "node:child_process";
+ import path from "node:path";
+ import { fileURLToPath } from "node:url";
+ import { getPackagePath } from "@opennextjs/aws/build/helper.js";
+ import * as buildHelper from "@opennextjs/aws/build/helper.js";
+ import { ContentUpdater } from "@opennextjs/aws/plugins/content-updater.js";
+-import { build } from "esbuild";
++import { build, buildSync } from "esbuild";
+ import { getOpenNextConfig } from "../../api/config.js";
+ import { normalizePath } from "../utils/normalize-path.js";
+ import { patchVercelOgLibrary } from "./patches/ast/patch-vercel-og-library.js";
+@@ -58,6 +60,26 @@ export async function bundleServer(buildOpts, projectOpts) {
+     const packagePath = getPackagePath(buildOpts);
+     const openNextServer = path.join(outputPath, packagePath, `index.mjs`);
+     const openNextServerBundle = path.join(outputPath, packagePath, `handler.mjs`);
++    // Compile fresh open-next.config to a temp dir (avoids broken perms on fakeowner filesystem)
++    const openNextConfigPath = path.join(outputPath, packagePath, `open-next.config.mjs`);
++    let freshConfigPath = null;
++    try {
++      const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), "open-next-cfg-"));
++      const tempOut = path.join(tempDir, "open-next.config.mjs");
++      const srcTs = path.join(appPath, "open-next.config.ts");
++      const srcMjs = path.join(appPath, "open-next.config.mjs");
++      if (fs.existsSync(srcTs)) {
++        buildSync({ entryPoints: [srcTs], outfile: tempOut, bundle: true, format: "esm", target: ["node18"], platform: "node" });
++      } else if (fs.existsSync(srcMjs)) {
++        buildSync({ entryPoints: [srcMjs], outfile: tempOut, bundle: true, format: "esm", target: ["node18"], platform: "node" });
++      } else {
++        fs.writeFileSync(tempOut, "export default { default: {} };");
++      }
++      freshConfigPath = tempOut;
++      console.log(`✓ Compiled fresh open-next.config.mjs to ${tempOut}`);
++    } catch (e) {
++      console.warn(`Could not compile fresh open-next.config.mjs: ${e.message}`);
++    }
+     const updater = new ContentUpdater(buildOpts);
+     const result = await build({
+         entryPoints: [openNextServer],
+@@ -82,6 +104,13 @@ export async function bundleServer(buildOpts, projectOpts) {
+         // - ESBuild `node` platform: https://esbuild.github.io/api/#platform
+         conditions: getOpenNextConfig(buildOpts).cloudflare?.useWorkerdCondition === false ? [] : ["workerd"],
+         plugins: [
++            // Redirect broken open-next.config.mjs (fakeowner filesystem perms) to fresh compiled version
++            ...(freshConfigPath ? [{
++              name: "fix-open-next-config",
++              setup(build) {
++                build.onResolve({ filter: /open-next\.config\.mjs$/ }, (args) => ({ path: freshConfigPath }));
++              }
++            }] : []),
+             shimRequireHook(buildOpts),
+             shimReact(buildOpts),
+             inlineDynamicRequires(updater, buildOpts),
+@@ -157,6 +186,25 @@ export async function bundleServer(buildOpts, projectOpts) {
+     if (isMonorepo) {
+         fs.writeFileSync(path.join(outputPath, "handler.mjs"), `export { handler } from "./${normalizePath(packagePath)}/handler.mjs";`);
+     }
++    // Fix middleware/handler.mjs: replace broken open-next.config.mjs import with a readable copy
++    try {
++        const middlewareDir = path.join(outputDir, "middleware");
++        const middlewareHandler = path.join(middlewareDir, "handler.mjs");
++        const edgeConfigSrc = path.join(outputDir, ".build", "open-next.config.edge.mjs");
++        if (fs.existsSync(middlewareHandler) && fs.existsSync(edgeConfigSrc)) {
++            const edgeContent = fs.readFileSync(edgeConfigSrc, "utf-8");
++            const freshConfigDst = path.join(middlewareDir, "_open-next-config.mjs");
++            fs.writeFileSync(freshConfigDst, edgeContent, { mode: 0o644 });
++            let handlerContent = fs.readFileSync(middlewareHandler, "utf-8");
++            if (handlerContent.includes('"./open-next.config.mjs"')) {
++                handlerContent = handlerContent.replace(/"\.\/open-next\.config\.mjs"/g, '"./_open-next-config.mjs"');
++                fs.writeFileSync(middlewareHandler, handlerContent);
++                console.log(`✓ Patched middleware/handler.mjs to use fresh edge config`);
++            }
++        }
++    } catch (e) {
++        console.warn(`Could not patch middleware: ${e.message}`);
++    }
+     console.log(`\x1b[35mWorker saved in \`${path.relative(buildOpts.appPath, getOutputWorkerPath(buildOpts))}\` 🚀\n\x1b[0m`);
+ }
+ /**
+diff --git a/node_modules/@opennextjs/cloudflare/dist/cli/build/patches/ast/patch-vercel-og-library.js b/node_modules/@opennextjs/cloudflare/dist/cli/build/patches/ast/patch-vercel-og-library.js
+index da90ef5..4720ea6 100644
+--- a/node_modules/@opennextjs/cloudflare/dist/cli/build/patches/ast/patch-vercel-og-library.js
++++ b/node_modules/@opennextjs/cloudflare/dist/cli/build/patches/ast/patch-vercel-og-library.js
+@@ -45,7 +45,16 @@ export function patchVercelOgLibrary(buildOpts) {
+             writeFileSync(outputEdgePath, ast.commitEdits(edits));
+             if (matches.length > 0) {
+                 const fontFileName = matches[0].getMatch("PATH").text();
+-                renameSync(path.join(outputDir, fontFileName), path.join(outputDir, `${fontFileName}.bin`));
++                const fontDest = path.join(outputDir, fontFileName.replace(/^\.\//, ""));
++                if (!existsSync(fontDest)) {
++                    const tracedFontPath = path.join(path.dirname(traceInfoPath), tracedNodePath.replace("index.node.js", fontFileName.replace(/^\.\//, "")));
++                    if (existsSync(tracedFontPath)) {
++                        copyFileSync(tracedFontPath, fontDest);
++                    }
++                }
++                if (existsSync(fontDest)) {
++                    renameSync(fontDest, path.join(outputDir, `${fontFileName.replace(/^\.\//, "")}.bin`));
++                }
+             }
+         }
+         // Change node imports for the library to edge imports.

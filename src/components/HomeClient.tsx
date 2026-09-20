@@ -504,7 +504,7 @@ export default function HomeClient({ allMakes, topRanked, recentReviews, tickerI
                       <span style={{ width: 96, height: 70, flexShrink: 0, borderRadius: 11, background: 'linear-gradient(140deg,#e8edf6,#d5deee)', display: 'block' }} />
                     )}
                     <span>
-                      <span style={{ display: 'block', fontFamily: 'Heebo,sans-serif', fontWeight: 700, fontSize: 16, lineHeight: 1.3, color: '#0d1b2f', direction: isHe ? 'rtl' : 'ltr', overflow: 'hidden', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' } as React.CSSProperties}>
+                      <span style={{ fontFamily: 'Heebo,sans-serif', fontWeight: 700, fontSize: 16, lineHeight: 1.3, color: '#0d1b2f', direction: isHe ? 'rtl' : 'ltr', overflow: 'hidden', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' } as React.CSSProperties}>
                         {isHe ? (item.title_he ?? item.title_en) : (item.title_en ?? item.title_he)}
                       </span>
                       <span style={{ display: 'block', fontSize: 12.5, color: '#5b6a86', marginTop: 6 }}>
