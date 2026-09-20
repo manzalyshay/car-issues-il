@@ -2,6 +2,7 @@
 
 import { useState, useRef } from 'react';
 import { useAuth } from '@/lib/authContext';
+import { useLocale } from '@/lib/localeContext';
 import { supabase } from '@/lib/supabase';
 
 interface Props {
@@ -11,25 +12,23 @@ interface Props {
   viewerUrl?: string;
   makeSlug?: string;
   modelSlug?: string;
+  carImageUrl?: string;
   onHidden?: () => void;
 }
 
 
-export default function Car3DViewer({ uid, modelName, author, makeSlug, modelSlug, onHidden }: Props) {
+export default function Car3DViewer({ uid, modelName, author, makeSlug, modelSlug, carImageUrl, onHidden }: Props) {
   const { isAdmin } = useAuth();
+  const { t, dir } = useLocale();
   const iframeRef = useRef<HTMLIFrameElement>(null); // kept for potential future API use
-  const [loaded, setLoaded] = useState(() => {
-    if (typeof navigator === 'undefined') return false;
-    const mem = (navigator as { deviceMemory?: number }).deviceMemory ?? 4;
-    const cores = navigator.hardwareConcurrency ?? 4;
-    return mem >= 4 && cores >= 4;
-  });
+  const [iframeReady, setIframeReady] = useState(false);
   const [showFlagMenu, setShowFlagMenu] = useState(false);
   const [flagReason, setFlagReason] = useState('');
   const [flagging, setFlagging] = useState(false);
   const [hidden, setHidden] = useState(false);
 
   const thumbnailUrl = `https://media.sketchfab.com/models/${uid}/thumbnails/result.jpg`;
+  const previewImage = carImageUrl || thumbnailUrl;
 
   // Build embed URL with all UI suppressed
   const embedUrl = `https://sketchfab.com/models/${uid}/embed?autostart=1&preload=1&ui_infos=0&ui_watermark=0&ui_watermark_link=0&ui_hint=0&ui_stop=0&ui_inspector=0&ui_vr=0&ui_ar=0&ui_help=0&ui_settings=0&ui_annotations=0&ui_controls=0&ui_fadeout=0&dnt=1&transparent=0&camera=0`;
@@ -58,46 +57,57 @@ export default function Car3DViewer({ uid, modelName, author, makeSlug, modelSlu
 
   return (
     <div style={{ position: 'relative', width: '100%', height: '100%', minHeight: 220, overflow: 'hidden', background: '#111' }}>
-      {loaded ? (
-        <iframe
-          ref={iframeRef}
-          src={embedUrl}
-          title={`${modelName} 3D`}
-          frameBorder={0}
-          allow="autoplay; fullscreen; xr-spatial-tracking"
-          allowFullScreen
-          style={{ width: '100%', height: '100%', display: 'block' }}
-        />
-      ) : (
-        <button
-          onClick={() => setLoaded(true)}
-          style={{
-            width: '100%', height: '100%', border: 'none', cursor: 'pointer', padding: 0,
-            background: 'none', display: 'block', position: 'relative',
-          }}
-          aria-label={`טען מודל תלת-ממד של ${modelName}`}
-        >
-          {/* Thumbnail background */}
+      {/* iframe loads in background; hidden until ready */}
+      <iframe
+        ref={iframeRef}
+        src={embedUrl}
+        title={`${modelName} 3D`}
+        frameBorder={0}
+        allow="autoplay; fullscreen; xr-spatial-tracking"
+        allowFullScreen
+        onLoad={() => setIframeReady(true)}
+        style={{
+          width: '100%', height: '100%', display: 'block',
+          position: 'absolute', inset: 0,
+          opacity: iframeReady ? 1 : 0,
+          transition: 'opacity 0.6s ease',
+          pointerEvents: iframeReady ? 'auto' : 'none',
+        }}
+      />
+      {/* Loading overlay shown while 3D model is being fetched */}
+      {!iframeReady && (
+        <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+          {/* Car image background */}
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
-            src={thumbnailUrl}
+            src={previewImage}
             alt=""
             onError={e => { (e.target as HTMLImageElement).style.display = 'none'; }}
-            style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', opacity: 0.5 }}
+            style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', opacity: 0.45 }}
           />
-          {/* Overlay */}
-          <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to top, rgba(0,0,0,0.7) 0%, rgba(0,0,0,0.2) 100%)' }} />
-          {/* Play button */}
-          <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 10 }}>
-            <div style={{ width: 56, height: 56, borderRadius: '50%', background: 'rgba(255,255,255,0.15)', backdropFilter: 'blur(4px)', border: '2px solid rgba(255,255,255,0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.5rem' }}>
-              🔷
+          <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to top, rgba(0,0,0,0.75) 0%, rgba(0,0,0,0.3) 100%)' }} />
+          {/* Spinner + label */}
+          <div style={{ position: 'relative', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12 }}>
+            <div style={{
+              width: 48, height: 48, borderRadius: '50%',
+              border: '3px solid rgba(255,255,255,0.15)',
+              borderTopColor: '#7ba0e8',
+              animation: 'car3d-spin 0.9s linear infinite',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+            }}>
+              <span style={{ fontSize: '1.2rem', lineHeight: 1 }}>🔷</span>
             </div>
-            <div style={{ color: '#fff', fontWeight: 700, fontSize: '0.9375rem' }}>{modelName}</div>
-            <div style={{ color: 'rgba(255,255,255,0.7)', fontSize: '0.8rem' }}>לחץ לטעינת מודל תלת-ממד</div>
-            {author && <div style={{ color: 'rgba(255,255,255,0.45)', fontSize: '0.7rem' }}>by {author}</div>}
+            <div style={{ color: '#fff', fontWeight: 700, fontSize: '0.875rem', letterSpacing: '0.02em' }}>
+              {modelName}
+            </div>
+            <div style={{ color: 'rgba(255,255,255,0.65)', fontSize: '0.78rem', fontWeight: 600, letterSpacing: '0.04em', textTransform: 'uppercase' }}>
+              {t.viewer3d.loading}
+            </div>
+            {author && <div style={{ color: 'rgba(255,255,255,0.35)', fontSize: '0.7rem' }}>by {author}</div>}
           </div>
-        </button>
+        </div>
       )}
+      <style>{`@keyframes car3d-spin { to { transform: rotate(360deg); } }`}</style>
 
       {/* Admin flag button — top-left */}
       {isAdmin && makeSlug && modelSlug && (
@@ -105,7 +115,7 @@ export default function Car3DViewer({ uid, modelName, author, makeSlug, modelSlu
           {!showFlagMenu ? (
             <button
               onClick={() => setShowFlagMenu(true)}
-              title="הסתר מודל תלת-ממד זה"
+              title={t.viewer3d.hideTitle}
               style={{
                 background: 'rgba(0,0,0,0.65)', color: '#fff',
                 border: '1px solid rgba(255,255,255,0.2)',
@@ -115,7 +125,7 @@ export default function Car3DViewer({ uid, modelName, author, makeSlug, modelSlu
                 display: 'flex', alignItems: 'center', gap: 5,
               }}
             >
-              🚩 הסתר מודל
+              🚩 {t.viewer3d.hideModel}
             </button>
           ) : (
             <div
@@ -126,17 +136,17 @@ export default function Car3DViewer({ uid, modelName, author, makeSlug, modelSlu
               }}
               onClick={e => e.stopPropagation()}
             >
-              <span style={{ fontSize: '0.8rem', fontWeight: 700, color: '#fff' }}>סיבת הסרה (אופציונלי)</span>
+              <span style={{ fontSize: '0.8rem', fontWeight: 700, color: '#fff' }}>{t.viewer3d.hideReasonLabel}</span>
               <input
                 autoFocus
                 value={flagReason}
                 onChange={e => setFlagReason(e.target.value)}
-                placeholder="למשל: רכב שגוי, מודל לא מתאים..."
+                placeholder={t.viewer3d.hideReasonPlaceholder}
                 onKeyDown={e => { if (e.key === 'Enter') handleFlag(); if (e.key === 'Escape') setShowFlagMenu(false); }}
                 style={{
                   background: 'rgba(255,255,255,0.08)', border: '1px solid var(--border)',
                   borderRadius: 6, padding: '5px 8px', color: '#fff', fontSize: '0.78rem',
-                  outline: 'none', direction: 'rtl',
+                  outline: 'none', direction: dir,
                 }}
               />
               <div style={{ display: 'flex', gap: 6 }}>
@@ -149,7 +159,7 @@ export default function Car3DViewer({ uid, modelName, author, makeSlug, modelSlu
                     fontSize: '0.78rem', fontWeight: 700,
                   }}
                 >
-                  {flagging ? '...' : 'הסתר'}
+                  {flagging ? '...' : t.viewer3d.hideConfirm}
                 </button>
                 <button
                   onClick={() => { setShowFlagMenu(false); setFlagReason(''); }}
@@ -158,7 +168,7 @@ export default function Car3DViewer({ uid, modelName, author, makeSlug, modelSlu
                     background: 'transparent', color: 'var(--text-muted)', cursor: 'pointer', fontSize: '0.78rem',
                   }}
                 >
-                  ביטול
+                  {t.viewer3d.hideCancel}
                 </button>
               </div>
             </div>

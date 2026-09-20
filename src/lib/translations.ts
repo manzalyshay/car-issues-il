@@ -382,6 +382,17 @@ export const translations = {
       images: '📷 תמונות',
       loading: 'טוען...',
     },
+    viewer3d: {
+      loading: 'טוען מודל תלת-ממד...',
+      clickToLoad: 'לחץ לטעינת מודל תלת-ממד',
+      ariaLoad: 'טען מודל תלת-ממד של',
+      hideModel: 'הסתר מודל',
+      hideTitle: 'הסתר מודל תלת-ממד זה',
+      hideReasonLabel: 'סיבת הסרה (אופציונלי)',
+      hideReasonPlaceholder: 'למשל: רכב שגוי, מודל לא מתאים...',
+      hideConfirm: 'הסתר',
+      hideCancel: 'ביטול',
+    },
     notFound: {
       title: 'דף לא נמצא',
       body: 'הדף שחיפשת לא קיים או הוסר.',
@@ -903,6 +914,17 @@ export const translations = {
       images: '📷 Photos',
       loading: 'Loading...',
     },
+    viewer3d: {
+      loading: 'Loading 3D Model...',
+      clickToLoad: 'Click to load 3D model',
+      ariaLoad: 'Load 3D model of',
+      hideModel: 'Hide model',
+      hideTitle: 'Hide this 3D model',
+      hideReasonLabel: 'Reason for removal (optional)',
+      hideReasonPlaceholder: 'e.g. wrong car, model does not match...',
+      hideConfirm: 'Hide',
+      hideCancel: 'Cancel',
+    },
     notFound: {
       title: 'Page Not Found',
       body: 'The page you were looking for does not exist or has been removed.',
@@ -1064,6 +1086,7 @@ export type Translations = {
   trimSpecs: { loading: string; noData: string; noDataSuffix: string; selectTrim: string; included: string; notIncluded: string; recommended: string; engine: string; interior: string; engineType: string; engineCc: string; engineHp: string; transmission: string; drive: string; upholstery: string; seats: string; screen: string; moreDetails: string; disclaimer: string; hp: string; cc: string; sections: Record<string, string>; engineTypes: Record<string, string>; transmissions: Record<string, string>; drives: Record<string, string>; upholsteries: Record<string, string> };
   firstReviewCta: { title: string; body: string; cta: string };
   carTabs: { reviews: string; specs: string; videos: string; images: string; loading: string };
+  viewer3d: { loading: string; clickToLoad: string; ariaLoad: string; hideModel: string; hideTitle: string; hideReasonLabel: string; hideReasonPlaceholder: string; hideConfirm: string; hideCancel: string };
   notFound: { title: string; body: string; home: string };
   compareStaticPage: { breadcrumbHome: string; breadcrumbCompare: string; vsWord: string; subtitleCompare: string; scoresTitle: string; userRating: string; aiScore: string; reviews: string; prosAndConsTitle: string; verdictTitle: string; verdictWinnerPre: string; verdictWinnerMid: string; verdictHasPros: string; verdictTie: string; ctaTitle: string; ctaSubtitle: string; ctaButton: string; relatedTitle: string; modelPageLink: string; no3dModel: string; models3dTitle: string; vsGroup: string; performanceTitle: string; perfNoData: string; perfLowerBetter: string; perfHigherBetter: string };
   writeReview: { success: string; successBody: string; addAnother: string; cta: string; cancel: string };
