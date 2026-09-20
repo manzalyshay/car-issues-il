@@ -3,27 +3,21 @@
 import Link from 'next/link';
 import { useState, useEffect } from 'react';
 import { usePathname } from 'next/navigation';
-import SearchBox from './SearchBox';
 import AuthModal from './AuthModal';
 import { useAuth, displayName } from '@/lib/authContext';
 import { useLocale, EN_SITE, HE_SITE } from '@/lib/localeContext';
 
-/* ── License plate logo mark (from design) ── */
-function LogoMark() {
+/* ── Real brand logo ── */
+function Logo() {
+  const { locale } = useLocale();
+  const isEn = locale === 'en';
   return (
-    <svg viewBox="0 0 44 30" width="41" height="28" style={{ display: 'block', flexShrink: 0 }} aria-hidden>
-      <defs>
-        <linearGradient id="ciPlate" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor="#25628f" />
-          <stop offset="100%" stopColor="#123a68" />
-        </linearGradient>
-      </defs>
-      <rect x="0.9" y="0.9" width="42.2" height="28.2" rx="5.4" fill="url(#ciPlate)" />
-      <path d="M0.9 6.3A5.4 5.4 0 0 1 6.3 0.9H9.4V29.1H6.3A5.4 5.4 0 0 1 0.9 23.7Z" fill="#f7d117" />
-      <rect x="13.1" y="13.6" width="5.2" height="2.6" rx="1.3" fill="#ffffff" opacity="0.34" />
-      <circle cx="28.4" cy="14.1" r="6.5" fill="none" stroke="#ffffff" strokeWidth="2.3" />
-      <path d="M33.3 19.1 36.9 22.6" stroke="#ffffff" strokeWidth="2.3" strokeLinecap="round" />
-    </svg>
+    /* eslint-disable-next-line @next/next/no-img-element */
+    <img
+      src={isEn ? '/logo-net.png' : '/logo-light.png'}
+      alt={isEn ? 'carissues.net' : 'carissues.co.il'}
+      style={{ height: isEn ? 56 : 34, width: 'auto', display: 'block' }}
+    />
   );
 }
 
@@ -81,7 +75,6 @@ export default function Header() {
   const [mobileOpen, setMobileOpen]   = useState(false);
   const [authOpen, setAuthOpen]       = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
-  const [searchOpen, setSearchOpen]   = useState(false);
   const [scrolled, setScrolled]       = useState(false);
 
   const { user, isAdmin, signOut, loading } = useAuth();
@@ -90,7 +83,7 @@ export default function Header() {
 
   const isHome    = pathname === '/';
   const isCarsIdx = pathname === '/cars';
-  const showCategoryBar = isHome || isCarsIdx;
+  const showCategoryBar = isCarsIdx; // only on /cars, not homepage
 
   useEffect(() => {
     const handler = () => setScrolled(window.scrollY > 8);
@@ -98,28 +91,25 @@ export default function Header() {
     return () => window.removeEventListener('scroll', handler);
   }, []);
 
-  const NAV_LINKS = [
-    { href: '/cars',              label: t.nav.allMakes },
-    { href: '/cars/compare',      label: t.nav.compare },
-    { href: '/rankings',          label: t.nav.rankings },
-    { href: '/repairs',           label: t.nav.repairs },
-    { href: '/tco',               label: t.nav.tco },
-    ...(locale === 'he' ? [{ href: '/vehicle-lookup', label: t.nav.vehicleLookup }] : []),
-    { href: '/news',   label: t.nav.news },
-    { href: '/sales',  label: t.nav.sales },
+  const NAV_LINKS = locale === 'he' ? [
+    { href: '/news',           label: 'חדשות' },
+    { href: '/rankings',       label: 'דירוגים' },
+    { href: '/cars/compare',   label: 'השוואה' },
+    { href: '/cars',           label: 'ביקורות' },
+    { href: '/repairs',        label: 'עלויות תיקון' },
+    { href: '/vehicle-lookup', label: 'בדיקת רכב' },
+  ] : [
+    { href: '/news',           label: t.nav.news },
+    { href: '/rankings',       label: t.nav.rankings },
+    { href: '/cars/compare',   label: t.nav.compare },
+    { href: '/cars',           label: t.nav.allMakes },
+    { href: '/repairs',        label: t.nav.repairs },
+    { href: '/vehicle-lookup', label: t.nav.vehicleLookup },
   ];
 
-  const logoText = (
-    <Link href="/" style={{ textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 10, flexShrink: 0 }}>
-      <LogoMark />
-      <span style={{ display: 'block' }}>
-        <span style={{ display: 'block', fontSize: 17.5, fontWeight: 900, letterSpacing: '-0.02em', color: '#12232f', lineHeight: 1 }}>
-          {locale === 'en' ? 'Car' : 'קאר'}<span style={{ color: '#1b4f8a' }}>{locale === 'en' ? 'Issues' : 'אישוז'}</span>
-        </span>
-        <span style={{ display: 'block', fontFamily: 'monospace', fontSize: 8, fontWeight: 700, letterSpacing: locale === 'en' ? '0.12em' : '0.05em', color: '#8595a6', marginTop: 2 }}>
-          {locale === 'en' ? 'USED CAR DATA' : 'מדד רכב יד שנייה'}
-        </span>
-      </span>
+  const logoEl = (
+    <Link href="/" style={{ textDecoration: 'none', display: 'flex', alignItems: 'center', flexShrink: 0 }}>
+      <Logo />
     </Link>
   );
 
@@ -127,33 +117,36 @@ export default function Header() {
   return (
     <>
       <header style={{
-        background: '#ffffff',
-        borderBottom: showCategoryBar ? 'none' : '1px solid var(--border)',
+        background: 'rgba(255,255,255,.86)',
+        backdropFilter: 'blur(14px)',
+        WebkitBackdropFilter: 'blur(14px)',
+        borderBottom: '1px solid var(--border)',
         position: 'sticky', top: 0, zIndex: 100,
         boxShadow: scrolled ? '0 2px 12px rgba(0,0,0,0.07)' : 'none',
         transition: 'box-shadow 0.2s',
       }}>
         <div className="container header-inner" style={{
-          height: 64,
+          height: 66,
           display: 'flex', alignItems: 'center', gap: 8,
           justifyContent: 'space-between',
           direction: locale === 'he' ? 'rtl' : 'ltr',
         }}>
-          {logoText}
+          {logoEl}
 
-          {/* Desktop nav — underline style */}
-          <nav className="desktop-nav" style={{ display: 'flex', alignItems: 'stretch', flex: 1, justifyContent: 'center', height: '100%' }}>
+          {/* Desktop nav — pill style */}
+          <nav className="desktop-nav" style={{ display: 'flex', alignItems: 'center', flex: 1, justifyContent: 'center', gap: 2, flexWrap: 'wrap' }}>
             {NAV_LINKS.map(link => {
               const active = pathname === link.href || (link.href !== '/' && pathname.startsWith(link.href));
               return (
                 <Link key={link.href} href={link.href} className="hdr-link"
                   style={{
                     display: 'flex', alignItems: 'center',
-                    padding: '0 14px', fontSize: '0.875rem', fontWeight: 600,
-                    color: active ? 'var(--accent)' : 'var(--text-muted)',
+                    padding: '8px 9px', fontSize: '0.875rem', fontWeight: active ? 700 : 600,
+                    color: active ? 'var(--accent)' : 'var(--text)',
                     textDecoration: 'none',
-                    borderBottom: active ? '2.5px solid var(--accent)' : '2.5px solid transparent',
-                    transition: 'color 0.15s, border-color 0.15s',
+                    borderRadius: 9,
+                    background: active ? '#eef2f9' : 'transparent',
+                    transition: 'color 0.15s, background 0.15s',
                     whiteSpace: 'nowrap',
                   }}
                 >
@@ -163,47 +156,58 @@ export default function Header() {
             })}
           </nav>
 
-          {/* Right actions */}
-          <div className="desktop-auth" style={{ display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0 }}>
-            {/* Search toggle (non-home pages inline; home uses hero search) */}
-            {!isHome && (
-              searchOpen
-                ? <div style={{ width: 200 }}><SearchBox compact /></div>
-                : <button className="btn btn-ghost" style={{ width: 36, height: 36, padding: 0, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center' }} onClick={() => setSearchOpen(true)} aria-label="search">
-                    <svg width="16" height="16" viewBox="0 0 20 20" fill="none"><circle cx="8.5" cy="8.5" r="5.5" stroke="currentColor" strokeWidth="1.8"/><path d="M12.5 12.5 L17 17" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"/></svg>
-                  </button>
+          {/* Left: CTA + avatar/login */}
+          <div className="desktop-auth" style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
+            <Link href="/cars" className="btn-check-model" style={{
+              display: 'flex', alignItems: 'center',
+              padding: '10px 18px', fontSize: '0.875rem', fontWeight: 700,
+              background: 'var(--accent)', color: '#fff',
+              textDecoration: 'none', borderRadius: 10,
+              transition: 'background 0.15s',
+              whiteSpace: 'nowrap',
+            }}>
+              {locale === 'he' ? 'בדקו דגם' : 'Check Model'}
+            </Link>
+            {/* Login button when logged out */}
+            {!loading && !user && (
+              <button
+                onClick={() => setAuthOpen(true)}
+                style={{
+                  padding: '8px 16px', fontSize: '0.875rem', fontWeight: 700,
+                  background: 'transparent', color: 'var(--text-muted)',
+                  border: '1px solid var(--border)', borderRadius: 10,
+                  cursor: 'pointer', whiteSpace: 'nowrap', transition: 'color 0.15s, border-color 0.15s',
+                }}
+                className="login-btn"
+              >
+                {locale === 'he' ? 'התחברות' : 'Login'}
+              </button>
             )}
-
-            {!loading && (
-              user ? (
-                <div
-                  style={{ position: 'relative' }}
-                  onMouseEnter={() => setProfileOpen(true)}
-                  onMouseLeave={() => setProfileOpen(false)}
-                >
-                  {isAdmin && (
-                    <Link href="/admin" style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--accent)', marginInlineEnd: 8 }}>
-                      {t.nav.admin}
-                    </Link>
-                  )}
-                  <Link href="/profile" style={{ display: 'flex', alignItems: 'center', gap: 6, textDecoration: 'none' }}>
-                    <div style={{
-                      width: 30, height: 30, borderRadius: '50%', flexShrink: 0,
-                      background: 'var(--accent)',
-                      display: 'flex', alignItems: 'center', justifyContent: 'center',
-                      fontSize: '0.8rem', fontWeight: 800, color: '#fff',
-                    }}>
-                      {displayName(user).charAt(0).toUpperCase()}
-                    </div>
+            {/* Avatar (only when logged in) */}
+            {!loading && user && (
+              <div
+                style={{ position: 'relative' }}
+                onMouseEnter={() => setProfileOpen(true)}
+                onMouseLeave={() => setProfileOpen(false)}
+              >
+                {isAdmin && (
+                  <Link href="/admin" style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--accent)', marginInlineEnd: 8 }}>
+                    {t.nav.admin}
                   </Link>
-
-                  {profileOpen && (
-                    <div style={{ position: 'absolute', top: '100%', insetInlineEnd: 0, paddingTop: 8, zIndex: 200 }}>
-                    <div style={{
-                      background: '#fff', border: '1px solid var(--border)',
-                      borderRadius: 10, boxShadow: '0 8px 28px rgba(0,0,0,0.1)',
-                      minWidth: 160, overflow: 'hidden',
-                    }}>
+                )}
+                <Link href="/profile" style={{ display: 'flex', alignItems: 'center', textDecoration: 'none' }}>
+                  <div style={{
+                    width: 32, height: 32, borderRadius: '50%', flexShrink: 0,
+                    background: 'var(--accent)',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    fontSize: '0.8rem', fontWeight: 800, color: '#fff',
+                  }}>
+                    {displayName(user).charAt(0).toUpperCase()}
+                  </div>
+                </Link>
+                {profileOpen && (
+                  <div style={{ position: 'absolute', top: '100%', insetInlineEnd: 0, paddingTop: 8, zIndex: 200 }}>
+                    <div style={{ background: '#fff', border: '1px solid var(--border)', borderRadius: 10, boxShadow: '0 8px 28px rgba(0,0,0,0.1)', minWidth: 160, overflow: 'hidden' }}>
                       <Link href="/profile" style={{ display: 'block', padding: '10px 16px', fontSize: '0.82rem', color: 'var(--text-muted)', textDecoration: 'none', borderBottom: '1px solid var(--border)' }}>
                         {locale === 'he' ? '👤 פרופיל' : '👤 Profile'}
                       </Link>
@@ -211,14 +215,9 @@ export default function Header() {
                         {t.nav.logout}
                       </button>
                     </div>
-                    </div>
-                  )}
-                </div>
-              ) : (
-                <button onClick={() => setAuthOpen(true)} className="btn btn-primary" style={{ height: 34, padding: '0 16px', fontSize: '0.8rem' }}>
-                  {t.nav.login}
-                </button>
-              )
+                  </div>
+                )}
+              </div>
             )}
           </div>
 
@@ -247,29 +246,30 @@ export default function Header() {
                 {link.label}
               </Link>
             ))}
-            <div style={{ marginTop: 16, display: 'flex', gap: 10, alignItems: 'center' }}>
+            <div style={{ marginTop: 16 }}>
               {user ? (
-                <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 8 }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     <Link href="/profile" onClick={() => setMobileOpen(false)} style={{ fontSize: '0.875rem', fontWeight: 600, color: 'var(--text-muted)', textDecoration: 'none' }}>
                       👤 {displayName(user)}
                     </Link>
-                    <button onClick={signOut} className="btn btn-outline" style={{ height: 32, padding: '0 12px', fontSize: '0.8rem' }}>{t.nav.logout}</button>
+                    <button onClick={signOut} style={{ height: 32, padding: '0 12px', fontSize: '0.8rem', background: 'none', border: '1px solid var(--border)', borderRadius: 8, cursor: 'pointer', color: 'var(--text-muted)' }}>{t.nav.logout}</button>
                   </div>
                   {isAdmin && <Link href="/admin" onClick={() => setMobileOpen(false)} style={{ fontSize: '0.8rem', fontWeight: 700, color: 'var(--accent)' }}>{t.nav.admin}</Link>}
                 </div>
               ) : (
-                <button onClick={() => { setAuthOpen(true); setMobileOpen(false); }} className="btn btn-primary" style={{ flex: 1, height: 42 }}>
+                <button onClick={() => { setAuthOpen(true); setMobileOpen(false); }} style={{ width: '100%', height: 42, background: 'var(--accent)', color: '#fff', fontWeight: 700, border: 'none', borderRadius: 10, cursor: 'pointer', fontSize: '0.9rem' }}>
                   {t.nav.loginRegister}
                 </button>
               )}
             </div>
-            {!isHome && <div style={{ marginTop: 14 }}><SearchBox fullWidth /></div>}
           </div>
         )}
 
         <style>{`
-          .hdr-link:hover { color: var(--accent) !important; border-bottom-color: var(--accent) !important; }
+          .hdr-link:hover { color: var(--accent) !important; background: #eef2f9 !important; }
+          .btn-check-model:hover { background: #0f2b63 !important; }
+          .login-btn:hover { color: var(--accent) !important; border-color: var(--accent) !important; }
           @media (max-width: 768px) {
             .desktop-nav  { display: none !important; }
             .desktop-auth { display: none !important; }

@@ -3,7 +3,7 @@ import Link from 'next/link';
 import { getHostLocale, getBaseUrl } from '@/lib/hostLocale';
 import { getLatestNews, ensureNewsTable } from '@/lib/carNews';
 
-export const dynamic = 'force-dynamic';
+export const revalidate = 1800;
 
 export async function generateMetadata(): Promise<Metadata> {
   const locale = await getHostLocale();
@@ -38,7 +38,7 @@ export default async function NewsPage() {
   const locale = await getHostLocale();
   const isHe = locale === 'he';
   await ensureNewsTable().catch(() => {});
-  const news = await getLatestNews(40).catch(() => []);
+  const news = await getLatestNews(40, 0, locale).catch(() => []);
 
   return (
     <div className="page-section" dir={isHe ? 'rtl' : 'ltr'}>
@@ -71,11 +71,9 @@ export default async function NewsPage() {
         ) : (
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: 16 }}>
             {news.map((item) => (
-              <a
+              <Link
                 key={item.id}
-                href={item.original_url}
-                target="_blank"
-                rel="noopener noreferrer"
+                href={`/news/${item.id}`}
                 style={{ textDecoration: 'none', color: 'inherit', display: 'block' }}
               >
                 <div className="card" style={{ height: '100%', overflow: 'hidden', padding: 0, display: 'flex', flexDirection: 'column', transition: 'border-color 0.15s, box-shadow 0.15s' }}>
@@ -105,7 +103,7 @@ export default async function NewsPage() {
                     )}
                   </div>
                 </div>
-              </a>
+              </Link>
             ))}
           </div>
         )}

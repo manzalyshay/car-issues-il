@@ -1,13 +1,18 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 44 30">
-  <defs>
-    <linearGradient id="ciPlate" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0%" stop-color="#25628f"/>
-      <stop offset="100%" stop-color="#123a68"/>
-    </linearGradient>
-  </defs>
-  <rect x="0.9" y="0.9" width="42.2" height="28.2" rx="5.4" fill="url(#ciPlate)"/>
-  <path d="M0.9 6.3A5.4 5.4 0 0 1 6.3 0.9H9.4V29.1H6.3A5.4 5.4 0 0 1 0.9 23.7Z" fill="#f7d117"/>
-  <rect x="13.1" y="13.6" width="5.2" height="2.6" rx="1.3" fill="#ffffff" opacity="0.34"/>
-  <circle cx="28.4" cy="14.1" r="6.5" fill="none" stroke="#ffffff" stroke-width="2.3"/>
-  <path d="M33.3 19.1 36.9 22.6" stroke="#ffffff" stroke-width="2.3" stroke-linecap="round"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <!-- lift posts -->
+  <rect x="4" y="16" width="3" height="14" rx="1.2" fill="#17408f"/>
+  <rect x="25" y="16" width="3" height="14" rx="1.2" fill="#17408f"/>
+  <!-- lift arms -->
+  <rect x="2" y="14" width="7" height="2.5" rx="1" fill="#17408f"/>
+  <rect x="23" y="14" width="7" height="2.5" rx="1" fill="#17408f"/>
+  <!-- car body -->
+  <path d="M7 14 C8 10 10 8 13 7.5 L19 7.5 C22 8 24 10 25 14 Z" fill="#0d1b2f"/>
+  <rect x="7" y="12" width="18" height="5" rx="2" fill="#0d1b2f"/>
+  <!-- windows -->
+  <path d="M9.5 12 C10 9.5 11.5 8.5 13.5 8.5 H18.5 C20.5 8.5 21.5 9.5 22 12 Z" fill="#7ba0e8" opacity="0.85"/>
+  <!-- wheels -->
+  <circle cx="11" cy="17.5" r="3" fill="#1a2a3a"/>
+  <circle cx="11" cy="17.5" r="1.5" fill="#4a6080"/>
+  <circle cx="21" cy="17.5" r="3" fill="#1a2a3a"/>
+  <circle cx="21" cy="17.5" r="1.5" fill="#4a6080"/>
 </svg>

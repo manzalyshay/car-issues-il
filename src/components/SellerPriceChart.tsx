@@ -61,9 +61,9 @@ export default function SellerPriceChart({ makeSlug, modelSlug, makeEn, modelEn,
 
   if (loading) {
     return (
-      <div ref={containerRef} style={{ overflow: 'hidden', borderRadius: 16, border: '1px solid #e3e8ee', background: '#fff', width: '100%', height: '100%' }}>
+      <div ref={containerRef} style={{ overflow: 'hidden', borderRadius: 16, border: '1px solid #e4e9f2', background: '#fff', width: '100%', height: '100%' }}>
         {header(isEn)}
-        <div style={{ textAlign: 'center', color: '#8595a6', fontSize: '0.875rem', padding: '32px 20px' }}>
+        <div style={{ textAlign: 'center', color: '#5b6a86', fontSize: '0.875rem', padding: '32px 20px' }}>
           {isEn ? 'Loading seller comparison...' : 'טוען השוואת מחירים...'}
         </div>
       </div>
@@ -113,7 +113,7 @@ export default function SellerPriceChart({ makeSlug, modelSlug, makeEn, modelEn,
   );
 
   return (
-    <div ref={containerRef} style={{ overflow: 'hidden', borderRadius: 16, border: '1px solid #e3e8ee', background: '#fff', width: '100%', height: '100%' }}>
+    <div ref={containerRef} style={{ overflow: 'hidden', borderRadius: 16, border: '1px solid #e4e9f2', background: '#fff', width: '100%', height: '100%' }}>
       {header(isEn)}
 
       <div style={{ padding: '16px 20px 12px' }}>
@@ -132,7 +132,7 @@ export default function SellerPriceChart({ makeSlug, modelSlug, makeEn, modelEn,
             {yTicks.map(({ y, label }, i) => (
               <g key={i}>
                 <line x1={0} x2={cW} y1={y} y2={y}
-                  stroke="#eef1f5" strokeWidth={1} />
+                  stroke="#eef2f9" strokeWidth={1} />
                 <text x={-8} y={y + 4} textAnchor="end" fontSize={compact ? 10 : 10.5} fill="#a8b5c4" fontFamily="system-ui,sans-serif">
                   {label}
                 </text>
@@ -240,7 +240,7 @@ export default function SellerPriceChart({ makeSlug, modelSlug, makeEn, modelEn,
                     stroke="#a8b5c4" strokeWidth={1} strokeDasharray="4 3" pointerEvents="none" />
                   <g pointerEvents="none" filter="url(#spc-shadow)">
                     <rect x={ttX} y={ttY} width={ttW} height={ttH} rx={7}
-                      fill="#1b2c4a" stroke="#e3e8ee" strokeWidth={1} />
+                      fill="#1b2c4a" stroke="#e4e9f2" strokeWidth={1} />
                     <text x={ttX + ttW / 2} y={ttY + 15} textAnchor="middle"
                       fontSize={12} fontWeight={700} fill="#f1f5f9" fontFamily="system-ui,sans-serif" direction="ltr">
                       {hoveredYear}
@@ -269,11 +269,11 @@ export default function SellerPriceChart({ makeSlug, modelSlug, makeEn, modelEn,
 
         {/* Legend */}
         <div style={{ display: 'flex', gap: 20, flexWrap: 'wrap', marginTop: 10 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 11.5, color: '#66788c' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 11.5, color: '#5b6a86' }}>
             <div style={{ width: 14, height: 2.5, background: PRIVATE_COLOR, borderRadius: 2 }} />
             <span>{isEn ? 'Private seller' : 'מוכר פרטי'}</span>
           </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 11.5, color: '#66788c' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 11.5, color: '#5b6a86' }}>
             <svg width={14} height={6} style={{ flexShrink: 0 }}>
               <line x1={0} y1={3} x2={14} y2={3} stroke={DEALER_COLOR} strokeWidth={2.5} strokeDasharray="5 2.5" />
             </svg>
@@ -285,7 +285,7 @@ export default function SellerPriceChart({ makeSlug, modelSlug, makeEn, modelEn,
         <div style={{
           marginTop: 12, padding: '10px 12px',
           background: '#f8fafc', borderRadius: 9,
-          fontSize: 13, color: '#4a5b6d',
+          fontSize: 13, color: '#41506c',
         }}>
           {isEn
             ? `On average, dealers charge ~${avgGapPct}% more than private sellers`
@@ -301,12 +301,12 @@ function header(isEn: boolean) {
     <div style={{
       padding: '16px 18px',
       display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 10,
-      borderBottom: '1px solid #eef1f5',
+      borderBottom: '1px solid #eef2f9',
     }}>
-      <span style={{ fontSize: 15, fontWeight: 700, color: '#1c2733' }}>
+      <span style={{ fontSize: 15, fontWeight: 700, color: '#0d1b2f' }}>
         {isEn ? 'Market Value' : 'שווי שוק יד שניה'}
       </span>
-      <span style={{ fontSize: 12, color: '#8595a6' }}>
+      <span style={{ fontSize: 12, color: '#5b6a86' }}>
         {isEn ? 'ILS · Private vs Dealer' : 'פרטי מול סוכנות'}
       </span>
     </div>

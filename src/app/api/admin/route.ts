@@ -3,6 +3,7 @@ import { getAllMakes, getMakeBySlug, getModelBySlug } from '@/lib/carsDb';
 import { scrapeExpertReviews } from '@/lib/expertReviews';
 import { isAdmin } from '@/lib/adminAuth';
 import { dbAll, dbRun } from '@/lib/db';
+import { deleteNewsArticle, hideNewsArticle } from '@/lib/carNews';
 
 async function validateCar(makeSlug: string, modelSlug: string) {
   const make  = await getMakeBySlug(makeSlug);
@@ -112,6 +113,20 @@ export async function POST(req: NextRequest) {
       params.push(reviewId);
       await dbRun(`UPDATE reviews SET ${sets.join(', ')} WHERE id = ?`, ...params);
     }
+    return NextResponse.json({ ok: true });
+  }
+
+  if (action === 'delete_news') {
+    const { newsId } = body;
+    if (!newsId) return NextResponse.json({ error: 'Missing newsId' }, { status: 400 });
+    await deleteNewsArticle(newsId);
+    return NextResponse.json({ ok: true });
+  }
+
+  if (action === 'hide_news') {
+    const { newsId } = body;
+    if (!newsId) return NextResponse.json({ error: 'Missing newsId' }, { status: 400 });
+    await hideNewsArticle(newsId);
     return NextResponse.json({ ok: true });
   }
 

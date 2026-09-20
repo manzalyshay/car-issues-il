@@ -858,7 +858,12 @@ function AdminPageInner() {
         </div>
       )}
       <div className="container">
-        <h1 style={{ fontSize: '1.75rem', fontWeight: 900, marginBottom: 24 }}>פאנל ניהול</h1>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24, flexWrap: 'wrap', gap: 12 }}>
+          <h1 style={{ fontSize: '1.75rem', fontWeight: 900, margin: 0 }}>פאנל ניהול</h1>
+          <a href="/admin/analytics" style={{ display: 'inline-flex', alignItems: 'center', gap: 7, padding: '9px 18px', background: 'var(--accent)', color: '#fff', textDecoration: 'none', borderRadius: 10, fontWeight: 700, fontSize: '0.875rem' }}>
+            📊 Analytics Dashboard
+          </a>
+        </div>
 
         {/* Deployment status bar */}
         {deployment && (() => {

@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import { headers, cookies } from 'next/headers';
 import Script from 'next/script';
+import { Heebo, Rubik, Assistant } from 'next/font/google';
 import './globals.css';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
@@ -8,6 +9,30 @@ import { AuthProvider } from '@/lib/authContext';
 import { LocaleProvider } from '@/lib/localeContext';
 import NavigationProgress from '@/components/NavigationProgress';
 import PageViewTracker from '@/components/PageViewTracker';
+
+const heebo = Heebo({
+  subsets: ['latin', 'hebrew'],
+  weight: ['400', '500', '600', '700', '800'],
+  display: 'swap',
+  variable: '--font-heebo',
+  preload: true,
+});
+
+const rubik = Rubik({
+  subsets: ['latin', 'hebrew'],
+  weight: ['400', '500', '600', '700', '800'],
+  display: 'swap',
+  variable: '--font-rubik',
+  preload: false,
+});
+
+const assistant = Assistant({
+  subsets: ['latin', 'hebrew'],
+  weight: ['400', '600', '700'],
+  display: 'swap',
+  variable: '--font-assistant',
+  preload: false,
+});
 
 const GA4_HE = 'G-5YR8RTYL8T';
 const GA4_EN = 'G-QE080JL7Z0';
@@ -30,7 +55,7 @@ export async function generateMetadata(): Promise<Metadata> {
       template: '%s | CarIssues',
     },
     metadataBase: new URL(baseUrl),
-    icons: { icon: '/favicon.svg', apple: '/favicon.svg' },
+    icons: { icon: isEn ? '/favicon-net.svg' : '/favicon.svg', apple: isEn ? '/favicon-net.svg' : '/favicon.svg' },
     description: isEn
       ? 'Real car owner reviews, common problems, recalls and reliability data — by make, model and year.'
       : "המאגר הגדול ביותר בישראל לבעיות רכב, ביקורות וחוות דעת. מצא בעיות נפוצות לפי יצרן, דגם ושנה.",
@@ -105,15 +130,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   };
 
   return (
-    <html lang={isEn ? 'en' : 'he'} dir={isEn ? 'ltr' : 'rtl'}>
-      <head>
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-        <link
-          href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;500;600;700;800&family=Rubik:wght@300;400;500;600;700;800;900&family=Assistant:wght@400;600;700&family=Syne:wght@400;500;600;700;800&family=Bebas+Neue&display=swap"
-          rel="stylesheet"
-        />
-      </head>
+    <html lang={isEn ? 'en' : 'he'} dir={isEn ? 'ltr' : 'rtl'} className={`${heebo.variable} ${rubik.variable} ${assistant.variable}`}>
       <body className="flex flex-col min-h-screen">
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(orgJsonLd) }} />
         {isProdHost && (

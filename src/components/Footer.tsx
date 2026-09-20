@@ -4,23 +4,6 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useLocale } from '@/lib/localeContext';
 
-function LogoMark() {
-  return (
-    <span style={{
-      width: 34, height: 34, borderRadius: 9, flexShrink: 0,
-      background: 'linear-gradient(135deg, var(--accent), var(--accent-2))',
-      display: 'inline-grid', placeItems: 'center',
-    }}>
-      <svg width={19} height={11} viewBox="0 0 24 14" fill="none" stroke="#fff"
-        strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-        <path d="M2 9l2-5a2 2 0 0 1 1.9-1.3h10.2a2 2 0 0 1 1.9 1.3L20 9" />
-        <path d="M1 9h22a.7.7 0 0 1 .7.7v3a.7.7 0 0 1-.7.7H19v.6a.7.7 0 0 1-.7.7h-1a.7.7 0 0 1-.7-.7v-.6H7.4v.6a.7.7 0 0 1-.7.7h-1a.7.7 0 0 1-.7-.7v-.6H1a.7.7 0 0 1-.7-.7v-3A.7.7 0 0 1 1 9z" />
-        <circle cx="6" cy="11" r=".8" />
-        <circle cx="18" cy="11" r=".8" />
-      </svg>
-    </span>
-  );
-}
 
 function LangSwitch({ isEn }: { isEn: boolean }) {
   const pathname = usePathname();
@@ -53,11 +36,11 @@ function LangSwitch({ isEn }: { isEn: boolean }) {
       style={{
         display: 'inline-flex', alignItems: 'center', gap: 6,
         fontSize: '0.75rem', fontWeight: 700,
-        color: 'var(--text-muted)', textDecoration: 'none',
-        border: '1.5px solid var(--border)', borderRadius: 8,
+        color: '#93a5c0', textDecoration: 'none',
+        border: '1.5px solid rgba(255,255,255,.2)', borderRadius: 8,
         padding: '5px 12px', transition: 'all 0.15s',
       }}
-      className="lang-switch"
+      className="lang-switch-dark"
     >
       🌐 {isEn ? 'עב' : 'EN'}
     </a>
@@ -65,120 +48,82 @@ function LangSwitch({ isEn }: { isEn: boolean }) {
 }
 
 export default function Footer() {
-  const { t, locale } = useLocale();
+  const { locale } = useLocale();
   const isEn = locale === 'en';
 
   const cols = [
     {
       head: isEn ? 'Explore' : 'עיון',
       links: [
-        { href: '/cars',         label: isEn ? 'All Makes'      : 'כל היצרנים' },
-        { href: '/rankings',     label: isEn ? 'Rankings'       : 'דירוגים' },
-        { href: '/cars/compare', label: isEn ? 'Compare Cars'   : 'השוואת רכבים' },
-        { href: '/repairs',      label: isEn ? 'Repair Costs'   : 'עלויות תיקון' },
+        { href: '/cars',         label: isEn ? 'All Makes'    : 'כל היצרנים' },
+        { href: '/rankings',     label: isEn ? 'Rankings'     : 'דירוגי דגמים' },
+        { href: '/cars/compare', label: isEn ? 'Compare'      : 'השוואות' },
       ],
     },
     {
       head: isEn ? 'Tools' : 'כלים',
       links: [
-        { href: '/tco',         label: isEn ? 'TCO Calculator'  : 'מחשבון TCO' },
-        { href: '/repairs',     label: isEn ? 'Repair Database' : 'מאגר תיקונים' },
-        { href: '/rankings',    label: isEn ? 'Car Rankings'    : 'טבלת דירוגים' },
-        { href: '/embed',       label: isEn ? 'Recall Widget'   : 'ווידג\'ט ריקולים' },
+        { href: '/tco',            label: isEn ? 'TCO Calculator'  : 'מחשבון TCO' },
+        { href: '/vehicle-lookup', label: isEn ? 'Car Check'       : 'צ׳קליסט קנייה' },
+        { href: '/repairs',        label: isEn ? 'Repair Costs'    : 'בדיקת ריקולים' },
       ],
     },
     {
       head: isEn ? 'Info' : 'מידע',
       links: [
-        { href: '/privacy',  label: isEn ? 'Privacy Policy' : 'מדיניות פרטיות' },
-        { href: '/terms',    label: isEn ? 'Terms of Use'   : 'תנאי שימוש' },
-        { href: '/contact',  label: isEn ? 'Contact'        : 'צור קשר' },
+        { href: '/privacy', label: isEn ? 'Privacy Policy' : 'מדיניות פרטיות' },
+        { href: '/news',    label: isEn ? 'News'           : 'חדשות' },
+        { href: '/sales',   label: isEn ? 'Deals'          : 'מבצעים' },
       ],
     },
   ];
 
   return (
-    <footer style={{
-      background: '#ffffff',
-      borderTop: '1px solid var(--border)',
-      marginTop: 'auto',
-      padding: '48px 0 28px',
-    }}>
-      <div className="container">
-        <div style={{
-          display: 'grid',
-          gridTemplateColumns: '220px repeat(3, 1fr)',
-          gap: 40,
-          marginBottom: 40,
-        }} className="footer-grid">
+    <footer style={{ background: '#08131f', color: '#93a5c0', padding: 'clamp(24px,3vw,40px) clamp(16px,3vw,32px)' }}>
+      <div style={{ maxWidth: 1280, margin: '0 auto' }}>
 
-          {/* Brand column */}
-          <div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12 }}>
-              <LogoMark />
-              <span style={{
-                fontFamily: 'var(--font-display)',
-                fontSize: 17, fontWeight: 800,
-                color: 'var(--text)', letterSpacing: '-0.01em',
-              }}>
-                {isEn
-                  ? <>Car<b style={{ color: 'var(--accent)' }}>Issues</b><span style={{ color: 'var(--text-faint)', fontWeight: 500, fontSize: '0.78em' }}>.net</span></>
-                  : <>קאר<b style={{ color: 'var(--accent)' }}>אישוז</b></>
-                }
-              </span>
-            </div>
-            <p style={{ color: 'var(--text-muted)', fontSize: '0.82rem', lineHeight: 1.7, marginBottom: 16 }}>
-              {t.footer.about}
+        {/* Brand row — compact on mobile */}
+        <div className="footer-brand" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16, flexWrap: 'wrap', marginBottom: 28, paddingBottom: 24, borderBottom: '1px solid rgba(255,255,255,.08)' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+            <span style={{ display: 'inline-flex', alignItems: 'center', background: '#fff', borderRadius: 10, padding: '6px 10px', flexShrink: 0 }}>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={isEn ? '/logo-net.png' : '/logo-light.png'} alt={isEn ? 'carissues.net' : 'carissues.co.il'} style={{ height: isEn ? 48 : 28, width: 'auto', display: 'block' }} />
+            </span>
+            <p style={{ fontSize: 13.5, lineHeight: 1.5, margin: 0, color: '#93a5c0' }} className="footer-tagline">
+              {isEn
+                ? 'Israel\'s largest database for car problems, recalls & repair costs.'
+                : 'המאגר הגדול ביותר בישראל לבעיות רכב, ריקולים ועלויות תיקון.'}
             </p>
-            {/* Language switcher */}
-            <LangSwitch isEn={isEn} />
           </div>
+          <LangSwitch isEn={isEn} />
+        </div>
 
-          {/* Link columns */}
+        {/* Link columns — 3-col desktop, 2-col mobile */}
+        <div className="footer-links">
           {cols.map(col => (
             <div key={col.head}>
-              <h4 style={{
-                fontSize: '0.68rem', fontWeight: 800,
-                letterSpacing: '0.12em', textTransform: 'uppercase',
-                color: 'var(--text-muted)', marginBottom: 14,
-              }}>
-                {col.head}
-              </h4>
-              <ul style={{ listStyle: 'none', padding: 0, display: 'flex', flexDirection: 'column', gap: 9 }}>
+              <div style={{ color: '#fff', fontWeight: 700, fontSize: 13.5, marginBottom: 10 }}>{col.head}</div>
+              <div style={{ display: 'grid', gap: 7, fontSize: 13.5 }}>
                 {col.links.map(l => (
-                  <li key={l.href}>
-                    <Link href={l.href} className="footer-link"
-                      style={{ color: 'var(--text-muted)', fontSize: '0.875rem', textDecoration: 'none', transition: 'color 0.15s', display: 'inline-flex', alignItems: 'center', gap: 5 }}
-                    >
-                      {l.label}
-                    </Link>
-                  </li>
+                  <Link key={l.href} href={l.href} className="footer-link" style={{ color: '#93a5c0', textDecoration: 'none' }}>
+                    {l.label}
+                  </Link>
                 ))}
-              </ul>
+              </div>
             </div>
           ))}
         </div>
 
-        {/* Bottom bar */}
-        <div style={{
-          borderTop: '1px solid var(--border)', paddingTop: 20,
-          display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-          flexWrap: 'wrap', gap: 8,
-          fontSize: '0.75rem', color: 'var(--text-muted)',
-        }}>
-          <span>© {new Date().getFullYear()} {t.footer.copyright}</span>
-          <span style={{ opacity: 0.5, fontSize: '0.68rem' }}>{t.footer.legal}</span>
-        </div>
       </div>
 
       <style>{`
-        .footer-link:hover { color: var(--accent) !important; }
-        .lang-switch:hover { border-color: var(--accent) !important; color: var(--accent) !important; }
-        @media (max-width: 768px) {
-          .footer-grid { grid-template-columns: 1fr 1fr !important; }
-        }
-        @media (max-width: 480px) {
-          .footer-grid { grid-template-columns: 1fr !important; }
+        .footer-links { display: grid; grid-template-columns: repeat(3, 1fr); gap: 28px; }
+        .footer-link:hover { color: #fff !important; }
+        .lang-switch-dark { border-color: rgba(255,255,255,.2) !important; }
+        .lang-switch-dark:hover { border-color: #fff !important; color: #fff !important; }
+        @media (max-width: 600px) {
+          .footer-links { grid-template-columns: repeat(2, 1fr); gap: 20px; }
+          .footer-tagline { display: none; }
         }
       `}</style>
     </footer>

@@ -35,6 +35,7 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOi
 binding = "DB"
 database_name = "car-issues-db"
 database_id = "090762ad-b029-4883-b827-9376cdee1ed2"
+remote = true
 
 [ai]
 binding = "AI"

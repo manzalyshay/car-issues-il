@@ -6,7 +6,7 @@ import { GoogleAuth } from 'google-auth-library';
 
 const DAYS = process.argv[2] ?? '30';
 const PROPERTY = '543980467';
-const KEY_FILE = new URL('../../../carissuesil-5264fe9517fb.json', import.meta.url).pathname;
+const KEY_FILE = new URL('../../carissuesil-5264fe9517fb.json', import.meta.url).pathname;
 
 const auth = new GoogleAuth({ keyFile: KEY_FILE, scopes: ['https://www.googleapis.com/auth/analytics.readonly'] });
 const token = await auth.getAccessToken();

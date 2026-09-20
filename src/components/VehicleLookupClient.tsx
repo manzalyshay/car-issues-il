@@ -40,15 +40,101 @@ const OWNERSHIP_LABEL: Record<string, string> = {
   'עסקי':    'עסקי',
 };
 
-function normalizeOwnership(raw: string): string {
+const OWNERSHIP_EN: Record<string, string> = {
+  'פרטי':   'Private',
+  'סוחר':   'Dealer',
+  'ליסינג': 'Leasing',
+  'השכרה':  'Rental',
+  'החכר':   'Leasing',
+  'חברה':   'Company',
+  'מדינה':  'Government',
+  'עירייה': 'Municipality',
+  'צבא':    'Military',
+  'עסקי':   'Business',
+};
+
+const COLOR_EN: Record<string, string> = {
+  'לבן':       'White',
+  'שחור':      'Black',
+  'כסוף':      'Silver',
+  'אפור':      'Gray',
+  'כסוף/אפור': 'Silver/Gray',
+  'כחול':      'Blue',
+  'אדום':      'Red',
+  'ירוק':      'Green',
+  'צהוב':      'Yellow',
+  'חום':       'Brown',
+  'כתום':      'Orange',
+  'סגול':      'Purple',
+  'זהוב':      'Gold',
+  'בז':        'Beige',
+  'ורוד':      'Pink',
+  'טורקיז':    'Turquoise',
+};
+
+const FUEL_EN: Record<string, string> = {
+  'בנזין':        'Gasoline',
+  'דיזל':         'Diesel',
+  'חשמל':         'Electric',
+  'גז':           'Gas (LPG)',
+  'היברידי':      'Hybrid',
+  'היברידי-חשמל': 'Plug-in Hybrid',
+  'בנזין/גז':     'Gasoline/LPG',
+  'מימן':         'Hydrogen',
+};
+
+const ORIGIN_EN: Record<string, string> = {
+  'יפן':         'Japan',
+  'גרמניה':      'Germany',
+  'דרום קוריאה': 'South Korea',
+  'קוריאה':      'South Korea',
+  'צרפת':        'France',
+  'ספרד':        'Spain',
+  'איטליה':      'Italy',
+  'ארה"ב':       'USA',
+  'ארהב':        'USA',
+  'סין':         'China',
+  'שבדיה':       'Sweden',
+  'הונגריה':     'Hungary',
+  'רומניה':      'Romania',
+  'בלגיה':       'Belgium',
+  'אנגליה':      'UK',
+  'בריטניה':     'UK',
+  'הולנד':       'Netherlands',
+  'פולין':       'Poland',
+  'מקסיקו':      'Mexico',
+  'סלובקיה':     'Slovakia',
+  'אוסטריה':     'Austria',
+  'פורטוגל':     'Portugal',
+  'תורכיה':      'Turkey',
+  'טורקיה':      'Turkey',
+  'דרום אפריקה': 'South Africa',
+  'הודו':        'India',
+  'תאילנד':      'Thailand',
+};
+
+function translateValue(raw: string, map: Record<string, string>): string {
   if (!raw) return raw;
-  // Exact match first
-  if (OWNERSHIP_LABEL[raw]) return OWNERSHIP_LABEL[raw];
-  // Partial match (e.g. "סוחר רכב" → "סוחר")
-  for (const [key, label] of Object.entries(OWNERSHIP_LABEL)) {
+  if (map[raw]) return map[raw];
+  for (const [key, val] of Object.entries(map)) {
+    if (raw.includes(key)) return val;
+  }
+  return raw;
+}
+
+function normalizeOwnership(raw: string, isHe = true): string {
+  if (!raw) return raw;
+  const map = isHe ? OWNERSHIP_LABEL : OWNERSHIP_EN;
+  if (map[raw]) return map[raw];
+  for (const [key, label] of Object.entries(map)) {
     if (raw.includes(key)) return label;
   }
   return raw;
+}
+
+/** Format a slug like "corolla-cross" → "Corolla Cross" */
+function slugToDisplay(slug: string): string {
+  return slug.split('-').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
 }
 
 // ── Progress bar hook ──────────────────────────────────────────────────────
@@ -330,11 +416,11 @@ export default function VehicleLookupClient({ initialPlate, initialVehicle, init
                 <div style={{ minWidth: 0 }}>
                   {v.makeHe && (
                     <div style={{ fontSize: '0.7rem', fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--text-muted)', marginBottom: 4 }}>
-                      {v.makeHe}
+                      {isHe ? v.makeHe : v.makeHe.split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join(' ')}
                     </div>
                   )}
                   <div style={{ fontSize: 'clamp(1.2rem, 4vw, 1.6rem)', fontWeight: 900, lineHeight: 1.1, letterSpacing: '-0.01em', color: 'var(--text)' }}>
-                    {v.name || v.makeHe}
+                    {isHe ? (v.name || v.makeHe) : (v.dbMatch?.modelSlug ? slugToDisplay(v.dbMatch.modelSlug) : v.name || v.makeHe)}
                   </div>
                   {v.year && (
                     <div style={{ marginTop: 6 }}>
@@ -373,9 +459,9 @@ export default function VehicleLookupClient({ initialPlate, initialVehicle, init
                 </div>
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px 20px' }}>
                   {[
-                    { label: L.color, value: v.color },
-                    { label: L.fuel, value: v.fuel },
-                    !isVehicleUk && { label: L.ownership, value: normalizeOwnership(v.ownership) },
+                    { label: L.color, value: isHe ? v.color : translateValue(v.color, COLOR_EN) },
+                    { label: L.fuel, value: isHe ? v.fuel : translateValue(v.fuel, FUEL_EN) },
+                    !isVehicleUk && { label: L.ownership, value: normalizeOwnership(v.ownership, isHe) },
                     { label: L.firstRoad, value: v.firstRoad ? fmtDate(v.firstRoad) : '' },
                     !isVehicleUk && v.frontTire && { label: L.tires, value: v.frontTire },
                     !isVehicleUk && v.vin && { label: L.vin, value: v.vin.slice(-8) },
@@ -404,7 +490,7 @@ export default function VehicleLookupClient({ initialPlate, initialVehicle, init
                   {v.wasRepainted    && <FlagRow color="amber"   label={L.repaint}          value={isHe ? 'הרכב נצבע מחדש' : 'Vehicle was repainted'} />}
                   {v.structuralChange && <FlagRow color="amber"  label={L.structuralChange} value={isHe ? 'נרשם שינוי מבנה' : 'Structural change recorded'} />}
                   {v.tireChange      && <FlagRow color="amber"   label={L.tireChange}        value={isHe ? 'שינוי צמיגים רשום' : 'Non-standard tires recorded'} />}
-                  {v.origin          && <FlagRow color="neutral" label={L.origin}            value={v.origin} />}
+                  {v.origin          && <FlagRow color="neutral" label={L.origin}            value={isHe ? v.origin : translateValue(v.origin, ORIGIN_EN)} />}
                 </div>
               )}
 
@@ -450,7 +536,7 @@ export default function VehicleLookupClient({ initialPlate, initialVehicle, init
                           <div key={i} style={{ position: 'relative', marginBottom: 12, paddingInlineStart: 14 }}>
                             <div style={{ position: 'absolute', insetInlineStart: -2, top: 5, width: 10, height: 10, borderRadius: '50%', background: dotColor, border: '2px solid var(--bg)' }} />
                             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', flexWrap: 'wrap', gap: 4 }}>
-                              <span style={{ fontWeight: 600, fontSize: '0.875rem' }}>{normalizeOwnership(rec.ownershipType)}</span>
+                              <span style={{ fontWeight: 600, fontSize: '0.875rem' }}>{normalizeOwnership(rec.ownershipType, isHe)}</span>
                               <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)', fontFamily: 'monospace' }}>{rec.dateLabel}</span>
                             </div>
                           </div>
@@ -469,7 +555,7 @@ export default function VehicleLookupClient({ initialPlate, initialVehicle, init
                           <div style={{ position: 'relative', paddingInlineStart: 14 }}>
                             <div style={{ position: 'absolute', insetInlineStart: -2, top: 5, width: 12, height: 12, borderRadius: '50%', background: dotColor, border: '2px solid var(--bg)', boxShadow: `0 0 0 3px ${dotColor}33` }} />
                             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', flexWrap: 'wrap', gap: 4 }}>
-                              <span style={{ fontWeight: 700, fontSize: '0.9rem', color: dotColor }}>{normalizeOwnership(currentEntry.ownershipType)}</span>
+                              <span style={{ fontWeight: 700, fontSize: '0.9rem', color: dotColor }}>{normalizeOwnership(currentEntry.ownershipType, isHe)}</span>
                               <span style={{ fontSize: '0.72rem', color: dotColor, fontWeight: 700, fontFamily: 'monospace' }}>{currentEntry.dateLabel}</span>
                             </div>
                             {!hasHistory && (

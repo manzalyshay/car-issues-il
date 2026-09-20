@@ -21,10 +21,11 @@ export function middleware(req: NextRequest) {
   }
 
   // ── Canonicalization: HTTPS + non-www ───────────────────────────────────────
+  const isLocalhost = host === 'localhost' || host.startsWith('localhost:') || host.startsWith('127.0.0.1');
   const proto = req.headers.get('x-forwarded-proto') ?? 'https';
   const hasWww = host.startsWith('www.');
   const canonicalHost = hasWww ? host.slice(4) : host;
-  if (proto !== 'https' || hasWww) {
+  if (!isLocalhost && (proto !== 'https' || hasWww)) {
     return NextResponse.redirect(
       `https://${canonicalHost}${pathname}${req.nextUrl.search}`,
       { status: 301 }

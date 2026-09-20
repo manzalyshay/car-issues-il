@@ -2,6 +2,7 @@ import type { MetadataRoute } from 'next';
 import { headers } from 'next/headers';
 import { getAllMakes } from '@/lib/carsDb';
 import { dbAll } from '@/lib/db';
+import { getLatestNews } from '@/lib/carNews';
 
 export const dynamic = 'force-dynamic';
 
@@ -20,7 +21,10 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const host = (await headers()).get('host') ?? '';
   const BASE = isEnHost(host) ? EN_BASE : HE_BASE;
   const isEn = isEnHost(host);
-  const makes = await getAllMakes().catch(() => []);
+  const [makes, news] = await Promise.all([
+    getAllMakes().catch(() => []),
+    getLatestNews(200, 0, isEn ? 'en' : 'he').catch(() => []),
+  ]);
 
   const makeUrls = makes.map((make) => ({
     url: `${BASE}/cars/${make.slug}`,
@@ -116,8 +120,16 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     }
   }
 
+  const newsUrls: MetadataRoute.Sitemap = news.map((n) => ({
+    url: `${BASE}/news/${n.id}`,
+    lastModified: n.published_at ? new Date(n.published_at) : undefined,
+    changeFrequency: 'monthly' as const,
+    priority: 0.6,
+  }));
+
   return [
     { url: BASE, changeFrequency: 'daily', priority: 1.0 },
+    { url: `${BASE}/news`, changeFrequency: 'daily', priority: 0.7 },
     { url: `${BASE}/cars`, changeFrequency: 'weekly', priority: 0.8 },
     { url: `${BASE}/cars/compare`, changeFrequency: 'weekly', priority: 0.7 },
     { url: `${BASE}/embed`, changeFrequency: 'monthly', priority: 0.6 },
@@ -134,5 +146,6 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     ...yearUrls,
     ...trimUrls,
     ...compareUrls,
+    ...newsUrls,
   ];
 }

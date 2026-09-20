@@ -8,6 +8,7 @@ interface Props {
   url: string;
   label?: string;
   compact?: boolean;
+  dark?: boolean;
 }
 
 const PLATFORMS_HE = [
@@ -88,7 +89,7 @@ const PLATFORMS_EN = [
   },
 ];
 
-export default function SharePopup({ title, url, label, compact = false }: Props) {
+export default function SharePopup({ title, url, label, compact = false, dark }: Props) {
   const { locale } = useLocale();
   const isEn = locale === 'en';
   const PLATFORMS = isEn ? PLATFORMS_EN : PLATFORMS_HE;
@@ -139,7 +140,14 @@ export default function SharePopup({ title, url, label, compact = false }: Props
       <button
         ref={btnRef}
         onClick={() => setOpen((v) => !v)}
-        style={{
+        style={dark ? {
+          display: 'flex', alignItems: 'center', gap: 5,
+          padding: '8px 14px', borderRadius: 10,
+          border: '1px solid rgba(255,255,255,.28)',
+          background: open ? 'rgba(255,255,255,.16)' : 'rgba(255,255,255,.08)',
+          color: '#fff', fontSize: 13.5,
+          fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', transition: 'all 0.15s', whiteSpace: 'nowrap' as const,
+        } : {
           display: 'flex', alignItems: 'center', gap: 5,
           height: compact ? 30 : 36, padding: compact ? '0 12px' : '0 16px',
           borderRadius: 9999, border: '1.5px solid var(--border)',

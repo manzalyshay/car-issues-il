@@ -54,9 +54,9 @@ export default function RecallsBarChart({ makeEn, modelEn, years, isEn }: Props)
 
   if (loading) {
     return (
-      <div ref={containerRef} style={{ overflow: 'hidden', borderRadius: 16, border: '1px solid #e3e8ee', background: '#fff', width: '100%', height: '100%' }}>
+      <div ref={containerRef} style={{ overflow: 'hidden', borderRadius: 16, border: '1px solid #e4e9f2', background: '#fff', width: '100%', height: '100%' }}>
         {header(isEn)}
-        <div style={{ textAlign: 'center', color: '#8595a6', fontSize: '0.875rem', padding: '32px 20px' }}>
+        <div style={{ textAlign: 'center', color: '#5b6a86', fontSize: '0.875rem', padding: '32px 20px' }}>
           {isEn ? 'Loading recall data...' : 'טוען נתוני ריקולים...'}
         </div>
       </div>
@@ -100,7 +100,7 @@ export default function RecallsBarChart({ makeEn, modelEn, years, isEn }: Props)
   const worstYear = allYears.reduce((a, b) => (countByYear.get(b)! > countByYear.get(a)! ? b : a));
 
   return (
-    <div ref={containerRef} style={{ overflow: 'hidden', borderRadius: 16, border: '1px solid #e3e8ee', background: '#fff', width: '100%', height: '100%' }}>
+    <div ref={containerRef} style={{ overflow: 'hidden', borderRadius: 16, border: '1px solid #e4e9f2', background: '#fff', width: '100%', height: '100%' }}>
       {header(isEn)}
 
       <div style={{ padding: '16px 20px 12px' }}>
@@ -115,7 +115,7 @@ export default function RecallsBarChart({ makeEn, modelEn, years, isEn }: Props)
             {yTicks.map(({ y, label }, i) => (
               <g key={i}>
                 <line x1={0} x2={cW} y1={y} y2={y}
-                  stroke="#eef1f5" strokeWidth={1} />
+                  stroke="#eef2f9" strokeWidth={1} />
                 <text x={-6} y={y + 4} textAnchor="end" fontSize={compact ? 9 : 10} fill="#a8b5c4" fontFamily="system-ui,sans-serif">
                   {label}
                 </text>
@@ -198,7 +198,7 @@ export default function RecallsBarChart({ makeEn, modelEn, years, isEn }: Props)
               return (
                 <g pointerEvents="none" filter="url(#rbc-shadow)">
                   <rect x={ttX} y={ttY} width={ttW} height={ttH} rx={7}
-                    fill="#1b2c4a" stroke="#e3e8ee" strokeWidth={1} />
+                    fill="#1b2c4a" stroke="#e4e9f2" strokeWidth={1} />
                   <text x={ttX + ttW / 2} y={ttY + 15} textAnchor="middle"
                     fontSize={12} fontWeight={700} fill="#f1f5f9" fontFamily="system-ui,sans-serif">
                     {hoveredYear}
@@ -214,7 +214,7 @@ export default function RecallsBarChart({ makeEn, modelEn, years, isEn }: Props)
         </svg>
 
         {/* Legend */}
-        <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap', marginTop: 10, fontSize: 11.5, color: '#66788c' }}>
+        <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap', marginTop: 10, fontSize: 11.5, color: '#5b6a86' }}>
           {[
             { color: '#f59e0b', label: isEn ? '1–2 recalls' : '1–2 ריקולים' },
             { color: '#f97316', label: isEn ? '3–4' : '3–4' },
@@ -231,7 +231,7 @@ export default function RecallsBarChart({ makeEn, modelEn, years, isEn }: Props)
         <div style={{
           marginTop: 12, padding: '10px 12px',
           background: '#fdf6ee', borderRadius: 9,
-          fontSize: 13, color: '#4a5b6d',
+          fontSize: 13, color: '#41506c',
         }}>
           {isEn
             ? `${totalRecalls} total recall${totalRecalls !== 1 ? 's' : ''} · most in ${worstYear} (${countByYear.get(worstYear)})`
@@ -247,12 +247,12 @@ function header(isEn: boolean) {
     <div style={{
       padding: '16px 18px',
       display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 10,
-      borderBottom: '1px solid #eef1f5',
+      borderBottom: '1px solid #eef2f9',
     }}>
-      <span style={{ fontSize: 15, fontWeight: 700, color: '#1c2733' }}>
+      <span style={{ fontSize: 15, fontWeight: 700, color: '#0d1b2f' }}>
         {isEn ? 'Recalls by Model Year' : 'ריקולים לפי שנת דגם'}
       </span>
-      <span style={{ fontSize: 12, color: '#8595a6' }}>NHTSA</span>
+      <span style={{ fontSize: 12, color: '#5b6a86' }}>NHTSA</span>
     </div>
   );
 }

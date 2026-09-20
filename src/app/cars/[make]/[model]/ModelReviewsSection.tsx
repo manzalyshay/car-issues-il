@@ -15,13 +15,14 @@ interface Props {
   years: number[];
   trims?: string[];
   initialReviews: Review[];
+  initialYear?: number | null;
 }
 
-export default function ModelReviewsSection({ makeSlug, modelSlug, years, trims, initialReviews }: Props) {
+export default function ModelReviewsSection({ makeSlug, modelSlug, years, trims, initialReviews, initialYear }: Props) {
   const { t, locale } = useLocale();
   const cp = t.carPage;
   const [reviews, setReviews] = useState<Review[]>(initialReviews);
-  const [selectedYear, setSelectedYear] = useState<number | null>(null);
+  const [selectedYear, setSelectedYear] = useState<number | null>(initialYear ?? null);
   const [showForm, setShowForm] = useState(false);
   const [starHover, setStarHover] = useState(0);
   const [starRating, setStarRating] = useState<number | null>(null);

@@ -1,5 +1,7 @@
 import { getAllMakes, getPopularMakes } from '@/lib/carsDb';
 import { dbAll } from '@/lib/db';
+import { getLatestNews } from '@/lib/carNews';
+import { getHostLocale } from '@/lib/hostLocale';
 import HomeClient from '@/components/HomeClient';
 
 export const revalidate = 300; // cache home page for 5 minutes
@@ -57,15 +59,16 @@ async function getTopRanked(limit = 3) {
   return ranked.slice(0, limit);
 }
 
-async function getRecentReviews(limit = 3) {
+async function getRecentReviews(limit = 3, locale?: string) {
   const makes = await getAllMakes();
   const lookup = new Map<string, { makeHe: string; modelHe: string; makeEn: string; modelEn: string; logoUrl: string }>();
   for (const make of makes)
     for (const model of make.models)
       lookup.set(`${make.slug}/${model.slug}`, { makeHe: make.nameHe, modelHe: model.nameHe, makeEn: make.nameEn, modelEn: model.nameEn, logoUrl: make.logoUrl });
 
+  const where = locale === 'en' ? 'WHERE body_en IS NOT NULL' : '';
   const rows = await dbAll<Record<string, unknown>>(
-    'SELECT * FROM reviews ORDER BY created_at DESC LIMIT ?', limit,
+    `SELECT * FROM reviews ${where} ORDER BY created_at DESC LIMIT ?`, limit,
   );
 
   return rows.map((r) => ({
@@ -135,7 +138,7 @@ async function getTickerItems(): Promise<TickerItem[]> {
     items.push({
       code: 'תיקון',
       textHe: `${info.makeHe} ${info.modelHe} · ${r.repair_name_he} ${cost}`,
-      textEn: `${info.makeEn} ${info.modelEn} · ${REPAIR_KEY_EN[r.repair_key] ?? r.repair_name_he} ${cost}`,
+      textEn: `${info.makeEn} ${info.modelEn} · ${REPAIR_KEY_EN[r.repair_key] ?? 'Repair'} ${cost}`,
       color: '#6fd9a0',
     });
   }
@@ -164,12 +167,14 @@ async function getTickerItems(): Promise<TickerItem[]> {
 }
 
 export default async function HomePage() {
-  const [popularMakes, allMakes, topRanked, recentReviews, tickerItems] = await Promise.all([
+  const locale = await getHostLocale().catch(() => 'he');
+  const [popularMakes, allMakes, topRanked, recentReviews, tickerItems, news] = await Promise.all([
     getPopularMakes().catch(() => []),
     getAllMakes().catch(() => []),
     getTopRanked(3).catch(() => []),
-    getRecentReviews(3).catch(() => []),
+    getRecentReviews(3, locale).catch(() => []),
     getTickerItems().catch(() => []),
+    getLatestNews(4, 0, locale).catch(() => []),
   ]);
 
   return (
@@ -179,6 +184,7 @@ export default async function HomePage() {
       topRanked={topRanked}
       recentReviews={recentReviews}
       tickerItems={tickerItems}
+      initialNews={news}
     />
   );
 }

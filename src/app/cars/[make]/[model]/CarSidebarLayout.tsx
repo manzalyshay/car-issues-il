@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import CarVideosTab from '@/components/CarVideosTab';
 import CarImagesTab from '@/components/CarImagesTab';
+import Car3DViewer from '@/components/Car3DViewer';
 import TrimSpecsTab from '@/components/TrimSpecsTab';
 import RecallsSection from '@/components/RecallsSection';
 import { useLocale } from '@/lib/localeContext';
@@ -27,13 +28,14 @@ interface Props {
   hasImages?: boolean;
   hasVideos?: boolean;
   hasRepairCosts?: boolean;
+  sketchfabModel?: { uid: string; name: string; author: string } | null;
   children: React.ReactNode;
 }
 
 /* ── Section anchor IDs used by the main content ── */
 const ANCHORS = ['reviews', 'specs', 'trims', 'repair', 'compare'] as const;
 
-export default function CarSidebarLayout({ makeSlug, modelSlug, makeNameHe, modelNameHe, makeNameEn, modelNameEn, makeEn, modelEn, modelYears, defaultYear, hasSpecs = true, hasImages = true, hasVideos = false, hasRepairCosts = true, children }: Props) {
+export default function CarSidebarLayout({ makeSlug, modelSlug, makeNameHe, modelNameHe, makeNameEn, modelNameEn, makeEn, modelEn, modelYears, defaultYear, hasSpecs = true, hasImages = true, hasVideos = false, hasRepairCosts = true, sketchfabModel, children }: Props) {
   const { t } = useLocale();
   const s = t.sidebar;
   const [tab, setTab] = useState<Tab>('reviews');
@@ -176,6 +178,11 @@ export default function CarSidebarLayout({ makeSlug, modelSlug, makeNameHe, mode
           {/* Images tab */}
           {tab === 'images' && (
             <div>
+              {sketchfabModel && (
+                <div style={{ marginBottom: 20 }}>
+                  <Car3DViewer uid={sketchfabModel.uid} modelName={sketchfabModel.name} author={sketchfabModel.author} makeSlug={makeSlug} modelSlug={modelSlug} />
+                </div>
+              )}
               {imagesLoading ? loadingPlaceholder : <CarImagesTab images={images || []} makeNameHe={makeNameHe} modelNameHe={modelNameHe} />}
             </div>
           )}

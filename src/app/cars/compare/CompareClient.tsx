@@ -296,7 +296,11 @@ function ComparePageInner() {
                     <div style={{ fontSize: '2.5rem', fontWeight: 900, marginBottom: 4 }}>
                       {d.avgRating != null ? d.avgRating.toFixed(1) : '—'}
                     </div>
-                    {d.avgRating != null && <StarRating rating={d.avgRating} size={20} />}
+                    {d.avgRating != null && (
+                      <div style={{ display: 'flex', justifyContent: 'center' }}>
+                        <StarRating rating={d.avgRating} size={20} />
+                      </div>
+                    )}
                     <div style={{ fontSize: '0.8125rem', color: 'var(--text-muted)', marginTop: 6 }}>{d.reviewCount} {cmp.reviews}</div>
                     <div style={{ fontWeight: 700, marginTop: 8, fontSize: '0.875rem' }}>{carName(d)}</div>
                   </div>
@@ -343,19 +347,9 @@ function ComparePageInner() {
               {[data1, data2].map((d, i) => (
                 <div key={i} className="card" style={{ padding: 24 }}>
                   <div style={{ fontWeight: 800, fontSize: '1rem', marginBottom: 16 }}>{carName(d)} — {cmp.aiSummary}</div>
-                  {d.localSummary && (
-                    <div style={{ marginBottom: 12 }}>
-                      <div style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', marginBottom: 6 }}>{cmp.israeliReviews}</div>
-                      <p style={{ margin: 0, fontSize: '0.875rem', lineHeight: 1.7, color: 'var(--text-muted)' }}>{d.localSummary}</p>
-                    </div>
-                  )}
-                  {d.globalSummary && (
-                    <div>
-                      <div style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', marginBottom: 6 }}>{cmp.globalReviews}</div>
-                      <p style={{ margin: 0, fontSize: '0.875rem', lineHeight: 1.7, color: 'var(--text-muted)' }}>{d.globalSummary}</p>
-                    </div>
-                  )}
-                  {!d.localSummary && !d.globalSummary && (
+                  {(d.localSummary ?? d.globalSummary) ? (
+                    <p style={{ margin: 0, fontSize: '0.875rem', lineHeight: 1.7, color: 'var(--text-muted)' }}>{d.localSummary ?? d.globalSummary}</p>
+                  ) : (
                     <div style={{ color: 'var(--text-muted)', fontSize: '0.875rem' }}>{cmp.noSummary}</div>
                   )}
                   <Link href={`/cars/${d.makeSlug}/${d.modelSlug}`} style={{ display: 'inline-block', marginTop: 16, fontSize: '0.8125rem', color: 'var(--accent)', textDecoration: 'none', fontWeight: 600 }}>

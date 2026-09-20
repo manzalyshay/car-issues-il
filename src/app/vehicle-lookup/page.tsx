@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import { getHostLocale, getBaseUrl } from '@/lib/hostLocale';
 import PlateSearch from '@/components/PlateSearch';
 
-export const dynamic = 'force-dynamic';
+export const revalidate = 3600;
 
 const LANGS = {
   he: 'https://carissues.co.il/vehicle-lookup',
@@ -72,11 +72,19 @@ export default async function VehicleLookupPage() {
     },
     {
       q: 'האם השירות בחינם?',
-      a: 'כן, בדיקת רכב לפי מספר רישוי היא חינמית לחלוטין באתר CarIssues. אין צורך בהרשמה.',
+      a: 'כן, בדיקת רכב לפי מספר רישוי היא חינמית לחלוטין באתר CarIssues. אין צורך בהרשמה, אין מנוי ואין פרסומות. המידע מוצג מיד, בחינם.',
     },
     {
-      q: 'מה ההבדל בין בדיקה כאן לבין אתר משרד התחבורה?',
-      a: 'CarIssues מציג את המידע בצורה ברורה וידידותית, כולל אינדיקציה ויזואלית על נזקים, פיצול של תאריכי טסט וטסט ומידע על הדגם הספציפי מתוך מאגר הביקורות שלנו.',
+      q: 'איך לבדוק עבר רכב לפני קנייה?',
+      a: 'לפני רכישת רכב יד שנייה מומלץ לבדוק: כמה בעלים היו לרכב, האם נרשם נזק בתאונה, מה הקילומטראז׳ בטסט האחרון, והאם תוקף הטסט תקף. הכניסו את מספר הרישוי בשדה למעלה וכל המידע יוצג מיד.',
+    },
+    {
+      q: 'כמה בעלים היו לרכב — איך בודקים?',
+      a: 'בדיקת הרכב לפי מספר רישוי מציגה את מספר העברות הבעלות הרשומות במשרד התחבורה. מספר בעלים גבוה יחסית לגיל הרכב יכול להיות סימן לבעיות. הזינו את מספר הרישוי לבדיקה מיידית.',
+    },
+    {
+      q: 'מה ההבדל בין בדיקה כאן לבין אתרים אחרים?',
+      a: 'רוב האתרים גובים תשלום, דורשים הרשמה, או מציגים פרסומות מסיחות. CarIssues מציג את אותו המידע — ישירות ממשרד התחבורה — בחינם, ללא פרסומות וללא הרשמה, בממשק נקי וברור.',
     },
     {
       q: 'מאיפה המידע?',
@@ -93,7 +101,11 @@ export default async function VehicleLookupPage() {
     },
     {
       q: 'Is this service free?',
-      a: 'Yes, the vehicle plate lookup on CarIssues is completely free. No registration required.',
+      a: 'Yes, completely free. No registration, no subscription, no ads. Enter a plate number and get the full report instantly — no strings attached.',
+    },
+    {
+      q: 'How do I check a vehicle\'s history before buying?',
+      a: 'Enter the license plate in the search box above. You\'ll instantly see ownership count, any recorded damage, odometer at last MOT, and whether the MOT is still valid — everything you need to make an informed purchase decision.',
     },
     {
       q: 'How accurate is the data?',
@@ -212,6 +224,34 @@ export default async function VehicleLookupPage() {
               </div>
             ))}
           </div>
+        </div>
+      </div>
+
+      {/* ── WHY CARISSUES ── */}
+      <div className="container" style={{ maxWidth: 760, padding: '48px 16px 0' }}>
+        <h2 style={{ fontSize: '1.25rem', fontWeight: 800, marginBottom: 20 }}>
+          {isHe ? 'למה CarIssues ולא אתרים אחרים?' : 'Why CarIssues over other services?'}
+        </h2>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 12 }}>
+          {(isHe ? [
+            { icon: '🆓', title: 'חינם לחלוטין', desc: 'אין תשלום, אין מנוי, אין "בדיקות מוגבלות בחינם"' },
+            { icon: '🚫', title: 'ללא פרסומות', desc: 'ממשק נקי — בלי פרסומות מסיחות ובלי חלונות קופצים' },
+            { icon: '🔓', title: 'ללא הרשמה', desc: 'אין צורך ליצור חשבון או למסור פרטים אישיים' },
+            { icon: '⚡', title: 'תוצאות מיידיות', desc: 'הנתונים מגיעים ישירות ממשרד התחבורה — בשניות' },
+          ] : [
+            { icon: '🆓', title: 'Completely free', desc: 'No payment, no subscription, no "limited free checks"' },
+            { icon: '🚫', title: 'No ads', desc: 'Clean interface — no pop-ups, no banner ads, no distractions' },
+            { icon: '🔓', title: 'No registration', desc: 'No account needed, no personal details required' },
+            { icon: '⚡', title: 'Instant results', desc: 'Data pulled directly from Ministry of Transport in seconds' },
+          ]).map(item => (
+            <div key={item.title} className="card" style={{ padding: '16px 18px', display: 'flex', gap: 12, alignItems: 'flex-start' }}>
+              <span style={{ fontSize: 22, flexShrink: 0 }}>{item.icon}</span>
+              <div>
+                <div style={{ fontWeight: 700, fontSize: '0.875rem', marginBottom: 3 }}>{item.title}</div>
+                <div style={{ color: 'var(--text-muted)', fontSize: '0.78rem', lineHeight: 1.5 }}>{item.desc}</div>
+              </div>
+            </div>
+          ))}
         </div>
       </div>
 

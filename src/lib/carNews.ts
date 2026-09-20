@@ -82,27 +82,66 @@ async function fetchRss(url: string): Promise<RssItem[]> {
   }
 }
 
-async function rewriteInHebrew(titleEn: string, bodyEn: string): Promise<{ titleHe: string; bodyHe: string } | null> {
-  const prompt = `You are an Israeli automotive journalist writing for carissues.co.il.
-Rewrite the following car news article in natural, engaging Hebrew — as if you wrote it originally, not as a translation.
-Keep the facts accurate. Use Israeli automotive terminology. Keep it under 200 words.
+function buildHebrewPrompt(titleEn: string, bodyEn: string): string {
+  return `You are an Israeli automotive journalist writing for carissues.co.il.
+Write a full, original Hebrew news article based on the following source material.
+Write as if you are the author — not a translator. Use natural, engaging Hebrew with Israeli automotive terminology.
+Structure the article with 3–5 paragraphs covering: the news angle, key details, context/background, and what it means for Israeli car buyers.
+Aim for 350–450 words.
 
-Return ONLY a JSON object:
-{"title": "<Hebrew title>", "body": "<Hebrew article body>"}
+Return ONLY a JSON object (no markdown, no code block):
+{"title": "<Hebrew headline>", "body": "<Full Hebrew article, paragraphs separated by \\n\\n>"}
 
-Original title: ${titleEn}
-Original summary: ${bodyEn.slice(0, 800)}`;
+Source title: ${titleEn}
+Source content: ${bodyEn.slice(0, 1200)}`;
+}
 
+function parseHebrewJson(raw: string): { titleHe: string; bodyHe: string } | null {
+  const cleaned = raw.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/, '').trim();
+  const parsed = JSON.parse(cleaned);
+  if (!parsed?.title || !parsed?.body) return null;
+  return { titleHe: parsed.title.trim(), bodyHe: parsed.body.trim() };
+}
+
+async function rewriteWithGemini(titleEn: string, bodyEn: string): Promise<{ titleHe: string; bodyHe: string } | null> {
+  const apiKey = process.env.GEMINI_API_KEY;
+  if (!apiKey) return null;
   try {
-    const raw = await runWorkersAI([{ role: 'user', content: prompt }], { max_tokens: 600, temperature: 0.4 });
+    const res = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent?key=${apiKey}`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contents: [{ parts: [{ text: buildHebrewPrompt(titleEn, bodyEn) }] }],
+          generationConfig: { temperature: 0.5, maxOutputTokens: 1200 },
+        }),
+        signal: AbortSignal.timeout(20000),
+      }
+    );
+    if (!res.ok) return null;
+    const data = await res.json() as { candidates?: { content?: { parts?: { text?: string }[] } }[] };
+    const raw = data?.candidates?.[0]?.content?.parts?.[0]?.text ?? '';
     if (!raw) return null;
-    const cleaned = raw.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/, '').trim();
-    const parsed = JSON.parse(cleaned);
-    if (!parsed?.title || !parsed?.body) return null;
-    return { titleHe: parsed.title.trim(), bodyHe: parsed.body.trim() };
+    return parseHebrewJson(raw);
   } catch {
     return null;
   }
+}
+
+async function rewriteWithWorkersAI(titleEn: string, bodyEn: string): Promise<{ titleHe: string; bodyHe: string } | null> {
+  try {
+    const raw = await runWorkersAI([{ role: 'user', content: buildHebrewPrompt(titleEn, bodyEn) }], { max_tokens: 1200, temperature: 0.5 });
+    if (!raw) return null;
+    return parseHebrewJson(raw);
+  } catch {
+    return null;
+  }
+}
+
+async function rewriteInHebrew(titleEn: string, bodyEn: string): Promise<{ titleHe: string; bodyHe: string } | null> {
+  // Try Gemini first (better quality), fall back to Cloudflare Workers AI
+  return (await rewriteWithGemini(titleEn, bodyEn)) ?? (await rewriteWithWorkersAI(titleEn, bodyEn));
 }
 
 export async function ensureNewsTable(): Promise<void> {
@@ -116,10 +155,13 @@ export async function ensureNewsTable(): Promise<void> {
     body_en TEXT,
     image_url TEXT,
     published_at TEXT,
-    created_at TEXT DEFAULT (datetime('now'))
+    created_at TEXT DEFAULT (datetime('now')),
+    hidden INTEGER DEFAULT 0
   )`);
   // Index won't fail if already exists (SQLite CREATE INDEX IF NOT EXISTS)
   await dbRun(`CREATE INDEX IF NOT EXISTS car_news_published_at ON car_news(published_at DESC)`).catch(() => {});
+  // Add hidden column if table already existed without it
+  await dbRun(`ALTER TABLE car_news ADD COLUMN hidden INTEGER DEFAULT 0`).catch(() => {});
 }
 
 /**
@@ -175,9 +217,47 @@ export async function refreshCarNews(maxPerRun = 15): Promise<number> {
   return saved;
 }
 
-export async function getLatestNews(limit = 20, offset = 0): Promise<CarNewsItem[]> {
+/**
+ * Retry translation for articles that previously failed (title_he IS NULL).
+ * @param maxRetry Max articles to retry per call
+ */
+export async function retranslateUntranslated(maxRetry = 10): Promise<number> {
+  const rows = await dbAll<{ id: string; title_en: string | null; body_en: string | null }>(
+    `SELECT id, title_en, body_en FROM car_news WHERE (title_he IS NULL OR body_he IS NULL) AND title_en IS NOT NULL AND body_en IS NOT NULL ORDER BY published_at DESC LIMIT ?`,
+    maxRetry,
+  );
+  let fixed = 0;
+  for (const row of rows) {
+    if (!row.title_en || !row.body_en) continue;
+    const result = await rewriteInHebrew(row.title_en, row.body_en);
+    if (result) {
+      await dbRun(`UPDATE car_news SET title_he=?, body_he=? WHERE id=?`, result.titleHe, result.bodyHe, row.id);
+      fixed++;
+    }
+  }
+  return fixed;
+}
+
+export async function getLatestNews(limit = 20, offset = 0, locale?: string): Promise<CarNewsItem[]> {
+  const conditions = ['(hidden IS NULL OR hidden = 0)'];
+  if (locale === 'he') conditions.push('title_he IS NOT NULL AND body_he IS NOT NULL');
+  else if (locale === 'en') conditions.push('title_en IS NOT NULL AND body_en IS NOT NULL');
+  const where = `WHERE ${conditions.join(' AND ')}`;
   return dbAll<CarNewsItem>(
-    `SELECT * FROM car_news ORDER BY published_at DESC LIMIT ? OFFSET ?`,
+    `SELECT * FROM car_news ${where} ORDER BY published_at DESC LIMIT ? OFFSET ?`,
     limit, offset,
   );
+}
+
+export async function getNewsArticle(id: string): Promise<CarNewsItem | null> {
+  const rows = await dbAll<CarNewsItem>(`SELECT * FROM car_news WHERE id = ? AND (hidden IS NULL OR hidden = 0) LIMIT 1`, id);
+  return rows[0] ?? null;
+}
+
+export async function deleteNewsArticle(id: string): Promise<void> {
+  await dbRun(`DELETE FROM car_news WHERE id = ?`, id);
+}
+
+export async function hideNewsArticle(id: string): Promise<void> {
+  await dbRun(`UPDATE car_news SET hidden = 1 WHERE id = ?`, id);
 }

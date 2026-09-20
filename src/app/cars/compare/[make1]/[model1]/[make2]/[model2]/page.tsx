@@ -264,8 +264,8 @@ export default async function ComparePage({ params }: Props) {
             <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 8 }}>
               <MakeLogo logoUrl={mA.logoUrl} nameEn={mA.nameEn} size={52} />
             </div>
-            <div className="cmp-car-name" style={{ fontWeight: 900, fontSize: '1.15rem' }}>{nameA}</div>
-            {!isEn && <div style={{ color: 'var(--text-muted)', fontSize: '0.875rem' }}>{mA.nameEn} {modA.nameEn}</div>}
+            <div className="cmp-car-name" style={{ fontWeight: 900, fontSize: '1.15rem', textAlign: 'center' }}>{nameA}</div>
+            {!isEn && <div style={{ color: 'var(--text-muted)', fontSize: '0.875rem', textAlign: 'center' }}>{mA.nameEn} {modA.nameEn}</div>}
             <Link href={`/cars/${make1}/${model1}`} style={{ fontSize: '0.8125rem', color: 'var(--accent)', textDecoration: 'none', display: 'block', marginTop: 8 }}>
               {sp.modelPageLink}
             </Link>
@@ -278,8 +278,8 @@ export default async function ComparePage({ params }: Props) {
             <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 8 }}>
               <MakeLogo logoUrl={mB.logoUrl} nameEn={mB.nameEn} size={52} />
             </div>
-            <div className="cmp-car-name" style={{ fontWeight: 900, fontSize: '1.15rem' }}>{nameB}</div>
-            {!isEn && <div style={{ color: 'var(--text-muted)', fontSize: '0.875rem' }}>{mB.nameEn} {modB.nameEn}</div>}
+            <div className="cmp-car-name" style={{ fontWeight: 900, fontSize: '1.15rem', textAlign: 'center' }}>{nameB}</div>
+            {!isEn && <div style={{ color: 'var(--text-muted)', fontSize: '0.875rem', textAlign: 'center' }}>{mB.nameEn} {modB.nameEn}</div>}
             <Link href={`/cars/${make2}/${model2}`} style={{ fontSize: '0.8125rem', color: 'var(--accent)', textDecoration: 'none', display: 'block', marginTop: 8 }}>
               {sp.modelPageLink}
             </Link>
@@ -322,7 +322,7 @@ export default async function ComparePage({ params }: Props) {
           <div style={{ display: 'flex', gap: 0 }}>
             <div className="cmp-score-col" style={{ ...col, padding: '0 16px' }}>
               <Score label={sp.userRating} value={avgA} best={ratingWinner === 'a' ? 'a' : null} />
-              {avgA !== null && <div style={{ marginTop: 6 }}><StarRating rating={avgA} size={14} /></div>}
+              {avgA !== null && <div style={{ marginTop: 6, display: 'flex', justifyContent: 'center' }}><StarRating rating={avgA} size={14} /></div>}
               <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: 4 }}>{reviewsA.length} {sp.reviews}</div>
             </div>
             <div className="cmp-score-vdivider" style={divider} />
@@ -332,7 +332,7 @@ export default async function ComparePage({ params }: Props) {
             <div className="cmp-score-vdivider" style={divider} />
             <div className="cmp-score-col" style={{ ...col, padding: '0 16px' }}>
               <Score label={sp.userRating} value={avgB} best={ratingWinner === 'b' ? 'b' : null} />
-              {avgB !== null && <div style={{ marginTop: 6 }}><StarRating rating={avgB} size={14} /></div>}
+              {avgB !== null && <div style={{ marginTop: 6, display: 'flex', justifyContent: 'center' }}><StarRating rating={avgB} size={14} /></div>}
               <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: 4 }}>{reviewsB.length} {sp.reviews}</div>
             </div>
           </div>
@@ -401,13 +401,13 @@ export default async function ComparePage({ params }: Props) {
                   alignItems: 'center',
                 }}>
                   <div />
-                  <div style={{ textAlign: 'center' }}>
+                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
                     <MakeLogo logoUrl={swapCols ? mB.logoUrl : mA.logoUrl} nameEn={swapCols ? mB.nameEn : mA.nameEn} size={28} />
-                    <div style={{ fontWeight: 700, fontSize: '0.82rem', marginTop: 4, color: 'var(--text)' }}>{swapCols ? nameB : nameA}</div>
+                    <div style={{ fontWeight: 700, fontSize: '0.82rem', marginTop: 4, color: 'var(--text)', textAlign: 'center' }}>{swapCols ? nameB : nameA}</div>
                   </div>
-                  <div style={{ textAlign: 'center' }}>
+                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
                     <MakeLogo logoUrl={swapCols ? mA.logoUrl : mB.logoUrl} nameEn={swapCols ? mA.nameEn : mB.nameEn} size={28} />
-                    <div style={{ fontWeight: 700, fontSize: '0.82rem', marginTop: 4, color: 'var(--text)' }}>{swapCols ? nameA : nameB}</div>
+                    <div style={{ fontWeight: 700, fontSize: '0.82rem', marginTop: 4, color: 'var(--text)', textAlign: 'center' }}>{swapCols ? nameA : nameB}</div>
                   </div>
                 </div>
 

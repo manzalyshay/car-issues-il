@@ -7,34 +7,57 @@
    ══════════════════════════════════════════════════════════ */
 
 :root {
-  /* ── Handoff design tokens ─────────────────────────── */
-  --accent:         #1b4f8a;
+  /* ── Design tokens — CarIssues 2026 handoff ─────────── */
+  --accent:         #17408f;
+  --accent-hover:   #0f2b63;
+  --accent-light:   #2b58ad;
+  --accent-on-dark: #7ba0e8;
   --accent-2:       #2f6fb0;
   --accent-ink:     #ffffff;
-  --accent-soft:    rgba(27,79,138,0.09);
+  --accent-soft:    #eaf0fb;
 
-  --bg:             #f4f6fa;
+  --bg:             #f2f5fa;
   --surface:        #ffffff;
-  --surface-2:      #f0f3f8;
-  --text:           #15202e;
-  --text-muted:     #5a6b7e;
-  --text-faint:     #8595a6;
-  --border:         #e3e8ef;
-  --border-strong:  #cfd8e3;
+  --surface-2:      #f7f9fd;
+  --surface-tint:   #fbfcfe;
+  --ink:            #0d1b2f;
+  --ink-deep:       #08131f;
+  --ink-soft:       #41506c;
+  --text:           #0d1b2f;
+  --text-muted:     #5b6a86;
+  --text-faint:     #5f6e88;
+  --border:         #e4e9f2;
+  --border-strong:  #c9d6ee;
+  --divider:        #eef2f9;
 
-  --good:  #1f8a5b;
-  --warn:  #c98a17;
-  --bad:   #c8472f;
-  --star:  #f2a93b;
+  --good:          #12a150;
+  --good-ink:      #0f7a3d;
+  --good-bg:       #e6f7ed;
+  --good-border:   #c6ecd7;
+  --good-bright:   #3ddc84;
+  --warn:          #f5b301;
+  --warn-deep:     #f0a202;
+  --warn-escalate: #e8590c;
+  --warn-ink:      #7a5000;
+  --warn-ink-2:    #a06a00;
+  --warn-bg:       #fff6e0;
+  --warn-border:   #f6e2b2;
+  --bad:           #c0392b;
+  --bad-bg:        #fdeceb;
+  --bad-border:    #f6cfcb;
+  --star:          #e0a300;
+  --star-empty:    #c9d2e0;
 
-  --shadow:    0 1px 2px rgba(20,40,70,.05), 0 8px 24px rgba(20,40,70,.06);
-  --shadow-lg: 0 4px 12px rgba(20,40,70,.08), 0 24px 56px rgba(20,40,70,.12);
+  --shadow:       none;
+  --shadow-hover: 0 24px 44px -26px rgba(13,27,47,.45);
+  --shadow-strip: 0 20px 50px -30px rgba(13,27,47,.35);
+  --shadow-lg:    0 4px 12px rgba(20,40,70,.08), 0 24px 56px rgba(20,40,70,.12);
 
-  --r:    14px;
+  --r:    16px;
   --r-sm: 9px;
   --pad:  22px;
   --gap:  20px;
-  --maxw: 1200px;
+  --maxw: 1280px;
 
   /* ── Legacy aliases (keep for components not yet migrated) */
   --bg-base:        var(--bg);
@@ -67,8 +90,8 @@
   --shadow-md:  var(--shadow-lg);
   --shadow-red: 0 0 20px rgba(200,71,47,.18), 0 4px 12px rgba(200,71,47,.1);
 
-  --font-display: 'Heebo', 'Rubik', sans-serif;
-  --font-body:    'Heebo', 'Rubik', system-ui, sans-serif;
+  --font-display: var(--font-heebo), 'Heebo', sans-serif;
+  --font-body:    var(--font-assistant), 'Assistant', var(--font-heebo), system-ui, sans-serif;
 
   --radius:      var(--r);
   --radius-sm:   var(--r-sm);
@@ -98,19 +121,20 @@ h1, h2, h3, h4, h5, h6 {
   font-family: var(--font-body);
   font-weight: 700;
   line-height: 1.2;
-  color: var(--text-primary);
 }
 a { color: inherit; text-decoration: none; }
 img { max-width: 100%; height: auto; display: block; }
 button { font-family: inherit; cursor: pointer; }
 
-.container { max-width: 1200px; margin: 0 auto; padding: 0 1.5rem; }
+.container { max-width: var(--maxw); margin: 0 auto; padding: 0 clamp(16px,3vw,32px); }
 
 /* ══════════════════════════════════════════════════════════
    Keyframes
    ══════════════════════════════════════════════════════════ */
-@keyframes ci-ticker { from { transform: translateX(0) } to { transform: translateX(-50%) } }
-@keyframes ci-pulse { 0%,100% { opacity:1 } 50% { opacity:.3 } }
+@keyframes ci-ticker { from { transform: translateX(0) } to { transform: translateX(50%) } }
+@keyframes ci-pulse { 0%,100% { opacity:1; transform:scale(1) } 50% { opacity:.35; transform:scale(.7) } }
+.ci-reveal-hidden { opacity: 0; transform: translateY(20px); }
+.ci-reveal-shown  { opacity: 1; transform: none; transition: opacity .62s cubic-bezier(.23,1,.32,1), transform .62s cubic-bezier(.23,1,.32,1); }
 @keyframes spin { to { transform: rotate(360deg); } }
 @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 @keyframes riseUp {

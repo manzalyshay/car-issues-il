@@ -8,9 +8,10 @@ interface Props {
   makeSlug: string;
   modelSlug: string;
   isEn: boolean;
+  dark?: boolean;
 }
 
-export default function FollowButton({ makeSlug, modelSlug, isEn }: Props) {
+export default function FollowButton({ makeSlug, modelSlug, isEn, dark }: Props) {
   const { user } = useAuth();
   const [following, setFollowing] = useState(false);
   const [showAuth, setShowAuth] = useState(false);
@@ -67,7 +68,14 @@ export default function FollowButton({ makeSlug, modelSlug, isEn }: Props) {
     <>
       <button
         onClick={handleClick}
-        style={{
+        style={dark ? {
+          border: following ? '1px solid rgba(255,255,255,.4)' : 0,
+          background: following ? 'rgba(255,255,255,.15)' : '#17408f',
+          color: '#fff',
+          borderRadius: 10, padding: '8px 15px', fontSize: 13.5, fontWeight: 700,
+          cursor: 'pointer', transition: 'all 0.15s', fontFamily: 'inherit',
+          display: 'inline-flex', alignItems: 'center', gap: 6, whiteSpace: 'nowrap',
+        } : {
           border: `1px solid ${following ? '#1b7a4b' : '#1b4f8a'}`,
           background: following ? '#e7f5ed' : '#1b4f8a',
           color: following ? '#1b7a4b' : '#fff',

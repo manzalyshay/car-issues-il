@@ -1,4 +1,7 @@
 import type { NextConfig } from 'next';
+import { initOpenNextCloudflareForDev } from '@opennextjs/cloudflare';
+
+initOpenNextCloudflareForDev();
 
 // When building for Cloudflare Pages, stub out playwright-core so esbuild
 // doesn't try to bundle the real package (which requires Node.js binaries).
