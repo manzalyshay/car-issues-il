@@ -192,7 +192,7 @@ export default function HomeClient({ allMakes, topRanked, recentReviews, tickerI
     if (!q) return;
     const digits = (q.match(/\d/g) || []).length;
     if (digits >= 5 && /^[\d\-\s]+$/.test(q)) {
-      router.push(`/vehicle-lookup?plate=${encodeURIComponent(q)}`);
+      router.push(`/vehicle-lookup/${q.replace(/\D/g, '')}`);
     } else {
       router.push(`/cars?q=${encodeURIComponent(q)}`);
     }
@@ -266,7 +266,7 @@ export default function HomeClient({ allMakes, topRanked, recentReviews, tickerI
         background: 'linear-gradient(180deg,#0d1b2f 0%,#12294a 62%,#12294a 100%)',
         color: '#fff',
         padding: `clamp(18px,2vw,26px) ${GUTTER} clamp(40px,4vw,52px)`,
-        overflow: 'hidden',
+        overflowX: 'clip',
       }}>
         {/* radial overlays */}
         <div aria-hidden style={{ position: 'absolute', inset: 0, opacity: .5, background: 'radial-gradient(70% 60% at 88% 8%,rgba(23,64,143,.85),transparent 70%),radial-gradient(50% 50% at 10% 90%,rgba(18,161,80,.28),transparent 70%)', pointerEvents: 'none' }} />
@@ -292,7 +292,7 @@ export default function HomeClient({ allMakes, topRanked, recentReviews, tickerI
                     onChange={e => { setSearchQ(e.target.value); setAcOpen(true); setAcIdx(-1); }}
                     onKeyDown={handleKeyDown}
                     onFocus={() => setAcOpen(true)}
-                    placeholder={isHe ? 'מספר רכב או דגם — נזהה אוטומטית' : 'Plate or model — auto-detected'}
+                    placeholder={isHe ? 'הכנס מספר רישוי (1234567) או שם דגם' : 'Enter plate (1234567) or car model'}
                     style={{ flex: 1, minWidth: 0, border: 0, background: 'transparent', padding: '10px', fontSize: 15, outline: 'none', color: '#0d1b2f', direction: isHe ? 'rtl' : 'ltr' }}
                   />
                   <button type="button" onClick={() => handleSearch()} style={{ border: 0, background: '#17408f', color: '#fff', fontWeight: 700, fontSize: 15, padding: '10px 22px', borderRadius: 10, cursor: 'pointer', whiteSpace: 'nowrap' }}>
@@ -318,6 +318,9 @@ export default function HomeClient({ allMakes, topRanked, recentReviews, tickerI
               <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginTop: 12, alignItems: 'center' }}>
                 <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 12, fontWeight: 700, color: '#0f7a3d', background: '#e6f7ed', border: '1px solid #c6ecd7', padding: '4px 10px', borderRadius: 999 }}>
                   {searchBadge}
+                </span>
+                <span style={{ fontSize: 12, color: '#8a9ab8' }}>
+                  {isHe ? '· מספר רישוי = בדיקת פרטי רכב מלאה' : '· plate number = full vehicle check'}
                 </span>
                 <span style={{ fontSize: 12, color: '#5b6a86', fontWeight: 600 }}>{isHe ? 'נבדק הרבה:' : 'Trending:'}</span>
                 {(isHe

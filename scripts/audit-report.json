@@ -1,5 +1,1012 @@
 [
   {
+    "make": "audi",
+    "model": "a7",
+    "nameEn": "Audi A7",
+    "nameHe": "אאודי A7",
+    "score": -10,
+    "has3d": false,
+    "images": 12,
+    "expertReviews": 1,
+    "expertEnComplete": 0,
+    "userReviews": 0,
+    "recalls": 0,
+    "issues": [
+      "No 3D model",
+      "1/1 expert reviews missing EN summary",
+      "1/1 expert reviews missing EN pros",
+      "1/1 expert reviews missing EN cons",
+      "No user reviews",
+      "No recalls cached"
+    ],
+    "fixes": [
+      "Add Sketchfab model (search sketchfab.com for Audi A7)",
+      "Re-run AI translation for expert reviews",
+      "Re-translate pros_en for expert reviews",
+      "Re-translate cons_en for expert reviews",
+      "Promote this page to attract reviews",
+      "Trigger recalls fetch: GET /api/recalls?make=Audi%20A7&model=Audi%20A7"
+    ]
+  },
+  {
+    "make": "audi",
+    "model": "q2",
+    "nameEn": "Audi Q2",
+    "nameHe": "אאודי Q2",
+    "score": -10,
+    "has3d": false,
+    "images": 12,
+    "expertReviews": 1,
+    "expertEnComplete": 0,
+    "userReviews": 0,
+    "recalls": 0,
+    "issues": [
+      "No 3D model",
+      "1/1 expert reviews missing EN summary",
+      "1/1 expert reviews missing EN pros",
+      "1/1 expert reviews missing EN cons",
+      "No user reviews",
+      "No recalls cached"
+    ],
+    "fixes": [
+      "Add Sketchfab model (search sketchfab.com for Audi Q2)",
+      "Re-run AI translation for expert reviews",
+      "Re-translate pros_en for expert reviews",
+      "Re-translate cons_en for expert reviews",
+      "Promote this page to attract reviews",
+      "Trigger recalls fetch: GET /api/recalls?make=Audi%20Q2&model=Audi%20Q2"
+    ]
+  },
+  {
+    "make": "audi",
+    "model": "q8",
+    "nameEn": "Audi Q8",
+    "nameHe": "אאודי Q8",
+    "score": -10,
+    "has3d": false,
+    "images": 12,
+    "expertReviews": 1,
+    "expertEnComplete": 0,
+    "userReviews": 0,
+    "recalls": 0,
+    "issues": [
+      "No 3D model",
+      "1/1 expert reviews missing EN summary",
+      "1/1 expert reviews missing EN pros",
+      "1/1 expert reviews missing EN cons",
+      "No user reviews",
+      "No recalls cached"
+    ],
+    "fixes": [
+      "Add Sketchfab model (search sketchfab.com for Audi Q8)",
+      "Re-run AI translation for expert reviews",
+      "Re-translate pros_en for expert reviews",
+      "Re-translate cons_en for expert reviews",
+      "Promote this page to attract reviews",
+      "Trigger recalls fetch: GET /api/recalls?make=Audi%20Q8&model=Audi%20Q8"
+    ]
+  },
+  {
+    "make": "bmw",
+    "model": "x2",
+    "nameEn": "BMW X2",
+    "nameHe": "BMW X2",
+    "score": -10,
+    "has3d": false,
+    "images": 12,
+    "expertReviews": 1,
+    "expertEnComplete": 0,
+    "userReviews": 0,
+    "recalls": 0,
+    "issues": [
+      "No 3D model",
+      "1/1 expert reviews missing EN summary",
+      "1/1 expert reviews missing EN pros",
+      "1/1 expert reviews missing EN cons",
+      "No user reviews",
+      "No recalls cached"
+    ],
+    "fixes": [
+      "Add Sketchfab model (search sketchfab.com for BMW X2)",
+      "Re-run AI translation for expert reviews",
+      "Re-translate pros_en for expert reviews",
+      "Re-translate cons_en for expert reviews",
+      "Promote this page to attract reviews",
+      "Trigger recalls fetch: GET /api/recalls?make=BMW%20X2&model=BMW%20X2"
+    ]
+  },
+  {
+    "make": "bmw",
+    "model": "x4",
+    "nameEn": "BMW X4",
+    "nameHe": "BMW X4",
+    "score": -10,
+    "has3d": false,
+    "images": 12,
+    "expertReviews": 1,
+    "expertEnComplete": 0,
+    "userReviews": 0,
+    "recalls": 0,
+    "issues": [
+      "No 3D model",
+      "1/1 expert reviews missing EN summary",
+      "1/1 expert reviews missing EN pros",
+      "1/1 expert reviews missing EN cons",
+      "No user reviews",
+      "No recalls cached"
+    ],
+    "fixes": [
+      "Add Sketchfab model (search sketchfab.com for BMW X4)",
+      "Re-run AI translation for expert reviews",
+      "Re-translate pros_en for expert reviews",
+      "Re-translate cons_en for expert reviews",
+      "Promote this page to attract reviews",
+      "Trigger recalls fetch: GET /api/recalls?make=BMW%20X4&model=BMW%20X4"
+    ]
+  },
+  {
+    "make": "bmw",
+    "model": "x6",
+    "nameEn": "BMW X6",
+    "nameHe": "BMW X6",
+    "score": -10,
+    "has3d": false,
+    "images": 12,
+    "expertReviews": 1,
+    "expertEnComplete": 0,
+    "userReviews": 0,
+    "recalls": 0,
+    "issues": [
+      "No 3D model",
+      "1/1 expert reviews missing EN summary",
+      "1/1 expert reviews missing EN pros",
+      "1/1 expert reviews missing EN cons",
+      "No user reviews",
+      "No recalls cached"
+    ],
+    "fixes": [
+      "Add Sketchfab model (search sketchfab.com for BMW X6)",
+      "Re-run AI translation for expert reviews",
+      "Re-translate pros_en for expert reviews",
+      "Re-translate cons_en for expert reviews",
+      "Promote this page to attract reviews",
+      "Trigger recalls fetch: GET /api/recalls?make=BMW%20X6&model=BMW%20X6"
+    ]
+  },
+  {
+    "make": "bmw",
+    "model": "ix1",
+    "nameEn": "BMW iX1",
+    "nameHe": "BMW iX1",
+    "score": -10,
+    "has3d": false,
+    "images": 12,
+    "expertReviews": 1,
+    "expertEnComplete": 0,
+    "userReviews": 0,
+    "recalls": 0,
+    "issues": [
+      "No 3D model",
+      "1/1 expert reviews missing EN summary",
+      "1/1 expert reviews missing EN pros",
+      "1/1 expert reviews missing EN cons",
+      "No user reviews",
+      "No recalls cached"
+    ],
+    "fixes": [
+      "Add Sketchfab model (search sketchfab.com for BMW iX1)",
+      "Re-run AI translation for expert reviews",
+      "Re-translate pros_en for expert reviews",
+      "Re-translate cons_en for expert reviews",
+      "Promote this page to attract reviews",
+      "Trigger recalls fetch: GET /api/recalls?make=BMW%20iX1&model=BMW%20iX1"
+    ]
+  },
+  {
+    "make": "volkswagen",
+    "model": "arteon",
+    "nameEn": "Volkswagen Arteon",
+    "nameHe": "פולקסווגן ארטאון",
+    "score": -10,
+    "has3d": false,
+    "images": 12,
+    "expertReviews": 1,
+    "expertEnComplete": 0,
+    "userReviews": 0,
+    "recalls": 0,
+    "issues": [
+      "No 3D model",
+      "1/1 expert reviews missing EN summary",
+      "1/1 expert reviews missing EN pros",
+      "1/1 expert reviews missing EN cons",
+      "No user reviews",
+      "No recalls cached"
+    ],
+    "fixes": [
+      "Add Sketchfab model (search sketchfab.com for Volkswagen Arteon)",
+      "Re-run AI translation for expert reviews",
+      "Re-translate pros_en for expert reviews",
+      "Re-translate cons_en for expert reviews",
+      "Promote this page to attract reviews",
+      "Trigger recalls fetch: GET /api/recalls?make=Volkswagen%20Arteon&model=Volkswagen%20Arteon"
+    ]
+  },
+  {
+    "make": "volkswagen",
+    "model": "amarok",
+    "nameEn": "Volkswagen Amarok",
+    "nameHe": "פולקסווגן אמרוק",
+    "score": -10,
+    "has3d": false,
+    "images": 12,
+    "expertReviews": 1,
+    "expertEnComplete": 0,
+    "userReviews": 0,
+    "recalls": 0,
+    "issues": [
+      "No 3D model",
+      "1/1 expert reviews missing EN summary",
+      "1/1 expert reviews missing EN pros",
+      "1/1 expert reviews missing EN cons",
+      "No user reviews",
+      "No recalls cached"
+    ],
+    "fixes": [
+      "Add Sketchfab model (search sketchfab.com for Volkswagen Amarok)",
+      "Re-run AI translation for expert reviews",
+      "Re-translate pros_en for expert reviews",
+      "Re-translate cons_en for expert reviews",
+      "Promote this page to attract reviews",
+      "Trigger recalls fetch: GET /api/recalls?make=Volkswagen%20Amarok&model=Volkswagen%20Amarok"
+    ]
+  },
+  {
+    "make": "chery",
+    "model": "omoda-fx",
+    "nameEn": "Chery OMODA FX",
+    "nameHe": "צ'רי אומודה FX",
+    "score": -10,
+    "has3d": false,
+    "images": 12,
+    "expertReviews": 1,
+    "expertEnComplete": 0,
+    "userReviews": 0,
+    "recalls": 0,
+    "issues": [
+      "No 3D model",
+      "1/1 expert reviews missing EN summary",
+      "1/1 expert reviews missing EN pros",
+      "1/1 expert reviews missing EN cons",
+      "No user reviews",
+      "No recalls cached"
+    ],
+    "fixes": [
+      "Add Sketchfab model (search sketchfab.com for Chery OMODA FX)",
+      "Re-run AI translation for expert reviews",
+      "Re-translate pros_en for expert reviews",
+      "Re-translate cons_en for expert reviews",
+      "Promote this page to attract reviews",
+      "Trigger recalls fetch: GET /api/recalls?make=Chery%20OMODA%20FX&model=Chery%20OMODA%20FX"
+    ]
+  },
+  {
+    "make": "mini",
+    "model": "clubman",
+    "nameEn": "Mini Clubman",
+    "nameHe": "מיני קלאבמן",
+    "score": -10,
+    "has3d": false,
+    "images": 12,
+    "expertReviews": 1,
+    "expertEnComplete": 0,
+    "userReviews": 0,
+    "recalls": 0,
+    "issues": [
+      "No 3D model",
+      "1/1 expert reviews missing EN summary",
+      "1/1 expert reviews missing EN pros",
+      "1/1 expert reviews missing EN cons",
+      "No user reviews",
+      "No recalls cached"
+    ],
+    "fixes": [
+      "Add Sketchfab model (search sketchfab.com for Mini Clubman)",
+      "Re-run AI translation for expert reviews",
+      "Re-translate pros_en for expert reviews",
+      "Re-translate cons_en for expert reviews",
+      "Promote this page to attract reviews",
+      "Trigger recalls fetch: GET /api/recalls?make=Mini%20Clubman&model=Mini%20Clubman"
+    ]
+  },
+  {
+    "make": "mini",
+    "model": "mini-electric",
+    "nameEn": "Mini Electric",
+    "nameHe": "מיני אלקטרי",
+    "score": -10,
+    "has3d": false,
+    "images": 12,
+    "expertReviews": 1,
+    "expertEnComplete": 0,
+    "userReviews": 0,
+    "recalls": 0,
+    "issues": [
+      "No 3D model",
+      "1/1 expert reviews missing EN summary",
+      "1/1 expert reviews missing EN pros",
+      "1/1 expert reviews missing EN cons",
+      "No user reviews",
+      "No recalls cached"
+    ],
+    "fixes": [
+      "Add Sketchfab model (search sketchfab.com for Mini Electric)",
+      "Re-run AI translation for expert reviews",
+      "Re-translate pros_en for expert reviews",
+      "Re-translate cons_en for expert reviews",
+      "Promote this page to attract reviews",
+      "Trigger recalls fetch: GET /api/recalls?make=Mini%20Electric&model=Mini%20Electric"
+    ]
+  },
+  {
+    "make": "citroen",
+    "model": "c3",
+    "nameEn": "Citroën C3",
+    "nameHe": "סיטרואן C3",
+    "score": -10,
+    "has3d": false,
+    "images": 12,
+    "expertReviews": 1,
+    "expertEnComplete": 0,
+    "userReviews": 0,
+    "recalls": 0,
+    "issues": [
+      "No 3D model",
+      "1/1 expert reviews missing EN summary",
+      "1/1 expert reviews missing EN pros",
+      "1/1 expert reviews missing EN cons",
+      "No user reviews",
+      "No recalls cached"
+    ],
+    "fixes": [
+      "Add Sketchfab model (search sketchfab.com for Citroën C3)",
+      "Re-run AI translation for expert reviews",
+      "Re-translate pros_en for expert reviews",
+      "Re-translate cons_en for expert reviews",
+      "Promote this page to attract reviews",
+      "Trigger recalls fetch: GET /api/recalls?make=Citro%C3%ABn%20C3&model=Citro%C3%ABn%20C3"
+    ]
+  },
+  {
+    "make": "citroen",
+    "model": "c4",
+    "nameEn": "Citroën C4",
+    "nameHe": "סיטרואן C4",
+    "score": -10,
+    "has3d": false,
+    "images": 12,
+    "expertReviews": 1,
+    "expertEnComplete": 0,
+    "userReviews": 0,
+    "recalls": 0,
+    "issues": [
+      "No 3D model",
+      "1/1 expert reviews missing EN summary",
+      "1/1 expert reviews missing EN pros",
+      "1/1 expert reviews missing EN cons",
+      "No user reviews",
+      "No recalls cached"
+    ],
+    "fixes": [
+      "Add Sketchfab model (search sketchfab.com for Citroën C4)",
+      "Re-run AI translation for expert reviews",
+      "Re-translate pros_en for expert reviews",
+      "Re-translate cons_en for expert reviews",
+      "Promote this page to attract reviews",
+      "Trigger recalls fetch: GET /api/recalls?make=Citro%C3%ABn%20C4&model=Citro%C3%ABn%20C4"
+    ]
+  },
+  {
+    "make": "citroen",
+    "model": "c5x",
+    "nameEn": "Citroën C5 X",
+    "nameHe": "סיטרואן C5 X",
+    "score": -10,
+    "has3d": false,
+    "images": 12,
+    "expertReviews": 1,
+    "expertEnComplete": 0,
+    "userReviews": 0,
+    "recalls": 0,
+    "issues": [
+      "No 3D model",
+      "1/1 expert reviews missing EN summary",
+      "1/1 expert reviews missing EN pros",
+      "1/1 expert reviews missing EN cons",
+      "No user reviews",
+      "No recalls cached"
+    ],
+    "fixes": [
+      "Add Sketchfab model (search sketchfab.com for Citroën C5 X)",
+      "Re-run AI translation for expert reviews",
+      "Re-translate pros_en for expert reviews",
+      "Re-translate cons_en for expert reviews",
+      "Promote this page to attract reviews",
+      "Trigger recalls fetch: GET /api/recalls?make=Citro%C3%ABn%20C5%20X&model=Citro%C3%ABn%20C5%20X"
+    ]
+  },
+  {
+    "make": "citroen",
+    "model": "berlingo",
+    "nameEn": "Citroën Berlingo",
+    "nameHe": "סיטרואן ברלינגו",
+    "score": -10,
+    "has3d": false,
+    "images": 12,
+    "expertReviews": 1,
+    "expertEnComplete": 0,
+    "userReviews": 0,
+    "recalls": 0,
+    "issues": [
+      "No 3D model",
+      "1/1 expert reviews missing EN summary",
+      "1/1 expert reviews missing EN pros",
+      "1/1 expert reviews missing EN cons",
+      "No user reviews",
+      "No recalls cached"
+    ],
+    "fixes": [
+      "Add Sketchfab model (search sketchfab.com for Citroën Berlingo)",
+      "Re-run AI translation for expert reviews",
+      "Re-translate pros_en for expert reviews",
+      "Re-translate cons_en for expert reviews",
+      "Promote this page to attract reviews",
+      "Trigger recalls fetch: GET /api/recalls?make=Citro%C3%ABn%20Berlingo&model=Citro%C3%ABn%20Berlingo"
+    ]
+  },
+  {
+    "make": "infiniti",
+    "model": "qx50",
+    "nameEn": "Infiniti QX50",
+    "nameHe": "אינפיניטי QX50",
+    "score": -10,
+    "has3d": false,
+    "images": 12,
+    "expertReviews": 1,
+    "expertEnComplete": 0,
+    "userReviews": 0,
+    "recalls": 0,
+    "issues": [
+      "No 3D model",
+      "1/1 expert reviews missing EN summary",
+      "1/1 expert reviews missing EN pros",
+      "1/1 expert reviews missing EN cons",
+      "No user reviews",
+      "No recalls cached"
+    ],
+    "fixes": [
+      "Add Sketchfab model (search sketchfab.com for Infiniti QX50)",
+      "Re-run AI translation for expert reviews",
+      "Re-translate pros_en for expert reviews",
+      "Re-translate cons_en for expert reviews",
+      "Promote this page to attract reviews",
+      "Trigger recalls fetch: GET /api/recalls?make=Infiniti%20QX50&model=Infiniti%20QX50"
+    ]
+  },
+  {
+    "make": "infiniti",
+    "model": "qx60",
+    "nameEn": "Infiniti QX60",
+    "nameHe": "אינפיניטי QX60",
+    "score": -10,
+    "has3d": false,
+    "images": 12,
+    "expertReviews": 1,
+    "expertEnComplete": 0,
+    "userReviews": 0,
+    "recalls": 0,
+    "issues": [
+      "No 3D model",
+      "1/1 expert reviews missing EN summary",
+      "1/1 expert reviews missing EN pros",
+      "1/1 expert reviews missing EN cons",
+      "No user reviews",
+      "No recalls cached"
+    ],
+    "fixes": [
+      "Add Sketchfab model (search sketchfab.com for Infiniti QX60)",
+      "Re-run AI translation for expert reviews",
+      "Re-translate pros_en for expert reviews",
+      "Re-translate cons_en for expert reviews",
+      "Promote this page to attract reviews",
+      "Trigger recalls fetch: GET /api/recalls?make=Infiniti%20QX60&model=Infiniti%20QX60"
+    ]
+  },
+  {
+    "make": "genesis",
+    "model": "g80",
+    "nameEn": "Genesis G80",
+    "nameHe": "גנסיס G80",
+    "score": -10,
+    "has3d": false,
+    "images": 12,
+    "expertReviews": 1,
+    "expertEnComplete": 0,
+    "userReviews": 0,
+    "recalls": 0,
+    "issues": [
+      "No 3D model",
+      "1/1 expert reviews missing EN summary",
+      "1/1 expert reviews missing EN pros",
+      "1/1 expert reviews missing EN cons",
+      "No user reviews",
+      "No recalls cached"
+    ],
+    "fixes": [
+      "Add Sketchfab model (search sketchfab.com for Genesis G80)",
+      "Re-run AI translation for expert reviews",
+      "Re-translate pros_en for expert reviews",
+      "Re-translate cons_en for expert reviews",
+      "Promote this page to attract reviews",
+      "Trigger recalls fetch: GET /api/recalls?make=Genesis%20G80&model=Genesis%20G80"
+    ]
+  },
+  {
+    "make": "genesis",
+    "model": "gv80",
+    "nameEn": "Genesis GV80",
+    "nameHe": "גנסיס GV80",
+    "score": -10,
+    "has3d": false,
+    "images": 12,
+    "expertReviews": 1,
+    "expertEnComplete": 0,
+    "userReviews": 0,
+    "recalls": 0,
+    "issues": [
+      "No 3D model",
+      "1/1 expert reviews missing EN summary",
+      "1/1 expert reviews missing EN pros",
+      "1/1 expert reviews missing EN cons",
+      "No user reviews",
+      "No recalls cached"
+    ],
+    "fixes": [
+      "Add Sketchfab model (search sketchfab.com for Genesis GV80)",
+      "Re-run AI translation for expert reviews",
+      "Re-translate pros_en for expert reviews",
+      "Re-translate cons_en for expert reviews",
+      "Promote this page to attract reviews",
+      "Trigger recalls fetch: GET /api/recalls?make=Genesis%20GV80&model=Genesis%20GV80"
+    ]
+  },
+  {
+    "make": "lamborghini",
+    "model": "huracan",
+    "nameEn": "Lamborghini Huracán",
+    "nameHe": "למבורגיני הוראקן",
+    "score": -10,
+    "has3d": false,
+    "images": 12,
+    "expertReviews": 1,
+    "expertEnComplete": 0,
+    "userReviews": 0,
+    "recalls": 0,
+    "issues": [
+      "No 3D model",
+      "1/1 expert reviews missing EN summary",
+      "1/1 expert reviews missing EN pros",
+      "1/1 expert reviews missing EN cons",
+      "No user reviews",
+      "No recalls cached"
+    ],
+    "fixes": [
+      "Add Sketchfab model (search sketchfab.com for Lamborghini Huracán)",
+      "Re-run AI translation for expert reviews",
+      "Re-translate pros_en for expert reviews",
+      "Re-translate cons_en for expert reviews",
+      "Promote this page to attract reviews",
+      "Trigger recalls fetch: GET /api/recalls?make=Lamborghini%20Hurac%C3%A1n&model=Lamborghini%20Hurac%C3%A1n"
+    ]
+  },
+  {
+    "make": "lamborghini",
+    "model": "revuelto",
+    "nameEn": "Lamborghini Revuelto",
+    "nameHe": "למבורגיני רבואלטו",
+    "score": -10,
+    "has3d": false,
+    "images": 12,
+    "expertReviews": 1,
+    "expertEnComplete": 0,
+    "userReviews": 0,
+    "recalls": 0,
+    "issues": [
+      "No 3D model",
+      "1/1 expert reviews missing EN summary",
+      "1/1 expert reviews missing EN pros",
+      "1/1 expert reviews missing EN cons",
+      "No user reviews",
+      "No recalls cached"
+    ],
+    "fixes": [
+      "Add Sketchfab model (search sketchfab.com for Lamborghini Revuelto)",
+      "Re-run AI translation for expert reviews",
+      "Re-translate pros_en for expert reviews",
+      "Re-translate cons_en for expert reviews",
+      "Promote this page to attract reviews",
+      "Trigger recalls fetch: GET /api/recalls?make=Lamborghini%20Revuelto&model=Lamborghini%20Revuelto"
+    ]
+  },
+  {
+    "make": "lynk-co",
+    "model": "01",
+    "nameEn": "Lynk & Co 01",
+    "nameHe": "לינק 01",
+    "score": -10,
+    "has3d": false,
+    "images": 12,
+    "expertReviews": 1,
+    "expertEnComplete": 0,
+    "userReviews": 0,
+    "recalls": 0,
+    "issues": [
+      "No 3D model",
+      "1/1 expert reviews missing EN summary",
+      "1/1 expert reviews missing EN pros",
+      "1/1 expert reviews missing EN cons",
+      "No user reviews",
+      "No recalls cached"
+    ],
+    "fixes": [
+      "Add Sketchfab model (search sketchfab.com for Lynk & Co 01)",
+      "Re-run AI translation for expert reviews",
+      "Re-translate pros_en for expert reviews",
+      "Re-translate cons_en for expert reviews",
+      "Promote this page to attract reviews",
+      "Trigger recalls fetch: GET /api/recalls?make=Lynk%20%26%20Co%2001&model=Lynk%20%26%20Co%2001"
+    ]
+  },
+  {
+    "make": "lynk-co",
+    "model": "05",
+    "nameEn": "Lynk & Co 05",
+    "nameHe": "לינק 05",
+    "score": -10,
+    "has3d": false,
+    "images": 12,
+    "expertReviews": 1,
+    "expertEnComplete": 0,
+    "userReviews": 0,
+    "recalls": 0,
+    "issues": [
+      "No 3D model",
+      "1/1 expert reviews missing EN summary",
+      "1/1 expert reviews missing EN pros",
+      "1/1 expert reviews missing EN cons",
+      "No user reviews",
+      "No recalls cached"
+    ],
+    "fixes": [
+      "Add Sketchfab model (search sketchfab.com for Lynk & Co 05)",
+      "Re-run AI translation for expert reviews",
+      "Re-translate pros_en for expert reviews",
+      "Re-translate cons_en for expert reviews",
+      "Promote this page to attract reviews",
+      "Trigger recalls fetch: GET /api/recalls?make=Lynk%20%26%20Co%2005&model=Lynk%20%26%20Co%2005"
+    ]
+  },
+  {
+    "make": "haval",
+    "model": "h6",
+    "nameEn": "Haval H6",
+    "nameHe": "הוואל H6",
+    "score": -10,
+    "has3d": false,
+    "images": 12,
+    "expertReviews": 1,
+    "expertEnComplete": 0,
+    "userReviews": 0,
+    "recalls": 0,
+    "issues": [
+      "No 3D model",
+      "1/1 expert reviews missing EN summary",
+      "1/1 expert reviews missing EN pros",
+      "1/1 expert reviews missing EN cons",
+      "No user reviews",
+      "No recalls cached"
+    ],
+    "fixes": [
+      "Add Sketchfab model (search sketchfab.com for Haval H6)",
+      "Re-run AI translation for expert reviews",
+      "Re-translate pros_en for expert reviews",
+      "Re-translate cons_en for expert reviews",
+      "Promote this page to attract reviews",
+      "Trigger recalls fetch: GET /api/recalls?make=Haval%20H6&model=Haval%20H6"
+    ]
+  },
+  {
+    "make": "isuzu",
+    "model": "mu-x",
+    "nameEn": "Isuzu MU-X",
+    "nameHe": "איסוזו MU-X",
+    "score": -10,
+    "has3d": false,
+    "images": 12,
+    "expertReviews": 1,
+    "expertEnComplete": 0,
+    "userReviews": 0,
+    "recalls": 0,
+    "issues": [
+      "No 3D model",
+      "1/1 expert reviews missing EN summary",
+      "1/1 expert reviews missing EN pros",
+      "1/1 expert reviews missing EN cons",
+      "No user reviews",
+      "No recalls cached"
+    ],
+    "fixes": [
+      "Add Sketchfab model (search sketchfab.com for Isuzu MU-X)",
+      "Re-run AI translation for expert reviews",
+      "Re-translate pros_en for expert reviews",
+      "Re-translate cons_en for expert reviews",
+      "Promote this page to attract reviews",
+      "Trigger recalls fetch: GET /api/recalls?make=Isuzu%20MU-X&model=Isuzu%20MU-X"
+    ]
+  },
+  {
+    "make": "ssangyong",
+    "model": "rexton",
+    "nameEn": "SsangYong Rexton",
+    "nameHe": "סאנגיונג רקסטון",
+    "score": -10,
+    "has3d": false,
+    "images": 12,
+    "expertReviews": 1,
+    "expertEnComplete": 0,
+    "userReviews": 0,
+    "recalls": 0,
+    "issues": [
+      "No 3D model",
+      "1/1 expert reviews missing EN summary",
+      "1/1 expert reviews missing EN pros",
+      "1/1 expert reviews missing EN cons",
+      "No user reviews",
+      "No recalls cached"
+    ],
+    "fixes": [
+      "Add Sketchfab model (search sketchfab.com for SsangYong Rexton)",
+      "Re-run AI translation for expert reviews",
+      "Re-translate pros_en for expert reviews",
+      "Re-translate cons_en for expert reviews",
+      "Promote this page to attract reviews",
+      "Trigger recalls fetch: GET /api/recalls?make=SsangYong%20Rexton&model=SsangYong%20Rexton"
+    ]
+  },
+  {
+    "make": "mercedes",
+    "model": "cls",
+    "nameEn": "CLS",
+    "nameHe": "CLS",
+    "score": -10,
+    "has3d": false,
+    "images": 10,
+    "expertReviews": 1,
+    "expertEnComplete": 0,
+    "userReviews": 0,
+    "recalls": 0,
+    "issues": [
+      "No 3D model",
+      "1/1 expert reviews missing EN summary",
+      "1/1 expert reviews missing EN pros",
+      "1/1 expert reviews missing EN cons",
+      "No user reviews",
+      "No recalls cached"
+    ],
+    "fixes": [
+      "Add Sketchfab model (search sketchfab.com for CLS)",
+      "Re-run AI translation for expert reviews",
+      "Re-translate pros_en for expert reviews",
+      "Re-translate cons_en for expert reviews",
+      "Promote this page to attract reviews",
+      "Trigger recalls fetch: GET /api/recalls?make=CLS&model=CLS"
+    ]
+  },
+  {
+    "make": "mercedes",
+    "model": "amg-gt",
+    "nameEn": "AMG GT",
+    "nameHe": "AMG GT",
+    "score": -10,
+    "has3d": false,
+    "images": 10,
+    "expertReviews": 1,
+    "expertEnComplete": 0,
+    "userReviews": 0,
+    "recalls": 0,
+    "issues": [
+      "No 3D model",
+      "1/1 expert reviews missing EN summary",
+      "1/1 expert reviews missing EN pros",
+      "1/1 expert reviews missing EN cons",
+      "No user reviews",
+      "No recalls cached"
+    ],
+    "fixes": [
+      "Add Sketchfab model (search sketchfab.com for AMG GT)",
+      "Re-run AI translation for expert reviews",
+      "Re-translate pros_en for expert reviews",
+      "Re-translate cons_en for expert reviews",
+      "Promote this page to attract reviews",
+      "Trigger recalls fetch: GET /api/recalls?make=AMG%20GT&model=AMG%20GT"
+    ]
+  },
+  {
+    "make": "mercedes",
+    "model": "sl",
+    "nameEn": "SL",
+    "nameHe": "SL",
+    "score": -10,
+    "has3d": false,
+    "images": 10,
+    "expertReviews": 1,
+    "expertEnComplete": 0,
+    "userReviews": 0,
+    "recalls": 0,
+    "issues": [
+      "No 3D model",
+      "1/1 expert reviews missing EN summary",
+      "1/1 expert reviews missing EN pros",
+      "1/1 expert reviews missing EN cons",
+      "No user reviews",
+      "No recalls cached"
+    ],
+    "fixes": [
+      "Add Sketchfab model (search sketchfab.com for SL)",
+      "Re-run AI translation for expert reviews",
+      "Re-translate pros_en for expert reviews",
+      "Re-translate cons_en for expert reviews",
+      "Promote this page to attract reviews",
+      "Trigger recalls fetch: GET /api/recalls?make=SL&model=SL"
+    ]
+  },
+  {
+    "make": "mercedes",
+    "model": "eqe-suv",
+    "nameEn": "EQE SUV",
+    "nameHe": "EQE SUV",
+    "score": -10,
+    "has3d": false,
+    "images": 10,
+    "expertReviews": 1,
+    "expertEnComplete": 0,
+    "userReviews": 0,
+    "recalls": 0,
+    "issues": [
+      "No 3D model",
+      "1/1 expert reviews missing EN summary",
+      "1/1 expert reviews missing EN pros",
+      "1/1 expert reviews missing EN cons",
+      "No user reviews",
+      "No recalls cached"
+    ],
+    "fixes": [
+      "Add Sketchfab model (search sketchfab.com for EQE SUV)",
+      "Re-run AI translation for expert reviews",
+      "Re-translate pros_en for expert reviews",
+      "Re-translate cons_en for expert reviews",
+      "Promote this page to attract reviews",
+      "Trigger recalls fetch: GET /api/recalls?make=EQE%20SUV&model=EQE%20SUV"
+    ]
+  },
+  {
+    "make": "mercedes",
+    "model": "eqs-suv",
+    "nameEn": "EQS SUV",
+    "nameHe": "EQS SUV",
+    "score": -10,
+    "has3d": false,
+    "images": 10,
+    "expertReviews": 1,
+    "expertEnComplete": 0,
+    "userReviews": 0,
+    "recalls": 0,
+    "issues": [
+      "No 3D model",
+      "1/1 expert reviews missing EN summary",
+      "1/1 expert reviews missing EN pros",
+      "1/1 expert reviews missing EN cons",
+      "No user reviews",
+      "No recalls cached"
+    ],
+    "fixes": [
+      "Add Sketchfab model (search sketchfab.com for EQS SUV)",
+      "Re-run AI translation for expert reviews",
+      "Re-translate pros_en for expert reviews",
+      "Re-translate cons_en for expert reviews",
+      "Promote this page to attract reviews",
+      "Trigger recalls fetch: GET /api/recalls?make=EQS%20SUV&model=EQS%20SUV"
+    ]
+  },
+  {
+    "make": "mercedes",
+    "model": "v-class",
+    "nameEn": "V-Class",
+    "nameHe": "V-Class",
+    "score": -10,
+    "has3d": false,
+    "images": 10,
+    "expertReviews": 1,
+    "expertEnComplete": 0,
+    "userReviews": 0,
+    "recalls": 0,
+    "issues": [
+      "No 3D model",
+      "1/1 expert reviews missing EN summary",
+      "1/1 expert reviews missing EN pros",
+      "1/1 expert reviews missing EN cons",
+      "No user reviews",
+      "No recalls cached"
+    ],
+    "fixes": [
+      "Add Sketchfab model (search sketchfab.com for V-Class)",
+      "Re-run AI translation for expert reviews",
+      "Re-translate pros_en for expert reviews",
+      "Re-translate cons_en for expert reviews",
+      "Promote this page to attract reviews",
+      "Trigger recalls fetch: GET /api/recalls?make=V-Class&model=V-Class"
+    ]
+  },
+  {
+    "make": "polestar",
+    "model": "polestar-3",
+    "nameEn": "Polestar 3",
+    "nameHe": "פולסטאר 3",
+    "score": -9,
+    "has3d": false,
+    "images": 12,
+    "expertReviews": 1,
+    "expertEnComplete": 0,
+    "userReviews": 0,
+    "recalls": 6,
+    "issues": [
+      "No 3D model",
+      "1/1 expert reviews missing EN summary",
+      "1/1 expert reviews missing EN pros",
+      "1/1 expert reviews missing EN cons",
+      "No user reviews"
+    ],
+    "fixes": [
+      "Add Sketchfab model (search sketchfab.com for Polestar 3)",
+      "Re-run AI translation for expert reviews",
+      "Re-translate pros_en for expert reviews",
+      "Re-translate cons_en for expert reviews",
+      "Promote this page to attract reviews"
+    ]
+  },
+  {
+    "make": "fiat",
+    "model": "panda",
+    "nameEn": "Panda",
+    "nameHe": "פנדה",
+    "score": -6,
+    "has3d": false,
+    "images": 82,
+    "expertReviews": 15,
+    "expertEnComplete": 100,
+    "userReviews": 0,
+    "recalls": 0,
+    "issues": [
+      "No 3D model",
+      "No user reviews",
+      "No recalls cached"
+    ],
+    "fixes": [
+      "Add Sketchfab model (search sketchfab.com for Panda)",
+      "Promote this page to attract reviews",
+      "Trigger recalls fetch: GET /api/recalls?make=Panda&model=Panda"
+    ]
+  },
+  {
     "make": "volkswagen",
     "model": "id3",
     "nameEn": "ID.3",
@@ -69,6 +1076,29 @@
     ]
   },
   {
+    "make": "dacia",
+    "model": "spring",
+    "nameEn": "Spring",
+    "nameHe": "ספרינג",
+    "score": -6,
+    "has3d": false,
+    "images": 37,
+    "expertReviews": 6,
+    "expertEnComplete": 100,
+    "userReviews": 0,
+    "recalls": 0,
+    "issues": [
+      "No 3D model",
+      "No user reviews",
+      "No recalls cached"
+    ],
+    "fixes": [
+      "Add Sketchfab model (search sketchfab.com for Spring)",
+      "Promote this page to attract reviews",
+      "Trigger recalls fetch: GET /api/recalls?make=Spring&model=Spring"
+    ]
+  },
+  {
     "make": "mg",
     "model": "hs",
     "nameEn": "HS",
@@ -89,6 +1119,29 @@
       "Add Sketchfab model (search sketchfab.com for HS)",
       "Promote this page to attract reviews",
       "Trigger recalls fetch: GET /api/recalls?make=HS&model=HS"
+    ]
+  },
+  {
+    "make": "skoda",
+    "model": "scala",
+    "nameEn": "Scala",
+    "nameHe": "סקאלה",
+    "score": -6,
+    "has3d": false,
+    "images": 49,
+    "expertReviews": 9,
+    "expertEnComplete": 100,
+    "userReviews": 0,
+    "recalls": 0,
+    "issues": [
+      "No 3D model",
+      "No user reviews",
+      "No recalls cached"
+    ],
+    "fixes": [
+      "Add Sketchfab model (search sketchfab.com for Scala)",
+      "Promote this page to attract reviews",
+      "Trigger recalls fetch: GET /api/recalls?make=Scala&model=Scala"
     ]
   },
   {
@@ -115,14 +1168,14 @@
     ]
   },
   {
-    "make": "mercedes",
-    "model": "a200",
-    "nameEn": "A200",
-    "nameHe": "A200",
+    "make": "land-rover",
+    "model": "defender",
+    "nameEn": "Defender",
+    "nameHe": "דיפנדר",
     "score": -6,
     "has3d": false,
-    "images": 23,
-    "expertReviews": 13,
+    "images": 48,
+    "expertReviews": 8,
     "expertEnComplete": 100,
     "userReviews": 0,
     "recalls": 0,
@@ -132,32 +1185,9 @@
       "No recalls cached"
     ],
     "fixes": [
-      "Add Sketchfab model (search sketchfab.com for A200)",
+      "Add Sketchfab model (search sketchfab.com for Defender)",
       "Promote this page to attract reviews",
-      "Trigger recalls fetch: GET /api/recalls?make=A200&model=A200"
-    ]
-  },
-  {
-    "make": "mercedes",
-    "model": "a220",
-    "nameEn": "A220",
-    "nameHe": "A220",
-    "score": -6,
-    "has3d": false,
-    "images": 17,
-    "expertReviews": 9,
-    "expertEnComplete": 100,
-    "userReviews": 0,
-    "recalls": 0,
-    "issues": [
-      "No 3D model",
-      "No user reviews",
-      "No recalls cached"
-    ],
-    "fixes": [
-      "Add Sketchfab model (search sketchfab.com for A220)",
-      "Promote this page to attract reviews",
-      "Trigger recalls fetch: GET /api/recalls?make=A220&model=A220"
+      "Trigger recalls fetch: GET /api/recalls?make=Defender&model=Defender"
     ]
   },
   {
@@ -207,6 +1237,719 @@
     ]
   },
   {
+    "make": "mercedes",
+    "model": "g-class",
+    "nameEn": "G-Class",
+    "nameHe": "G-Class",
+    "score": -6,
+    "has3d": false,
+    "images": 12,
+    "expertReviews": 1,
+    "expertEnComplete": 100,
+    "userReviews": 0,
+    "recalls": 0,
+    "issues": [
+      "No 3D model",
+      "No user reviews",
+      "No recalls cached"
+    ],
+    "fixes": [
+      "Add Sketchfab model (search sketchfab.com for G-Class)",
+      "Promote this page to attract reviews",
+      "Trigger recalls fetch: GET /api/recalls?make=G-Class&model=G-Class"
+    ]
+  },
+  {
+    "make": "mercedes",
+    "model": "gle",
+    "nameEn": "GLE",
+    "nameHe": "GLE",
+    "score": -6,
+    "has3d": false,
+    "images": 12,
+    "expertReviews": 1,
+    "expertEnComplete": 100,
+    "userReviews": 0,
+    "recalls": 0,
+    "issues": [
+      "No 3D model",
+      "No user reviews",
+      "No recalls cached"
+    ],
+    "fixes": [
+      "Add Sketchfab model (search sketchfab.com for GLE)",
+      "Promote this page to attract reviews",
+      "Trigger recalls fetch: GET /api/recalls?make=GLE&model=GLE"
+    ]
+  },
+  {
+    "make": "mercedes",
+    "model": "gls",
+    "nameEn": "GLS",
+    "nameHe": "GLS",
+    "score": -6,
+    "has3d": false,
+    "images": 12,
+    "expertReviews": 1,
+    "expertEnComplete": 100,
+    "userReviews": 0,
+    "recalls": 0,
+    "issues": [
+      "No 3D model",
+      "No user reviews",
+      "No recalls cached"
+    ],
+    "fixes": [
+      "Add Sketchfab model (search sketchfab.com for GLS)",
+      "Promote this page to attract reviews",
+      "Trigger recalls fetch: GET /api/recalls?make=GLS&model=GLS"
+    ]
+  },
+  {
+    "make": "mercedes",
+    "model": "s-class",
+    "nameEn": "S-Class",
+    "nameHe": "S-Class",
+    "score": -6,
+    "has3d": false,
+    "images": 12,
+    "expertReviews": 1,
+    "expertEnComplete": 100,
+    "userReviews": 0,
+    "recalls": 0,
+    "issues": [
+      "No 3D model",
+      "No user reviews",
+      "No recalls cached"
+    ],
+    "fixes": [
+      "Add Sketchfab model (search sketchfab.com for S-Class)",
+      "Promote this page to attract reviews",
+      "Trigger recalls fetch: GET /api/recalls?make=S-Class&model=S-Class"
+    ]
+  },
+  {
+    "make": "mercedes",
+    "model": "eqa",
+    "nameEn": "EQA",
+    "nameHe": "EQA",
+    "score": -6,
+    "has3d": false,
+    "images": 12,
+    "expertReviews": 1,
+    "expertEnComplete": 100,
+    "userReviews": 0,
+    "recalls": 0,
+    "issues": [
+      "No 3D model",
+      "No user reviews",
+      "No recalls cached"
+    ],
+    "fixes": [
+      "Add Sketchfab model (search sketchfab.com for EQA)",
+      "Promote this page to attract reviews",
+      "Trigger recalls fetch: GET /api/recalls?make=EQA&model=EQA"
+    ]
+  },
+  {
+    "make": "mercedes",
+    "model": "eqe",
+    "nameEn": "EQE",
+    "nameHe": "EQE",
+    "score": -6,
+    "has3d": false,
+    "images": 12,
+    "expertReviews": 1,
+    "expertEnComplete": 100,
+    "userReviews": 0,
+    "recalls": 0,
+    "issues": [
+      "No 3D model",
+      "No user reviews",
+      "No recalls cached"
+    ],
+    "fixes": [
+      "Add Sketchfab model (search sketchfab.com for EQE)",
+      "Promote this page to attract reviews",
+      "Trigger recalls fetch: GET /api/recalls?make=EQE&model=EQE"
+    ]
+  },
+  {
+    "make": "mercedes",
+    "model": "eqs",
+    "nameEn": "EQS",
+    "nameHe": "EQS",
+    "score": -6,
+    "has3d": false,
+    "images": 12,
+    "expertReviews": 1,
+    "expertEnComplete": 100,
+    "userReviews": 0,
+    "recalls": 0,
+    "issues": [
+      "No 3D model",
+      "No user reviews",
+      "No recalls cached"
+    ],
+    "fixes": [
+      "Add Sketchfab model (search sketchfab.com for EQS)",
+      "Promote this page to attract reviews",
+      "Trigger recalls fetch: GET /api/recalls?make=EQS&model=EQS"
+    ]
+  },
+  {
+    "make": "audi",
+    "model": "a1",
+    "nameEn": "Audi A1",
+    "nameHe": "אאודי A1",
+    "score": -6,
+    "has3d": false,
+    "images": 12,
+    "expertReviews": 1,
+    "expertEnComplete": 100,
+    "userReviews": 0,
+    "recalls": 0,
+    "issues": [
+      "No 3D model",
+      "No user reviews",
+      "No recalls cached"
+    ],
+    "fixes": [
+      "Add Sketchfab model (search sketchfab.com for Audi A1)",
+      "Promote this page to attract reviews",
+      "Trigger recalls fetch: GET /api/recalls?make=Audi%20A1&model=Audi%20A1"
+    ]
+  },
+  {
+    "make": "audi",
+    "model": "a5",
+    "nameEn": "Audi A5",
+    "nameHe": "אאודי A5",
+    "score": -6,
+    "has3d": false,
+    "images": 12,
+    "expertReviews": 1,
+    "expertEnComplete": 100,
+    "userReviews": 0,
+    "recalls": 0,
+    "issues": [
+      "No 3D model",
+      "No user reviews",
+      "No recalls cached"
+    ],
+    "fixes": [
+      "Add Sketchfab model (search sketchfab.com for Audi A5)",
+      "Promote this page to attract reviews",
+      "Trigger recalls fetch: GET /api/recalls?make=Audi%20A5&model=Audi%20A5"
+    ]
+  },
+  {
+    "make": "audi",
+    "model": "q7",
+    "nameEn": "Audi Q7",
+    "nameHe": "אאודי Q7",
+    "score": -6,
+    "has3d": false,
+    "images": 12,
+    "expertReviews": 1,
+    "expertEnComplete": 100,
+    "userReviews": 0,
+    "recalls": 0,
+    "issues": [
+      "No 3D model",
+      "No user reviews",
+      "No recalls cached"
+    ],
+    "fixes": [
+      "Add Sketchfab model (search sketchfab.com for Audi Q7)",
+      "Promote this page to attract reviews",
+      "Trigger recalls fetch: GET /api/recalls?make=Audi%20Q7&model=Audi%20Q7"
+    ]
+  },
+  {
+    "make": "audi",
+    "model": "q4-etron",
+    "nameEn": "Audi Q4 e-tron",
+    "nameHe": "אאודי Q4 e-tron",
+    "score": -6,
+    "has3d": false,
+    "images": 12,
+    "expertReviews": 1,
+    "expertEnComplete": 100,
+    "userReviews": 0,
+    "recalls": 0,
+    "issues": [
+      "No 3D model",
+      "No user reviews",
+      "No recalls cached"
+    ],
+    "fixes": [
+      "Add Sketchfab model (search sketchfab.com for Audi Q4 e-tron)",
+      "Promote this page to attract reviews",
+      "Trigger recalls fetch: GET /api/recalls?make=Audi%20Q4%20e-tron&model=Audi%20Q4%20e-tron"
+    ]
+  },
+  {
+    "make": "bmw",
+    "model": "series2",
+    "nameEn": "BMW 2 Series",
+    "nameHe": "BMW סדרה 2",
+    "score": -6,
+    "has3d": false,
+    "images": 12,
+    "expertReviews": 1,
+    "expertEnComplete": 100,
+    "userReviews": 0,
+    "recalls": 0,
+    "issues": [
+      "No 3D model",
+      "No user reviews",
+      "No recalls cached"
+    ],
+    "fixes": [
+      "Add Sketchfab model (search sketchfab.com for BMW 2 Series)",
+      "Promote this page to attract reviews",
+      "Trigger recalls fetch: GET /api/recalls?make=BMW%202%20Series&model=BMW%202%20Series"
+    ]
+  },
+  {
+    "make": "bmw",
+    "model": "series4",
+    "nameEn": "BMW 4 Series",
+    "nameHe": "BMW סדרה 4",
+    "score": -6,
+    "has3d": false,
+    "images": 12,
+    "expertReviews": 1,
+    "expertEnComplete": 100,
+    "userReviews": 0,
+    "recalls": 0,
+    "issues": [
+      "No 3D model",
+      "No user reviews",
+      "No recalls cached"
+    ],
+    "fixes": [
+      "Add Sketchfab model (search sketchfab.com for BMW 4 Series)",
+      "Promote this page to attract reviews",
+      "Trigger recalls fetch: GET /api/recalls?make=BMW%204%20Series&model=BMW%204%20Series"
+    ]
+  },
+  {
+    "make": "bmw",
+    "model": "i4",
+    "nameEn": "BMW i4",
+    "nameHe": "BMW i4",
+    "score": -6,
+    "has3d": false,
+    "images": 12,
+    "expertReviews": 1,
+    "expertEnComplete": 100,
+    "userReviews": 0,
+    "recalls": 0,
+    "issues": [
+      "No 3D model",
+      "No user reviews",
+      "No recalls cached"
+    ],
+    "fixes": [
+      "Add Sketchfab model (search sketchfab.com for BMW i4)",
+      "Promote this page to attract reviews",
+      "Trigger recalls fetch: GET /api/recalls?make=BMW%20i4&model=BMW%20i4"
+    ]
+  },
+  {
+    "make": "bmw",
+    "model": "ix",
+    "nameEn": "BMW iX",
+    "nameHe": "BMW iX",
+    "score": -6,
+    "has3d": false,
+    "images": 12,
+    "expertReviews": 1,
+    "expertEnComplete": 100,
+    "userReviews": 0,
+    "recalls": 0,
+    "issues": [
+      "No 3D model",
+      "No user reviews",
+      "No recalls cached"
+    ],
+    "fixes": [
+      "Add Sketchfab model (search sketchfab.com for BMW iX)",
+      "Promote this page to attract reviews",
+      "Trigger recalls fetch: GET /api/recalls?make=BMW%20iX&model=BMW%20iX"
+    ]
+  },
+  {
+    "make": "toyota",
+    "model": "supra",
+    "nameEn": "Toyota Supra",
+    "nameHe": "טויוטה סופרה",
+    "score": -6,
+    "has3d": false,
+    "images": 12,
+    "expertReviews": 1,
+    "expertEnComplete": 100,
+    "userReviews": 0,
+    "recalls": 0,
+    "issues": [
+      "No 3D model",
+      "No user reviews",
+      "No recalls cached"
+    ],
+    "fixes": [
+      "Add Sketchfab model (search sketchfab.com for Toyota Supra)",
+      "Promote this page to attract reviews",
+      "Trigger recalls fetch: GET /api/recalls?make=Toyota%20Supra&model=Toyota%20Supra"
+    ]
+  },
+  {
+    "make": "toyota",
+    "model": "gr86",
+    "nameEn": "Toyota GR86",
+    "nameHe": "טויוטה GR86",
+    "score": -6,
+    "has3d": false,
+    "images": 12,
+    "expertReviews": 1,
+    "expertEnComplete": 100,
+    "userReviews": 0,
+    "recalls": 0,
+    "issues": [
+      "No 3D model",
+      "No user reviews",
+      "No recalls cached"
+    ],
+    "fixes": [
+      "Add Sketchfab model (search sketchfab.com for Toyota GR86)",
+      "Promote this page to attract reviews",
+      "Trigger recalls fetch: GET /api/recalls?make=Toyota%20GR86&model=Toyota%20GR86"
+    ]
+  },
+  {
+    "make": "volkswagen",
+    "model": "id5",
+    "nameEn": "Volkswagen ID.5",
+    "nameHe": "פולקסווגן ID.5",
+    "score": -6,
+    "has3d": false,
+    "images": 12,
+    "expertReviews": 1,
+    "expertEnComplete": 100,
+    "userReviews": 0,
+    "recalls": 0,
+    "issues": [
+      "No 3D model",
+      "No user reviews",
+      "No recalls cached"
+    ],
+    "fixes": [
+      "Add Sketchfab model (search sketchfab.com for Volkswagen ID.5)",
+      "Promote this page to attract reviews",
+      "Trigger recalls fetch: GET /api/recalls?make=Volkswagen%20ID.5&model=Volkswagen%20ID.5"
+    ]
+  },
+  {
+    "make": "hyundai",
+    "model": "ioniq-9",
+    "nameEn": "Hyundai Ioniq 9",
+    "nameHe": "יונדאי איוניק 9",
+    "score": -6,
+    "has3d": false,
+    "images": 12,
+    "expertReviews": 1,
+    "expertEnComplete": 100,
+    "userReviews": 0,
+    "recalls": 0,
+    "issues": [
+      "No 3D model",
+      "No user reviews",
+      "No recalls cached"
+    ],
+    "fixes": [
+      "Add Sketchfab model (search sketchfab.com for Hyundai Ioniq 9)",
+      "Promote this page to attract reviews",
+      "Trigger recalls fetch: GET /api/recalls?make=Hyundai%20Ioniq%209&model=Hyundai%20Ioniq%209"
+    ]
+  },
+  {
+    "make": "hyundai",
+    "model": "palisade",
+    "nameEn": "Hyundai Palisade",
+    "nameHe": "יונדאי פליסייד",
+    "score": -6,
+    "has3d": false,
+    "images": 12,
+    "expertReviews": 1,
+    "expertEnComplete": 100,
+    "userReviews": 0,
+    "recalls": 0,
+    "issues": [
+      "No 3D model",
+      "No user reviews",
+      "No recalls cached"
+    ],
+    "fixes": [
+      "Add Sketchfab model (search sketchfab.com for Hyundai Palisade)",
+      "Promote this page to attract reviews",
+      "Trigger recalls fetch: GET /api/recalls?make=Hyundai%20Palisade&model=Hyundai%20Palisade"
+    ]
+  },
+  {
+    "make": "kia",
+    "model": "ev3",
+    "nameEn": "Kia EV3",
+    "nameHe": "קיה EV3",
+    "score": -6,
+    "has3d": false,
+    "images": 12,
+    "expertReviews": 1,
+    "expertEnComplete": 100,
+    "userReviews": 0,
+    "recalls": 0,
+    "issues": [
+      "No 3D model",
+      "No user reviews",
+      "No recalls cached"
+    ],
+    "fixes": [
+      "Add Sketchfab model (search sketchfab.com for Kia EV3)",
+      "Promote this page to attract reviews",
+      "Trigger recalls fetch: GET /api/recalls?make=Kia%20EV3&model=Kia%20EV3"
+    ]
+  },
+  {
+    "make": "chevrolet",
+    "model": "corvette",
+    "nameEn": "Chevrolet Corvette",
+    "nameHe": "שברולט קורבט",
+    "score": -6,
+    "has3d": false,
+    "images": 12,
+    "expertReviews": 1,
+    "expertEnComplete": 100,
+    "userReviews": 0,
+    "recalls": 0,
+    "issues": [
+      "No 3D model",
+      "No user reviews",
+      "No recalls cached"
+    ],
+    "fixes": [
+      "Add Sketchfab model (search sketchfab.com for Chevrolet Corvette)",
+      "Promote this page to attract reviews",
+      "Trigger recalls fetch: GET /api/recalls?make=Chevrolet%20Corvette&model=Chevrolet%20Corvette"
+    ]
+  },
+  {
+    "make": "geely",
+    "model": "monjaro",
+    "nameEn": "Geely Monjaro",
+    "nameHe": "ג'ילי מונחארו",
+    "score": -6,
+    "has3d": false,
+    "images": 12,
+    "expertReviews": 1,
+    "expertEnComplete": 100,
+    "userReviews": 0,
+    "recalls": 0,
+    "issues": [
+      "No 3D model",
+      "No user reviews",
+      "No recalls cached"
+    ],
+    "fixes": [
+      "Add Sketchfab model (search sketchfab.com for Geely Monjaro)",
+      "Promote this page to attract reviews",
+      "Trigger recalls fetch: GET /api/recalls?make=Geely%20Monjaro&model=Geely%20Monjaro"
+    ]
+  },
+  {
+    "make": "mini",
+    "model": "cooper",
+    "nameEn": "Mini Cooper",
+    "nameHe": "מיני קופר",
+    "score": -6,
+    "has3d": false,
+    "images": 12,
+    "expertReviews": 1,
+    "expertEnComplete": 100,
+    "userReviews": 0,
+    "recalls": 0,
+    "issues": [
+      "No 3D model",
+      "No user reviews",
+      "No recalls cached"
+    ],
+    "fixes": [
+      "Add Sketchfab model (search sketchfab.com for Mini Cooper)",
+      "Promote this page to attract reviews",
+      "Trigger recalls fetch: GET /api/recalls?make=Mini%20Cooper&model=Mini%20Cooper"
+    ]
+  },
+  {
+    "make": "mini",
+    "model": "countryman",
+    "nameEn": "Mini Countryman",
+    "nameHe": "מיני קאנטרימן",
+    "score": -6,
+    "has3d": false,
+    "images": 12,
+    "expertReviews": 1,
+    "expertEnComplete": 100,
+    "userReviews": 0,
+    "recalls": 0,
+    "issues": [
+      "No 3D model",
+      "No user reviews",
+      "No recalls cached"
+    ],
+    "fixes": [
+      "Add Sketchfab model (search sketchfab.com for Mini Countryman)",
+      "Promote this page to attract reviews",
+      "Trigger recalls fetch: GET /api/recalls?make=Mini%20Countryman&model=Mini%20Countryman"
+    ]
+  },
+  {
+    "make": "infiniti",
+    "model": "q50",
+    "nameEn": "Infiniti Q50",
+    "nameHe": "אינפיניטי Q50",
+    "score": -6,
+    "has3d": false,
+    "images": 12,
+    "expertReviews": 1,
+    "expertEnComplete": 100,
+    "userReviews": 0,
+    "recalls": 0,
+    "issues": [
+      "No 3D model",
+      "No user reviews",
+      "No recalls cached"
+    ],
+    "fixes": [
+      "Add Sketchfab model (search sketchfab.com for Infiniti Q50)",
+      "Promote this page to attract reviews",
+      "Trigger recalls fetch: GET /api/recalls?make=Infiniti%20Q50&model=Infiniti%20Q50"
+    ]
+  },
+  {
+    "make": "genesis",
+    "model": "gv70",
+    "nameEn": "Genesis GV70",
+    "nameHe": "גנסיס GV70",
+    "score": -6,
+    "has3d": false,
+    "images": 12,
+    "expertReviews": 1,
+    "expertEnComplete": 100,
+    "userReviews": 0,
+    "recalls": 0,
+    "issues": [
+      "No 3D model",
+      "No user reviews",
+      "No recalls cached"
+    ],
+    "fixes": [
+      "Add Sketchfab model (search sketchfab.com for Genesis GV70)",
+      "Promote this page to attract reviews",
+      "Trigger recalls fetch: GET /api/recalls?make=Genesis%20GV70&model=Genesis%20GV70"
+    ]
+  },
+  {
+    "make": "lamborghini",
+    "model": "urus",
+    "nameEn": "Lamborghini Urus",
+    "nameHe": "למבורגיני אורוס",
+    "score": -6,
+    "has3d": false,
+    "images": 12,
+    "expertReviews": 1,
+    "expertEnComplete": 100,
+    "userReviews": 0,
+    "recalls": 0,
+    "issues": [
+      "No 3D model",
+      "No user reviews",
+      "No recalls cached"
+    ],
+    "fixes": [
+      "Add Sketchfab model (search sketchfab.com for Lamborghini Urus)",
+      "Promote this page to attract reviews",
+      "Trigger recalls fetch: GET /api/recalls?make=Lamborghini%20Urus&model=Lamborghini%20Urus"
+    ]
+  },
+  {
+    "make": "haval",
+    "model": "jolion",
+    "nameEn": "Haval Jolion",
+    "nameHe": "הוואל ג'וליון",
+    "score": -6,
+    "has3d": false,
+    "images": 12,
+    "expertReviews": 1,
+    "expertEnComplete": 100,
+    "userReviews": 0,
+    "recalls": 0,
+    "issues": [
+      "No 3D model",
+      "No user reviews",
+      "No recalls cached"
+    ],
+    "fixes": [
+      "Add Sketchfab model (search sketchfab.com for Haval Jolion)",
+      "Promote this page to attract reviews",
+      "Trigger recalls fetch: GET /api/recalls?make=Haval%20Jolion&model=Haval%20Jolion"
+    ]
+  },
+  {
+    "make": "isuzu",
+    "model": "d-max",
+    "nameEn": "Isuzu D-Max",
+    "nameHe": "איסוזו D-Max",
+    "score": -6,
+    "has3d": false,
+    "images": 12,
+    "expertReviews": 1,
+    "expertEnComplete": 100,
+    "userReviews": 0,
+    "recalls": 0,
+    "issues": [
+      "No 3D model",
+      "No user reviews",
+      "No recalls cached"
+    ],
+    "fixes": [
+      "Add Sketchfab model (search sketchfab.com for Isuzu D-Max)",
+      "Promote this page to attract reviews",
+      "Trigger recalls fetch: GET /api/recalls?make=Isuzu%20D-Max&model=Isuzu%20D-Max"
+    ]
+  },
+  {
+    "make": "ssangyong",
+    "model": "tivoli",
+    "nameEn": "SsangYong Tivoli",
+    "nameHe": "סאנגיונג טיבולי",
+    "score": -6,
+    "has3d": false,
+    "images": 12,
+    "expertReviews": 1,
+    "expertEnComplete": 100,
+    "userReviews": 0,
+    "recalls": 0,
+    "issues": [
+      "No 3D model",
+      "No user reviews",
+      "No recalls cached"
+    ],
+    "fixes": [
+      "Add Sketchfab model (search sketchfab.com for SsangYong Tivoli)",
+      "Promote this page to attract reviews",
+      "Trigger recalls fetch: GET /api/recalls?make=SsangYong%20Tivoli&model=SsangYong%20Tivoli"
+    ]
+  },
+  {
     "make": "mg",
     "model": "ehs",
     "nameEn": "EHS",
@@ -225,6 +1968,71 @@
     "fixes": [
       "Add Sketchfab model (search sketchfab.com for EHS)",
       "Trigger recalls fetch: GET /api/recalls?make=EHS&model=EHS"
+    ]
+  },
+  {
+    "make": "volvo",
+    "model": "s60",
+    "nameEn": "S60",
+    "nameHe": "S60",
+    "score": -5,
+    "has3d": false,
+    "images": 102,
+    "expertReviews": 15,
+    "expertEnComplete": 100,
+    "userReviews": 0,
+    "recalls": 6,
+    "issues": [
+      "No 3D model",
+      "No user reviews"
+    ],
+    "fixes": [
+      "Add Sketchfab model (search sketchfab.com for S60)",
+      "Promote this page to attract reviews"
+    ]
+  },
+  {
+    "make": "mitsubishi",
+    "model": "pajero",
+    "nameEn": "Pajero",
+    "nameHe": "פג׳רו",
+    "score": -5,
+    "has3d": true,
+    "images": 0,
+    "expertReviews": 1,
+    "expertEnComplete": 100,
+    "userReviews": 0,
+    "recalls": 0,
+    "issues": [
+      "No images",
+      "No user reviews",
+      "No recalls cached"
+    ],
+    "fixes": [
+      "Add car images to car_images table",
+      "Promote this page to attract reviews",
+      "Trigger recalls fetch: GET /api/recalls?make=Pajero&model=Pajero"
+    ]
+  },
+  {
+    "make": "polestar",
+    "model": "polestar-2",
+    "nameEn": "Polestar 2",
+    "nameHe": "פולסטאר 2",
+    "score": -5,
+    "has3d": false,
+    "images": 12,
+    "expertReviews": 1,
+    "expertEnComplete": 100,
+    "userReviews": 0,
+    "recalls": 7,
+    "issues": [
+      "No 3D model",
+      "No user reviews"
+    ],
+    "fixes": [
+      "Add Sketchfab model (search sketchfab.com for Polestar 2)",
+      "Promote this page to attract reviews"
     ]
   },
   {
@@ -357,90 +2165,6 @@
   },
   {
     "make": "fiat",
-    "model": "panda",
-    "nameEn": "Panda",
-    "nameHe": "פנדה",
-    "score": -2,
-    "has3d": true,
-    "images": 82,
-    "expertReviews": 15,
-    "expertEnComplete": 100,
-    "userReviews": 0,
-    "recalls": 0,
-    "issues": [
-      "No user reviews",
-      "No recalls cached"
-    ],
-    "fixes": [
-      "Promote this page to attract reviews",
-      "Trigger recalls fetch: GET /api/recalls?make=Panda&model=Panda"
-    ]
-  },
-  {
-    "make": "mercedes",
-    "model": "c180",
-    "nameEn": "C180",
-    "nameHe": "C180",
-    "score": -2,
-    "has3d": true,
-    "images": 29,
-    "expertReviews": 11,
-    "expertEnComplete": 100,
-    "userReviews": 0,
-    "recalls": 0,
-    "issues": [
-      "No user reviews",
-      "No recalls cached"
-    ],
-    "fixes": [
-      "Promote this page to attract reviews",
-      "Trigger recalls fetch: GET /api/recalls?make=C180&model=C180"
-    ]
-  },
-  {
-    "make": "mercedes",
-    "model": "c220d",
-    "nameEn": "C220d",
-    "nameHe": "C220d",
-    "score": -2,
-    "has3d": true,
-    "images": 26,
-    "expertReviews": 13,
-    "expertEnComplete": 100,
-    "userReviews": 0,
-    "recalls": 0,
-    "issues": [
-      "No user reviews",
-      "No recalls cached"
-    ],
-    "fixes": [
-      "Promote this page to attract reviews",
-      "Trigger recalls fetch: GET /api/recalls?make=C220d&model=C220d"
-    ]
-  },
-  {
-    "make": "mercedes",
-    "model": "a250",
-    "nameEn": "A250",
-    "nameHe": "A250",
-    "score": -2,
-    "has3d": true,
-    "images": 22,
-    "expertReviews": 13,
-    "expertEnComplete": 100,
-    "userReviews": 0,
-    "recalls": 0,
-    "issues": [
-      "No user reviews",
-      "No recalls cached"
-    ],
-    "fixes": [
-      "Promote this page to attract reviews",
-      "Trigger recalls fetch: GET /api/recalls?make=A250&model=A250"
-    ]
-  },
-  {
-    "make": "fiat",
     "model": "tipo-cross",
     "nameEn": "Tipo Cross",
     "nameHe": "טיפו קרוס",
@@ -458,48 +2182,6 @@
     "fixes": [
       "Promote this page to attract reviews",
       "Trigger recalls fetch: GET /api/recalls?make=Tipo%20Cross&model=Tipo%20Cross"
-    ]
-  },
-  {
-    "make": "mercedes",
-    "model": "c200",
-    "nameEn": "C200",
-    "nameHe": "C200",
-    "score": -2,
-    "has3d": true,
-    "images": 44,
-    "expertReviews": 14,
-    "expertEnComplete": 100,
-    "userReviews": 0,
-    "recalls": 0,
-    "issues": [
-      "No user reviews",
-      "No recalls cached"
-    ],
-    "fixes": [
-      "Promote this page to attract reviews",
-      "Trigger recalls fetch: GET /api/recalls?make=C200&model=C200"
-    ]
-  },
-  {
-    "make": "mercedes",
-    "model": "c43-amg",
-    "nameEn": "C43 AMG",
-    "nameHe": "C43 AMG",
-    "score": -2,
-    "has3d": true,
-    "images": 39,
-    "expertReviews": 13,
-    "expertEnComplete": 100,
-    "userReviews": 0,
-    "recalls": 0,
-    "issues": [
-      "No user reviews",
-      "No recalls cached"
-    ],
-    "fixes": [
-      "Promote this page to attract reviews",
-      "Trigger recalls fetch: GET /api/recalls?make=C43%20AMG&model=C43%20AMG"
     ]
   },
   {
@@ -524,27 +2206,6 @@
     ]
   },
   {
-    "make": "mercedes",
-    "model": "c300",
-    "nameEn": "C300",
-    "nameHe": "C300",
-    "score": -2,
-    "has3d": true,
-    "images": 30,
-    "expertReviews": 13,
-    "expertEnComplete": 100,
-    "userReviews": 0,
-    "recalls": 0,
-    "issues": [
-      "No user reviews",
-      "No recalls cached"
-    ],
-    "fixes": [
-      "Promote this page to attract reviews",
-      "Trigger recalls fetch: GET /api/recalls?make=C300&model=C300"
-    ]
-  },
-  {
     "make": "fiat",
     "model": "doblo",
     "nameEn": "Doblò",
@@ -563,27 +2224,6 @@
     "fixes": [
       "Promote this page to attract reviews",
       "Trigger recalls fetch: GET /api/recalls?make=Dobl%C3%B2&model=Dobl%C3%B2"
-    ]
-  },
-  {
-    "make": "mercedes",
-    "model": "a45-amg",
-    "nameEn": "A45 AMG",
-    "nameHe": "A45 AMG",
-    "score": -2,
-    "has3d": true,
-    "images": 30,
-    "expertReviews": 14,
-    "expertEnComplete": 100,
-    "userReviews": 0,
-    "recalls": 0,
-    "issues": [
-      "No user reviews",
-      "No recalls cached"
-    ],
-    "fixes": [
-      "Promote this page to attract reviews",
-      "Trigger recalls fetch: GET /api/recalls?make=A45%20AMG&model=A45%20AMG"
     ]
   },
   {
@@ -1160,7 +2800,7 @@
     "nameHe": "בורן",
     "score": -2,
     "has3d": true,
-    "images": 41,
+    "images": 39,
     "expertReviews": 6,
     "expertEnComplete": 100,
     "userReviews": 0,
@@ -1323,27 +2963,6 @@
   },
   {
     "make": "renault",
-    "model": "clio",
-    "nameEn": "Clio",
-    "nameHe": "קליאו",
-    "score": -2,
-    "has3d": true,
-    "images": 95,
-    "expertReviews": 14,
-    "expertEnComplete": 100,
-    "userReviews": 0,
-    "recalls": 0,
-    "issues": [
-      "No user reviews",
-      "No recalls cached"
-    ],
-    "fixes": [
-      "Promote this page to attract reviews",
-      "Trigger recalls fetch: GET /api/recalls?make=Clio&model=Clio"
-    ]
-  },
-  {
-    "make": "renault",
     "model": "zoe",
     "nameEn": "Zoe",
     "nameHe": "זואי",
@@ -1445,27 +3064,6 @@
     "fixes": [
       "Promote this page to attract reviews",
       "Trigger recalls fetch: GET /api/recalls?make=Ateca&model=Ateca"
-    ]
-  },
-  {
-    "make": "dacia",
-    "model": "spring",
-    "nameEn": "Spring",
-    "nameHe": "ספרינג",
-    "score": -2,
-    "has3d": true,
-    "images": 37,
-    "expertReviews": 6,
-    "expertEnComplete": 100,
-    "userReviews": 0,
-    "recalls": 0,
-    "issues": [
-      "No user reviews",
-      "No recalls cached"
-    ],
-    "fixes": [
-      "Promote this page to attract reviews",
-      "Trigger recalls fetch: GET /api/recalls?make=Spring&model=Spring"
     ]
   },
   {
@@ -1784,27 +3382,6 @@
     ]
   },
   {
-    "make": "skoda",
-    "model": "scala",
-    "nameEn": "Scala",
-    "nameHe": "סקאלה",
-    "score": -2,
-    "has3d": true,
-    "images": 49,
-    "expertReviews": 9,
-    "expertEnComplete": 100,
-    "userReviews": 0,
-    "recalls": 0,
-    "issues": [
-      "No user reviews",
-      "No recalls cached"
-    ],
-    "fixes": [
-      "Promote this page to attract reviews",
-      "Trigger recalls fetch: GET /api/recalls?make=Scala&model=Scala"
-    ]
-  },
-  {
     "make": "mg",
     "model": "mg4",
     "nameEn": "MG4",
@@ -2058,27 +3635,6 @@
   },
   {
     "make": "lexus",
-    "model": "rx",
-    "nameEn": "RX",
-    "nameHe": "RX",
-    "score": -2,
-    "has3d": true,
-    "images": 96,
-    "expertReviews": 13,
-    "expertEnComplete": 100,
-    "userReviews": 0,
-    "recalls": 0,
-    "issues": [
-      "No user reviews",
-      "No recalls cached"
-    ],
-    "fixes": [
-      "Promote this page to attract reviews",
-      "Trigger recalls fetch: GET /api/recalls?make=RX&model=RX"
-    ]
-  },
-  {
-    "make": "lexus",
     "model": "ux",
     "nameEn": "UX",
     "nameHe": "UX",
@@ -2225,90 +3781,6 @@
     ]
   },
   {
-    "make": "mercedes",
-    "model": "c63-amg",
-    "nameEn": "C63 AMG",
-    "nameHe": "C63 AMG",
-    "score": -2,
-    "has3d": true,
-    "images": 50,
-    "expertReviews": 14,
-    "expertEnComplete": 100,
-    "userReviews": 0,
-    "recalls": 0,
-    "issues": [
-      "No user reviews",
-      "No recalls cached"
-    ],
-    "fixes": [
-      "Promote this page to attract reviews",
-      "Trigger recalls fetch: GET /api/recalls?make=C63%20AMG&model=C63%20AMG"
-    ]
-  },
-  {
-    "make": "mercedes",
-    "model": "a180",
-    "nameEn": "A180",
-    "nameHe": "A180",
-    "score": -2,
-    "has3d": true,
-    "images": 33,
-    "expertReviews": 15,
-    "expertEnComplete": 100,
-    "userReviews": 0,
-    "recalls": 0,
-    "issues": [
-      "No user reviews",
-      "No recalls cached"
-    ],
-    "fixes": [
-      "Promote this page to attract reviews",
-      "Trigger recalls fetch: GET /api/recalls?make=A180&model=A180"
-    ]
-  },
-  {
-    "make": "mercedes",
-    "model": "a35-amg",
-    "nameEn": "A35 AMG",
-    "nameHe": "A35 AMG",
-    "score": -2,
-    "has3d": true,
-    "images": 18,
-    "expertReviews": 9,
-    "expertEnComplete": 100,
-    "userReviews": 0,
-    "recalls": 0,
-    "issues": [
-      "No user reviews",
-      "No recalls cached"
-    ],
-    "fixes": [
-      "Promote this page to attract reviews",
-      "Trigger recalls fetch: GET /api/recalls?make=A35%20AMG&model=A35%20AMG"
-    ]
-  },
-  {
-    "make": "mercedes",
-    "model": "c300d",
-    "nameEn": "C300d",
-    "nameHe": "C300d",
-    "score": -2,
-    "has3d": true,
-    "images": 5,
-    "expertReviews": 10,
-    "expertEnComplete": 100,
-    "userReviews": 0,
-    "recalls": 0,
-    "issues": [
-      "No user reviews",
-      "No recalls cached"
-    ],
-    "fixes": [
-      "Promote this page to attract reviews",
-      "Trigger recalls fetch: GET /api/recalls?make=C300d&model=C300d"
-    ]
-  },
-  {
     "make": "alfa-romeo",
     "model": "giulia",
     "nameEn": "Giulia",
@@ -2369,27 +3841,6 @@
     "fixes": [
       "Promote this page to attract reviews",
       "Trigger recalls fetch: GET /api/recalls?make=Tonale&model=Tonale"
-    ]
-  },
-  {
-    "make": "land-rover",
-    "model": "defender",
-    "nameEn": "Defender",
-    "nameHe": "דיפנדר",
-    "score": -2,
-    "has3d": true,
-    "images": 48,
-    "expertReviews": 8,
-    "expertEnComplete": 100,
-    "userReviews": 0,
-    "recalls": 0,
-    "issues": [
-      "No user reviews",
-      "No recalls cached"
-    ],
-    "fixes": [
-      "Promote this page to attract reviews",
-      "Trigger recalls fetch: GET /api/recalls?make=Defender&model=Defender"
     ]
   },
   {
@@ -2477,6 +3928,48 @@
     ]
   },
   {
+    "make": "mercedes",
+    "model": "a-class",
+    "nameEn": "A-Class",
+    "nameHe": "A-Class",
+    "score": -2,
+    "has3d": true,
+    "images": 89,
+    "expertReviews": 14,
+    "expertEnComplete": 100,
+    "userReviews": 0,
+    "recalls": 0,
+    "issues": [
+      "No user reviews",
+      "No recalls cached"
+    ],
+    "fixes": [
+      "Promote this page to attract reviews",
+      "Trigger recalls fetch: GET /api/recalls?make=A-Class&model=A-Class"
+    ]
+  },
+  {
+    "make": "mercedes",
+    "model": "c-class",
+    "nameEn": "C-Class",
+    "nameHe": "C-Class",
+    "score": -2,
+    "has3d": true,
+    "images": 75,
+    "expertReviews": 13,
+    "expertEnComplete": 100,
+    "userReviews": 0,
+    "recalls": 0,
+    "issues": [
+      "No user reviews",
+      "No recalls cached"
+    ],
+    "fixes": [
+      "Promote this page to attract reviews",
+      "Trigger recalls fetch: GET /api/recalls?make=C-Class&model=C-Class"
+    ]
+  },
+  {
     "make": "kia",
     "model": "carnival",
     "nameEn": "Carnival",
@@ -2525,7 +4018,7 @@
     "expertReviews": 11,
     "expertEnComplete": 100,
     "userReviews": 0,
-    "recalls": 17,
+    "recalls": 33,
     "issues": [
       "No user reviews"
     ],
@@ -2753,7 +4246,7 @@
     "expertReviews": 11,
     "expertEnComplete": 100,
     "userReviews": 0,
-    "recalls": 13,
+    "recalls": 14,
     "issues": [
       "No user reviews"
     ],
@@ -2791,7 +4284,7 @@
     "expertReviews": 8,
     "expertEnComplete": 100,
     "userReviews": 0,
-    "recalls": 4,
+    "recalls": 5,
     "issues": [
       "No user reviews"
     ],
@@ -2810,7 +4303,7 @@
     "expertReviews": 8,
     "expertEnComplete": 100,
     "userReviews": 0,
-    "recalls": 24,
+    "recalls": 26,
     "issues": [
       "No user reviews"
     ],
@@ -2915,25 +4408,6 @@
   },
   {
     "make": "mazda",
-    "model": "cx5",
-    "nameEn": "CX-5",
-    "nameHe": "CX-5",
-    "score": -1,
-    "has3d": true,
-    "images": 101,
-    "expertReviews": 15,
-    "expertEnComplete": 100,
-    "userReviews": 0,
-    "recalls": 6,
-    "issues": [
-      "No user reviews"
-    ],
-    "fixes": [
-      "Promote this page to attract reviews"
-    ]
-  },
-  {
-    "make": "mazda",
     "model": "mx5",
     "nameEn": "MX-5",
     "nameHe": "MX-5",
@@ -2962,7 +4436,7 @@
     "expertReviews": 15,
     "expertEnComplete": 100,
     "userReviews": 0,
-    "recalls": 20,
+    "recalls": 23,
     "issues": [
       "No user reviews"
     ],
@@ -3019,7 +4493,7 @@
     "expertReviews": 15,
     "expertEnComplete": 100,
     "userReviews": 0,
-    "recalls": 22,
+    "recalls": 23,
     "issues": [
       "No user reviews"
     ],
@@ -3142,25 +4616,6 @@
     ]
   },
   {
-    "make": "kia",
-    "model": "sorento",
-    "nameEn": "Sorento",
-    "nameHe": "סורנטו",
-    "score": -1,
-    "has3d": true,
-    "images": 101,
-    "expertReviews": 14,
-    "expertEnComplete": 100,
-    "userReviews": 0,
-    "recalls": 25,
-    "issues": [
-      "No user reviews"
-    ],
-    "fixes": [
-      "Promote this page to attract reviews"
-    ]
-  },
-  {
     "make": "audi",
     "model": "q3",
     "nameEn": "Q3",
@@ -3171,7 +4626,7 @@
     "expertReviews": 15,
     "expertEnComplete": 100,
     "userReviews": 0,
-    "recalls": 14,
+    "recalls": 15,
     "issues": [
       "No user reviews"
     ],
@@ -3190,7 +4645,7 @@
     "expertReviews": 4,
     "expertEnComplete": 100,
     "userReviews": 0,
-    "recalls": 8,
+    "recalls": 9,
     "issues": [
       "No user reviews"
     ],
@@ -3228,7 +4683,7 @@
     "expertReviews": 14,
     "expertEnComplete": 100,
     "userReviews": 0,
-    "recalls": 24,
+    "recalls": 43,
     "issues": [
       "No user reviews"
     ],
@@ -3294,22 +4749,22 @@
     ]
   },
   {
-    "make": "volvo",
-    "model": "s60",
-    "nameEn": "S60",
-    "nameHe": "S60",
+    "make": "renault",
+    "model": "clio",
+    "nameEn": "Clio",
+    "nameHe": "קליאו",
     "score": -1,
     "has3d": true,
-    "images": 102,
-    "expertReviews": 15,
+    "images": 95,
+    "expertReviews": 14,
     "expertEnComplete": 100,
-    "userReviews": 0,
-    "recalls": 6,
+    "userReviews": 1,
+    "recalls": 0,
     "issues": [
-      "No user reviews"
+      "No recalls cached"
     ],
     "fixes": [
-      "Promote this page to attract reviews"
+      "Trigger recalls fetch: GET /api/recalls?make=Clio&model=Clio"
     ]
   },
   {
@@ -3323,7 +4778,7 @@
     "expertReviews": 15,
     "expertEnComplete": 100,
     "userReviews": 0,
-    "recalls": 30,
+    "recalls": 40,
     "issues": [
       "No user reviews"
     ],
@@ -3342,7 +4797,7 @@
     "expertReviews": 13,
     "expertEnComplete": 100,
     "userReviews": 0,
-    "recalls": 7,
+    "recalls": 9,
     "issues": [
       "No user reviews"
     ],
@@ -3399,7 +4854,7 @@
     "expertReviews": 14,
     "expertEnComplete": 100,
     "userReviews": 0,
-    "recalls": 45,
+    "recalls": 48,
     "issues": [
       "No user reviews"
     ],
@@ -3484,25 +4939,6 @@
     ]
   },
   {
-    "make": "nissan",
-    "model": "juke",
-    "nameEn": "Juke",
-    "nameHe": "ג'וק",
-    "score": -1,
-    "has3d": true,
-    "images": 99,
-    "expertReviews": 14,
-    "expertEnComplete": 100,
-    "userReviews": 0,
-    "recalls": 3,
-    "issues": [
-      "No user reviews"
-    ],
-    "fixes": [
-      "Promote this page to attract reviews"
-    ]
-  },
-  {
     "make": "toyota",
     "model": "camry",
     "nameEn": "Camry",
@@ -3551,7 +4987,7 @@
     "expertReviews": 14,
     "expertEnComplete": 100,
     "userReviews": 0,
-    "recalls": 26,
+    "recalls": 27,
     "issues": [
       "No user reviews"
     ],
@@ -3608,7 +5044,7 @@
     "expertReviews": 11,
     "expertEnComplete": 100,
     "userReviews": 0,
-    "recalls": 12,
+    "recalls": 13,
     "issues": [
       "No user reviews"
     ],
@@ -3674,6 +5110,25 @@
     ]
   },
   {
+    "make": "lexus",
+    "model": "rx",
+    "nameEn": "RX",
+    "nameHe": "RX",
+    "score": -1,
+    "has3d": true,
+    "images": 96,
+    "expertReviews": 13,
+    "expertEnComplete": 100,
+    "userReviews": 1,
+    "recalls": 0,
+    "issues": [
+      "No recalls cached"
+    ],
+    "fixes": [
+      "Trigger recalls fetch: GET /api/recalls?make=RX&model=RX"
+    ]
+  },
+  {
     "make": "volvo",
     "model": "xc90",
     "nameEn": "XC90",
@@ -3722,7 +5177,7 @@
     "expertReviews": 14,
     "expertEnComplete": 100,
     "userReviews": 0,
-    "recalls": 60,
+    "recalls": 63,
     "issues": [
       "No user reviews"
     ],
@@ -3817,7 +5272,7 @@
     "expertReviews": 15,
     "expertEnComplete": 100,
     "userReviews": 0,
-    "recalls": 50,
+    "recalls": 51,
     "issues": [
       "No user reviews"
     ],
@@ -4158,7 +5613,22 @@
     "expertReviews": 13,
     "expertEnComplete": 100,
     "userReviews": 1,
-    "recalls": 13,
+    "recalls": 18,
+    "issues": [],
+    "fixes": []
+  },
+  {
+    "make": "mazda",
+    "model": "cx5",
+    "nameEn": "CX-5",
+    "nameHe": "CX-5",
+    "score": 0,
+    "has3d": true,
+    "images": 101,
+    "expertReviews": 15,
+    "expertEnComplete": 100,
+    "userReviews": 1,
+    "recalls": 6,
     "issues": [],
     "fixes": []
   },
@@ -4189,6 +5659,21 @@
     "expertEnComplete": 100,
     "userReviews": 2,
     "recalls": 9,
+    "issues": [],
+    "fixes": []
+  },
+  {
+    "make": "kia",
+    "model": "sorento",
+    "nameEn": "Sorento",
+    "nameHe": "סורנטו",
+    "score": 0,
+    "has3d": true,
+    "images": 101,
+    "expertReviews": 14,
+    "expertEnComplete": 100,
+    "userReviews": 1,
+    "recalls": 25,
     "issues": [],
     "fixes": []
   },
@@ -4253,6 +5738,21 @@
     "fixes": []
   },
   {
+    "make": "nissan",
+    "model": "juke",
+    "nameEn": "Juke",
+    "nameHe": "ג'וק",
+    "score": 0,
+    "has3d": true,
+    "images": 99,
+    "expertReviews": 14,
+    "expertEnComplete": 100,
+    "userReviews": 1,
+    "recalls": 3,
+    "issues": [],
+    "fixes": []
+  },
+  {
     "make": "toyota",
     "model": "chr",
     "nameEn": "C-HR",
@@ -4263,7 +5763,7 @@
     "expertReviews": 11,
     "expertEnComplete": 100,
     "userReviews": 1,
-    "recalls": 3,
+    "recalls": 4,
     "issues": [],
     "fixes": []
   },
@@ -4322,7 +5822,7 @@
     "images": 94,
     "expertReviews": 14,
     "expertEnComplete": 100,
-    "userReviews": 2,
+    "userReviews": 3,
     "recalls": 17,
     "issues": [],
     "fixes": []
