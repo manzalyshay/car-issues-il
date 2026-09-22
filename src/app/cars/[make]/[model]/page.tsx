@@ -13,7 +13,6 @@ import StarRating from '@/components/StarRating';
 import MakeLogo from '@/components/MakeLogo';
 import ModelReviewsSection from './ModelReviewsSection';
 import SharePopup from '@/components/SharePopup';
-import RecallsBadge from '@/components/RecallsBadge';
 import CarSidebarLayout from './CarSidebarLayout';
 import RepairCostsSection from '@/components/RepairCostsSection';
 import { getImagesForCar } from '@/lib/carImages';
@@ -23,9 +22,6 @@ import Car3DViewer from '@/components/Car3DViewer';
 import VerdictCard from '@/components/VerdictCard';
 import FollowButton from '@/components/FollowButton';
 
-function toTrimSlug(name: string) {
-  return name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
-}
 
 export const revalidate = 900; // cache 15 minutes
 
@@ -42,9 +38,9 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const base = getBaseUrl(locale);
   const url = `${base}/cars/${make.slug}/${model.slug}`;
   const [avgRating, reviews, trims] = await Promise.all([
-    getAverageRating(makeSlug, modelSlug),
-    getReviewsForModel(makeSlug, modelSlug),
-    getTrimSpecs(makeSlug, modelSlug),
+    getAverageRating(makeSlug, modelSlug).catch(() => null),
+    getReviewsForModel(makeSlug, modelSlug).catch(() => []),
+    getTrimSpecs(makeSlug, modelSlug).catch(() => []),
   ]);
   const yearRange = model.years.length > 1
     ? `${model.years[model.years.length - 1]}–${model.years[0]}`
@@ -124,7 +120,6 @@ export default async function ModelPage({ params }: Props) {
 
   const isEn = locale === 'en';
   const cp = translations[locale].carPage;
-  const cpNoReviews = cp.noReviewsBeFirst;
   const makeName = isEn ? make.nameEn : make.nameHe;
   const modelName = isEn ? model.nameEn : model.nameHe;
 

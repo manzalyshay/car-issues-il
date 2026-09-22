@@ -48,7 +48,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     getHostLocale(),
     getMakeBySlug(makeSlug),
     getModelBySlug(makeSlug, modelSlug),
-    getTrimSpecs(makeSlug, modelSlug),
+    getTrimSpecs(makeSlug, modelSlug).catch(() => []),
   ]);
   if (!make || !model) return {};
   const trim = trims.find(t => toTrimSlug(t.name) === trimSlug);
@@ -96,7 +96,7 @@ export default async function TrimPage({ params }: Props) {
     getHostLocale(),
     getMakeBySlug(makeSlug),
     getModelBySlug(makeSlug, modelSlug),
-    getTrimSpecs(makeSlug, modelSlug),
+    getTrimSpecs(makeSlug, modelSlug).catch(() => []),
   ]);
 
   if (!make || !model) notFound();

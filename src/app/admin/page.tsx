@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useCallback, useRef, Suspense, type ReactNode } from 'react';
+import { useEffect, useState, useCallback, useRef, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/lib/authContext';
@@ -57,15 +57,6 @@ interface SocialPostRow {
   scheduled_for: string;
   status: 'pending' | 'posted' | 'failed';
   metadata: Record<string, unknown>;
-}
-
-interface MetricsData {
-  totals: {
-    views1: number; views7: number; views30: number;
-    sessions1: number; sessions7: number; sessions30: number;
-  };
-  dailyChart: { date: string; views: number; sessions: number }[];
-  topPages: { path: string; views: number; sessions: number }[];
 }
 
 interface ReportRow {
@@ -141,18 +132,12 @@ function AdminPageInner() {
   const [reportsFetching, setReportsFetching] = useState(false);
 
   // ── Metrics tab state ─────────────────────────────────────────────────────────
-  const [metrics, setMetrics] = useState<MetricsData | null>(null);
-  const [metricsFetching, setMetricsFetching] = useState(false);
-
   // ── Logs tab state ────────────────────────────────────────────────────────────
   const [logs, setLogs] = useState<AdminLogRow[]>([]);
   const [logsFetching, setLogsFetching] = useState(false);
   const [logsLevelFilter, setLogsLevelFilter] = useState<'all' | 'info' | 'warn' | 'error'>('all');
   const [expandedLogId, setExpandedLogId] = useState<number | null>(null);
   const [copiedLogId, setCopiedLogId] = useState<number | null>(null);
-
-  // ── Deployment status ─────────────────────────────────────────────────────────
-  const [deployment, setDeployment] = useState<{ state: string; readyState: string; createdAt: number; meta: { commitMessage: string }; url: string } | null>(null);
 
   // ── Users tab state ────────────────────────────────────────────────────────────
   const [users, setUsers] = useState<{ id: string; email: string; display_name: string | null; is_admin: boolean; created_at: string; last_sign_in: string | null; provider: string }[]>([]);
@@ -272,16 +257,6 @@ function AdminPageInner() {
   }, [isAdmin, fetchStatus]);
 
   useEffect(() => {
-    if (!isAdmin) return;
-    getToken().then((token) => {
-      fetch('/api/admin/deployment', { headers: { Authorization: `Bearer ${token}` } })
-        .then(r => r.ok ? r.json() : null)
-        .then(data => { if (data?.deployments?.[0]) setDeployment(data.deployments[0]); })
-        .catch(() => {});
-    });
-  }, [isAdmin, getToken]);
-
-  useEffect(() => {
     if (isAdmin && tab === 'user_reviews') { fetchUserReviews(); fetchUntranslatedCount(); }
   }, [isAdmin, tab, fetchUserReviews, fetchUntranslatedCount]);
 
@@ -302,21 +277,6 @@ function AdminPageInner() {
   useEffect(() => {
     if (isAdmin && tab === 'reports') fetchReports();
   }, [isAdmin, tab, fetchReports]);
-
-  const fetchMetrics = useCallback(async () => {
-    setMetricsFetching(true);
-    try {
-      const token = await getToken();
-      const res = await fetch('/api/admin/metrics', { headers: { Authorization: `Bearer ${token}` } });
-      if (res.ok) setMetrics(await res.json());
-    } catch { /* ignore */ } finally {
-      setMetricsFetching(false);
-    }
-  }, [getToken]);
-
-  useEffect(() => {
-    if (isAdmin && tab === 'metrics') fetchMetrics();
-  }, [isAdmin, tab, fetchMetrics]);
 
   const fetchLogs = useCallback(async (levelFilter = logsLevelFilter) => {
     setLogsFetching(true);
@@ -571,17 +531,6 @@ function AdminPageInner() {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
       body: JSON.stringify({ action: 'reset_post', id }),
-    });
-    await fetchSocialPosts();
-  };
-
-  const toggleSocialStatus = async (id: string, currentStatus: string) => {
-    const next = currentStatus === 'pending' ? 'posted' : 'pending';
-    const token = await getToken();
-    await fetch('/api/admin/social-posts', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-      body: JSON.stringify({ action: 'update', id, status: next }),
     });
     await fetchSocialPosts();
   };
@@ -860,44 +809,16 @@ function AdminPageInner() {
       <div className="container">
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24, flexWrap: 'wrap', gap: 12 }}>
           <h1 style={{ fontSize: '1.75rem', fontWeight: 900, margin: 0 }}>פאנל ניהול</h1>
-          <a href="/admin/analytics" style={{ display: 'inline-flex', alignItems: 'center', gap: 7, padding: '9px 18px', background: 'var(--accent)', color: '#fff', textDecoration: 'none', borderRadius: 10, fontWeight: 700, fontSize: '0.875rem' }}>
-            📊 Analytics Dashboard
+          <a href="/admin/analytics" style={{ display: 'inline-flex', alignItems: 'center', gap: 7, padding: '9px 18px', background: 'var(--brand-red)', color: '#fff', textDecoration: 'none', borderRadius: 10, fontWeight: 700, fontSize: '0.875rem' }}>
+            📊 אנליטיקה
           </a>
         </div>
-
-        {/* Deployment status bar */}
-        {deployment && (() => {
-          const state = deployment.readyState || deployment.state;
-          const isBuilding = state === 'BUILDING' || state === 'INITIALIZING' || state === 'QUEUED';
-          const isReady = state === 'READY';
-          const isError = state === 'ERROR' || state === 'CANCELED';
-          const color = isBuilding ? '#f59e0b' : isError ? 'var(--brand-red)' : '#16a34a';
-          const dot = isBuilding ? '🟡' : isError ? '🔴' : '🟢';
-          const label = isBuilding ? 'בפריסה...' : isError ? 'פריסה נכשלה' : 'פרוס';
-          const ago = deployment.createdAt ? Math.round((Date.now() - deployment.createdAt) / 60000) : null;
-          return (
-            <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 14px', borderRadius: 8, background: isBuilding ? 'rgba(245,158,11,0.08)' : isError ? 'rgba(230,57,70,0.08)' : 'rgba(22,163,74,0.08)', border: `1px solid ${color}40`, marginBottom: 20, flexWrap: 'wrap' }}>
-              <span style={{ fontSize: '0.85rem' }}>{dot}</span>
-              <span style={{ fontWeight: 700, fontSize: '0.8rem', color }}>{label}</span>
-              {deployment.meta?.commitMessage && (
-                <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)', flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{deployment.meta.commitMessage}</span>
-              )}
-              {ago !== null && (
-                <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>לפני {ago < 1 ? 'פחות מדקה' : `${ago} דק׳`}</span>
-              )}
-              {isReady && (
-                <a href={`https://${deployment.url}`} target="_blank" rel="noopener noreferrer" style={{ fontSize: '0.75rem', color, textDecoration: 'none', whiteSpace: 'nowrap' }}>↗ פתח</a>
-              )}
-            </div>
-          );
-        })()}
 
         {/* Tabs */}
         <div style={{ display: 'flex', gap: 2, marginBottom: 32, borderBottom: '2px solid var(--border)', overflowX: 'auto', flexShrink: 0 }}>
           {([
             ['user_reviews', 'ביקורות'],
             ['reports', `דיווחים${reports.length ? ` (${reports.length})` : ''}`],
-            ['metrics', 'מדדים'],
             ['users', 'משתמשים'],
             ['social_posts', 'רשתות חברתיות'],
             ['contact', `פניות${contactMessages.filter(m => m.status === 'unread').length ? ` (${contactMessages.filter(m => m.status === 'unread').length})` : ''}`],
@@ -1084,7 +1005,7 @@ function AdminPageInner() {
 
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24, flexWrap: 'wrap', gap: 12 }}>
               <p style={{ color: 'var(--text-muted)', margin: 0 }}>
-                {userReviews.length} ביקורות סה"כ
+                {userReviews.length} ביקורות סה&quot;כ
               </p>
               <button onClick={fetchUserReviews} disabled={reviewsFetching} style={{ padding: '8px 16px', borderRadius: 8, border: '1px solid var(--border)', background: 'transparent', cursor: 'pointer', fontWeight: 600, fontSize: '0.875rem', color: 'var(--text-secondary)' }}>
                 {reviewsFetching ? 'טוען...' : 'רענן'}
@@ -1127,7 +1048,7 @@ function AdminPageInner() {
                           <input
                             type="checkbox"
                             checked={isSelected}
-                            onChange={(e) => setSelectedReviews((prev) => { const n = new Set(prev); e.target.checked ? n.add(review.id) : n.delete(review.id); return n; })}
+                            onChange={(e) => setSelectedReviews((prev) => { const n = new Set(prev); if (e.target.checked) { n.add(review.id); } else { n.delete(review.id); } return n; })}
                             style={{ marginTop: 4, flexShrink: 0, width: 15, height: 15 }}
                           />
                           <div style={{ minWidth: 0 }}>
@@ -1197,7 +1118,7 @@ function AdminPageInner() {
 
         {/* ── Metrics Tab ─────────────────────────────────────────────────────── */}
         {tab === 'metrics' && (
-          <MetricsTab metrics={metrics} fetching={metricsFetching} onRefresh={fetchMetrics} />
+          <MetricsTab />
         )}
 
         {/* ── Logs Tab ─────────────────────────────────────────────────────────── */}
@@ -1621,7 +1542,6 @@ function AdminPageInner() {
                     const isPublishing = !!publishingPost[post.id];
                     const isScreenshotting = !!screenshotting[post.id];
 
-                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
                     const platformRow = (isPosted || isFailed) ? (
                       <div style={{ borderTop: '1px solid var(--border)', background: 'var(--bg-muted)' }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '9px 14px', borderBottom: '1px solid var(--border)' }}>
@@ -2575,120 +2495,17 @@ const REASON_LABELS: Record<string, string> = {
   other: 'אחר',
 };
 
-function MetricsTab({ metrics, fetching, onRefresh }: { metrics: MetricsData | null; fetching: boolean; onRefresh: () => void }) {
-  if (fetching) return <div style={{ textAlign: 'center', padding: 64, color: 'var(--text-muted)' }}>טוען נתונים...</div>;
-  if (!metrics) return <div style={{ textAlign: 'center', padding: 64, color: 'var(--text-muted)' }}>לא נטענו נתונים</div>;
-
-  const { totals, dailyChart, topPages } = metrics;
-  const maxViews = Math.max(...dailyChart.map((d) => d.views), 1);
-
-  const dateLabel = (iso: string) => {
-    const [, , day] = iso.split('-');
-    const months = ['ינו','פבר','מרץ','אפר','מאי','יונ','יול','אוג','ספט','אוק','נוב','דצמ'];
-    const m = parseInt(iso.split('-')[1]) - 1;
-    return `${parseInt(day)} ${months[m]}`;
-  };
-
+function MetricsTab() {
   return (
-    <div>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24, flexWrap: 'wrap', gap: 12 }}>
-        {/* Vercel Analytics link */}
-        <a
-          href="https://vercel.com/dashboard"
-          target="_blank"
-          rel="noopener noreferrer"
-          style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '8px 16px', borderRadius: 8, border: '1px solid var(--border)', background: 'var(--bg-muted)', cursor: 'pointer', fontWeight: 600, fontSize: '0.875rem', color: 'var(--text-primary)', textDecoration: 'none' }}
-        >
-          <span>▲</span>
-          <span>Vercel Analytics</span>
-          <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>(מדויק יותר · מדינות · מכשירים)</span>
-        </a>
-        <button onClick={onRefresh} style={{ padding: '8px 16px', borderRadius: 8, border: '1px solid var(--border)', background: 'transparent', cursor: 'pointer', fontWeight: 600, fontSize: '0.875rem', color: 'var(--text-secondary)' }}>
-          רענן
-        </button>
+    <div style={{ textAlign: 'center', padding: 64 }}>
+      <div style={{ fontSize: '2.5rem', marginBottom: 16 }}>📊</div>
+      <div style={{ fontWeight: 700, fontSize: '1.1rem', marginBottom: 8 }}>האנליטיקה עברה לעמוד חדש</div>
+      <div style={{ color: 'var(--text-muted)', fontSize: '0.875rem', marginBottom: 24 }}>
+        נתוני Cloudflare, Google Analytics ו-Search Console מאוחדים במקום אחד
       </div>
-
-      {/* Note about session count */}
-      <div style={{ padding: '10px 16px', borderRadius: 8, background: 'rgba(245,158,11,0.08)', border: '1px solid rgba(245,158,11,0.25)', fontSize: '0.8125rem', color: 'var(--text-muted)', marginBottom: 24, lineHeight: 1.6 }}>
-        <strong style={{ color: 'var(--text-primary)' }}>מבקרים ייחודיים</strong> — מחושב לפי session ID מטבלת page_views שלנו. הספירה כוללת גם בוטים, סורקי גוגל ועכביש-אינטרנט. לנתונים מסוננים עם מדינות ומכשירים, השתמש ב-Vercel Analytics ↗
-      </div>
-
-      {/* KPI cards */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: 16, marginBottom: 40 }}>
-        {[
-          { label: 'צפיות היום',    views: totals.views1,   sessions: totals.sessions1 },
-          { label: 'צפיות 7 ימים', views: totals.views7,   sessions: totals.sessions7 },
-          { label: 'צפיות 30 ימים', views: totals.views30, sessions: totals.sessions30 },
-        ].map((kpi) => (
-          <div key={kpi.label} className="card" style={{ padding: '20px 24px' }}>
-            <div style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-muted)', marginBottom: 8, textTransform: 'uppercase', letterSpacing: '0.05em' }}>{kpi.label}</div>
-            <div style={{ fontSize: '2rem', fontWeight: 900, color: 'var(--brand-red)', lineHeight: 1 }}>{kpi.views.toLocaleString()}</div>
-            <div style={{ fontSize: '0.8125rem', color: 'var(--text-muted)', marginTop: 6 }}>{kpi.sessions.toLocaleString()} מבקרים ייחודיים</div>
-          </div>
-        ))}
-      </div>
-
-      {/* Daily chart */}
-      <div className="card" style={{ padding: '24px', marginBottom: 32 }}>
-        <h3 style={{ fontWeight: 800, fontSize: '1rem', marginBottom: 20 }}>צפיות יומיות — 14 ימים אחרונים</h3>
-        <div style={{ display: 'flex', alignItems: 'flex-end', gap: 6, height: 120 }}>
-          {dailyChart.map((d) => {
-            const heightPct = (d.views / maxViews) * 100;
-            const isToday = d.date === new Date().toISOString().slice(0, 10);
-            return (
-              <div key={d.date} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}>
-                <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)', fontWeight: 600 }}>
-                  {d.views > 0 ? d.views : ''}
-                </div>
-                <div
-                  title={`${dateLabel(d.date)}: ${d.views} צפיות, ${d.sessions} מבקרים`}
-                  style={{
-                    width: '100%',
-                    height: `${Math.max(heightPct, d.views > 0 ? 4 : 2)}%`,
-                    minHeight: 2,
-                    borderRadius: '4px 4px 0 0',
-                    background: isToday ? 'var(--brand-red)' : 'rgba(230,57,70,0.4)',
-                    transition: 'height 0.3s',
-                    cursor: 'default',
-                  }}
-                />
-                <div style={{ fontSize: '0.6rem', color: 'var(--text-muted)', whiteSpace: 'nowrap', writingMode: 'vertical-rl', transform: 'rotate(180deg)', height: 36 }}>
-                  {dateLabel(d.date)}
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      </div>
-
-      {/* Top pages */}
-      <div className="card" style={{ padding: '24px' }}>
-        <h3 style={{ fontWeight: 800, fontSize: '1rem', marginBottom: 16 }}>עמודים פופולריים — 30 ימים</h3>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-          {topPages.map((p, i) => {
-            const pct = (p.views / (topPages[0]?.views || 1)) * 100;
-            return (
-              <div key={p.path} style={{ display: 'grid', gridTemplateColumns: '20px 1fr 60px 60px', alignItems: 'center', gap: 12 }}>
-                <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textAlign: 'center' }}>{i + 1}</div>
-                <div style={{ position: 'relative', height: 28, borderRadius: 6, overflow: 'hidden', background: 'var(--bg-muted)' }}>
-                  <div style={{ position: 'absolute', inset: 0, width: `${pct}%`, background: 'rgba(230,57,70,0.15)', borderRadius: 6 }} />
-                  <div style={{ position: 'relative', padding: '0 10px', lineHeight: '28px', fontSize: '0.8125rem', fontWeight: 600, color: 'var(--text-primary)', overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis', direction: 'ltr', textAlign: 'left' }}>
-                    {p.path}
-                  </div>
-                </div>
-                <div style={{ textAlign: 'center', fontSize: '0.8125rem', fontWeight: 700, color: 'var(--text-primary)' }}>{p.views}</div>
-                <div style={{ textAlign: 'center', fontSize: '0.75rem', color: 'var(--text-muted)' }}>{p.sessions} מב׳</div>
-              </div>
-            );
-          })}
-        </div>
-        <div style={{ display: 'grid', gridTemplateColumns: '20px 1fr 60px 60px', gap: 12, marginTop: 8, paddingTop: 8, borderTop: '1px solid var(--border)' }}>
-          <div />
-          <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', paddingRight: 10 }}>עמוד</div>
-          <div style={{ textAlign: 'center', fontSize: '0.75rem', color: 'var(--text-muted)' }}>צפיות</div>
-          <div style={{ textAlign: 'center', fontSize: '0.75rem', color: 'var(--text-muted)' }}>מבקרים</div>
-        </div>
-      </div>
+      <a href="/admin/analytics" style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '10px 22px', background: 'var(--brand-red)', color: '#fff', textDecoration: 'none', borderRadius: 10, fontWeight: 700, fontSize: '0.875rem' }}>
+        עבור ללוח האנליטיקה →
+      </a>
     </div>
   );
 }

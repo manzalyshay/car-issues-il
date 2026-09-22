@@ -2,11 +2,7 @@
 
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
-import MakeLogo from '@/components/MakeLogo';
-import StarRating from '@/components/StarRating';
-import HeroSearch from '@/components/HeroSearch';
-import PlateSearch from '@/components/PlateSearch';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import { useLocale } from '@/lib/localeContext';
 
 /* ── Types ──────────────────────────────────────────────── */
@@ -39,7 +35,7 @@ function useReveal() {
   useEffect(() => {
     if (!('IntersectionObserver' in window)) return;
     // Only hide once we know animation timeline is advancing
-    let t0 = document.timeline?.currentTime;
+    const t0 = document.timeline?.currentTime;
     requestAnimationFrame(() => requestAnimationFrame(() => {
       const t1 = document.timeline?.currentTime;
       const alive = typeof t0 === 'number' && typeof t1 === 'number' && t1 > t0;
@@ -143,7 +139,7 @@ const TICKER_FALLBACK: TickerItem[] = [
    Main component
    ═══════════════════════════════════════════════════════════ */
 export default function HomeClient({ allMakes, topRanked, recentReviews, tickerItems: tickerProp, initialNews }: Props) {
-  const { locale, t } = useLocale();
+  const { locale } = useLocale();
   const isHe = locale === 'he';
   const totalModels = allMakes.reduce((s, m) => s + m.models.length, 0);
 

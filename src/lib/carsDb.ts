@@ -101,7 +101,7 @@ export async function invalidateMakesCache(): Promise<void> {
 }
 
 export async function getMakeBySlug(slug: string): Promise<CarMake | undefined> {
-  const makes = await fetchAllMakes();
+  const makes = await fetchAllMakes().catch(() => [] as CarMake[]);
   return makes.find((m) => m.slug === slug);
 }
 
@@ -110,7 +110,7 @@ export async function getModelBySlug(
   modelSlug: string,
 ): Promise<CarModel | undefined> {
   const makeSlug = typeof makeOrSlug === 'string' ? makeOrSlug : makeOrSlug.slug;
-  const makes = await fetchAllMakes();
+  const makes = await fetchAllMakes().catch(() => [] as CarMake[]);
   const make = makes.find((m) => m.slug === makeSlug);
   return make?.models.find((m) => m.slug === modelSlug);
 }

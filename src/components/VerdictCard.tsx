@@ -241,10 +241,10 @@ export default function VerdictCard({
             </div>
           )}
         </div>
-        {/* One-line summary */}
+        {/* Summary */}
         {leadSummary && (
-          <p style={{ margin: 0, fontSize: 14, color: '#4a5b6d', maxWidth: '52ch', flex: 1, minWidth: 200, lineHeight: 1.6 }}>
-            {leadSummary.length > 220 ? leadSummary.slice(0, 220) + '…' : leadSummary}
+          <p style={{ margin: 0, fontSize: 14, color: '#4a5b6d', maxWidth: '60ch', flex: 1, minWidth: 200, lineHeight: 1.6 }}>
+            {leadSummary}
           </p>
         )}
       </div>

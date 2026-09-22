@@ -26,9 +26,10 @@ function titleYearOk(title: string | null, requestedYear: number): boolean {
 }
 
 export async function getImagesForCar(makeSlug: string, modelSlug: string): Promise<CarImage[]> {
-  // Include recent year-tagged images (last 3 years) + null-year images, newest year first.
-  // Exclude old year-specific photos (>3 years ago) which show outdated designs.
-  const recentThreshold = new Date().getFullYear() - 3;
+  // Include year-tagged images from the last 12 years + null-year images, newest year first.
+  // 12-year window covers discontinued models (e.g. Giulietta last made 2020)
+  // while still filtering very old photos. Hidden flag handles bad/vintage images.
+  const recentThreshold = new Date().getFullYear() - 12;
   return dbAll<CarImage>(
     `SELECT * FROM car_images
      WHERE make_slug = ? AND model_slug = ?

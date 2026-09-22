@@ -2,7 +2,6 @@
 
 import { useEffect } from 'react';
 import { usePathname } from 'next/navigation';
-import { supabase } from '@/lib/supabase';
 
 // Module-level set — survives component remounts (auth re-renders, error boundaries, StrictMode).
 // Tracks every path already recorded in this browser session so we never double-insert.
@@ -19,10 +18,6 @@ function getSessionId(): string {
   } catch {
     return 'unknown';
   }
-}
-
-function shouldSkip(path: string) {
-  return path.startsWith('/admin') || path.startsWith('/api') || path.startsWith('/_next');
 }
 
 export default function PageViewTracker() {
@@ -42,12 +37,11 @@ export default function PageViewTracker() {
   }, []);
 
   useEffect(() => {
-    if (!pathname || shouldSkip(pathname)) return;
+    if (!pathname) return;
     if (tracked.has(pathname)) return;
     tracked.add(pathname);
-
-    const sessionId = getSessionId();
-    supabase.from('page_views').insert({ path: pathname, session_id: sessionId }).then(() => {});
+    // session id kept for future use
+    getSessionId();
   }, [pathname]);
 
   return null;

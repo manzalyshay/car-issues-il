@@ -4,15 +4,13 @@ import { notFound } from 'next/navigation';
 import { getMakeBySlug, getModelBySlug, getCategoryLabel, getSimilarModels } from '@/lib/carsDb';
 import { getHostLocale, getBaseUrl } from '@/lib/hostLocale';
 import { translations } from '@/lib/translations';
-import { getReviewsForModel, getAverageRating } from '@/lib/reviewsDb';
+import { getReviewsForModel } from '@/lib/reviewsDb';
 import { getExpertReviewsForYear } from '@/lib/expertReviews';
 import { getTrimSpecs } from '@/lib/trimSpecsDb';
 import { findCarModel } from '@/lib/sketchfab';
 import { getImagesForCar } from '@/lib/carImages';
 import { getModelRepairCosts } from '@/lib/repairCostsDb';
 import { getRecallsFromCache } from '@/lib/recallsDb';
-import StarRating from '@/components/StarRating';
-import MakeLogo from '@/components/MakeLogo';
 import SharePopup from '@/components/SharePopup';
 import RecallsBadge from '@/components/RecallsBadge';
 import Car3DViewer from '@/components/Car3DViewer';
@@ -41,10 +39,10 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const url = `${base}/cars/${make.slug}/${model.slug}/${year}`;
 
   const [allReviews, trims, { review: metaExpertReview }, metaRecalls] = await Promise.all([
-    getReviewsForModel(makeSlug, modelSlug),
-    getTrimSpecs(makeSlug, modelSlug, yearNum),
-    getExpertReviewsForYear(makeSlug, modelSlug, yearNum),
-    getRecallsFromCache(make.nameEn, model.nameEn),
+    getReviewsForModel(makeSlug, modelSlug).catch(() => []),
+    getTrimSpecs(makeSlug, modelSlug, yearNum).catch(() => []),
+    getExpertReviewsForYear(makeSlug, modelSlug, yearNum).catch(() => ({ review: null })),
+    getRecallsFromCache(make.nameEn, model.nameEn).catch(() => []),
   ]);
 
   const yearReviews = allReviews.filter(r => r.year === yearNum);
@@ -220,20 +218,23 @@ export default async function CarYearPage({ params }: Props) {
             </div>
 
             {/* Hero media */}
-            <div style={{ display: 'grid', gap: 6, justifySelf: 'end', width: '100%', maxWidth: 380 }}>
-              <div style={{ position: 'relative', aspectRatio: '16/9', borderRadius: 14, overflow: 'hidden', background: '#1a3055', boxShadow: '0 20px 46px -28px rgba(0,0,0,.9)' }}>
-                {sketchfabModel ? (
-                  <Car3DViewer uid={sketchfabModel.uid} modelName={sketchfabModel.name} author={sketchfabModel.author} makeSlug={make.slug} modelSlug={model.slug} carImageUrl={carImages[0]?.url} />
-                ) : carImages[0]?.url ? (
-                  /* eslint-disable-next-line @next/next/no-img-element */
-                  <img src={carImages[0].url} alt={`${make.nameEn} ${model.nameEn} ${year}`} fetchPriority="high" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
-                ) : (
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%' }}>
-                    <span style={{ fontSize: 12, color: '#7ba0e8', letterSpacing: '.1em', fontWeight: 600 }}>
-                      {isEn ? `${make.nameEn} ${model.nameEn} ${year}` : `${make.nameHe} ${model.nameHe} ${year}`}
-                    </span>
-                  </div>
-                )}
+            <div style={{ display: 'grid', gap: 8, justifySelf: 'end', width: '100%' }}>
+              {/* Enlarged 3D viewer frame */}
+              <div style={{ borderRadius: 20, padding: 10, background: 'linear-gradient(160deg,#212c56 0%,#131a3a 100%)', boxShadow: '0 24px 54px -24px rgba(0,0,0,0.65),inset 0 0 0 1px rgba(255,255,255,0.07)' }}>
+                <div style={{ position: 'relative', aspectRatio: '16/10', borderRadius: 12, overflow: 'hidden', background: 'radial-gradient(ellipse at 50% 38%,#171923 0%,#06070c 72%)', border: '1px solid rgba(255,255,255,0.09)' }}>
+                  {sketchfabModel ? (
+                    <Car3DViewer uid={sketchfabModel.uid} modelName={sketchfabModel.name} author={sketchfabModel.author} makeSlug={make.slug} modelSlug={model.slug} carImageUrl={carImages[0]?.url} />
+                  ) : carImages[0]?.url ? (
+                    /* eslint-disable-next-line @next/next/no-img-element */
+                    <img src={carImages[0].url} alt={`${make.nameEn} ${model.nameEn} ${year}`} fetchPriority="high" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
+                  ) : (
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%' }}>
+                      <span style={{ fontSize: 12, color: '#7ba0e8', letterSpacing: '.1em', fontWeight: 600 }}>
+                        {isEn ? `${make.nameEn} ${model.nameEn} ${year}` : `${make.nameHe} ${model.nameHe} ${year}`}
+                      </span>
+                    </div>
+                  )}
+                </div>
               </div>
               {!sketchfabModel && carImages.length > 1 && (
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5,1fr)', gap: 5 }}>
