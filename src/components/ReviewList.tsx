@@ -263,6 +263,7 @@ function ReportButton({ reviewId }: { reviewId: string }) {
         }}>
           <p style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-muted)', marginBottom: 8 }}>{rl.reportReason}</p>
           <select
+            aria-label={rl.reportReason}
             value={reason}
             onChange={(e) => setReason(e.target.value)}
             style={{
@@ -474,6 +475,7 @@ export default function ReviewList({ reviews, onHelpful, onDislike }: Props) {
             )}
           </div>
           <select
+            aria-label={locale === 'en' ? 'Sort reviews' : 'מיון ביקורות'}
             value={sort}
             onChange={(e) => setSort(e.target.value as typeof sort)}
             style={{

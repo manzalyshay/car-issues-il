@@ -77,7 +77,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
         'x-default': `https://carissues.net/cars/compare/${c1}/${c2}`,
       },
     },
-    openGraph: { title, description, url: canonical, images: [{ url: '/og-default.svg', width: 1200, height: 630 }] },
+    openGraph: { title, description, url: canonical, images: [{ url: '/og-default.png', width: 1200, height: 630 }] },
   };
 }
 
@@ -718,47 +718,34 @@ export default async function ComparePage({ params }: Props) {
           const base = getBaseUrl(locale);
           const pageUrl = `${base}/cars/compare/${make1}/${model1}/${make2}/${model2}`;
 
-          // Same pattern as the model page: emit Product+AggregateRating when we have
-          // real owner reviews, otherwise fall back to the AI expert score as a Review
-          // so Google's rich-result requirement (rating OR review) is still satisfied.
+          // Same pattern as the model page: emit Product+AggregateRating only when we have
+          // real owner reviews. The AI expert score is NOT marked up as a Review — Google's
+          // review-snippet policy disallows self-authored/AI ratings and can flag the page.
           const productFor = (
             name: string, makeEn: string, url: string,
-            avg: number | null, reviewCount: number, topScore: number | null,
+            avg: number | null, reviewCount: number,
           ) => {
-            if (avg === null && topScore == null) return [];
+            if (avg === null || reviewCount === 0) return [];
             return [{
               '@type': 'Product',
               name,
               brand: { '@type': 'Brand', name: makeEn },
               url,
-              ...(avg !== null ? {
-                aggregateRating: {
-                  '@type': 'AggregateRating',
-                  ratingValue: avg.toFixed(1),
-                  reviewCount,
-                  bestRating: 5,
-                  worstRating: 1,
-                },
-              } : {
-                review: {
-                  '@type': 'Review',
-                  author: { '@type': 'Organization', name: 'CarIssues AI' },
-                  reviewRating: {
-                    '@type': 'Rating',
-                    ratingValue: topScore!.toFixed(1),
-                    bestRating: 10,
-                    worstRating: 0,
-                  },
-                },
-              }),
+              aggregateRating: {
+                '@type': 'AggregateRating',
+                ratingValue: avg.toFixed(1),
+                reviewCount,
+                bestRating: 5,
+                worstRating: 1,
+              },
             }];
           };
 
           return {
             '@context': 'https://schema.org',
             '@graph': [
-              ...productFor(nameA, mA.nameEn, `${base}/cars/${make1}/${model1}`, avgA, reviewsA.length, scoreA),
-              ...productFor(nameB, mB.nameEn, `${base}/cars/${make2}/${model2}`, avgB, reviewsB.length, scoreB),
+              ...productFor(nameA, mA.nameEn, `${base}/cars/${make1}/${model1}`, avgA, reviewsA.length),
+              ...productFor(nameB, mB.nameEn, `${base}/cars/${make2}/${model2}`, avgB, reviewsB.length),
               {
                 '@type': 'WebPage',
                 name: `${nameA} ${sp.vsWord} ${nameB}`,

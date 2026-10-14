@@ -69,7 +69,7 @@ export async function generateMetadata(): Promise<Metadata> {
       alternateLocale: isEn ? 'he_IL' : 'en_US',
       siteName: 'CarIssues',
       url: baseUrl,
-      images: [{ url: '/og-default.svg', width: 1200, height: 630, alt: 'CarIssues' }],
+      images: [{ url: '/og-default.png', width: 1200, height: 630, alt: 'CarIssues' }],
     },
     twitter: { card: 'summary_large_image' },
     alternates: {
@@ -148,8 +148,11 @@ export default async function RootLayout({ children }: { children: React.ReactNo
           <AuthProvider>
             {!isEmbed && <NavigationProgress />}
             {!isEmbed && <PageViewTracker />}
+            {!isEmbed && (
+              <a href="#main-content" className="skip-link">{isEn ? 'Skip to main content' : 'דלגו לתוכן הראשי'}</a>
+            )}
             {!isEmbed && <Header />}
-            <main className={isEmbed ? '' : 'flex-1'}>{children}</main>
+            <main id="main-content" tabIndex={-1} className={isEmbed ? '' : 'flex-1'}>{children}</main>
             {!isEmbed && <Footer />}
           </AuthProvider>
         </LocaleProvider>

@@ -285,6 +285,7 @@ export default function HomeClient({ allMakes, topRanked, recentReviews, tickerI
                 <div style={{ display: 'flex', gap: 10, alignItems: 'center', border: '1px solid #e0e6f1', borderRadius: 12, padding: 6, background: '#fbfcfe' }}>
                   <input
                     type="text"
+                    aria-label={isHe ? 'חיפוש לפי מספר רישוי או שם דגם' : 'Search by plate number or car model'}
                     value={searchQ}
                     onChange={e => { setSearchQ(e.target.value); setAcOpen(true); setAcIdx(-1); }}
                     onKeyDown={handleKeyDown}

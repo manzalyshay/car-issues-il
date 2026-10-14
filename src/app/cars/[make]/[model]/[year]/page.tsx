@@ -96,7 +96,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       description: `${yearReviews.length > 0 ? `${yearReviews.length} real owner reviews` : 'Real owner reviews'} for the ${make.nameEn} ${model.nameEn} ${year}${avgRating ? `. Average rating ${avgRating.toFixed(1)}/5` : ''}.${expertPart}${prosPart}${consPart}${recallPart} Common problems and reliability.`,
       robots: hasContent ? { index: true, follow: true } : { index: false, follow: true },
       alternates: { canonical: url, languages: { he: `https://carissues.co.il/cars/${make.slug}/${model.slug}/${year}`, en: url, 'x-default': url } },
-      openGraph: { title: `${make.nameEn} ${model.nameEn} ${year} | CarIssues`, description: `Owner reviews & reliability — ${make.nameEn} ${model.nameEn} ${year}`, url, images: [{ url: '/og-default.svg', width: 1200, height: 630 }] },
+      openGraph: { title: `${make.nameEn} ${model.nameEn} ${year} | CarIssues`, description: `Owner reviews & reliability — ${make.nameEn} ${model.nameEn} ${year}`, url, images: [{ url: '/og-default.png', width: 1200, height: 630 }] },
     };
   }
 
@@ -110,7 +110,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     description: `${yearReviews.length > 0 ? `${yearReviews.length} ביקורות אמיתיות על` : 'כל מה שצריך לדעת על'} ${make.nameHe} ${model.nameHe} ${year} (${make.nameEn} ${model.nameEn})${avgRating ? ` — דירוג ממוצע ${avgRating.toFixed(1)}/5` : ''}.${priceDesc}${trimDesc}${recallPartHe} יתרונות, חסרונות ובעיות נפוצות מבעלי רכב בישראל.`,
     robots: hasContent ? { index: true, follow: true } : { index: false, follow: true },
     alternates: { canonical: url, languages: { he: url, en: `https://carissues.net/cars/${make.slug}/${model.slug}/${year}`, 'x-default': `https://carissues.net/cars/${make.slug}/${model.slug}/${year}` } },
-    openGraph: { title: `${make.nameHe} ${model.nameHe} ${year}${ratingStr} | CarIssues IL`, description: `ביקורות ואמינות — ${make.nameHe} ${model.nameHe} ${year}`, url, images: [{ url: '/og-default.svg', width: 1200, height: 630 }] },
+    openGraph: { title: `${make.nameHe} ${model.nameHe} ${year}${ratingStr} | CarIssues IL`, description: `ביקורות ואמינות — ${make.nameHe} ${model.nameHe} ${year}`, url, images: [{ url: '/og-default.png', width: 1200, height: 630 }] },
   };
 }
 

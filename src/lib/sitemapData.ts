@@ -165,6 +165,7 @@ async function buildSections(locale: 'en' | 'he'): Promise<Sections> {
     { url: `${BASE}/contact`, changeFrequency: 'monthly', priority: 0.3 },
     { url: `${BASE}/terms`, changeFrequency: 'monthly', priority: 0.2 },
     { url: `${BASE}/privacy`, changeFrequency: 'monthly', priority: 0.2 },
+    { url: `${BASE}/accessibility`, changeFrequency: 'yearly', priority: 0.2 },
   ];
 
   return { static: staticEntries, models, issues, years, trims: trimEntries, compare, news: newsEntries };

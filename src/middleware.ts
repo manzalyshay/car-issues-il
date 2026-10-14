@@ -48,9 +48,11 @@ export function middleware(req: NextRequest) {
   // ── Geo-redirect — only on production domains ───────────────────────────────
   if (!isHeHost && !isEnHost) return NextResponse.next();
 
-  // Never redirect crawlers — let them see the canonical page they requested
+  // Never redirect crawlers — let them see the canonical page they requested.
+  // Includes AI search/answer crawlers: they mostly crawl from US IPs, so without this
+  // they were bounced from the .co.il homepage to .net and never indexed the Hebrew site's entry point.
   const ua = req.headers.get('user-agent') ?? '';
-  if (/googlebot|bingbot|slurp|duckduckbot|baiduspider|yandexbot|facebookexternalhit|twitterbot|linkedinbot|applebot/i.test(ua)) {
+  if (/googlebot|google-inspectiontool|bingbot|slurp|duckduckbot|baiduspider|yandexbot|facebookexternalhit|meta-externalagent|twitterbot|linkedinbot|applebot|whatsapp|telegrambot|gptbot|oai-searchbot|chatgpt-user|claudebot|claude-searchbot|claude-user|anthropic-ai|perplexitybot|perplexity-user|ccbot|bytespider|amazonbot|cohere-ai|youbot|mistralai-user|duckassistbot/i.test(ua)) {
     return NextResponse.next();
   }
 
