@@ -22,7 +22,9 @@ export async function getRepairCosts(category: string): Promise<RepairCost[]> {
   try {
     return await dbAll<RepairCost>(
       `SELECT repair_key, repair_name_he, repair_name_en, cost_min_ils, cost_max_ils, category, applies_to, notes
-       FROM repair_costs WHERE applies_to IN ('all', ?) ORDER BY category, repair_key`,
+       FROM repair_costs
+       WHERE applies_to IN ('all', ?) AND cost_min_ils IS NOT NULL AND cost_max_ils IS NOT NULL
+       ORDER BY category, repair_key`,
       tier,
     );
   } catch {
