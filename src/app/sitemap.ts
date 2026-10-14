@@ -13,6 +13,20 @@ function isEnHost(h: string) {
   return h === 'carissues.net' || h === 'www.carissues.net' || h.startsWith('en.');
 }
 
+/** D1 stores datetime('now') as 'YYYY-MM-DD HH:MM:SS' (UTC); also accept ISO strings. */
+function parseDbDate(v: string | null | undefined): Date | undefined {
+  if (!v) return undefined;
+  const iso = /^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/.test(v) ? v.replace(' ', 'T') + 'Z' : v;
+  const d = new Date(iso);
+  return Number.isNaN(d.getTime()) ? undefined : d;
+}
+
+function latest(...dates: (Date | undefined)[]): Date | undefined {
+  let best: Date | undefined;
+  for (const d of dates) if (d && (!best || d > best)) best = d;
+  return best;
+}
+
 function toTrimSlug(name: string) {
   return name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
 }
@@ -26,8 +40,33 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     getLatestNews(200, 0, isEn ? 'en' : 'he').catch(() => []),
   ]);
 
+  // Real last-change dates for <lastmod>: newest owner review or expert-review scrape per
+  // model (and per model-year). Only genuine content changes are used — Google ignores
+  // lastmod values it learns are unreliable.
+  const [modelRows, yearRows] = await Promise.all([
+    dbAll<{ make_slug: string; model_slug: string; ts: string | null }>(
+      `SELECT make_slug, model_slug, MAX(ts) AS ts FROM (
+         SELECT make_slug, model_slug, created_at AS ts FROM reviews
+         UNION ALL
+         SELECT make_slug, model_slug, scraped_at AS ts FROM expert_reviews
+       ) GROUP BY make_slug, model_slug`,
+    ).catch(() => []),
+    dbAll<{ make_slug: string; model_slug: string; year: number; ts: string | null }>(
+      `SELECT make_slug, model_slug, year, MAX(ts) AS ts FROM (
+         SELECT make_slug, model_slug, year, created_at AS ts FROM reviews
+         UNION ALL
+         SELECT make_slug, model_slug, year, scraped_at AS ts FROM expert_reviews WHERE year IS NOT NULL
+       ) GROUP BY make_slug, model_slug, year`,
+    ).catch(() => []),
+  ]);
+  const modelMod = new Map(modelRows.map((r) => [`${r.make_slug}/${r.model_slug}`, parseDbDate(r.ts)]));
+  const yearMod = new Map(yearRows.map((r) => [`${r.make_slug}/${r.model_slug}/${r.year}`, parseDbDate(r.ts)]));
+  const makeMod = (slug: string) =>
+    latest(...[...modelMod].filter(([k]) => k.startsWith(`${slug}/`)).map(([, d]) => d));
+
   const makeUrls = makes.map((make) => ({
     url: `${BASE}/cars/${make.slug}`,
+    lastModified: makeMod(make.slug),
     changeFrequency: 'weekly' as const,
     priority: 0.8,
   }));
@@ -35,6 +74,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const modelUrls = makes.flatMap((make) =>
     make.models.map((model) => ({
       url: `${BASE}/cars/${make.slug}/${model.slug}`,
+      lastModified: modelMod.get(`${make.slug}/${model.slug}`),
       changeFrequency: 'daily' as const,
       priority: 0.9,
     }))
@@ -43,6 +83,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const issuesUrls = makes.flatMap((make) =>
     make.models.map((model) => ({
       url: `${BASE}/cars/${make.slug}/${model.slug}/issues`,
+      lastModified: modelMod.get(`${make.slug}/${model.slug}`),
       changeFrequency: 'weekly' as const,
       priority: 0.8,
     }))
@@ -62,6 +103,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
           .filter((year) => expertSet.has(`${make.slug}/${model.slug}/${year}`))
           .map((year) => ({
             url: `${BASE}/cars/${make.slug}/${model.slug}/${year}`,
+            lastModified: yearMod.get(`${make.slug}/${model.slug}/${year}`),
             changeFrequency: 'weekly' as const,
             priority: 0.7,
           }))
@@ -72,6 +114,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       make.models.flatMap((model) =>
         (model.years ?? []).map((year) => ({
           url: `${BASE}/cars/${make.slug}/${model.slug}/${year}`,
+          lastModified: yearMod.get(`${make.slug}/${model.slug}/${year}`),
           changeFrequency: 'weekly' as const,
           priority: 0.7,
         }))
@@ -113,6 +156,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
         const [c1, c2] = [key1, key2].sort();
         compareUrls.push({
           url: `${BASE}/cars/compare/${c1}/${c2}`,
+          lastModified: latest(modelMod.get(key1), modelMod.get(key2)),
           changeFrequency: 'weekly' as const,
           priority: 0.65,
         });
@@ -140,6 +184,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: `${BASE}/contact`, changeFrequency: 'monthly', priority: 0.3 },
     { url: `${BASE}/terms`, changeFrequency: 'monthly', priority: 0.2 },
     { url: `${BASE}/privacy`, changeFrequency: 'monthly', priority: 0.2 },
+    { url: `${BASE}/accessibility`, changeFrequency: 'yearly', priority: 0.2 },
     ...makeUrls,
     ...modelUrls,
     ...issuesUrls,

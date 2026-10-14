@@ -72,6 +72,7 @@ export default function Footer() {
       head: isEn ? 'Info' : 'מידע',
       links: [
         { href: '/privacy', label: isEn ? 'Privacy Policy' : 'מדיניות פרטיות' },
+        { href: '/accessibility', label: isEn ? 'Accessibility' : 'הצהרת נגישות' },
         { href: '/news',    label: isEn ? 'News'           : 'חדשות' },
         { href: '/sales',   label: isEn ? 'Deals'          : 'מבצעים' },
       ],
