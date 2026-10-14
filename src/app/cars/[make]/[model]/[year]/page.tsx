@@ -27,6 +27,17 @@ export const revalidate = 86400;
 
 interface Props { params: Promise<{ make: string; model: string; year: string }> }
 
+// New-car list prices below this are bad scraped data (e.g. monthly lease figures)
+const MIN_PLAUSIBLE_PRICE_ILS = 20000;
+
+function getPriceRange(trims: { priceIls?: number | null }[]): { minPrice: number | null; maxPrice: number | null } {
+  const prices = trims
+    .map(t => t.priceIls)
+    .filter((p): p is number => typeof p === 'number' && p >= MIN_PLAUSIBLE_PRICE_ILS);
+  if (prices.length === 0) return { minPrice: null, maxPrice: null };
+  return { minPrice: Math.min(...prices), maxPrice: Math.max(...prices) };
+}
+
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { make: makeSlug, model: modelSlug, year } = await params;
   const [locale, make, model] = await Promise.all([
@@ -53,9 +64,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     ? yearReviews.reduce((s, r) => s + r.rating, 0) / yearReviews.length
     : null;
 
-  const trimsWithPrice = trims.filter(t => t.priceIls);
-  const minPrice = trimsWithPrice.length > 0 ? Math.min(...trimsWithPrice.map(t => t.priceIls!)) : null;
-  const maxPrice = trimsWithPrice.length > 0 ? Math.max(...trimsWithPrice.map(t => t.priceIls!)) : null;
+  const { minPrice, maxPrice } = getPriceRange(trims);
   const priceHook = minPrice
     ? ` · ₪${Math.round(minPrice / 1000)}K${maxPrice && maxPrice !== minPrice ? `–₪${Math.round(maxPrice / 1000)}K` : ''}`
     : '';
@@ -116,7 +125,7 @@ export default async function CarYearPage({ params }: Props) {
   const yearNum = parseInt(year);
   if (!model.years.includes(yearNum)) notFound();
 
-  const [allReviews, expertReviewsList, sketchfabModel, similarModels, carImages, modelRepairCosts, trimSpecs] = await Promise.all([
+  const [allReviews, expertReviewsList, sketchfabModel, similarModels, carImages, modelRepairCosts, trimSpecs, yearTrims] = await Promise.all([
     getReviewsForModel(makeSlug, modelSlug).catch(() => []),
     getExpertReviewsForYear(makeSlug, modelSlug, yearNum).catch(() => ({ review: null, isYearSpecific: false })),
     findCarModel(makeSlug, modelSlug).catch(() => null),
@@ -124,7 +133,9 @@ export default async function CarYearPage({ params }: Props) {
     getImagesForCar(makeSlug, modelSlug).catch(() => []),
     getModelRepairCosts(makeSlug, modelSlug).catch(() => []),
     getTrimSpecs(makeSlug, modelSlug).catch(() => []),
+    getTrimSpecs(makeSlug, modelSlug, yearNum).catch(() => []),
   ]);
+  const { minPrice, maxPrice } = getPriceRange(yearTrims);
 
   const expertReview = (expertReviewsList as { review: unknown }).review ?? null;
 
@@ -379,11 +390,21 @@ export default async function CarYearPage({ params }: Props) {
             __html: JSON.stringify({
               '@context': 'https://schema.org',
               '@graph': [
-                {
+                // Google rejects Product without offers, review or aggregateRating
+                ...((minPrice !== null || yearReviews.length > 0) ? [{
                   '@type': 'Product',
                   name: `${make.nameEn} ${model.nameEn} ${year}`,
                   brand: { '@type': 'Brand', name: make.nameEn },
                   url: `${base}/cars/${make.slug}/${model.slug}/${year}`,
+                  ...(minPrice !== null && maxPrice !== null && {
+                    offers: {
+                      '@type': 'AggregateOffer',
+                      priceCurrency: 'ILS',
+                      lowPrice: minPrice,
+                      highPrice: maxPrice,
+                      offerCount: yearTrims.filter(t => (t.priceIls ?? 0) >= MIN_PLAUSIBLE_PRICE_ILS).length,
+                    },
+                  }),
                   ...(avgRating !== null && {
                     aggregateRating: {
                       '@type': 'AggregateRating',
@@ -401,7 +422,7 @@ export default async function CarYearPage({ params }: Props) {
                     author: { '@type': 'Person', name: r.authorName },
                     datePublished: r.createdAt.split('T')[0],
                   })),
-                },
+                }] : []),
                 {
                   '@type': 'BreadcrumbList',
                   itemListElement: [
