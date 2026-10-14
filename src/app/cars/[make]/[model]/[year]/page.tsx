@@ -11,6 +11,7 @@ import { findCarModel } from '@/lib/sketchfab';
 import { getImagesForCar } from '@/lib/carImages';
 import { getModelRepairCosts } from '@/lib/repairCostsDb';
 import { getRecallsFromCache } from '@/lib/recallsDb';
+import { isModelYearIndexable } from '@/lib/seoIndexing';
 import SharePopup from '@/components/SharePopup';
 import RecallsBadge from '@/components/RecallsBadge';
 import Car3DViewer from '@/components/Car3DViewer';
@@ -26,6 +27,17 @@ export const revalidate = 86400;
 
 interface Props { params: Promise<{ make: string; model: string; year: string }> }
 
+// New-car list prices below this are bad scraped data (e.g. monthly lease figures)
+const MIN_PLAUSIBLE_PRICE_ILS = 20000;
+
+function getPriceRange(trims: { priceIls?: number | null }[]): { minPrice: number | null; maxPrice: number | null } {
+  const prices = trims
+    .map(t => t.priceIls)
+    .filter((p): p is number => typeof p === 'number' && p >= MIN_PLAUSIBLE_PRICE_ILS);
+  if (prices.length === 0) return { minPrice: null, maxPrice: null };
+  return { minPrice: Math.min(...prices), maxPrice: Math.max(...prices) };
+}
+
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { make: makeSlug, model: modelSlug, year } = await params;
   const [locale, make, model] = await Promise.all([
@@ -38,11 +50,13 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const base = getBaseUrl(locale);
   const url = `${base}/cars/${make.slug}/${model.slug}/${year}`;
 
-  const [allReviews, trims, { review: metaExpertReview }, metaRecalls] = await Promise.all([
+  const [allReviews, trims, { review: metaExpertReview }, metaRecalls, indexable] = await Promise.all([
     getReviewsForModel(makeSlug, modelSlug).catch(() => []),
     getTrimSpecs(makeSlug, modelSlug, yearNum).catch(() => []),
     getExpertReviewsForYear(makeSlug, modelSlug, yearNum).catch(() => ({ review: null })),
     getRecallsFromCache(make.nameEn, model.nameEn).catch(() => []),
+    // Fail open: a D1 hiccup must not cache a noindex for a day (revalidate = 86400)
+    isModelYearIndexable(makeSlug, modelSlug, yearNum, model.years).catch(() => true),
   ]);
 
   const yearReviews = allReviews.filter(r => r.year === yearNum);
@@ -50,18 +64,23 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     ? yearReviews.reduce((s, r) => s + r.rating, 0) / yearReviews.length
     : null;
 
-  const trimsWithPrice = trims.filter(t => t.priceIls);
-  const minPrice = trimsWithPrice.length > 0 ? Math.min(...trimsWithPrice.map(t => t.priceIls!)) : null;
-  const maxPrice = trimsWithPrice.length > 0 ? Math.max(...trimsWithPrice.map(t => t.priceIls!)) : null;
+  const { minPrice, maxPrice } = getPriceRange(trims);
   const priceHook = minPrice
     ? ` · ₪${Math.round(minPrice / 1000)}K${maxPrice && maxPrice !== minPrice ? `–₪${Math.round(maxPrice / 1000)}K` : ''}`
     : '';
   const priceDesc = minPrice && maxPrice && minPrice !== maxPrice
     ? ` מחיר: ₪${Math.round(minPrice / 1000)}K–₪${Math.round(maxPrice / 1000)}K.`
     : minPrice ? ` מחיר מומלץ: ₪${minPrice.toLocaleString('he-IL')}.` : '';
-  const trimNames = trims.slice(0, 4).map(t => t.name).join(', ');
-  const trimDesc = trimNames ? ` גימורים: ${trimNames}${trims.length > 4 ? ' ועוד' : ''}.` : '';
-  const hasContent = yearReviews.length > 0 || !!metaExpertReview || metaRecalls.length > 0;
+  // Only this year's trims (getTrimSpecs falls back to every year's), cut to the short
+  // name before the spec list: "S Line 55 TFSIe, אוט', 3.0 ל' טורבו, …" → "S Line 55 TFSIe"
+  const yearTrimNames = [...new Set(
+    trims.filter(t => t.modelYear === yearNum).map(t => t.name.split(',')[0].trim()).filter(Boolean),
+  )];
+  const trimNames = yearTrimNames.slice(0, 3).join(', ');
+  const trimDesc = trimNames ? ` גימורים: ${trimNames}${yearTrimNames.length > 3 ? ' ועוד' : ''}.` : '';
+  // Years without year-specific content are near-duplicates of each other: noindex,
+  // and they're left out of the sitemap (same rule, see lib/seoIndexing).
+  const hasContent = indexable;
 
   if (locale === 'en') {
     const ratingStr = avgRating ? ` ⭐ ${avgRating.toFixed(1)}` : '';
@@ -77,7 +96,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       description: `${yearReviews.length > 0 ? `${yearReviews.length} real owner reviews` : 'Real owner reviews'} for the ${make.nameEn} ${model.nameEn} ${year}${avgRating ? `. Average rating ${avgRating.toFixed(1)}/5` : ''}.${expertPart}${prosPart}${consPart}${recallPart} Common problems and reliability.`,
       robots: hasContent ? { index: true, follow: true } : { index: false, follow: true },
       alternates: { canonical: url, languages: { he: `https://carissues.co.il/cars/${make.slug}/${model.slug}/${year}`, en: url, 'x-default': url } },
-      openGraph: { title: `${make.nameEn} ${model.nameEn} ${year} | CarIssues`, description: `Owner reviews & reliability — ${make.nameEn} ${model.nameEn} ${year}`, url, images: [{ url: '/og-default.svg', width: 1200, height: 630 }] },
+      openGraph: { title: `${make.nameEn} ${model.nameEn} ${year} | CarIssues`, description: `Owner reviews & reliability — ${make.nameEn} ${model.nameEn} ${year}`, url, images: [{ url: '/og-default.png', width: 1200, height: 630 }] },
     };
   }
 
@@ -91,7 +110,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     description: `${yearReviews.length > 0 ? `${yearReviews.length} ביקורות אמיתיות על` : 'כל מה שצריך לדעת על'} ${make.nameHe} ${model.nameHe} ${year} (${make.nameEn} ${model.nameEn})${avgRating ? ` — דירוג ממוצע ${avgRating.toFixed(1)}/5` : ''}.${priceDesc}${trimDesc}${recallPartHe} יתרונות, חסרונות ובעיות נפוצות מבעלי רכב בישראל.`,
     robots: hasContent ? { index: true, follow: true } : { index: false, follow: true },
     alternates: { canonical: url, languages: { he: url, en: `https://carissues.net/cars/${make.slug}/${model.slug}/${year}`, 'x-default': `https://carissues.net/cars/${make.slug}/${model.slug}/${year}` } },
-    openGraph: { title: `${make.nameHe} ${model.nameHe} ${year}${ratingStr} | CarIssues IL`, description: `ביקורות ואמינות — ${make.nameHe} ${model.nameHe} ${year}`, url, images: [{ url: '/og-default.svg', width: 1200, height: 630 }] },
+    openGraph: { title: `${make.nameHe} ${model.nameHe} ${year}${ratingStr} | CarIssues IL`, description: `ביקורות ואמינות — ${make.nameHe} ${model.nameHe} ${year}`, url, images: [{ url: '/og-default.png', width: 1200, height: 630 }] },
   };
 }
 
@@ -106,7 +125,7 @@ export default async function CarYearPage({ params }: Props) {
   const yearNum = parseInt(year);
   if (!model.years.includes(yearNum)) notFound();
 
-  const [allReviews, expertReviewsList, sketchfabModel, similarModels, carImages, modelRepairCosts, trimSpecs] = await Promise.all([
+  const [allReviews, expertReviewsList, sketchfabModel, similarModels, carImages, modelRepairCosts, trimSpecs, yearTrims] = await Promise.all([
     getReviewsForModel(makeSlug, modelSlug).catch(() => []),
     getExpertReviewsForYear(makeSlug, modelSlug, yearNum).catch(() => ({ review: null, isYearSpecific: false })),
     findCarModel(makeSlug, modelSlug).catch(() => null),
@@ -114,7 +133,9 @@ export default async function CarYearPage({ params }: Props) {
     getImagesForCar(makeSlug, modelSlug).catch(() => []),
     getModelRepairCosts(makeSlug, modelSlug).catch(() => []),
     getTrimSpecs(makeSlug, modelSlug).catch(() => []),
+    getTrimSpecs(makeSlug, modelSlug, yearNum).catch(() => []),
   ]);
+  const { minPrice, maxPrice } = getPriceRange(yearTrims);
 
   const expertReview = (expertReviewsList as { review: unknown }).review ?? null;
 
@@ -369,11 +390,21 @@ export default async function CarYearPage({ params }: Props) {
             __html: JSON.stringify({
               '@context': 'https://schema.org',
               '@graph': [
-                {
+                // Google rejects Product without offers, review or aggregateRating
+                ...((minPrice !== null || yearReviews.length > 0) ? [{
                   '@type': 'Product',
                   name: `${make.nameEn} ${model.nameEn} ${year}`,
                   brand: { '@type': 'Brand', name: make.nameEn },
                   url: `${base}/cars/${make.slug}/${model.slug}/${year}`,
+                  ...(minPrice !== null && maxPrice !== null && {
+                    offers: {
+                      '@type': 'AggregateOffer',
+                      priceCurrency: 'ILS',
+                      lowPrice: minPrice,
+                      highPrice: maxPrice,
+                      offerCount: yearTrims.filter(t => (t.priceIls ?? 0) >= MIN_PLAUSIBLE_PRICE_ILS).length,
+                    },
+                  }),
                   ...(avgRating !== null && {
                     aggregateRating: {
                       '@type': 'AggregateRating',
@@ -391,7 +422,7 @@ export default async function CarYearPage({ params }: Props) {
                     author: { '@type': 'Person', name: r.authorName },
                     datePublished: r.createdAt.split('T')[0],
                   })),
-                },
+                }] : []),
                 {
                   '@type': 'BreadcrumbList',
                   itemListElement: [

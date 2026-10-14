@@ -131,6 +131,7 @@ export default function ModelReviewsSection({ makeSlug, modelSlug, years, trims,
       {reviews.length > 0 && yearsWithReviews.length > 1 && (
         <div style={{ marginBottom: 16 }}>
           <select
+            aria-label={locale === 'en' ? 'Filter reviews by year' : 'סינון ביקורות לפי שנה'}
             value={selectedYear ?? ''}
             onChange={(e) => { setSelectedYear(e.target.value ? Number(e.target.value) : null); setPage(1); }}
             style={{

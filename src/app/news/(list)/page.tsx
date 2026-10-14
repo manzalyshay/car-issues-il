@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { getHostLocale, getBaseUrl } from '@/lib/hostLocale';
 import { getLatestNews, ensureNewsTable } from '@/lib/carNews';
+import { newsPath } from '@/lib/newsSlug';
 
 export const revalidate = 1800;
 
@@ -9,11 +10,11 @@ export async function generateMetadata(): Promise<Metadata> {
   const locale = await getHostLocale();
   const base = getBaseUrl(locale);
   return locale === 'he' ? {
-    title: 'חדשות רכב | CarIssues',
+    title: 'חדשות רכב',
     description: 'חדשות רכב עדכניות מהעולם — עיבוד ותרגום AI, מתעדכן יומית',
     alternates: { canonical: `${base}/news` },
   } : {
-    title: 'Car News | CarIssues',
+    title: 'Car News',
     description: 'Latest car news from around the world — AI-rewritten daily',
     alternates: { canonical: `${base}/news` },
   };
@@ -73,7 +74,7 @@ export default async function NewsPage() {
             {news.map((item) => (
               <Link
                 key={item.id}
-                href={`/news/${item.id}`}
+                href={newsPath(item)}
                 style={{ textDecoration: 'none', color: 'inherit', display: 'block' }}
               >
                 <div className="card" style={{ height: '100%', overflow: 'hidden', padding: 0, display: 'flex', flexDirection: 'column', transition: 'border-color 0.15s, box-shadow 0.15s' }}>

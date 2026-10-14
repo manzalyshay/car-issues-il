@@ -66,7 +66,7 @@ export default async function IssuesPage({ params }: Props) {
 
   const [expertReviewsList, allReviews, repairCosts] = await Promise.all([
     getExpertReviews(makeSlug, modelSlug),
-    getReviewsForModel(makeSlug, modelSlug),
+    getReviewsForModel(makeSlug, modelSlug).catch(() => []),
     getRepairCosts(model.category),
   ]);
 

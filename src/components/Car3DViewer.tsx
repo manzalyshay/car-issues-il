@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { useAuth } from '@/lib/authContext';
 import { useLocale } from '@/lib/localeContext';
 import { supabase } from '@/lib/supabase';
@@ -26,6 +26,34 @@ export default function Car3DViewer({ uid, modelName, author, makeSlug, modelSlu
   const [flagReason, setFlagReason] = useState('');
   const [flagging, setFlagging] = useState(false);
   const [hidden, setHidden] = useState(false);
+  // Defer mounting the Sketchfab iframe until (a) the page has finished loading and
+  // (b) the viewer is on/near screen. The preview image fills the slot meanwhile, so the
+  // 3D model still auto-starts but no longer competes with first paint (mobile LCP).
+  const wrapRef = useRef<HTMLDivElement>(null);
+  const [shouldMount, setShouldMount] = useState(false);
+
+  useEffect(() => {
+    const el = wrapRef.current;
+    if (!el || shouldMount) return;
+    let visible = false;
+    let loaded = document.readyState === 'complete';
+    let cancelled = false;
+    const tryMount = () => {
+      if (cancelled || !visible || !loaded) return;
+      const ric = (window as Window & { requestIdleCallback?: (cb: () => void, o?: { timeout: number }) => number }).requestIdleCallback;
+      if (ric) ric(() => !cancelled && setShouldMount(true), { timeout: 1500 });
+      else setTimeout(() => !cancelled && setShouldMount(true), 200);
+    };
+    const onLoad = () => { loaded = true; tryMount(); };
+    if (!loaded) window.addEventListener('load', onLoad, { once: true });
+    const io = typeof IntersectionObserver !== 'undefined'
+      ? new IntersectionObserver((entries) => {
+          if (entries.some((e) => e.isIntersecting)) { visible = true; io?.disconnect(); tryMount(); }
+        }, { rootMargin: '300px' })
+      : null;
+    if (io) io.observe(el); else { visible = true; tryMount(); }
+    return () => { cancelled = true; io?.disconnect(); window.removeEventListener('load', onLoad); };
+  }, [shouldMount]);
 
   const thumbnailUrl = `https://media.sketchfab.com/models/${uid}/thumbnails/result.jpg`;
   const previewImage = carImageUrl || thumbnailUrl;
@@ -56,9 +84,9 @@ export default function Car3DViewer({ uid, modelName, author, makeSlug, modelSlu
   if (hidden) return null;
 
   return (
-    <div style={{ position: 'relative', width: '100%', height: '100%', minHeight: 220, overflow: 'hidden', background: '#111' }}>
-      {/* iframe loads in background; hidden until ready */}
-      <iframe
+    <div ref={wrapRef} style={{ position: 'relative', width: '100%', height: '100%', minHeight: 220, overflow: 'hidden', background: '#111' }}>
+      {/* iframe mounts after page load when on screen; hidden until ready */}
+      {shouldMount && <iframe
         ref={iframeRef}
         src={embedUrl}
         title={`${modelName} 3D`}
@@ -73,7 +101,7 @@ export default function Car3DViewer({ uid, modelName, author, makeSlug, modelSlu
           transition: 'opacity 0.6s ease',
           pointerEvents: iframeReady ? 'auto' : 'none',
         }}
-      />
+      />}
       {/* Loading overlay shown while 3D model is being fetched */}
       {!iframeReady && (
         <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>

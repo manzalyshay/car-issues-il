@@ -51,6 +51,7 @@ function CarSelector({ value, onChange, options, label }: {
     <div className="card cmp-selector-card" style={{ padding: 24, flex: '1 1 0', minWidth: 0 }}>
       <div style={{ fontWeight: 700, fontSize: '0.875rem', color: 'var(--text-muted)', marginBottom: 16, textTransform: 'uppercase', letterSpacing: '0.06em' }}>{label}</div>
       <select
+        aria-label={`${label} — ${locale === 'en' ? 'make' : 'יצרן'}`}
         value={make}
         onChange={e => { setMake(e.target.value); setModel(''); onChange(null); }}
         style={{ width: '100%', height: 42, padding: '0 12px', border: '1.5px solid var(--border)', borderRadius: 10, background: 'var(--bg)', color: 'var(--text)', fontSize: '0.9375rem', marginBottom: 12, cursor: 'pointer' }}
@@ -62,6 +63,7 @@ function CarSelector({ value, onChange, options, label }: {
         })}
       </select>
       <select
+        aria-label={`${label} — ${locale === 'en' ? 'model' : 'דגם'}`}
         value={model}
         onChange={e => setModel(e.target.value)}
         disabled={!make}

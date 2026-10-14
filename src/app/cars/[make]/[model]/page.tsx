@@ -59,7 +59,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
         title: `${make.nameEn} ${model.nameEn}${ratingStr} | CarIssues`,
         description: `Owner reviews & common problems — ${make.nameEn} ${model.nameEn} ${yearRange}`,
         url,
-        images: [{ url: '/og-default.svg', width: 1200, height: 630 }],
+        images: [{ url: '/og-default.png', width: 1200, height: 630 }],
       },
     };
   }
@@ -85,7 +85,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       title: `${make.nameHe} ${model.nameHe}${ratingStr}${countStr} | CarIssues IL`,
       description: `ביקורות ובעיות נפוצות — ${make.nameHe} ${model.nameHe} ${yearRange}`,
       url,
-      images: [{ url: '/og-default.svg', width: 1200, height: 630 }],
+      images: [{ url: '/og-default.png', width: 1200, height: 630 }],
     },
   };
 }
@@ -410,33 +410,21 @@ export default async function ModelPage({ params }: Props) {
               return {
                 '@context': 'https://schema.org',
                 '@graph': [
-                  // Only emit Product schema when we have the required aggregateRating or review
-                  ...(avgRating !== null || expertReview?.topScore != null ? [{
+                  // Only emit Product schema when real owner reviews give us an aggregateRating.
+                  // The AI expert score is not marked up as a Review: Google's review-snippet
+                  // policy disallows self-authored/AI ratings.
+                  ...(avgRating !== null && allReviews.length > 0 ? [{
                     '@type': 'Product',
                     name: `${make.nameEn} ${model.nameEn}`,
                     brand: { '@type': 'Brand', name: make.nameEn },
                     url: `${base}/cars/${make.slug}/${model.slug}`,
-                    ...(avgRating !== null ? {
-                      aggregateRating: {
-                        '@type': 'AggregateRating',
-                        ratingValue: avgRating.toFixed(1),
-                        reviewCount: allReviews.length,
-                        bestRating: 5,
-                        worstRating: 1,
-                      },
-                    } : {
-                      // No user reviews — use expert AI score as a single Review to satisfy Google's requirement
-                      review: {
-                        '@type': 'Review',
-                        author: { '@type': 'Organization', name: 'CarIssues AI' },
-                        reviewRating: {
-                          '@type': 'Rating',
-                          ratingValue: expertReview!.topScore!.toFixed(1),
-                          bestRating: 10,
-                          worstRating: 0,
-                        },
-                      },
-                    }),
+                    aggregateRating: {
+                      '@type': 'AggregateRating',
+                      ratingValue: avgRating.toFixed(1),
+                      reviewCount: allReviews.length,
+                      bestRating: 5,
+                      worstRating: 1,
+                    },
                   }] : []),
                   {
                     '@type': 'BreadcrumbList',
