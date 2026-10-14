@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
-  title: 'Free NHTSA Recall Widget — Embed on Your Website | CarIssues',
+  title: 'Free NHTSA Recall Widget — Embed on Your Website',
   description: 'Embed a free NHTSA recall lookup widget on your car blog or website. Shows live recall data for any make, model and year. Powered by CarIssues.net.',
   robots: { index: true, follow: true },
   alternates: {

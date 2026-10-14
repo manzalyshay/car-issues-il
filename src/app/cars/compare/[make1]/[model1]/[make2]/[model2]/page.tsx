@@ -8,6 +8,7 @@ import { findCarModel } from '@/lib/sketchfab';
 import { getTrimSpecs } from '@/lib/trimSpecsDb';
 import type { TrimSpecWithYear } from '@/lib/trimSpecsDb';
 import { getHostLocale, getBaseUrl } from '@/lib/hostLocale';
+import { getComparePolicy } from '@/lib/seoIndexing';
 import { translations } from '@/lib/translations';
 import StarRating from '@/components/StarRating';
 import MakeLogo from '@/components/MakeLogo';
@@ -34,11 +35,14 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
   // Pull real ratings into the snippet — matches the Product/AggregateRating schema
   // on the page itself, and gives the SERP something concrete instead of generic copy.
-  const [reviewsA, reviewsB, expertA, expertB] = await Promise.all([
+  const [reviewsA, reviewsB, expertA, expertB, indexable] = await Promise.all([
     getReviewsForModel(make1, model1).catch(() => []),
     getReviewsForModel(make2, model2).catch(() => []),
     getExpertReviews(make1, model1).catch(() => []),
     getExpertReviews(make2, model2).catch(() => []),
+    // Pairs outside the sitemap are noindex (same rule, see lib/seoIndexing).
+    // Fail open so a D1 error never caches a stray noindex.
+    getComparePolicy().then(p => p.isIndexable(c1, c2)).catch(() => true),
   ]);
   const avgA = reviewsA.length ? reviewsA.reduce((s, r) => s + r.rating, 0) / reviewsA.length : null;
   const avgB = reviewsB.length ? reviewsB.reduce((s, r) => s + r.rating, 0) / reviewsB.length : null;
@@ -64,6 +68,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   return {
     title,
     description,
+    robots: indexable ? { index: true, follow: true } : { index: false, follow: true },
     alternates: {
       canonical,
       languages: {

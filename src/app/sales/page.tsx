@@ -8,11 +8,11 @@ export async function generateMetadata(): Promise<Metadata> {
   const locale = await getHostLocale();
   const base = getBaseUrl(locale);
   return locale === 'he' ? {
-    title: 'מבצעי רכב בישראל | CarIssues',
+    title: 'מבצעי רכב בישראל',
     description: 'מבצעים, הנחות ועסקאות על רכבים חדשים ויד שנייה בישראל — עם ציון האמינות של כל דגם',
     alternates: { canonical: `${base}/sales` },
   } : {
-    title: 'Car Deals in Israel | CarIssues',
+    title: 'Car Deals in Israel',
     description: 'Best car deals, discounts and offers in Israel — with reliability scores',
     alternates: { canonical: `${base}/sales` },
   };

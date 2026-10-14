@@ -5,6 +5,7 @@
  */
 import { dbRun, dbAll } from '@/lib/db';
 import { runWorkersAI } from '@/lib/workersAi';
+import { parseNewsSegment } from '@/lib/newsSlug';
 
 export interface CarNewsItem {
   id: string;
@@ -251,6 +252,19 @@ export async function getLatestNews(limit = 20, offset = 0, locale?: string): Pr
 
 export async function getNewsArticle(id: string): Promise<CarNewsItem | null> {
   const rows = await dbAll<CarNewsItem>(`SELECT * FROM car_news WHERE id = ? AND (hidden IS NULL OR hidden = 0) LIMIT 1`, id);
+  return rows[0] ?? null;
+}
+
+/** Resolve a /news/[id] URL segment (legacy 40-hex hash or `slug-shortid`) to an article. */
+export async function getNewsArticleBySegment(segment: string): Promise<CarNewsItem | null> {
+  const parsed = parseNewsSegment(segment);
+  if (!parsed) return null;
+  if ('fullId' in parsed) return getNewsArticle(parsed.fullId);
+  // idPrefix is validated hex, so it's safe inside LIKE
+  const rows = await dbAll<CarNewsItem>(
+    `SELECT * FROM car_news WHERE id LIKE ? AND (hidden IS NULL OR hidden = 0) ORDER BY published_at DESC LIMIT 1`,
+    `${parsed.idPrefix}%`,
+  );
   return rows[0] ?? null;
 }
 

@@ -14,7 +14,7 @@ export async function generateMetadata(): Promise<Metadata> {
   const locale = await getHostLocale();
   const base = getBaseUrl(locale);
   return locale === 'en' ? {
-    title: 'Free Israeli License Plate Lookup — Full Vehicle History | CarIssues',
+    title: 'Free Israeli License Plate Lookup — Full Vehicle History',
     description: 'Check any Israeli vehicle by license plate: MOT date, ownership history, odometer, damage record, VIN, color, fuel type and more — live data from Israel\'s Ministry of Transport.',
     alternates: { canonical: `${base}/vehicle-lookup`, languages: LANGS },
     openGraph: {
@@ -23,7 +23,7 @@ export async function generateMetadata(): Promise<Metadata> {
       url: `${base}/vehicle-lookup`,
     },
   } : {
-    title: 'בדיקת רכב חינם לפי מספר רישוי — היסטוריית רכב מלאה | CarIssues',
+    title: 'בדיקת רכב חינם לפי מספר רישוי — היסטוריית רכב מלאה',
     description: 'בדוק כל רכב ישראלי לפי מספר לוחית רישוי: תוקף טסט, בעלות, קילומטראז׳, היסטוריית נזק, VIN, צבע, סוג דלק ועוד — נתונים חיים ממשרד התחבורה.',
     alternates: { canonical: `${base}/vehicle-lookup`, languages: LANGS },
     openGraph: {

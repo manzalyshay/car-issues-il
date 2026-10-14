@@ -11,6 +11,7 @@ import { findCarModel } from '@/lib/sketchfab';
 import { getImagesForCar } from '@/lib/carImages';
 import { getModelRepairCosts } from '@/lib/repairCostsDb';
 import { getRecallsFromCache } from '@/lib/recallsDb';
+import { isModelYearIndexable } from '@/lib/seoIndexing';
 import SharePopup from '@/components/SharePopup';
 import RecallsBadge from '@/components/RecallsBadge';
 import Car3DViewer from '@/components/Car3DViewer';
@@ -38,11 +39,13 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const base = getBaseUrl(locale);
   const url = `${base}/cars/${make.slug}/${model.slug}/${year}`;
 
-  const [allReviews, trims, { review: metaExpertReview }, metaRecalls] = await Promise.all([
+  const [allReviews, trims, { review: metaExpertReview }, metaRecalls, indexable] = await Promise.all([
     getReviewsForModel(makeSlug, modelSlug).catch(() => []),
     getTrimSpecs(makeSlug, modelSlug, yearNum).catch(() => []),
     getExpertReviewsForYear(makeSlug, modelSlug, yearNum).catch(() => ({ review: null })),
     getRecallsFromCache(make.nameEn, model.nameEn).catch(() => []),
+    // Fail open: a D1 hiccup must not cache a noindex for a day (revalidate = 86400)
+    isModelYearIndexable(makeSlug, modelSlug, yearNum, model.years).catch(() => true),
   ]);
 
   const yearReviews = allReviews.filter(r => r.year === yearNum);
@@ -59,9 +62,16 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const priceDesc = minPrice && maxPrice && minPrice !== maxPrice
     ? ` מחיר: ₪${Math.round(minPrice / 1000)}K–₪${Math.round(maxPrice / 1000)}K.`
     : minPrice ? ` מחיר מומלץ: ₪${minPrice.toLocaleString('he-IL')}.` : '';
-  const trimNames = trims.slice(0, 4).map(t => t.name).join(', ');
-  const trimDesc = trimNames ? ` גימורים: ${trimNames}${trims.length > 4 ? ' ועוד' : ''}.` : '';
-  const hasContent = yearReviews.length > 0 || !!metaExpertReview || metaRecalls.length > 0;
+  // Only this year's trims (getTrimSpecs falls back to every year's), cut to the short
+  // name before the spec list: "S Line 55 TFSIe, אוט', 3.0 ל' טורבו, …" → "S Line 55 TFSIe"
+  const yearTrimNames = [...new Set(
+    trims.filter(t => t.modelYear === yearNum).map(t => t.name.split(',')[0].trim()).filter(Boolean),
+  )];
+  const trimNames = yearTrimNames.slice(0, 3).join(', ');
+  const trimDesc = trimNames ? ` גימורים: ${trimNames}${yearTrimNames.length > 3 ? ' ועוד' : ''}.` : '';
+  // Years without year-specific content are near-duplicates of each other: noindex,
+  // and they're left out of the sitemap (same rule, see lib/seoIndexing).
+  const hasContent = indexable;
 
   if (locale === 'en') {
     const ratingStr = avgRating ? ` ⭐ ${avgRating.toFixed(1)}` : '';
