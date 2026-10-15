@@ -123,6 +123,8 @@ export interface Vehicle {
   displayPlate: string;
   name: string;
   makeHe: string;
+  /** English make name from our catalogue (car_makes.name_en) when the registry make is matched. */
+  makeEn?: string | null;
   year: number | null;
   color: string;
   fuel: string;
@@ -344,6 +346,9 @@ export async function lookupVehicle(rawPlate: string): Promise<LookupResult> {
     const tozet  = String(record.tozeret_nm ?? '');
     const shnat  = record.shnat_yitzur ? Number(record.shnat_yitzur) : null;
     const dbMatch = await matchToDb(tozet, kinuy, shnat);
+    const makeEn = dbMatch
+      ? (await dbFirst<{ name_en: string }>('SELECT name_en FROM car_makes WHERE slug = ?', dbMatch.makeSlug).catch(() => null))?.name_en ?? null
+      : null;
 
     const extraData = extraRes?.ok ? await extraRes.json().catch(() => null) : null;
     const extra = extraData?.result?.records?.[0] ?? null;
@@ -360,6 +365,7 @@ export async function lookupVehicle(rawPlate: string): Promise<LookupResult> {
         displayPlate:  fmtPlate(plate),
         name:          kinuy,
         makeHe:        tozet,
+        makeEn,
         year:          shnat,
         color:         String(record.tzeva_rechev ?? ''),
         fuel:          String(record.sug_delek_nm ?? ''),

@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import type { Vehicle } from '@/lib/vehicleLookup';
 import { detectCountry } from '@/lib/vehicleLookup';
+import { COLOR_EN, FUEL_EN, translateValue, englishMakeLabel, englishModelName } from '@/lib/vehicleLookupI18n';
 
 // ── Helpers ────────────────────────────────────────────────────────────────
 
@@ -53,36 +54,6 @@ const OWNERSHIP_EN: Record<string, string> = {
   'עסקי':   'Business',
 };
 
-const COLOR_EN: Record<string, string> = {
-  'לבן':       'White',
-  'שחור':      'Black',
-  'כסוף':      'Silver',
-  'אפור':      'Gray',
-  'כסוף/אפור': 'Silver/Gray',
-  'כחול':      'Blue',
-  'אדום':      'Red',
-  'ירוק':      'Green',
-  'צהוב':      'Yellow',
-  'חום':       'Brown',
-  'כתום':      'Orange',
-  'סגול':      'Purple',
-  'זהוב':      'Gold',
-  'בז':        'Beige',
-  'ורוד':      'Pink',
-  'טורקיז':    'Turquoise',
-};
-
-const FUEL_EN: Record<string, string> = {
-  'בנזין':        'Gasoline',
-  'דיזל':         'Diesel',
-  'חשמל':         'Electric',
-  'גז':           'Gas (LPG)',
-  'היברידי':      'Hybrid',
-  'היברידי-חשמל': 'Plug-in Hybrid',
-  'בנזין/גז':     'Gasoline/LPG',
-  'מימן':         'Hydrogen',
-};
-
 const ORIGIN_EN: Record<string, string> = {
   'יפן':         'Japan',
   'גרמניה':      'Germany',
@@ -113,14 +84,6 @@ const ORIGIN_EN: Record<string, string> = {
   'תאילנד':      'Thailand',
 };
 
-function translateValue(raw: string, map: Record<string, string>): string {
-  if (!raw) return raw;
-  if (map[raw]) return map[raw];
-  for (const [key, val] of Object.entries(map)) {
-    if (raw.includes(key)) return val;
-  }
-  return raw;
-}
 
 function normalizeOwnership(raw: string, isHe = true): string {
   if (!raw) return raw;
@@ -416,11 +379,11 @@ export default function VehicleLookupClient({ initialPlate, initialVehicle, init
                 <div style={{ minWidth: 0 }}>
                   {v.makeHe && (
                     <div style={{ fontSize: '0.7rem', fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--text-muted)', marginBottom: 4 }}>
-                      {isHe ? v.makeHe : v.makeHe.split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join(' ')}
+                      {isHe ? v.makeHe : englishMakeLabel(v)}
                     </div>
                   )}
                   <div style={{ fontSize: 'clamp(1.2rem, 4vw, 1.6rem)', fontWeight: 900, lineHeight: 1.1, letterSpacing: '-0.01em', color: 'var(--text)' }}>
-                    {isHe ? (v.name || v.makeHe) : (v.dbMatch?.modelSlug ? slugToDisplay(v.dbMatch.modelSlug) : v.name || v.makeHe)}
+                    {isHe ? (v.name || v.makeHe) : (v.dbMatch?.modelSlug ? slugToDisplay(v.dbMatch.modelSlug) : englishModelName(v))}
                   </div>
                   {v.year && (
                     <div style={{ marginTop: 6 }}>

@@ -7,7 +7,7 @@ export async function generateMetadata(): Promise<Metadata> {
   const locale = await getHostLocale();
   const isEn = locale === 'en';
   return {
-    title: isEn ? 'Used Car Buying Checklist — 40 Critical Checks | CarIssues' : 'רשימת בדיקה לקניית יד שניה — 40 נקודות קריטיות | CarIssues',
+    title: isEn ? 'Used Car Buying Checklist — 40 Critical Checks' : 'רשימת בדיקה לקניית יד שניה — 40 נקודות קריטיות',
     description: isEn
       ? '40 critical checks before buying a used car. Inspect the exterior, interior, engine, documents, and test drive — don\'t sign without this checklist.'
       : '40 נקודות בדיקה לפני קניית רכב יד שניה. בדיקת חוץ, פנים, מנוע, מסמכים ונסיעת מבחן — אל תגיעו לרכב בלי זה.',
