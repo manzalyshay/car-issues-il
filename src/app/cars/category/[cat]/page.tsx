@@ -45,7 +45,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const locale = await getHostLocale();
   const base = getBaseUrl(locale);
   const label = CAT_LABELS[cat]!;
-  const title = locale === 'en' ? `${label.en} Cars | CarIssues` : `${label.he} בישראל | CarIssues`;
+  const title = locale === 'en' ? `${label.en} Cars` : `${label.he} בישראל`;
   const description = locale === 'en' ? label.desc_en : label.desc_he;
   return {
     title,

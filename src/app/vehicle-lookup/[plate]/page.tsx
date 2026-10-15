@@ -3,6 +3,7 @@ import { getHostLocale, getBaseUrl } from '@/lib/hostLocale';
 import { lookupVehicle, detectCountry } from '@/lib/vehicleLookup';
 import { lookupUkVehicle } from '@/lib/vehicleLookupUk';
 import VehicleLookupClient from '@/components/VehicleLookupClient';
+import { COLOR_EN, FUEL_EN, translateValue, englishVehicleName } from '@/lib/vehicleLookupI18n';
 
 interface Props { params: Promise<{ plate: string }> }
 
@@ -36,14 +37,17 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
   if (result.status !== 'found') {
     return {
-      title: isHe ? `בדיקת רכב ${displayPlate} | CarIssues` : `Vehicle Check ${displayPlate} | CarIssues`,
+      title: isHe ? `בדיקת רכב ${displayPlate}` : `Vehicle Check ${displayPlate}`,
       robots: { index: false, follow: true },
       alternates: { canonical: `${base}/vehicle-lookup/${plate}`, languages: langs },
     };
   }
 
   const v = result.vehicle;
-  const name = [v.makeHe, v.name].filter(Boolean).join(' ') || v.makeHe;
+  // Title template in the root layout adds " | CarIssues"; the English site never shows the Hebrew registry make
+  const name = isHe ? ([v.makeHe, v.name].filter(Boolean).join(' ') || v.makeHe) : englishVehicleName(v);
+  const fuel = isHe ? v.fuel : translateValue(v.fuel, FUEL_EN);
+  const color = isHe ? v.color : translateValue(v.color, COLOR_EN);
   const yearStr = v.year ? ` ${v.year}` : '';
   const damageStr = isHe
     ? (v.hasAccident === true ? ' נרשם נזק.' : v.hasAccident === false ? ' ללא נזק רשום.' : '')
@@ -52,11 +56,11 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
   return {
     title: isHe
-      ? `${name}${yearStr} – בדיקת רכב ${displayPlate} | CarIssues`
-      : `${name}${yearStr} – Vehicle Check ${displayPlate} | CarIssues`,
+      ? `${name}${yearStr} – בדיקת רכב ${displayPlate}`
+      : `${name}${yearStr} – Vehicle Check ${displayPlate}`,
     description: isHe
       ? `פרטי הרכב ${displayPlate}: ${name}${yearStr}. דלק: ${v.fuel}. צבע: ${v.color}.${kmStr}${damageStr} תוקף טסט ועוד ממשרד התחבורה.`
-      : `Vehicle ${displayPlate}: ${name}${yearStr}. Fuel: ${v.fuel}. Color: ${v.color}.${kmStr}${damageStr} MOT status and more from Israel's Ministry of Transport.`,
+      : `Vehicle ${displayPlate}: ${name}${yearStr}. Fuel: ${fuel}. Color: ${color}.${kmStr}${damageStr} MOT status and more from Israel's Ministry of Transport.`,
     alternates: { canonical: `${base}/vehicle-lookup/${plate}`, languages: langs },
     openGraph: {
       title: `${name}${yearStr} – ${displayPlate}`,
