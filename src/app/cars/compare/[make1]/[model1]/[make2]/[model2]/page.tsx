@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound, redirect } from 'next/navigation';
-import { getMakeBySlug, getModelBySlug, getAllMakes, getSimilarModels } from '@/lib/carsDb';
+import { getMakeBySlug, getModelBySlug, getAllMakes, getSimilarModels, getCategoryLabel } from '@/lib/carsDb';
 import { getReviewsForModel } from '@/lib/reviewsDb';
 import { getExpertReviews } from '@/lib/expertReviews';
 import { findCarModel } from '@/lib/sketchfab';
@@ -16,6 +16,9 @@ import PriceHistoryChart from '@/components/PriceHistoryChart';
 import CarComparisonAI from '@/components/CarComparisonAI';
 import RecallsCompare from '@/components/RecallsCompare';
 import ReviewsCompare from '@/components/ReviewsCompare';
+import { getRecallsFromCache } from '@/lib/recallsDb';
+import { summarizeTrims } from '@/lib/specSummary';
+import { buildCompareInsights } from '@/lib/compareInsights';
 
 interface Props { params: Promise<{ make1: string; model1: string; make2: string; model2: string }> }
 
@@ -105,7 +108,7 @@ export default async function ComparePage({ params }: Props) {
   const [modA, modB] = await Promise.all([getModelBySlug(make1, model1), getModelBySlug(make2, model2)]);
   if (!modA || !modB) notFound();
 
-  const [reviewsA, reviewsB, expertA, expertB, carModelA, carModelB, similarA, similarB, trimsA, trimsB] = await Promise.all([
+  const [reviewsA, reviewsB, expertA, expertB, carModelA, carModelB, similarA, similarB, trimsA, trimsB, recallsA, recallsB] = await Promise.all([
     getReviewsForModel(make1, model1).catch(() => []),
     getReviewsForModel(make2, model2).catch(() => []),
     getExpertReviews(make1, model1).catch(() => []),
@@ -116,6 +119,8 @@ export default async function ComparePage({ params }: Props) {
     getSimilarModels(make2, model2, modB?.category ?? 'sedan', 10).catch(() => []),
     getTrimSpecs(make1, model1).catch(() => [] as TrimSpecWithYear[]),
     getTrimSpecs(make2, model2).catch(() => [] as TrimSpecWithYear[]),
+    getRecallsFromCache(mA.nameEn, modA.nameEn),
+    getRecallsFromCache(mB.nameEn, modB.nameEn),
   ]);
 
   const isEn = locale === 'en';
@@ -152,6 +157,17 @@ export default async function ComparePage({ params }: Props) {
     ? (expertB[0]?.consEn?.filter(c => c && !hasHeb(c)) ?? [])
     : (expertB[0]?.cons ?? []);
 
+  // ── Spec summaries (sanity-checked; fuel from petrol/hybrid/diesel trims only) ──
+  const specA = summarizeTrims(trimsA);
+  const specB = summarizeTrims(trimsB);
+  const insights = buildCompareInsights(
+    { name: nameA, categoryLabel: getCategoryLabel(modA.category, locale), spec: specA, reviewCount: reviewsA.length, avgRating: avgA, recallCount: recallsA.length },
+    { name: nameB, categoryLabel: getCategoryLabel(modB.category, locale), spec: specB, reviewCount: reviewsB.length, avgRating: avgB, recallCount: recallsB.length },
+    locale,
+  );
+  const latestYearA = modA.years.length ? Math.max(...modA.years) : null;
+  const latestYearB = modB.years.length ? Math.max(...modB.years) : null;
+
   // ── Performance data aggregation ─────────────────────────────────────────────
   const maxVal = (trims: TrimSpecWithYear[], key: keyof TrimSpecWithYear): number | null =>
     trims.reduce((best: number | null, t) => {
@@ -171,7 +187,7 @@ export default async function ComparePage({ params }: Props) {
     torque:   maxVal(trimsA, 'torqueNm'),
     accel:    minVal(trimsA, 'acceleration'),
     topSpeed: maxVal(trimsA, 'topSpeedKmh'),
-    fuel:     minVal(trimsA, 'fuelConsumption'),
+    fuel:     specA.fuelBest,
     cargo:    maxVal(trimsA, 'cargoLiters'),
     weight:   minVal(trimsA, 'curbWeightKg'),
     price:    minVal(trimsA, 'priceIls'),
@@ -181,7 +197,7 @@ export default async function ComparePage({ params }: Props) {
     torque:   maxVal(trimsB, 'torqueNm'),
     accel:    minVal(trimsB, 'acceleration'),
     topSpeed: maxVal(trimsB, 'topSpeedKmh'),
-    fuel:     minVal(trimsB, 'fuelConsumption'),
+    fuel:     specB.fuelBest,
     cargo:    maxVal(trimsB, 'cargoLiters'),
     weight:   minVal(trimsB, 'curbWeightKg'),
     price:    minVal(trimsB, 'priceIls'),
@@ -254,9 +270,23 @@ export default async function ComparePage({ params }: Props) {
         <h1 style={{ fontSize: 'clamp(1.4rem,3vw,2rem)', fontWeight: 900, marginBottom: 8 }}>
           {nameA} {sp.vsWord} {nameB}
         </h1>
-        <p style={{ color: 'var(--text-muted)', marginBottom: 32 }}>
+        <p style={{ color: 'var(--text-muted)', marginBottom: insights.verdict ? 16 : 32 }}>
           {mA.nameEn} {modA.nameEn} vs {mB.nameEn} {modB.nameEn} — {sp.subtitleCompare}
         </p>
+
+        {/* Verdict — deterministic, built from trim prices/specs, owner reviews and recall counts */}
+        {insights.verdict && (
+          <section className="card" aria-labelledby="cmp-verdict-title" style={{ padding: '20px 24px', marginBottom: 28, borderInlineStart: '4px solid var(--accent)' }}>
+            <h2 id="cmp-verdict-title" style={{ fontWeight: 800, fontSize: '1.05rem', margin: '0 0 10px' }}>{sp.verdictTitle}</h2>
+            <p style={{ margin: '0 0 6px', fontSize: '0.95rem', lineHeight: 1.7 }}>
+              <strong>{isEn ? `Who the ${nameA} suits:` : `למי מתאים ${nameA}:`}</strong> {insights.verdict.forA}
+            </p>
+            <p style={{ margin: '0 0 8px', fontSize: '0.95rem', lineHeight: 1.7 }}>
+              <strong>{isEn ? `Who the ${nameB} suits:` : `למי מתאים ${nameB}:`}</strong> {insights.verdict.forB}
+            </p>
+            <p style={{ margin: 0, fontSize: '0.75rem', color: 'var(--text-muted)' }}>{insights.verdict.basis}</p>
+          </section>
+        )}
 
         {/* Header card */}
         <div className="card cmp-header-card" style={{ padding: '24px 28px', marginBottom: 28, display: 'flex', gap: 16, alignItems: 'center' }}>
@@ -272,6 +302,11 @@ export default async function ComparePage({ params }: Props) {
             <Link href={`/cars/${make1}/${model1}/issues`} style={{ fontSize: '0.8125rem', color: 'var(--accent)', textDecoration: 'none', display: 'block', marginTop: 4 }}>
               {sp.issuesLink}
             </Link>
+            {latestYearA && (
+              <Link href={`/cars/${make1}/${model1}/${latestYearA}`} style={{ fontSize: '0.8125rem', color: 'var(--accent)', textDecoration: 'none', display: 'block', marginTop: 4 }}>
+                {isEn ? `${latestYearA} — prices & trims →` : `${latestYearA} — מחירים וגרסאות ←`}
+              </Link>
+            )}
           </div>
           <div style={{ fontWeight: 900, fontSize: '1.2rem', color: 'var(--text-muted)', flexShrink: 0 }}>VS</div>
           <div style={{ ...col }}>
@@ -286,6 +321,11 @@ export default async function ComparePage({ params }: Props) {
             <Link href={`/cars/${make2}/${model2}/issues`} style={{ fontSize: '0.8125rem', color: 'var(--accent)', textDecoration: 'none', display: 'block', marginTop: 4 }}>
               {sp.issuesLink}
             </Link>
+            {latestYearB && (
+              <Link href={`/cars/${make2}/${model2}/${latestYearB}`} style={{ fontSize: '0.8125rem', color: 'var(--accent)', textDecoration: 'none', display: 'block', marginTop: 4 }}>
+                {isEn ? `${latestYearB} — prices & trims →` : `${latestYearB} — מחירים וגרסאות ←`}
+              </Link>
+            )}
           </div>
         </div>
 
@@ -353,6 +393,11 @@ export default async function ComparePage({ params }: Props) {
                   <Score label={sp.aiScore} value={scoreB} best={scoreWinner === 'b' ? 'b' : null} />
                 </div>
               </div>
+              <p style={{ margin: '14px 0 0', fontSize: '0.75rem', color: 'var(--text-muted)', textAlign: 'center', lineHeight: 1.6 }}>
+                {isEn
+                  ? 'AI score (0–10) for each model: an AI summary of owner posts on forums and review sites. It is not a CarIssues owner rating.'
+                  : 'ציון AI (0–10) לכל דגם: סיכום שמחושב ע"י AI מפוסטים של בעלי רכב בפורומים ובאתרי ביקורות. זה לא דירוג בעלים באתר.'}
+              </p>
             </>
           )}
         </div>
@@ -601,29 +646,18 @@ export default async function ComparePage({ params }: Props) {
           </div>
         )}
 
-        {/* Verdict */}
-        {(scoreA !== null || scoreB !== null || avgA !== null || avgB !== null) && (() => {
-          const rw = better(avgA, avgB);
-          const sw = better(scoreA, scoreB);
-          const winner = sw ?? rw;
-          const winnerName = winner === 'a' ? nameA : winner === 'b' ? nameB : null;
-          const loserName  = winner === 'a' ? nameB : winner === 'b' ? nameA : null;
-          return (
-            <div className="card" style={{ padding: '24px 28px', marginBottom: 28, borderRight: '4px solid var(--accent)' }}>
-              <h2 style={{ fontWeight: 800, fontSize: '1rem', marginBottom: 12 }}>{sp.verdictTitle}</h2>
-              {winner && winner !== 'tie' ? (
-                <p style={{ margin: 0, fontSize: '0.9375rem', lineHeight: 1.7, color: 'var(--text-muted)' }}>
-                  {sp.verdictWinnerPre} <strong>{winnerName}</strong> {sp.verdictWinnerMid} {loserName}.
-                  {(expertA[0]?.pros?.length ?? 0) > 0 || (expertB[0]?.pros?.length ?? 0) > 0 ? ` ${sp.verdictHasPros}` : ''}
-                </p>
-              ) : (
-                <p style={{ margin: 0, fontSize: '0.9375rem', lineHeight: 1.7, color: 'var(--text-muted)' }}>
-                  {sp.verdictTie}
-                </p>
-              )}
-            </div>
-          );
-        })()}
+        {/* FAQ — only questions whose numbers exist for both cars; mirrors the FAQPage JSON-LD */}
+        {insights.faq.length > 0 && (
+          <section className="card" aria-labelledby="cmp-faq-title" style={{ padding: '24px 28px', marginBottom: 28 }}>
+            <h2 id="cmp-faq-title" style={{ fontWeight: 800, fontSize: '1rem', margin: '0 0 16px' }}>{isEn ? 'Frequently asked questions' : 'שאלות נפוצות'}</h2>
+            {insights.faq.map((f, i) => (
+              <div key={i} style={{ marginBottom: i === insights.faq.length - 1 ? 0 : 16 }}>
+                <h3 style={{ fontWeight: 700, fontSize: '0.95rem', margin: '0 0 6px' }}>{f.q}</h3>
+                <p style={{ margin: 0, fontSize: '0.9rem', lineHeight: 1.7, color: 'var(--text-muted)' }}>{f.a}</p>
+              </div>
+            ))}
+          </section>
+        )}
 
         {/* AI Comparison */}
         <CarComparisonAI
@@ -713,47 +747,48 @@ export default async function ComparePage({ params }: Props) {
           const base = getBaseUrl(locale);
           const pageUrl = `${base}/cars/compare/${make1}/${model1}/${make2}/${model2}`;
 
-          // Same pattern as the model page: emit Product+AggregateRating when we have
-          // real owner reviews, otherwise fall back to the AI expert score as a Review
-          // so Google's rich-result requirement (rating OR review) is still satisfied.
+          // Product is emitted only for a car with real owner reviews (AggregateRating from
+          // CarIssues reviews, shown next to that car in the scores card). No AI/self-authored
+          // ratings and no offers — a Product without either would fail rich-result validation.
           const productFor = (
             name: string, makeEn: string, url: string,
-            avg: number | null, reviewCount: number, topScore: number | null,
+            avg: number | null, reviewCount: number,
+            image: string | null | undefined, categoryLabel: string, priceMin: number | null,
           ) => {
-            if (avg === null && topScore == null) return [];
+            if (avg === null || reviewCount < 1) return [];
+            const description = isEn
+              ? `${name} — ${categoryLabel}${priceMin ? `, from ₪${priceMin.toLocaleString('en-US')} in Israel` : ''}. Owner reviews, common problems and specs on CarIssues.`
+              : `${name} — ${categoryLabel}${priceMin ? `, החל מ-₪${priceMin.toLocaleString('en-US')}` : ''}. ביקורות בעלים, בעיות נפוצות ומפרט ב-CarIssues.`;
             return [{
               '@type': 'Product',
               name,
               brand: { '@type': 'Brand', name: makeEn },
               url,
-              ...(avg !== null ? {
-                aggregateRating: {
-                  '@type': 'AggregateRating',
-                  ratingValue: avg.toFixed(1),
-                  reviewCount,
-                  bestRating: 5,
-                  worstRating: 1,
-                },
-              } : {
-                review: {
-                  '@type': 'Review',
-                  author: { '@type': 'Organization', name: 'CarIssues AI' },
-                  reviewRating: {
-                    '@type': 'Rating',
-                    ratingValue: topScore!.toFixed(1),
-                    bestRating: 10,
-                    worstRating: 0,
-                  },
-                },
-              }),
+              description,
+              ...(image && /^https?:\/\//.test(image) ? { image } : {}),
+              aggregateRating: {
+                '@type': 'AggregateRating',
+                ratingValue: avg.toFixed(1),
+                reviewCount,
+                bestRating: 5,
+                worstRating: 1,
+              },
             }];
           };
 
           return {
             '@context': 'https://schema.org',
             '@graph': [
-              ...productFor(nameA, mA.nameEn, `${base}/cars/${make1}/${model1}`, avgA, reviewsA.length, scoreA),
-              ...productFor(nameB, mB.nameEn, `${base}/cars/${make2}/${model2}`, avgB, reviewsB.length, scoreB),
+              ...productFor(nameA, mA.nameEn, `${base}/cars/${make1}/${model1}`, avgA, reviewsA.length, modA.leadingImageUrl, getCategoryLabel(modA.category, locale), specA.priceMin),
+              ...productFor(nameB, mB.nameEn, `${base}/cars/${make2}/${model2}`, avgB, reviewsB.length, modB.leadingImageUrl, getCategoryLabel(modB.category, locale), specB.priceMin),
+              ...(insights.faq.length >= 2 ? [{
+                '@type': 'FAQPage',
+                mainEntity: insights.faq.map((f) => ({
+                  '@type': 'Question',
+                  name: f.q,
+                  acceptedAnswer: { '@type': 'Answer', text: f.a },
+                })),
+              }] : []),
               {
                 '@type': 'WebPage',
                 name: `${nameA} ${sp.vsWord} ${nameB}`,
