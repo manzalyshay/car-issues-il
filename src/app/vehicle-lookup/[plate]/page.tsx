@@ -3,6 +3,7 @@ import { getHostLocale, getBaseUrl } from '@/lib/hostLocale';
 import { lookupVehicle, detectCountry } from '@/lib/vehicleLookup';
 import { lookupUkVehicle } from '@/lib/vehicleLookupUk';
 import VehicleLookupClient from '@/components/VehicleLookupClient';
+import { getModelInfo } from '@/lib/modelInfo';
 
 interface Props { params: Promise<{ plate: string }> }
 
@@ -36,7 +37,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
   if (result.status !== 'found') {
     return {
-      title: isHe ? `בדיקת רכב ${displayPlate} | CarIssues` : `Vehicle Check ${displayPlate} | CarIssues`,
+      title: isHe ? `בדיקת רכב ${displayPlate}` : `Vehicle Check ${displayPlate}`,
       robots: { index: false, follow: true },
       alternates: { canonical: `${base}/vehicle-lookup/${plate}`, languages: langs },
     };
@@ -52,8 +53,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
   return {
     title: isHe
-      ? `${name}${yearStr} – בדיקת רכב ${displayPlate} | CarIssues`
-      : `${name}${yearStr} – Vehicle Check ${displayPlate} | CarIssues`,
+      ? `${name}${yearStr} – בדיקת רכב ${displayPlate}`
+      : `${name}${yearStr} – Vehicle Check ${displayPlate}`,
     description: isHe
       ? `פרטי הרכב ${displayPlate}: ${name}${yearStr}. דלק: ${v.fuel}. צבע: ${v.color}.${kmStr}${damageStr} תוקף טסט ועוד ממשרד התחבורה.`
       : `Vehicle ${displayPlate}: ${name}${yearStr}. Fuel: ${v.fuel}. Color: ${v.color}.${kmStr}${damageStr} MOT status and more from Israel's Ministry of Transport.`,
@@ -72,6 +73,8 @@ export default async function VehiclePlatePage({ params }: Props) {
   const isHe = locale === 'he';
   const base = getBaseUrl(locale);
   const result = await lookupByPlate(plate);
+  const match = result.status === 'found' ? result.vehicle.dbMatch : null;
+  const modelInfo = match ? await getModelInfo(match.makeSlug, match.modelSlug, locale).catch(() => null) : null;
 
   const jsonLd = {
     '@context': 'https://schema.org',
@@ -104,6 +107,7 @@ export default async function VehiclePlatePage({ params }: Props) {
         initialPlate={plate}
         initialVehicle={result.status === 'found' ? result.vehicle : null}
         initialStatus={result.status === 'found' ? 'found' : result.status === 'not_found' ? 'not_found' : 'error'}
+        initialModelInfo={modelInfo}
         isHe={isHe}
         base={base}
       />

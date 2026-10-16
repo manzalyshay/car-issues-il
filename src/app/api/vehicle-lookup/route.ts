@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { lookupVehicle, detectCountry } from '@/lib/vehicleLookup';
 import { lookupUkVehicle } from '@/lib/vehicleLookupUk';
+import { getModelInfo } from '@/lib/modelInfo';
+import { getHostLocale } from '@/lib/hostLocale';
 
 export async function GET(req: NextRequest) {
   const raw = req.nextUrl.searchParams.get('plate') ?? '';
@@ -15,7 +17,9 @@ export async function GET(req: NextRequest) {
       const result = await lookupVehicle(plate);
       if (result.status === 'not_found') return NextResponse.json({ error: 'Vehicle not found' }, { status: 404 });
       if (result.status === 'error')     return NextResponse.json({ error: 'Government API unavailable' }, { status: 502 });
-      return NextResponse.json({ vehicle: result.vehicle }, { headers: { 'Cache-Control': 'public, s-maxage=86400' } });
+      const m = result.vehicle.dbMatch;
+      const modelInfo = m ? await getModelInfo(m.makeSlug, m.modelSlug, await getHostLocale()).catch(() => null) : null;
+      return NextResponse.json({ vehicle: result.vehicle, modelInfo }, { headers: { 'Cache-Control': 'public, s-maxage=86400' } });
     } catch (err) {
       console.error('[vehicle-lookup/il]', err);
       return NextResponse.json({ error: 'Failed to fetch vehicle data' }, { status: 500 });

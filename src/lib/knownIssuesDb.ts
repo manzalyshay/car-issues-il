@@ -12,7 +12,8 @@ export interface KnownIssue {
 
 export async function getKnownIssues(makeSlug: string, modelSlug: string, limit = 5): Promise<KnownIssue[]> {
   const rows = await dbAll<{ title: string; rank: number | null; model_year: number | null; avg_mileage: number | null; source: string; source_url: string | null }>(
-    'SELECT title, rank, model_year, avg_mileage, source, source_url FROM known_issues WHERE make_slug = ? AND model_slug = ? ORDER BY rank IS NULL, rank LIMIT ?',
+    // Rows repeat per model-year range — one row per distinct title, best rank first
+    'SELECT title, MIN(rank) AS rank, MAX(model_year) AS model_year, MIN(avg_mileage) AS avg_mileage, source, MIN(source_url) AS source_url FROM known_issues WHERE make_slug = ? AND model_slug = ? GROUP BY title, source ORDER BY rank IS NULL, rank LIMIT ?',
     makeSlug, modelSlug, limit,
   ).catch(() => []);
   return rows.map((r) => ({
