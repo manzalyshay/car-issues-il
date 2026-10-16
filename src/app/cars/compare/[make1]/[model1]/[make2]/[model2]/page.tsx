@@ -19,6 +19,7 @@ import ReviewsCompare from '@/components/ReviewsCompare';
 import { getRecallsFromCache } from '@/lib/recallsDb';
 import { summarizeTrims } from '@/lib/specSummary';
 import { buildCompareInsights } from '@/lib/compareInsights';
+import { isOwnerPostBased } from '@/lib/aiSource';
 
 interface Props { params: Promise<{ make1: string; model1: string; make2: string; model2: string }> }
 
@@ -599,7 +600,12 @@ export default async function ComparePage({ params }: Props) {
         {/* Pros & Cons — only shown for Hebrew locale (data is Hebrew from DB) */}
         {(prosA.length > 0 || prosB.length > 0 || consA.length > 0 || consB.length > 0) && (
           <div className="card" style={{ padding: '24px 28px', marginBottom: 28 }}>
-            <h2 style={{ fontWeight: 800, fontSize: '1rem', marginBottom: 20 }}>{sp.prosAndConsTitle}</h2>
+            <h2 style={{ fontWeight: 800, fontSize: '1rem', marginBottom: 6 }}>{sp.prosAndConsTitle}</h2>
+            <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', margin: '0 0 16px' }}>
+              {isOwnerPostBased(expertA[0]) || isOwnerPostBased(expertB[0])
+                ? (isEn ? 'AI summaries of owner posts on forums and review sites.' : 'סיכומי AI של פוסטים של בעלי רכב בפורומים ובאתרי ביקורות.')
+                : (isEn ? 'AI summaries from general knowledge — not based on owner reviews on this site.' : 'סיכומי AI על בסיס ידע כללי — לא מבוססים על ביקורות בעלים באתר.')}
+            </p>
             <div className="cmp-proscons-flex" style={{ display: 'flex', gap: 24, flexWrap: 'wrap' }}>
               <div style={{ flex: 1, minWidth: 200 }}>
                 <div style={{ fontWeight: 700, marginBottom: 12, fontSize: '0.9rem' }}>{nameA}</div>

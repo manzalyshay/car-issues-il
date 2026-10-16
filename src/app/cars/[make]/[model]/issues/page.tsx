@@ -8,6 +8,7 @@ import { getRepairCosts } from '@/lib/repairCostsDb';
 import MakeLogo from '@/components/MakeLogo';
 import { getHostLocale, getBaseUrl } from '@/lib/hostLocale';
 import { translations } from '@/lib/translations';
+import { aiSourceLabel, isOwnerPostBased } from '@/lib/aiSource';
 
 export const revalidate = 86400;
 
@@ -152,7 +153,9 @@ export default async function IssuesPage({ params }: Props) {
               {makeName} {modelName} — {ip.titleSuffix}
             </h1>
             <p style={{ margin: '4px 0 0', fontSize: '0.875rem', color: 'var(--text-muted)' }}>
-              {isEn ? make.nameEn : make.nameHe} {isEn ? model.nameEn : model.nameHe} · {ip.basedOn} {allReviews.length} {ip.ownerReviews}
+              {isEn ? make.nameEn : make.nameHe} {isEn ? model.nameEn : model.nameHe} · {allReviews.length > 0
+                ? `${allReviews.length} ${ip.ownerReviews}`
+                : (isEn ? 'no owner reviews on CarIssues yet' : 'עדיין אין ביקורות בעלים באתר')}
             </p>
           </div>
         </div>
@@ -163,6 +166,7 @@ export default async function IssuesPage({ params }: Props) {
             <h2 style={{ fontSize: '1.1rem', fontWeight: 700, marginBottom: 14, display: 'flex', alignItems: 'center', gap: 8 }}>
               {ip.reportedIssues}
             </h2>
+            <p style={{ fontSize: '0.78rem', color: 'var(--text-muted)', margin: '-6px 0 10px' }}>{aiSourceLabel(expertReview, isEn)}</p>
             <div style={{ background: 'rgba(230,57,70,0.05)', border: '1px solid rgba(230,57,70,0.15)', borderRadius: 12, padding: '16px 20px' }}>
               <ul style={{ margin: 0, padding: 0, listStyle: 'none', display: 'flex', flexDirection: 'column', gap: 10 }}>
                 {cons.map((con, i) => (
@@ -198,9 +202,10 @@ export default async function IssuesPage({ params }: Props) {
         {/* AI summary */}
         {aiSummary && (
           <section style={{ marginBottom: 32 }}>
-            <h2 style={{ fontSize: '1.1rem', fontWeight: 700, marginBottom: 12 }}>
-              {ip.aiAnalysis}
+            <h2 style={{ fontSize: '1.1rem', fontWeight: 700, marginBottom: 6 }}>
+              {isOwnerPostBased(expertReview) ? ip.aiAnalysis : (isEn ? '🤖 AI summary' : '🤖 סיכום AI')}
             </h2>
+            <p style={{ fontSize: '0.78rem', color: 'var(--text-muted)', margin: '0 0 10px' }}>{aiSourceLabel(expertReview, isEn)}</p>
             <p style={{ fontSize: '0.9rem', lineHeight: 1.8, color: 'var(--text-muted)', background: 'var(--surface-2)', borderRadius: 10, padding: '14px 18px', margin: 0 }}>
               {aiSummary}
             </p>

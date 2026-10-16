@@ -5,6 +5,16 @@ import { getAllMakes, getMakeBySlug, getCategoryLabel } from '@/lib/carsDb';
 import MakeLogo from '@/components/MakeLogo';
 import { getHostLocale, getBaseUrl } from '@/lib/hostLocale';
 import { translations } from '@/lib/translations';
+import { getMakeStats, buildMakeIntro } from '@/lib/makeSummary';
+import { curatedPairs } from '@/lib/comparePairs';
+import { fmtIls } from '@/lib/specSummary';
+
+/** Meta description within 70–160 chars: cut at a word boundary. */
+function clampDesc(s: string, max = 160): string {
+  if (s.length <= max) return s;
+  const cut = s.slice(0, max - 1);
+  return `${cut.slice(0, cut.lastIndexOf(' '))}…`;
+}
 
 interface Props { params: Promise<{ make: string }> }
 
@@ -17,13 +27,15 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const base = getBaseUrl(locale);
   const url = `${base}/cars/${make.slug}`;
   const isEn = locale === 'en';
+  const stats = await getMakeStats(make).catch(() => null);
+  const from = stats?.prices[0] ? stats.prices[0].price : null;
   return {
     title: isEn
       ? `${make.nameEn} — Models & Common Issues`
       : `${make.nameHe} — בעיות ודגמים`,
-    description: isEn
-      ? `All ${make.nameEn} models with owner reviews and common problems reported by real car owners.`
-      : `כל דגמי ${make.nameHe} (${make.nameEn}) עם ביקורות בעברית ובעיות נפוצות שדיווחו בעלי רכב בישראל.`,
+    description: clampDesc(isEn
+      ? `All ${make.models.length} ${make.nameEn} models: owner reviews, common problems, recalls and Israeli trim prices${from ? ` from ${fmtIls(from)}` : ''}. Compare ${make.nameEn} models side by side.`
+      : `כל ${make.models.length} דגמי ${make.nameHe} (${make.nameEn}): ביקורות בעלים, בעיות נפוצות, ריקולים ומחירון גרסאות בישראל${from ? ` החל מ-${fmtIls(from)}` : ''}. השוואה בין דגמים.`),
     alternates: {
       canonical: url,
       languages: {
@@ -49,6 +61,14 @@ export default async function MakePage({ params }: Props) {
   const isEn = locale === 'en';
 
   const categories = [...new Set(make.models.map((m) => m.category))];
+  const stats = await getMakeStats(make).catch(() => null);
+  const intro = stats ? buildMakeIntro(make, stats, locale) : [];
+  // Top models: owner-rated first, then highest AI score (labelled in the intro)
+  const topModelSlugs = stats
+    ? [...new Set([...stats.rated.map((r) => r.slug), ...stats.aiScores.map((s) => s.slug)])].slice(0, 6)
+    : [];
+  const makePairs = curatedPairs(await getAllMakes().catch(() => []))
+    .filter((p) => p.a.make.slug === make.slug || p.b.make.slug === make.slug).slice(0, 6);
 
   return (
     <div style={{ background: 'var(--bg)', minHeight: '100vh' }}>
@@ -105,6 +125,37 @@ export default async function MakePage({ params }: Props) {
 
       {/* ── MODELS GRID ── */}
       <div className="container" style={{ padding: '36px 1.5rem 72px' }}>
+
+        {/* Data-built overview — every sentence comes from the site's data */}
+        {intro.length > 0 && (
+          <section style={{ maxWidth: 860, marginBottom: 32 }}>
+            <h2 style={{ fontSize: '1.1rem', fontWeight: 700, margin: '0 0 10px' }}>
+              {isEn ? `${make.nameEn} at a glance` : `${make.nameHe} — תמונת מצב`}
+            </h2>
+            {intro.map((para, i) => (
+              <p key={i} style={{ margin: '0 0 10px', fontSize: '0.95rem', lineHeight: 1.8, color: 'var(--text-muted)' }}>{para}</p>
+            ))}
+            {(topModelSlugs.length > 0 || makePairs.length > 0) && (
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginTop: 12 }}>
+                {topModelSlugs.map((slug) => {
+                  const m = make.models.find((x) => x.slug === slug);
+                  return m ? (
+                    <Link key={slug} href={`/cars/${make.slug}/${slug}`} style={{ padding: '6px 12px', borderRadius: 20, fontSize: '0.8rem', background: 'var(--surface-2)', color: 'var(--text)', textDecoration: 'none', border: '1px solid var(--border)' }}>
+                      {isEn ? `${make.nameEn} ${m.nameEn}` : `${make.nameHe} ${m.nameHe}`}
+                    </Link>
+                  ) : null;
+                })}
+                {makePairs.map((p) => (
+                  <Link key={p.path} href={p.path} style={{ padding: '6px 12px', borderRadius: 20, fontSize: '0.8rem', color: 'var(--accent)', textDecoration: 'none', border: '1px solid var(--accent)' }}>
+                    {isEn
+                      ? `${p.a.make.nameEn} ${p.a.model.nameEn} vs ${p.b.make.nameEn} ${p.b.model.nameEn}`
+                      : `${p.a.make.nameHe} ${p.a.model.nameHe} מול ${p.b.make.nameHe} ${p.b.model.nameHe}`}
+                  </Link>
+                ))}
+              </div>
+            )}
+          </section>
+        )}
 
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20, flexWrap: 'wrap', gap: 8 }}>
           <h2 style={{ fontSize: '1.1rem', fontWeight: 700, color: 'var(--text)' }}>
