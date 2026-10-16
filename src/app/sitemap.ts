@@ -3,6 +3,7 @@ import { headers } from 'next/headers';
 import { getAllMakes } from '@/lib/carsDb';
 import { dbAll } from '@/lib/db';
 import { getLatestNews } from '@/lib/carNews';
+import { curatedPairs } from '@/lib/comparePairs';
 
 export const dynamic = 'force-dynamic';
 
@@ -117,6 +118,15 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
           priority: 0.65,
         });
       }
+    }
+    // Curated pairs (top-clicked + searched, see src/data/*-compare-pairs.ts) are always
+    // included — even across categories, which the loop above skips.
+    const have = new Set(compareUrls.map((u) => u.url));
+    for (const p of curatedPairs(makes)) {
+      const url = `${BASE}${p.path}`;
+      if (have.has(url)) continue;
+      have.add(url);
+      compareUrls.push({ url, changeFrequency: 'weekly' as const, priority: 0.7 });
     }
   }
 

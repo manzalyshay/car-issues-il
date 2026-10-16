@@ -1,7 +1,8 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
-import { getMakeBySlug, getModelBySlug, getCategoryLabel, getSimilarModels } from '@/lib/carsDb';
+import { getMakeBySlug, getModelBySlug, getCategoryLabel, getSimilarModels, getAllMakes } from '@/lib/carsDb';
+import { comparePairsForModel } from '@/lib/comparePairs';
 import { getReviewsForModel, getAverageRating } from '@/lib/reviewsDb';
 import { findCarModel } from '@/lib/sketchfab';
 import { getExpertReviews } from '@/lib/expertReviews';
@@ -100,7 +101,7 @@ export default async function ModelPage({ params }: Props) {
   if (!make) notFound();
   if (!model) notFound();
 
-  const [allReviews, expertReviewsList, sketchfabModel, similarModels, carImages, modelRepairCosts, trimSpecs] = await Promise.all([
+  const [allReviews, expertReviewsList, sketchfabModel, similarModels, carImages, modelRepairCosts, trimSpecs, allMakes] = await Promise.all([
     getReviewsForModel(makeSlug, modelSlug).catch(() => []),
     getExpertReviews(makeSlug, modelSlug).catch(() => []),
     findCarModel(makeSlug, modelSlug).catch(() => null),
@@ -108,7 +109,10 @@ export default async function ModelPage({ params }: Props) {
     getImagesForCar(makeSlug, modelSlug).catch(() => []),
     getModelRepairCosts(makeSlug, modelSlug).catch(() => []),
     getTrimSpecs(makeSlug, modelSlug).catch(() => []),
+    getAllMakes().catch(() => []),
   ]);
+  // Curated (top-clicked + searched, incl. cross-category) pairs first, then same-category rivals
+  const comparePairs = comparePairsForModel(allMakes, makeSlug, modelSlug, 8);
   const [similarRatings, similarImages] = await Promise.all([
     Promise.all(similarModels.map(({ makeSlug: ms, model: m }) => getAverageRating(ms, m.slug).catch(() => null))),
     Promise.all(similarModels.map(({ makeSlug: ms, model: m }) => getImagesForCar(ms, m.slug).catch(() => []))),
@@ -373,25 +377,28 @@ export default async function ModelPage({ params }: Props) {
               </Link>
             </div>
 
-            {/* Compare chips */}
-            <div style={{ marginTop: 20 }}>
-              <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: 8, fontWeight: 600 }}>
-                {cp.compareWith} {makeName} {modelName} {cp.compareVs}
-              </div>
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
-                {similarModels.slice(0, 6).map(({ makeSlug: ms, makeNameHe, makeNameEn, model: m }) => {
-                  const [s1, s2] = [`${makeSlug}/${modelSlug}`, `${ms}/${m.slug}`].sort();
-                  return (
-                    <Link
-                      key={`cmp-${ms}/${m.slug}`}
-                      href={`/cars/compare/${s1}/${s2}`}
-                      style={{ padding: '6px 12px', borderRadius: 20, fontSize: '0.8rem', background: 'transparent', color: 'var(--accent)', textDecoration: 'none', border: '1px solid var(--accent)', whiteSpace: 'nowrap' }}
-                    >
-                      {isEn ? `${makeNameEn} ${m.nameEn}` : `${makeNameHe} ${m.nameHe}`}
-                    </Link>
-                  );
-                })}
-              </div>
+          </section>
+        )}
+
+        {/* Compare links — curated pairs first (includes searched cross-category pairs) */}
+        {comparePairs.length > 0 && (
+          <section style={{ marginTop: 28 }}>
+            <h2 style={{ fontSize: '0.95rem', fontWeight: 700, marginBottom: 10 }}>
+              {cp.compareWith} {makeName} {modelName} {cp.compareVs}
+            </h2>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+              {comparePairs.map((p) => {
+                const other = p.a.key === `${makeSlug}/${modelSlug}` ? p.b : p.a;
+                return (
+                  <Link
+                    key={p.path}
+                    href={p.path}
+                    style={{ padding: '6px 12px', borderRadius: 20, fontSize: '0.8rem', background: 'transparent', color: 'var(--accent)', textDecoration: 'none', border: '1px solid var(--accent)', whiteSpace: 'nowrap' }}
+                  >
+                    {isEn ? `${other.make.nameEn} ${other.model.nameEn}` : `${other.make.nameHe} ${other.model.nameHe}`}
+                  </Link>
+                );
+              })}
             </div>
           </section>
         )}
