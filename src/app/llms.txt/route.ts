@@ -1,53 +1,80 @@
+import { headers } from 'next/headers';
 import { getAllMakes } from '@/lib/carsDb';
+import { resolvePairs } from '@/lib/comparePairs';
+import { TOP_COMPARE_PAIRS } from '@/data/top-compare-pairs';
 
 export const revalidate = 86400;
 
+function isEnHost(host: string) {
+  return host === 'carissues.net' || host === 'www.carissues.net' || host.startsWith('en.');
+}
+
 export async function GET() {
+  const host = (await headers()).get('host') ?? '';
+  const en = isEnHost(host);
+  const base = en ? 'https://carissues.net' : 'https://carissues.co.il';
   const makes = await getAllMakes().catch(() => []);
+  const modelCount = makes.reduce((s, m) => s + m.models.length, 0);
+  const topPairs = resolvePairs(makes, TOP_COMPARE_PAIRS).slice(0, 15);
+
+  const pairLines = topPairs.map(({ path, a, b }) =>
+    en
+      ? `- [${a.make.nameEn} ${a.model.nameEn} vs ${b.make.nameEn} ${b.model.nameEn}](${base}${path})`
+      : `- [${a.make.nameHe} ${a.model.nameHe} מול ${b.make.nameHe} ${b.model.nameHe}](${base}${path})`,
+  );
 
   const brandLines = makes.flatMap((m) => [
-    `### ${m.nameHe} (${m.nameEn})`,
-    `- Brand page: https://carissues.co.il/cars/${m.slug}`,
-    ...m.models.map(
-      (mo) =>
-        `- [${m.nameHe} ${mo.nameHe}](https://carissues.co.il/cars/${m.slug}/${mo.slug}): Owner reviews, issues, recalls, repair costs — ${mo.years[mo.years.length - 1]}–${mo.years[0]}`,
-    ),
+    `### ${en ? m.nameEn : `${m.nameHe} (${m.nameEn})`}`,
+    `- ${en ? 'Brand page' : 'עמוד יצרן'}: ${base}/cars/${m.slug}`,
+    ...m.models.map((mo) => {
+      const range = mo.years.length ? ` — ${mo.years[mo.years.length - 1]}–${mo.years[0]}` : '';
+      return en
+        ? `- [${m.nameEn} ${mo.nameEn}](${base}/cars/${m.slug}/${mo.slug}): reviews, common problems, recalls${range}`
+        : `- [${m.nameHe} ${mo.nameHe}](${base}/cars/${m.slug}/${mo.slug}): ביקורות, בעיות נפוצות, ריקולים${range}`;
+    }),
     '',
   ]);
 
-  const content = `# CarIssues Israel — ביקורות רכב ובעיות נפוצות
+  const content = en
+    ? `# CarIssues — Car Reviews, Common Problems & Reliability
 
-> Israeli car reviews platform (content in Hebrew / עברית). Aggregates real owner reviews, common problems, safety recalls, repair cost estimates, and trim pricing for cars sold in Israel.
-
-## About
-
-CarIssues.co.il helps Israeli car buyers make informed decisions by publishing:
-- Genuine owner reviews (rating 1–5, mileage, year, trim)
-- AI-generated expert summaries based on Israeli and international owner forums
-- Common problems and reliability issues reported by owners
-- NHTSA + Israeli safety recall alerts
-- Real repair cost data from owners (broken down by repair type and workshop type)
-- Trim-level specs and prices in ILS (₪)
-
-All content is in Hebrew. The site covers ${makes.length} car brands and ${makes.reduce((s, m) => s + m.models.length, 0)} models currently on sale or recently discontinued in Israel.
+> English edition of CarIssues (Hebrew edition: https://carissues.co.il). Owner reviews, AI summaries of owner forums, common problems, safety recalls, trim specs and side-by-side comparisons for ${makes.length} brands and ${modelCount} models.
 
 ## Key Pages
 
-- [כל היצרנים / All Brands](https://carissues.co.il/cars): Full list of brands with owner reviews
-- [השוואת רכבים / Car Compare](https://carissues.co.il/cars/compare): Side-by-side comparison of any two models
-- [דירוג רכבים / Rankings](https://carissues.co.il/rankings): Models ranked by average owner rating
-- [עלויות תיקון / Repair Costs](https://carissues.co.il/repairs): Common repair types and cost estimates in Israel
+- [Car comparison](${base}/cars/compare): compare any two models side by side
+- [All brands](${base}/cars)
+- [Rankings](${base}/rankings): models ranked by owner and AI scores
+- [Repair costs](${base}/repairs)
+- [Vehicle lookup](${base}/vehicle-lookup): look up a vehicle by plate
+
+## Most-Read Comparisons
+
+${pairLines.join('\n')}
+
+## Car Brands & Models
+
+${brandLines.join('\n')}
+`.trimEnd()
+    : `# CarIssues IL — ביקורות רכב, בעיות נפוצות ואמינות
+
+> Israeli car reliability site (Hebrew-first; English edition at https://carissues.net). Owner reviews, AI summaries of Israeli and international owner forums, common problems, safety recalls, repair costs, Israeli trim prices (₪), side-by-side comparisons and a free vehicle lookup by Israeli licence plate (Ministry of Transport data). Covers ${makes.length} brands and ${modelCount} models sold in Israel.
+
+## Key Pages
+
+- [בדיקת רכב לפי מספר רישוי / Vehicle lookup by plate](${base}/vehicle-lookup): free lookup — test, ownership, recalls and technical data from the Ministry of Transport database
+- [השוואת רכבים / Car comparison](${base}/cars/compare): compare any two models side by side
+- [כל היצרנים / All brands](${base}/cars)
+- [דירוג רכבים / Rankings](${base}/rankings): models ranked by owner and AI scores
+- [עלויות תיקון / Repair costs](${base}/repairs): repair cost data reported by owners
+
+## Most-Read Comparisons
+
+${pairLines.join('\n')}
 
 ## Per-Model Page Structure
 
-Each model page at https://carissues.co.il/cars/{make}/{model} includes:
-1. Average owner rating + review count
-2. AI expert review (pros, cons, Israeli forum summary, global forum summary, score out of 10)
-3. Year-by-year owner reviews with text, rating, mileage, trim
-4. Common issues section (/issues sub-page)
-5. Safety recalls
-6. Repair cost estimates from owners
-7. Trim specs and prices
+Each model page at ${base}/cars/{make}/{model} includes owner reviews (when available), an AI summary of owner forums with pros and cons, common issues (/issues), safety recalls, repair costs, and trim specs and prices.
 
 ## Car Brands & Models
 

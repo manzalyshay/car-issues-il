@@ -11,7 +11,8 @@ interface TopCar { makeSlug: string; modelSlug: string; makeHe: string; modelHe:
 interface Review { id: string; make_slug: string; model_slug: string; year: number | null; rating: number; title: string; body: string; title_en?: string | null; body_en?: string | null; author: string; created_at: string; makeHe: string; modelHe: string; makeEn: string; modelEn: string; logoUrl: string; }
 interface TickerItem { code: string; textHe: string; textEn: string; color: string; }
 interface NewsItem { id: string; title_he: string | null; title_en: string | null; body_he: string | null; body_en: string | null; image_url: string | null; published_at: string | null; original_url: string; source: string; }
-interface Props { popularMakes: Make[]; allMakes: Make[]; topRanked: TopCar[]; recentReviews: Review[]; tickerItems?: TickerItem[]; initialNews?: NewsItem[]; }
+interface TopPair { href: string; aHe: string; aEn: string; bHe: string; bEn: string; }
+interface Props { popularMakes: Make[]; allMakes: Make[]; topRanked: TopCar[]; recentReviews: Review[]; tickerItems?: TickerItem[]; initialNews?: NewsItem[]; topPairs?: TopPair[]; }
 
 /* ── Helpers ─────────────────────────────────────────────── */
 function timeAgo(dateStr: string, isHe: boolean) {
@@ -138,7 +139,7 @@ const TICKER_FALLBACK: TickerItem[] = [
 /* ═══════════════════════════════════════════════════════════
    Main component
    ═══════════════════════════════════════════════════════════ */
-export default function HomeClient({ allMakes, topRanked, recentReviews, tickerItems: tickerProp, initialNews }: Props) {
+export default function HomeClient({ allMakes, topRanked, recentReviews, tickerItems: tickerProp, initialNews, topPairs = [] }: Props) {
   const { locale } = useLocale();
   const isHe = locale === 'he';
   const totalModels = allMakes.reduce((s, m) => s + m.models.length, 0);
@@ -522,7 +523,7 @@ export default function HomeClient({ allMakes, topRanked, recentReviews, tickerI
                 <h2 style={{ fontFamily: 'Heebo,sans-serif', fontWeight: 900, fontSize: 'clamp(24px,2.6vw,34px)', letterSpacing: '-.035em', margin: '0 0 6px' }}>
                   {isHe ? 'גלו דגמים' : 'Explore Models'}
                 </h2>
-                <p style={{ color: '#5b6a86', fontSize: 16, margin: 0 }}>{isHe ? 'הדגמים הפופולריים באתר השבוע' : 'Popular models on the site this week'}</p>
+                <p style={{ color: '#5b6a86', fontSize: 16, margin: 0 }}>{isHe ? 'דגמים מדורגים מתוך המאגר' : 'Rated models from the catalogue'}</p>
               </div>
               <Link href="/rankings" style={{ fontWeight: 700, fontSize: 15, color: '#17408f', whiteSpace: 'nowrap' }}>{isHe ? 'לכל הדירוגים ←' : 'All rankings →'}</Link>
             </div>
@@ -542,7 +543,9 @@ export default function HomeClient({ allMakes, topRanked, recentReviews, tickerI
                     <span style={{ display: 'block', padding: '13px 16px 16px' }}>
                       <span style={{ display: 'block', fontFamily: 'Heebo,sans-serif', fontWeight: 700, fontSize: 18, color: '#0d1b2f' }}>{name}</span>
                       <span style={{ display: 'block', fontSize: 13.5, color: '#5b6a86', marginTop: 4 }}>
-                        {car.avgRating != null ? `${(car.avgRating * (car.avgRating <= 5 ? 20 : 10)).toFixed(0)} ${isHe ? 'ביקורות בעלים' : 'owner reviews'}` : (isHe ? 'ביקורות בעלים' : 'owner reviews')}
+                        {car.avgRating != null
+                          ? (isHe ? `דירוג בעלים ${car.avgRating.toFixed(1)} מתוך 5` : `Owner rating ${car.avgRating.toFixed(1)}/5`)
+                          : (isHe ? 'ביקורות, בעיות נפוצות ומפרט' : 'Reviews, common problems & specs')}
                       </span>
                     </span>
                   </Link>
@@ -553,41 +556,33 @@ export default function HomeClient({ allMakes, topRanked, recentReviews, tickerI
         )}
 
         {/* ── Head to Head ─────────────────────────────── */}
-        <section id="head" style={{ padding: `clamp(34px,3.6vw,52px) ${GUTTER} 0` }}>
-          <div data-ci-reveal style={{ marginBottom: 18 }}>
-            <h2 style={{ fontFamily: 'Heebo,sans-serif', fontWeight: 900, fontSize: 'clamp(24px,2.6vw,34px)', letterSpacing: '-.035em', margin: '0 0 6px' }}>
-              {isHe ? 'ראש בראש' : 'Head to Head'}
-            </h2>
-            <p style={{ color: '#5b6a86', fontSize: 16, margin: 0 }}>{isHe ? 'ההשוואות שנבדקות הכי הרבה' : 'The comparisons people run most'}</p>
-          </div>
-          <div data-ci-group="70" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(240px,1fr))', gap: 16 }}>
-            {[
-              { aHe: 'טויוטה RAV4',   bHe: 'יונדאי טוסון', aEn: 'Toyota RAV4',     bEn: 'Hyundai Tucson', aScore: 8.7, bScore: 8.3, cmp: '2,340', href: '/cars/compare/toyota/rav4/hyundai/tucson' },
-              { aHe: 'מאזדה CX-5',    bHe: 'קיה ספורטז׳',  aEn: 'Mazda CX-5',      bEn: 'Kia Sportage',   aScore: 8.9, bScore: 8.1, cmp: '1,820', href: '/cars/compare/mazda/cx5/kia/sportage' },
-              { aHe: 'יונדאי אלנטרה', bHe: 'קיה סראטו',    aEn: 'Hyundai Elantra', bEn: 'Kia Cerato',     aScore: 8.2, bScore: 8.0, cmp: '1,550', href: '/cars/compare/hyundai/elantra/kia/cerato' },
-            ].map((vs, i) => {
-              const total = vs.aScore + vs.bScore;
-              const aPct  = `${((vs.aScore / total) * 100).toFixed(0)}%`;
-              return (
-                <Link key={i} href={vs.href} style={{ background: '#fff', border: '1px solid #e4e9f2', borderRadius: 16, padding: 20, display: 'block', textDecoration: 'none' }} className="ci-vs-card">
-                  <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontFamily: 'Heebo,sans-serif', fontWeight: 700, fontSize: 16.5, color: '#0d1b2f' }}>
+        {topPairs.length > 0 && (
+          <section id="head" style={{ padding: `clamp(34px,3.6vw,52px) ${GUTTER} 0` }}>
+            <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: 24, flexWrap: 'wrap', marginBottom: 18 }}>
+              <div data-ci-reveal>
+                <h2 style={{ fontFamily: 'Heebo,sans-serif', fontWeight: 900, fontSize: 'clamp(24px,2.6vw,34px)', letterSpacing: '-.035em', margin: '0 0 6px' }}>
+                  {isHe ? 'ראש בראש' : 'Head to Head'}
+                </h2>
+                <p style={{ color: '#5b6a86', fontSize: 16, margin: 0 }}>{isHe ? 'ההשוואות הנקראות ביותר באתר' : 'The most-read comparisons on the site'}</p>
+              </div>
+              <Link href="/cars/compare" style={{ fontWeight: 700, fontSize: 15, color: '#17408f', whiteSpace: 'nowrap' }}>{isHe ? 'השוואת רכבים — כל ההשוואות ←' : 'Car comparison — all pairs →'}</Link>
+            </div>
+            <div data-ci-group="70" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(240px,1fr))', gap: 16 }}>
+              {topPairs.slice(0, 6).map((vs) => (
+                <Link key={vs.href} href={vs.href} style={{ background: '#fff', border: '1px solid #e4e9f2', borderRadius: 16, padding: 20, display: 'block', textDecoration: 'none' }} className="ci-vs-card">
+                  <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, fontFamily: 'Heebo,sans-serif', fontWeight: 700, fontSize: 16.5, color: '#0d1b2f' }}>
                     <span>{isHe ? vs.aHe : vs.aEn}</span>
                     <span style={{ fontSize: 11, letterSpacing: '.14em', color: '#5f6e88' }}>VS</span>
                     <span>{isHe ? vs.bHe : vs.bEn}</span>
                   </span>
-                  <span style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 14, fontFamily: 'Heebo,sans-serif', fontWeight: 900, fontSize: 17 }}>
-                    <span style={{ color: '#0f7a3d' }}>{vs.aScore.toFixed(1)}</span>
-                    <span style={{ flex: 1, height: 7, borderRadius: 999, background: `linear-gradient(90deg,#17408f 0 ${aPct},#12a150 ${aPct} 100%)`, display: 'block' }} />
-                    <span style={{ color: '#17408f' }}>{vs.bScore.toFixed(1)}</span>
-                  </span>
                   <span style={{ display: 'block', fontSize: 12.5, color: '#5b6a86', marginTop: 10 }}>
-                    {vs.cmp} {isHe ? 'השוואות' : 'comparisons'}
+                    {isHe ? 'מחיר, מפרט, ביקורות וריקולים ←' : 'Price, specs, reviews & recalls →'}
                   </span>
                 </Link>
-              );
-            })}
-          </div>
-        </section>
+              ))}
+            </div>
+          </section>
+        )}
 
       </div>{/* /maxw wrapper */}
 

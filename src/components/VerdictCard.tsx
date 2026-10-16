@@ -2,6 +2,7 @@ import type { ExpertReview } from '@/lib/expertReviews';
 import type { ModelRepairCost } from '@/lib/repairCostsDb';
 import type { TrimSpecWithYear } from '@/lib/trimSpecsDb';
 import VerdictCardClient from './VerdictCardClient';
+import { aiSourceLabel } from '@/lib/aiSource';
 
 interface Props {
   expertReview: ExpertReview | null;
@@ -199,18 +200,14 @@ export default function VerdictCard({
               {isEn ? 'CarIssues Intelligence' : 'CarIssues Intelligence'}
             </div>
             <div style={{ fontSize: 12, color: '#66788c' }}>
-              {isEn ? 'Owner reviews & expert data · AI summarized' : 'ביקורות בעלים ונתוני מומחים · סיכום AI'}
+              {aiSourceLabel(expertReview, isEn)}
             </div>
           </div>
         </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          <span style={{ fontSize: 12, fontWeight: 600, color: '#66788c' }}>
-            {isEn ? 'Confidence' : 'רמת ודאות'}
-          </span>
-          <div style={{ width: 110, height: 6, borderRadius: 999, background: '#e3e8ee', overflow: 'hidden' }}>
-            <div style={{ width: '92%', height: '100%', background: '#2f6fb0' }} />
-          </div>
-          <span style={{ fontSize: 13, fontWeight: 700, color: '#1c2733' }}>92%</span>
+        <div style={{ fontSize: 12, color: '#66788c' }}>
+          {reviewCount > 0
+            ? (isEn ? `${reviewCount} owner review${reviewCount > 1 ? 's' : ''} on CarIssues` : (reviewCount === 1 ? 'ביקורת בעלים אחת באתר' : `${reviewCount} ביקורות בעלים באתר`))
+            : (isEn ? 'No owner reviews on CarIssues yet' : 'עדיין אין ביקורות בעלים באתר')}
         </div>
       </div>
 

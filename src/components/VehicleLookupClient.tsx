@@ -1,6 +1,8 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
+import type { ModelInfo } from '@/lib/modelInfo';
+import VehicleModelBlock from './VehicleModelBlock';
 import Link from 'next/link';
 import type { Vehicle } from '@/lib/vehicleLookup';
 import { detectCountry } from '@/lib/vehicleLookup';
@@ -199,9 +201,11 @@ interface Props {
   initialStatus: 'found' | 'not_found' | 'error';
   isHe: boolean;
   base: string;
+  initialModelInfo?: ModelInfo | null;
 }
 
-export default function VehicleLookupClient({ initialPlate, initialVehicle, initialStatus, isHe, base }: Props) {
+export default function VehicleLookupClient({ initialPlate, initialVehicle, initialStatus, isHe, base, initialModelInfo = null }: Props) {
+  const [modelInfo, setModelInfo] = useState<ModelInfo | null>(initialModelInfo);
   const [plate, setPlate]       = useState(initialPlate);
   const [inputVal, setInputVal] = useState(initialPlate.replace(/\D/g, ''));
   const [vehicle, setVehicle]   = useState<Vehicle | null>(initialVehicle);
@@ -267,6 +271,7 @@ export default function VehicleLookupClient({ initialPlate, initialVehicle, init
 
     setLoading(true);
     setVehicle(null);
+    setModelInfo(null);
     setStatus('idle');
     setPlate(cleaned);
 
@@ -275,11 +280,12 @@ export default function VehicleLookupClient({ initialPlate, initialVehicle, init
 
     try {
       const res = await fetch(`/api/vehicle-lookup?plate=${encodeURIComponent(cleaned)}`);
-      const data = await res.json() as { vehicle?: Vehicle; error?: string };
+      const data = await res.json() as { vehicle?: Vehicle; modelInfo?: ModelInfo | null; error?: string };
       if (!res.ok || data.error) {
         setStatus(res.status === 404 ? 'not_found' : 'error');
       } else if (data.vehicle) {
         setVehicle(data.vehicle);
+        setModelInfo(data.modelInfo ?? null);
         setStatus('found');
         // Scroll to top so the hero remains visible
         window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -569,8 +575,11 @@ export default function VehicleLookupClient({ initialPlate, initialVehicle, init
                 );
               })()}
 
+              {/* About this model — reviews, price, problems, compare links */}
+              {modelInfo && <VehicleModelBlock info={modelInfo} isHe={isHe} />}
+
               {/* CTA */}
-              {v.dbMatch?.modelSlug && (
+              {v.dbMatch?.modelSlug && !modelInfo && (
                 <Link
                   href={`/cars/${v.dbMatch.makeSlug}/${v.dbMatch.modelSlug}`}
                   style={{

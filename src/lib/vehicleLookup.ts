@@ -211,18 +211,26 @@ async function matchToDb(
   if (!models.length) return null;
 
   const modelWords = modelPart.split(/\s+/).filter(Boolean);
+  // Compact forms ignore hyphens/spaces: gov records write "CX5", "CHR", "IONIQ5" etc.
+  const compact = (x: string) => x.toUpperCase().replace(/[^A-Z0-9]/g, '');
+  const modelCompact = compact(modelPart);
   let bestSlug: string | null = null;
   let bestScore = 0;
+  let bestNameLen = 0;
   let bestYear: number | null = null;
 
   for (const m of models) {
     const nameUp = m.name_en.toUpperCase();
+    const nameCompact = compact(m.name_en);
     let score = 0;
     for (const w of modelWords) {
       if (w.length > 1 && nameUp.includes(w)) score++;
     }
     if (nameUp === modelPart) score += 5;
-    if (score > bestScore) {
+    if (nameCompact.length > 1 && modelCompact.includes(nameCompact)) score += 2;
+    // Ties go to the longer (more specific) name: "Corolla Cross" over "Corolla"
+    if (score > bestScore || (score > 0 && score === bestScore && nameCompact.length > bestNameLen)) {
+      bestNameLen = nameCompact.length;
       bestScore = score;
       bestSlug = m.slug;
       try {
@@ -344,6 +352,7 @@ export async function lookupVehicle(rawPlate: string): Promise<LookupResult> {
     const tozet  = String(record.tozeret_nm ?? '');
     const shnat  = record.shnat_yitzur ? Number(record.shnat_yitzur) : null;
     const dbMatch = await matchToDb(tozet, kinuy, shnat);
+    if (!dbMatch) console.warn('[vehicle-lookup] unmatched model', JSON.stringify({ tozeret: tozet, kinuy, year: shnat }));
 
     const extraData = extraRes?.ok ? await extraRes.json().catch(() => null) : null;
     const extra = extraData?.result?.records?.[0] ?? null;

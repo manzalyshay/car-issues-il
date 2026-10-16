@@ -59,3 +59,14 @@ export async function getTrimSpecs(makeSlug: string, modelSlug: string, year?: n
     return [];
   }
 }
+
+/**
+ * Lowest Israeli list price per model ("make/model" → ₪), from trims with a plausible
+ * price. Used for budget bands and price copy; models without priced trims are absent.
+ */
+export async function getModelPriceMins(): Promise<Map<string, number>> {
+  const rows = await dbAll<{ make_slug: string; model_slug: string; p: number }>(
+    'SELECT make_slug, model_slug, MIN(price_ils) AS p FROM car_trims WHERE is_israel = 1 AND price_ils BETWEEN 30000 AND 3000000 GROUP BY make_slug, model_slug',
+  ).catch(() => []);
+  return new Map(rows.map((r) => [`${r.make_slug}/${r.model_slug}`, r.p]));
+}
