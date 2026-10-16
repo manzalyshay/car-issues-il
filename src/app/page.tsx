@@ -3,6 +3,7 @@ import { dbAll } from '@/lib/db';
 import { getLatestNews } from '@/lib/carNews';
 import { getHostLocale } from '@/lib/hostLocale';
 import HomeClient from '@/components/HomeClient';
+import EnglishVersionBanner from '@/components/EnglishVersionBanner';
 
 export const revalidate = 300; // cache home page for 5 minutes
 
@@ -178,13 +179,16 @@ export default async function HomePage() {
   ]);
 
   return (
-    <HomeClient
-      popularMakes={popularMakes}
-      allMakes={allMakes}
-      topRanked={topRanked}
-      recentReviews={recentReviews}
-      tickerItems={tickerItems}
-      initialNews={news}
-    />
+    <>
+      {locale === 'he' && <EnglishVersionBanner />}
+      <HomeClient
+        popularMakes={popularMakes}
+        allMakes={allMakes}
+        topRanked={topRanked}
+        recentReviews={recentReviews}
+        tickerItems={tickerItems}
+        initialNews={news}
+      />
+    </>
   );
 }
