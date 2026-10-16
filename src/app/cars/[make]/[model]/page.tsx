@@ -189,7 +189,7 @@ export default async function ModelPage({ params }: Props) {
                   href={`/cars/compare?car1=${make.slug}/${model.slug}`}
                   style={{ border: '1px solid rgba(255,255,255,.28)', background: 'rgba(255,255,255,.08)', color: '#fff', fontWeight: 700, fontSize: 13.5, padding: '8px 14px', borderRadius: 10, textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: 6, whiteSpace: 'nowrap' }}
                 >
-                  {isEn ? 'Compare' : 'השוואה'}
+                  {isEn ? `Compare the ${modelName} with another car` : `השוו את ${modelName} לרכב אחר`}
                 </Link>
                 <SharePopup title={`${makeName} ${modelName} — ${cp.shareTitle}`} url={`${getBaseUrl(locale)}/cars/${make.slug}/${model.slug}`} dark />
               </div>

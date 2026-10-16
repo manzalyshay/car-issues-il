@@ -4,6 +4,8 @@ import { getLatestNews } from '@/lib/carNews';
 import { getHostLocale } from '@/lib/hostLocale';
 import HomeClient from '@/components/HomeClient';
 import EnglishVersionBanner from '@/components/EnglishVersionBanner';
+import { resolvePairs } from '@/lib/comparePairs';
+import { TOP_COMPARE_PAIRS } from '@/data/top-compare-pairs';
 
 export const revalidate = 300; // cache home page for 5 minutes
 
@@ -178,6 +180,12 @@ export default async function HomePage() {
     getLatestNews(4, 0, locale).catch(() => []),
   ]);
 
+  const topPairs = resolvePairs(allMakes, TOP_COMPARE_PAIRS).slice(0, 6).map((p) => ({
+    href: p.path,
+    aHe: `${p.a.make.nameHe} ${p.a.model.nameHe}`, aEn: `${p.a.make.nameEn} ${p.a.model.nameEn}`,
+    bHe: `${p.b.make.nameHe} ${p.b.model.nameHe}`, bEn: `${p.b.make.nameEn} ${p.b.model.nameEn}`,
+  }));
+
   return (
     <>
       {locale === 'he' && <EnglishVersionBanner />}
@@ -188,6 +196,7 @@ export default async function HomePage() {
         recentReviews={recentReviews}
         tickerItems={tickerItems}
         initialNews={news}
+        topPairs={topPairs}
       />
     </>
   );
