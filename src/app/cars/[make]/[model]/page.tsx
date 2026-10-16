@@ -130,6 +130,7 @@ export default async function ModelPage({ params }: Props) {
   const yearRange = model.years.length > 1
     ? `${model.years[model.years.length - 1]}–${model.years[0]}`
     : `${model.years[0]}`;
+  const latestYear = model.years.length ? Math.max(...model.years) : null;
 
   return (
     <div style={{ background: 'var(--bg)', minHeight: '100vh' }}>
@@ -249,6 +250,20 @@ export default async function ModelPage({ params }: Props) {
         hasRepairCosts={modelRepairCosts.length > 0}
         sketchfabModel={sketchfabModel}
       >
+        {/* ── Current model-year page ── */}
+        {latestYear && (
+          <Link
+            href={`/cars/${make.slug}/${model.slug}/${latestYear}`}
+            className="card"
+            style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, padding: '14px 18px', marginBottom: 20, textDecoration: 'none', color: 'var(--text)', borderInlineStart: '4px solid var(--accent)' }}
+          >
+            <span style={{ fontWeight: 800, fontSize: '1rem' }}>
+              {isEn ? `${makeName} ${modelName} ${latestYear} — prices & trims` : `${makeName} ${modelName} ${latestYear} — מחירים וגרסאות`}
+            </span>
+            <span style={{ color: 'var(--accent)', fontWeight: 700 }}>{isEn ? '→' : '←'}</span>
+          </Link>
+        )}
+
         {/* ── Owner reviews — write review at top ── */}
         <div id="reviews" style={{ paddingTop: 0 }}>
           <ModelReviewsSection

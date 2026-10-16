@@ -1,7 +1,10 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
-import { getMakeBySlug, getModelBySlug, getCategoryLabel, getSimilarModels } from '@/lib/carsDb';
+import { getMakeBySlug, getModelBySlug, getCategoryLabel, getSimilarModels, getAllMakes } from '@/lib/carsDb';
+import { comparePairsForModel } from '@/lib/comparePairs';
+import { summarizeTrims, fmtIls, kmPerL } from '@/lib/specSummary';
+import { getKnownIssues, knownIssueSourceLabel } from '@/lib/knownIssuesDb';
 import { getHostLocale, getBaseUrl } from '@/lib/hostLocale';
 import { translations } from '@/lib/translations';
 import { getReviewsForModel } from '@/lib/reviewsDb';
@@ -50,7 +53,9 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     ? yearReviews.reduce((s, r) => s + r.rating, 0) / yearReviews.length
     : null;
 
-  const trimsWithPrice = trims.filter(t => t.priceIls);
+  // Only year-tagged prices — or the untagged current list on the current-year page.
+  const isCurrentYearMeta = model.years.length > 0 && yearNum === Math.max(...model.years);
+  const trimsWithPrice = trims.filter(t => t.priceIls && (t.modelYear === yearNum || (isCurrentYearMeta && t.modelYear == null)));
   const minPrice = trimsWithPrice.length > 0 ? Math.min(...trimsWithPrice.map(t => t.priceIls!)) : null;
   const maxPrice = trimsWithPrice.length > 0 ? Math.max(...trimsWithPrice.map(t => t.priceIls!)) : null;
   const priceHook = minPrice
@@ -62,6 +67,10 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const trimNames = trims.slice(0, 4).map(t => t.name).join(', ');
   const trimDesc = trimNames ? ` גימורים: ${trimNames}${trims.length > 4 ? ' ועוד' : ''}.` : '';
   const hasContent = yearReviews.length > 0 || !!metaExpertReview || metaRecalls.length > 0;
+  // Current model-year page ("<model> 2026") — the year people search with "מחיר". Picks up
+  // 2027 automatically once it is added to the model's years.
+  const isCurrentYear = model.years.length > 0 && yearNum === Math.max(...model.years);
+  const currentTitle = (t: string) => (t.length + ' | CarIssues'.length <= 65 ? t : { absolute: t });
 
   if (locale === 'en') {
     const ratingStr = avgRating ? ` ⭐ ${avgRating.toFixed(1)}` : '';
@@ -73,7 +82,9 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     const consPart = metaExpertReview?.consEn?.[0] ? ` Cons: ${metaExpertReview.consEn[0]}.` : '';
     const recallPart = metaRecalls.length > 0 ? ` ${metaRecalls.length} recall${metaRecalls.length > 1 ? 's' : ''}.` : '';
     return {
-      title: `${make.nameEn} ${model.nameEn} ${year} — ${reviewPart} | Specs & Price`,
+      title: isCurrentYear
+        ? currentTitle(`${make.nameEn} ${model.nameEn} ${year} — Price, Trims & Common Problems`)
+        : `${make.nameEn} ${model.nameEn} ${year} — ${reviewPart} | Specs & Price`,
       description: `${yearReviews.length > 0 ? `${yearReviews.length} real owner reviews` : 'Real owner reviews'} for the ${make.nameEn} ${model.nameEn} ${year}${avgRating ? `. Average rating ${avgRating.toFixed(1)}/5` : ''}.${expertPart}${prosPart}${consPart}${recallPart} Common problems and reliability.`,
       robots: hasContent ? { index: true, follow: true } : { index: false, follow: true },
       alternates: { canonical: url, languages: { he: `https://carissues.co.il/cars/${make.slug}/${model.slug}/${year}`, en: url, 'x-default': url } },
@@ -87,7 +98,9 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     : 'חוות דעת ואמינות';
   const recallPartHe = metaRecalls.length > 0 ? ` ${metaRecalls.length} ריקולים.` : '';
   return {
-    title: `${make.nameHe} ${model.nameHe} ${year}${priceHook} — ${reviewPart} | מחיר, מפרט ואמינות`,
+    title: isCurrentYear
+      ? currentTitle(`${make.nameHe} ${model.nameHe} ${year} — מחיר, גרסאות ובעיות נפוצות`)
+      : `${make.nameHe} ${model.nameHe} ${year}${priceHook} — ${reviewPart} | מחיר, מפרט ואמינות`,
     description: `${yearReviews.length > 0 ? `${yearReviews.length} ביקורות אמיתיות על` : 'כל מה שצריך לדעת על'} ${make.nameHe} ${model.nameHe} ${year} (${make.nameEn} ${model.nameEn})${avgRating ? ` — דירוג ממוצע ${avgRating.toFixed(1)}/5` : ''}.${priceDesc}${trimDesc}${recallPartHe} יתרונות, חסרונות ובעיות נפוצות מבעלי רכב בישראל.`,
     robots: hasContent ? { index: true, follow: true } : { index: false, follow: true },
     alternates: { canonical: url, languages: { he: url, en: `https://carissues.net/cars/${make.slug}/${model.slug}/${year}`, 'x-default': `https://carissues.net/cars/${make.slug}/${model.slug}/${year}` } },
@@ -117,6 +130,45 @@ export default async function CarYearPage({ params }: Props) {
   ]);
 
   const expertReview = (expertReviewsList as { review: unknown }).review ?? null;
+
+  const [allMakes, knownIssues, prevExpert] = await Promise.all([
+    getAllMakes().catch(() => []),
+    getKnownIssues(makeSlug, modelSlug, 5),
+    model.years.includes(yearNum - 1)
+      ? getExpertReviewsForYear(makeSlug, modelSlug, yearNum - 1).catch(() => ({ review: null, isYearSpecific: false }))
+      : Promise.resolve({ review: null, isYearSpecific: false }),
+  ]);
+  const isCurrentYear = model.years.length > 0 && yearNum === Math.max(...model.years);
+  // Prices: year-tagged trims first; on the current-year page fall back to the untagged
+  // (current) price list, and say so. Older years never borrow current prices.
+  const yearTrims = trimSpecs.filter((t) => t.modelYear === yearNum);
+  const priceSource: 'year' | 'current' | null = yearTrims.some((t) => t.priceIls) ? 'year'
+    : isCurrentYear && trimSpecs.some((t) => t.modelYear == null && t.priceIls) ? 'current' : null;
+  const priceRows = (priceSource === 'year' ? yearTrims : priceSource === 'current' ? trimSpecs.filter((t) => t.modelYear == null) : [])
+    .filter((t) => t.priceIls && t.priceIls >= 30_000 && t.priceIls <= 3_000_000)
+    .sort((a, b) => (a.priceIls ?? 0) - (b.priceIls ?? 0));
+  // What changed vs the previous model year — only when both years have year-tagged trims
+  const prevTrims = trimSpecs.filter((t) => t.modelYear === yearNum - 1);
+  const yearChanges: string[] = [];
+  if (yearTrims.length && prevTrims.length) {
+    const cur = summarizeTrims(yearTrims), prev = summarizeTrims(prevTrims);
+    const he = !(locale === 'en');
+    if (cur.priceMin && prev.priceMin && cur.priceMin !== prev.priceMin)
+      yearChanges.push(he ? `מחיר כניסה: ${fmtIls(prev.priceMin)} ← ${fmtIls(cur.priceMin)}` : `Starting price: ${fmtIls(prev.priceMin)} → ${fmtIls(cur.priceMin)}`);
+    if (cur.hpMax && prev.hpMax && cur.hpMax !== prev.hpMax)
+      yearChanges.push(he ? `הספק מרבי: ${prev.hpMax} ← ${cur.hpMax} כ"ס` : `Max power: ${prev.hpMax} → ${cur.hpMax} hp`);
+    if (cur.fuelBest && prev.fuelBest && cur.fuelBest !== prev.fuelBest)
+      yearChanges.push(he ? `צריכת דלק (הטובה ביותר): ${kmPerL(prev.fuelBest)} ← ${kmPerL(cur.fuelBest)} ק"מ לליטר` : `Best fuel economy: ${kmPerL(prev.fuelBest)} → ${kmPerL(cur.fuelBest)} km/L`);
+    const curNames = new Set(yearTrims.map((t) => t.name)), prevNames = new Set(prevTrims.map((t) => t.name));
+    const added = [...curNames].filter((n) => !prevNames.has(n)), removed = [...prevNames].filter((n) => !curNames.has(n));
+    if (added.length) yearChanges.push(he ? `גרסאות חדשות: ${added.join(', ')}` : `New trims: ${added.join(', ')}`);
+    if (removed.length) yearChanges.push(he ? `גרסאות שירדו: ${removed.join(', ')}` : `Dropped trims: ${removed.join(', ')}`);
+  }
+  const prevYearReview = (prevExpert as { review: { cons?: string[]; consEn?: string[]; sourceName?: string } | null; isYearSpecific: boolean });
+  const prevYearCons = prevYearReview.isYearSpecific && prevYearReview.review
+    ? ((locale === 'en' ? prevYearReview.review.consEn : prevYearReview.review.cons) ?? []).filter((c) => c && (locale !== 'en' || !/[\u0590-\u05FF]/.test(c))).slice(0, 4)
+    : [];
+  const yearComparePairs = comparePairsForModel(allMakes, makeSlug, modelSlug, 5);
 
   // Year-specific stats for the hero — model page shows all-time avg
   const yearReviews = allReviews.filter(r => r.year === yearNum);
@@ -266,6 +318,121 @@ export default async function CarYearPage({ params }: Props) {
         hasRepairCosts={modelRepairCosts.length > 0}
         sketchfabModel={sketchfabModel}
       >
+        {/* ── Year overview: prices, changes, known problems, reviews, comparisons (each only with data) ── */}
+        {(priceRows.length > 0 || yearChanges.length > 0 || knownIssues.length > 0 || prevYearCons.length > 0 || yearReviews.length > 0 || yearComparePairs.length > 0) && (
+          <div style={{ display: 'grid', gap: 18, marginBottom: 28 }}>
+            {priceRows.length > 0 && (
+              <section className="card" style={{ padding: '18px 22px' }}>
+                <h2 style={{ fontSize: '1.05rem', fontWeight: 800, margin: '0 0 4px' }}>
+                  {isEn ? `${makeName} ${modelName} ${year} prices in Israel by trim` : `מחירי ${makeName} ${modelName} ${year} בישראל לפי גרסה`}
+                </h2>
+                <p style={{ fontSize: '0.78rem', color: 'var(--text-muted)', margin: '0 0 12px' }}>
+                  {priceSource === 'year'
+                    ? (isEn ? `List prices recorded for model year ${year}.` : `מחירון שנרשם במאגר לשנתון ${year}.`)
+                    : (isEn ? 'The current Israeli price list on file (not tagged to a specific model year).' : 'המחירון העדכני שבמאגר (לא משויך במאגר לשנתון מסוים).')}
+                </p>
+                <div style={{ overflowX: 'auto' }}>
+                  <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.875rem' }}>
+                    <thead>
+                      <tr style={{ color: 'var(--text-muted)', textAlign: 'start' }}>
+                        <th style={{ textAlign: 'start', padding: '6px 8px', fontWeight: 600 }}>{isEn ? 'Trim' : 'גרסה'}</th>
+                        <th style={{ textAlign: 'start', padding: '6px 8px', fontWeight: 600 }}>{isEn ? 'Power' : 'הספק'}</th>
+                        <th style={{ textAlign: 'start', padding: '6px 8px', fontWeight: 600 }}>{isEn ? 'Price' : 'מחיר'}</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {priceRows.map((t) => (
+                        <tr key={t.id} style={{ borderTop: '1px solid var(--border)' }}>
+                          <td style={{ padding: '7px 8px', fontWeight: 600 }}>{t.name}</td>
+                          <td style={{ padding: '7px 8px' }}>{t.engineHp ? (isEn ? `${t.engineHp} hp` : `${t.engineHp} כ"ס`) : '—'}</td>
+                          <td style={{ padding: '7px 8px', fontWeight: 700 }}>{fmtIls(t.priceIls!)}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </section>
+            )}
+
+            {yearChanges.length > 0 && (
+              <section className="card" style={{ padding: '18px 22px' }}>
+                <h2 style={{ fontSize: '1.05rem', fontWeight: 800, margin: '0 0 10px' }}>
+                  {isEn ? `What changed vs ${yearNum - 1}` : `מה השתנה לעומת ${yearNum - 1}`}
+                </h2>
+                <ul style={{ margin: 0, paddingInlineStart: 18, lineHeight: 1.8, fontSize: '0.9rem' }}>
+                  {yearChanges.map((c) => <li key={c}>{c}</li>)}
+                </ul>
+                <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', margin: '8px 0 0' }}>{isEn ? 'From the trim specs on file for both model years.' : 'לפי נתוני הגרסאות שבמאגר לשני השנתונים.'}</p>
+              </section>
+            )}
+
+            {(knownIssues.length > 0 || prevYearCons.length > 0) && (
+              <section className="card" style={{ padding: '18px 22px' }}>
+                <h2 style={{ fontSize: '1.05rem', fontWeight: 800, margin: '0 0 10px' }}>
+                  {isEn ? `Known problems — ${makeName} ${modelName}` : `בעיות ידועות — ${makeName} ${modelName}`}
+                </h2>
+                {knownIssues.length > 0 && (
+                  <div style={{ marginBottom: prevYearCons.length ? 14 : 0 }}>
+                    <ol style={{ margin: 0, paddingInlineStart: 18, lineHeight: 1.8, fontSize: '0.9rem' }} lang="en" dir="ltr">
+                      {knownIssues.map((k) => <li key={k.title}>{k.title}{k.avgMileage ? ` (avg. ${k.avgMileage.toLocaleString('en-US')} mi)` : ''}</li>)}
+                    </ol>
+                    <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', margin: '6px 0 0' }}>
+                      {isEn ? 'Most-reported problems across all model years, from ' : 'הבעיות המדווחות ביותר לדגם (כל השנתונים, בעיקר בעלים בארה"ב), מתוך '}
+                      {knownIssues[0].sourceUrl
+                        ? <a href={knownIssues[0].sourceUrl} target="_blank" rel="noopener nofollow" style={{ color: 'var(--accent)' }}>{knownIssueSourceLabel(knownIssues[0].source)}</a>
+                        : knownIssueSourceLabel(knownIssues[0].source)}
+                    </p>
+                  </div>
+                )}
+                {prevYearCons.length > 0 && (
+                  <div>
+                    <h3 style={{ fontSize: '0.9rem', fontWeight: 700, margin: '0 0 6px' }}>{isEn ? `Reported weak points of the ${yearNum - 1} model year` : `חולשות שדווחו בשנתון ${yearNum - 1}`}</h3>
+                    <ul style={{ margin: 0, paddingInlineStart: 18, lineHeight: 1.8, fontSize: '0.9rem' }}>
+                      {prevYearCons.map((c) => <li key={c}>{c}</li>)}
+                    </ul>
+                    <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', margin: '6px 0 0' }}>
+                      {prevYearReview.review?.sourceName === 'AI Knowledge'
+                        ? (isEn ? 'AI summary from general knowledge — not based on reviews on this site.' : 'סיכום AI על בסיס ידע כללי — לא מבוסס על ביקורות באתר.')
+                        : (isEn ? `AI summary of owner posts${prevYearReview.review?.sourceName ? ` (${prevYearReview.review.sourceName})` : ''}.` : `סיכום AI של פוסטים של בעלי רכב${prevYearReview.review?.sourceName ? ` (${prevYearReview.review.sourceName})` : ''}.`)}
+                    </p>
+                  </div>
+                )}
+              </section>
+            )}
+
+            {yearReviews.length > 0 && avgRating !== null && (
+              <section className="card" style={{ padding: '14px 22px', display: 'flex', alignItems: 'center', gap: 14, flexWrap: 'wrap' }}>
+                <h2 style={{ fontSize: '1rem', fontWeight: 800, margin: 0 }}>
+                  {isEn ? `Owner reviews of the ${year}` : `ביקורות בעלים על שנתון ${year}`}
+                </h2>
+                <span style={{ fontWeight: 800 }}>{avgRating.toFixed(1)} / 5</span>
+                <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>
+                  {isEn ? `${yearReviews.length} review${yearReviews.length > 1 ? 's' : ''}` : (yearReviews.length === 1 ? 'ביקורת אחת' : `${yearReviews.length} ביקורות`)}
+                </span>
+                <a href="#reviews" style={{ fontSize: '0.85rem', color: 'var(--accent)' }}>{isEn ? 'Read them ↓' : 'לקריאה ↓'}</a>
+              </section>
+            )}
+
+            {yearComparePairs.length > 0 && (
+              <section>
+                <h2 style={{ fontSize: '0.95rem', fontWeight: 700, margin: '0 0 10px' }}>
+                  {isEn ? `Compare the ${modelName} with:` : `השוו את ${modelName} מול:`}
+                </h2>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+                  {yearComparePairs.map((p) => {
+                    const other = p.a.key === `${makeSlug}/${modelSlug}` ? p.b : p.a;
+                    return (
+                      <Link key={p.path} href={p.path} style={{ padding: '6px 12px', borderRadius: 20, fontSize: '0.8rem', color: 'var(--accent)', textDecoration: 'none', border: '1px solid var(--accent)', whiteSpace: 'nowrap' }}>
+                        {isEn ? `${other.make.nameEn} ${other.model.nameEn}` : `${other.make.nameHe} ${other.model.nameHe}`}
+                      </Link>
+                    );
+                  })}
+                </div>
+              </section>
+            )}
+          </div>
+        )}
+
         {/* ── Owner reviews — pre-filtered to this year ── */}
         <div id="reviews" style={{ paddingTop: 0 }}>
           <ModelReviewsSection
@@ -369,7 +536,7 @@ export default async function CarYearPage({ params }: Props) {
             __html: JSON.stringify({
               '@context': 'https://schema.org',
               '@graph': [
-                {
+                ...(yearReviews.length > 0 ? [{
                   '@type': 'Product',
                   name: `${make.nameEn} ${model.nameEn} ${year}`,
                   brand: { '@type': 'Brand', name: make.nameEn },
@@ -391,7 +558,7 @@ export default async function CarYearPage({ params }: Props) {
                     author: { '@type': 'Person', name: r.authorName },
                     datePublished: r.createdAt.split('T')[0],
                   })),
-                },
+                }] : []),
                 {
                   '@type': 'BreadcrumbList',
                   itemListElement: [
