@@ -83,17 +83,31 @@ async function fetchRss(url: string): Promise<RssItem[]> {
 }
 
 function buildHebrewPrompt(titleEn: string, bodyEn: string): string {
-  return `You are an Israeli automotive journalist writing for carissues.co.il.
-Write a full, original Hebrew news article based on the following source material.
-Write as if you are the author — not a translator. Use natural, engaging Hebrew with Israeli automotive terminology.
-Structure the article with 3–5 paragraphs covering: the news angle, key details, context/background, and what it means for Israeli car buyers.
-Aim for 350–450 words.
+  // RSS descriptions are often a single sentence. Asking for a long article from that made
+  // the model invent "background" (e.g. calling LeBron James the owner of the Lakers), so the
+  // length now follows the source and every fact must come from it.
+  const source = bodyEn.slice(0, 1200);
+  const sourceWords = source.split(/\s+/).filter(Boolean).length;
+  const length = sourceWords < 60
+    ? '1–2 short paragraphs (40–120 words). The source is short — do not pad it.'
+    : `2–4 paragraphs, at most ${Math.min(400, Math.round(sourceWords * 1.5))} words.`;
+  return `You are an Israeli automotive journalist writing a short Hebrew news item for carissues.co.il, based ONLY on the source below.
+
+Accuracy rules (most important):
+- Use only facts stated in the source title and source content. Do not add any fact from memory.
+- Do not add names, job titles, roles, ownership, relationships, numbers, prices, dates, specs, model history or quotes that are not in the source.
+- If the source is ambiguous, keep the Hebrew equally general — do not guess or "fill in" details.
+- No speculation about prices, availability in Israel or what it means for buyers unless the source says so.
+- Brand and model names stay as in the source (Latin letters are fine).
+
+Style: natural Israeli Hebrew, news tone, no filler, no marketing phrases.
+Length: ${length}
 
 Return ONLY a JSON object (no markdown, no code block):
-{"title": "<Hebrew headline>", "body": "<Full Hebrew article, paragraphs separated by \\n\\n>"}
+{"title": "<Hebrew headline that says the same thing as the source title>", "body": "<Hebrew text, paragraphs separated by \\n\\n>"}
 
 Source title: ${titleEn}
-Source content: ${bodyEn.slice(0, 1200)}`;
+Source content: ${source}`;
 }
 
 function parseHebrewJson(raw: string): { titleHe: string; bodyHe: string } | null {
@@ -114,7 +128,7 @@ async function rewriteWithGemini(titleEn: string, bodyEn: string): Promise<{ tit
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           contents: [{ parts: [{ text: buildHebrewPrompt(titleEn, bodyEn) }] }],
-          generationConfig: { temperature: 0.5, maxOutputTokens: 1200 },
+          generationConfig: { temperature: 0.2, maxOutputTokens: 1200 },
         }),
         signal: AbortSignal.timeout(20000),
       }
@@ -131,7 +145,7 @@ async function rewriteWithGemini(titleEn: string, bodyEn: string): Promise<{ tit
 
 async function rewriteWithWorkersAI(titleEn: string, bodyEn: string): Promise<{ titleHe: string; bodyHe: string } | null> {
   try {
-    const raw = await runWorkersAI([{ role: 'user', content: buildHebrewPrompt(titleEn, bodyEn) }], { max_tokens: 1200, temperature: 0.5 });
+    const raw = await runWorkersAI([{ role: 'user', content: buildHebrewPrompt(titleEn, bodyEn) }], { max_tokens: 1200, temperature: 0.2 });
     if (!raw) return null;
     return parseHebrewJson(raw);
   } catch {
