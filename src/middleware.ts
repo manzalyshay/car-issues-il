@@ -21,7 +21,7 @@ const BOT_UA = new RegExp(
   'i',
 );
 
-export function proxy(req: NextRequest) {
+export function middleware(req: NextRequest) {
   const { pathname, searchParams } = req.nextUrl;
   const host = req.headers.get('host') ?? '';
   const isHeHost = host === HE_HOST || host === `www.${HE_HOST}`;

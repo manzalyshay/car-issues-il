@@ -212,9 +212,11 @@ export default async function CarYearPage({ params }: Props) {
                     {isEn ? 'Recommended' : 'מומלץ'}
                   </span>
                 )}
-                <span style={{ fontSize: 12.5, color: '#9db1d4' }}>
-                  {yearReviews.length} {isEn ? `owner reviews (${year})` : `ביקורות בעלים (${year})`}
-                </span>
+                {yearReviews.length > 0 && (
+                  <span style={{ fontSize: 12.5, color: '#9db1d4' }}>
+                    {yearReviews.length} {isEn ? `owner reviews (${year})` : `ביקורות בעלים (${year})`}
+                  </span>
+                )}
                 <RecallsBadge makeEn={make.nameEn} modelEn={model.nameEn} year={yearNum} />
               </div>
 
@@ -270,10 +272,13 @@ export default async function CarYearPage({ params }: Props) {
         modelYears={model.years}
         defaultYear={yearNum}
         hasSpecs={trimSpecs.length > 0}
+        hasTrimEquipment={trimSpecs.some(trim => trim.features.length > 0)}
         hasImages={carImages.length > 0 || relevantSketchfabModel !== null}
         hasRepairCosts={modelRepairCosts.length > 0}
         sketchfabModel={relevantSketchfabModel}
         year={yearNum}
+        safetyHe={expertReview?.safetyHe}
+        techComfortHe={expertReview?.techComfortHe}
       >
         {/* ── Owner reviews — pre-filtered to this year ── */}
         <div id="reviews" style={{ paddingTop: 0 }}>

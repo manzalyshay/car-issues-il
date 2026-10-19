@@ -68,10 +68,17 @@ export async function getDB(): Promise<D1Database> {
   if (process.env.NEXT_PHASE === 'phase-production-build') {
     throw new Error('D1 not available at build time');
   }
-  // In dev, use D1 REST API directly to get real production data
+  // In dev, prefer the D1 binding supplied by OpenNext's local Cloudflare
+  // runtime. Fall back to the REST API only when that binding is unavailable.
   if (process.env.NODE_ENV === 'development') {
-    _db = makeRemoteDB();
-    return _db;
+    try {
+      const ctx = await getCloudflareContext({ async: true });
+      _db = (ctx.env as D1Env).DB;
+      return _db;
+    } catch {
+      _db = makeRemoteDB();
+      return _db;
+    }
   }
   try {
     const ctx = await getCloudflareContext({ async: true });

@@ -10,6 +10,12 @@ function toTrimSlug(name: string) {
   return name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
 }
 
+function setTrimInUrl(name: string) {
+  const url = new URL(window.location.href);
+  url.searchParams.set('trim', toTrimSlug(name));
+  window.history.replaceState(null, '', `${url.pathname}${url.search}${url.hash}`);
+}
+
 interface TrimWithYear extends TrimSpec {
   modelYear: number | null;
   isIsrael: boolean;
@@ -63,7 +69,11 @@ export default function TrimSpecsTab({ makeSlug, modelSlug, makeNameHe, modelNam
       fetch(`/api/ncap?make=${makeSlug}&model=${modelSlug}`).then(r => r.json()).catch(() => null),
     ]).then(([data, ncapData]) => {
       setAllTrims(data);
-      setSelected(data[0]?.name ?? '');
+      const requestedTrim = new URLSearchParams(window.location.search).get('trim');
+      const matchedTrim = data.find((trim: TrimWithYear) => toTrimSlug(trim.name) === requestedTrim);
+      const initialTrim = matchedTrim?.name ?? data[0]?.name ?? '';
+      setSelected(initialTrim);
+      if (initialTrim && !matchedTrim) setTrimInUrl(initialTrim);
       setNcap(ncapData);
     }).catch(() => setAllTrims([])).finally(() => setLoading(false));
   }, [makeSlug, modelSlug, defaultYear]);
@@ -111,7 +121,7 @@ export default function TrimSpecsTab({ makeSlug, modelSlug, makeNameHe, modelNam
         fontSize: '0.8rem', fontWeight: 700,
         color: has ? '#16a34a' : 'var(--border-strong)',
       }}>
-        {has ? ts.included : ts.notIncluded}
+        {has ? ts.included : ts.notListed}
       </span>
     </div>
   );
@@ -137,6 +147,42 @@ export default function TrimSpecsTab({ makeSlug, modelSlug, makeNameHe, modelNam
   const hasSafetyCard = ncap != null || !!safetyHe;
   const hasTechCard = techStats.length > 0 || techChecklist.length > 0 || !!techComfortHe;
 
+  const trimSelector = trim && (
+    <div style={{ marginBottom: 20 }}>
+      <p style={{ fontSize: '0.78rem', color: 'var(--text-muted)', marginBottom: 10, fontWeight: 600 }}>
+        {ts.selectTrim}
+      </p>
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+        {allTrims!.map(t => {
+          const on = selected === t.name;
+          return (
+            <button
+              key={t.id ?? t.name}
+              onClick={() => { setSelected(t.name); setTrimInUrl(t.name); }}
+              aria-pressed={on}
+              style={{
+                padding: '6px 16px', borderRadius: 999,
+                border: on ? '2px solid var(--accent)' : '1.5px solid var(--border)',
+                background: on ? 'var(--accent)' : 'var(--surface)',
+                color: on ? '#fff' : 'var(--text-muted)',
+                fontWeight: on ? 700 : 500,
+                fontSize: '0.83rem', cursor: 'pointer', transition: 'all 0.15s',
+                display: 'flex', alignItems: 'center', gap: 6,
+              }}
+            >
+              {t.name}
+              {t.priceIls && (
+                <span style={{ fontSize: '0.72rem', opacity: on ? 0.85 : 0.6 }}>
+                  {fmtPrice(t.priceIls, locale)}
+                </span>
+              )}
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+
   const StarIcon = ({ filled }: { filled: boolean }) => (
     <svg width="20" height="20" viewBox="0 0 24 24" fill={filled ? 'currentColor' : 'none'} stroke={filled ? 'none' : '#B9BFC8'} strokeWidth={filled ? 0 : 1.6} aria-hidden="true">
       <path d="M12 2.5l2.9 5.9 6.5.9-4.7 4.6 1.1 6.5L12 17.3l-5.8 3.1 1.1-6.5L2.6 9.3l6.5-.9z" />
@@ -145,6 +191,7 @@ export default function TrimSpecsTab({ makeSlug, modelSlug, makeNameHe, modelNam
 
   return (
     <div>
+      {mode === 'safety' && trimSelector}
       {/* Safety & Tech Cards — only in safety mode */}
       {mode === 'safety' && (hasSafetyCard || hasTechCard || !!safetyHe || !!techComfortHe) && (
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 20, marginBottom: 24 }}>
@@ -199,14 +246,19 @@ export default function TrimSpecsTab({ makeSlug, modelSlug, makeNameHe, modelNam
                     return (
                       <li key={k} style={{ display: 'flex', gap: 10, alignItems: 'flex-start', fontSize: 15, lineHeight: 1.5 }}>
                         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={has ? '#1F4FD1' : '#B9BFC8'} strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" style={{ flex: 'none', marginTop: 3 }}><path d="M5 12l5 5L19 7" /></svg>
-                        <span style={{ color: has ? '#15181D' : '#565D68', opacity: has ? 1 : 0.55 }}>{label}</span>
+                        <span style={{ color: has ? '#15181D' : '#565D68', opacity: has ? 1 : 0.72 }}>
+                          {label}{!has && <span style={{ fontSize: 12 }}> · {ts.notListedInTrim}</span>}
+                        </span>
                       </li>
                     );
                   })}
                 </ul>
               )}
               {safetyHe && (
-                <p style={{ margin: 0, fontSize: 15, lineHeight: 1.6, color: '#565D68' }}>{safetyHe}</p>
+                <div>
+                  <p style={{ margin: '0 0 6px', fontSize: 12, fontWeight: 700, color: '#565D68' }}>{ts.modelLevelNote}</p>
+                  <p style={{ margin: 0, fontSize: 15, lineHeight: 1.6, color: '#565D68' }}>{safetyHe}</p>
+                </div>
               )}
             </article>
           )}
@@ -248,47 +300,19 @@ export default function TrimSpecsTab({ makeSlug, modelSlug, makeNameHe, modelNam
                 </ul>
               )}
               {techComfortHe && (
-                <p style={{ margin: 0, fontSize: 15, lineHeight: 1.6, color: '#565D68' }}>{techComfortHe}</p>
+                <div>
+                  <p style={{ margin: '0 0 6px', fontSize: 12, fontWeight: 700, color: '#565D68' }}>{ts.modelLevelNote}</p>
+                  <p style={{ margin: 0, fontSize: 15, lineHeight: 1.6, color: '#565D68' }}>{techComfortHe}</p>
+                </div>
               )}
             </article>
           )}
         </div>
       )}
 
-      {/* Trim selector — only in specs mode */}
+      {/* Specs mode includes the same trim selector, with full technical details. */}
       {mode === 'specs' && trim && (<>
-      <div style={{ marginBottom: 20 }}>
-        <p style={{ fontSize: '0.78rem', color: 'var(--text-muted)', marginBottom: 10, fontWeight: 600 }}>
-          {ts.selectTrim}
-        </p>
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
-          {allTrims!.map(t => {
-            const on = selected === t.name;
-            return (
-              <button
-                key={t.name}
-                onClick={() => setSelected(t.name)}
-                style={{
-                  padding: '6px 16px', borderRadius: 999,
-                  border: on ? '2px solid var(--accent)' : '1.5px solid var(--border)',
-                  background: on ? 'var(--accent)' : 'var(--surface)',
-                  color: on ? '#fff' : 'var(--text-muted)',
-                  fontWeight: on ? 700 : 500,
-                  fontSize: '0.83rem', cursor: 'pointer', transition: 'all 0.15s',
-                  display: 'flex', alignItems: 'center', gap: 6,
-                }}
-              >
-                {t.name}
-                {t.priceIls && (
-                  <span style={{ fontSize: '0.72rem', opacity: on ? 0.85 : 0.6 }}>
-                    {fmtPrice(t.priceIls, locale)}
-                  </span>
-                )}
-              </button>
-            );
-          })}
-        </div>
-      </div>
+      {trimSelector}
 
       {/* Detail card for selected trim */}
       <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 14, overflow: 'hidden' }}>

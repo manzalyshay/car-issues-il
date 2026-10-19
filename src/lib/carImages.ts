@@ -47,13 +47,33 @@ export async function getImagesForCar(makeSlug: string, modelSlug: string): Prom
     makeSlug, modelSlug, cutoff,
   );
   // Filter null-year rows whose title reveals an old year
-  return rows
+  const images = rows
     .filter(img => {
       if (img.year !== null) return true;
       const titleYear = extractTitleYear(img.title);
       return titleYear === null || titleYear >= cutoff;
-    })
-    .slice(0, 20);
+    });
+
+  if (makeSlug === 'mini' && modelSlug === 'mini-electric') {
+    // The D1 image set for this model accidentally includes Honda e,
+    // Countryman, and concept-car photos. Keep production Cooper SE images.
+    const miniElectricImages = images.filter(img =>
+      /electric|cooper\s+se/i.test(img.title ?? '') &&
+      !/countryman|honda\s+e|concept/i.test(img.title ?? ''),
+    );
+    const leadImageRank = (img: CarImage) => {
+      const title = img.title ?? '';
+      if (/mini hatch \(f56\) electric img 2679/i.test(title)) return 0;
+      if (/mini cooper se electric/i.test(title)) return 1;
+      if (/mini hatch \(f56\) electric at iaa 2019/i.test(title)) return 2;
+      if (/mini hatch \(f56\) electric/i.test(title)) return 3;
+      return 4;
+    };
+    miniElectricImages.sort((a, b) => leadImageRank(a) - leadImageRank(b));
+    return miniElectricImages.slice(0, 20);
+  }
+
+  return images.slice(0, 20);
 }
 
 export async function getImagesForYear(makeSlug: string, modelSlug: string, year: number): Promise<CarImage[]> {

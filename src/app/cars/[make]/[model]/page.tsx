@@ -142,6 +142,8 @@ export default async function ModelPage({ params, searchParams }: Props) {
   // fall back to name-based check for legacy entries
   const relevantSketchfabModel = (() => {
     if (!sketchfabModel) return null;
+    // Some search results are multi-asset packs rather than a model of this car.
+    if (/\basset(?:s|'s)?\s+pack\b/i.test(sketchfabModel.name)) return null;
     if (sketchfabModel.yearFrom != null) return sketchfabModel;
     const m = sketchfabModel.name.match(/\b(19|20)\d{2}\b/);
     if (!m) return sketchfabModel;
@@ -202,9 +204,11 @@ export default async function ModelPage({ params, searchParams }: Props) {
                     {isEn ? 'Recommended' : 'מומלץ'}
                   </span>
                 )}
-                <span style={{ fontSize: 12.5, color: '#9db1d4' }}>
-                  {allReviews.length} {isEn ? 'owner reviews' : 'ביקורות בעלים'}
-                </span>
+                {allReviews.length > 0 && (
+                  <span style={{ fontSize: 12.5, color: '#9db1d4' }}>
+                    {allReviews.length} {isEn ? 'owner reviews' : 'ביקורות בעלים'}
+                  </span>
+                )}
               </div>
 
               {model.activeVehiclesIl != null && model.activeVehiclesIl > 0 && (
@@ -270,6 +274,7 @@ export default async function ModelPage({ params, searchParams }: Props) {
         modelYears={model.years}
         defaultYear={model.years[0]}
         hasSpecs={trimSpecs.length > 0}
+        hasTrimEquipment={trimSpecs.some(trim => trim.features.length > 0)}
         hasImages={carImages.length > 0 || relevantSketchfabModel !== null}
         hasRepairCosts={modelRepairCosts.length > 0}
         sketchfabModel={relevantSketchfabModel}

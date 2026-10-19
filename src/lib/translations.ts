@@ -302,6 +302,9 @@ export const translations = {
       selectTrim: 'בחר גימור:',
       included: '✓ כלול',
       notIncluded: '–',
+      notListed: 'לא צוין במפרט',
+      notListedInTrim: 'לא צוין בגימור זה',
+      modelLevelNote: 'מידע כללי על הדגם; האבזור עשוי להשתנות בין רמות גימור.',
       recommended: 'מחיר מומלץ',
       engine: '🔧 מנוע ותיבת הילוכים',
       interior: '🪑 פנים הרכב',
@@ -843,6 +846,9 @@ export const translations = {
       selectTrim: 'Select trim:',
       included: '✓ Included',
       notIncluded: '–',
+      notListed: 'Not listed in specs',
+      notListedInTrim: 'Not listed for this trim',
+      modelLevelNote: 'General model information; equipment may vary by trim.',
       recommended: 'MSRP',
       engine: '🔧 Engine & Transmission',
       interior: '🪑 Interior',
@@ -1110,7 +1116,7 @@ export type Translations = {
   recalls: { title: string; source: string; allYears: string; loading: string; noneFound: string; noneForYear: string; component: string; descLabel: string; riskLabel: string; fixLabel: string; moreDetails: string };
   complaints: { title: string; loading: string; noneFound: string; source: string; total: string; byComponent: string; moreDetails: string; crash: string; fire: string; injury: string; notAvailable: string };
   repairCosts: { title: string; basedOn: string; ownerReports: string; median: string; reports: string; noData: string; noDataSuffix: string; disclaimer: string; garage: Record<string, string> };
-  trimSpecs: { loading: string; noData: string; noDataSuffix: string; selectTrim: string; included: string; notIncluded: string; recommended: string; engine: string; interior: string; engineType: string; engineCc: string; engineHp: string; transmission: string; drive: string; upholstery: string; seats: string; screen: string; moreDetails: string; disclaimer: string; hp: string; cc: string; sections: Record<string, string>; engineTypes: Record<string, string>; transmissions: Record<string, string>; drives: Record<string, string>; upholsteries: Record<string, string> };
+  trimSpecs: { loading: string; noData: string; noDataSuffix: string; selectTrim: string; included: string; notIncluded: string; notListed: string; notListedInTrim: string; modelLevelNote: string; recommended: string; engine: string; interior: string; engineType: string; engineCc: string; engineHp: string; transmission: string; drive: string; upholstery: string; seats: string; screen: string; moreDetails: string; disclaimer: string; hp: string; cc: string; sections: Record<string, string>; engineTypes: Record<string, string>; transmissions: Record<string, string>; drives: Record<string, string>; upholsteries: Record<string, string> };
   firstReviewCta: { title: string; body: string; cta: string };
   carTabs: { reviews: string; specs: string; videos: string; images: string; loading: string };
   viewer3d: { loading: string; clickToLoad: string; ariaLoad: string; hideModel: string; hideTitle: string; hideReasonLabel: string; hideReasonPlaceholder: string; hideConfirm: string; hideCancel: string };

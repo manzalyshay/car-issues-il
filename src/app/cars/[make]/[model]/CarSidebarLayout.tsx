@@ -26,6 +26,7 @@ interface Props {
   modelYears?: number[];
   defaultYear?: number;
   hasSpecs?: boolean;
+  hasTrimEquipment?: boolean;
   hasImages?: boolean;
   hasVideos?: boolean;
   hasRepairCosts?: boolean;
@@ -45,8 +46,8 @@ function resolveTab(raw?: string): Tab {
   return VALID_TABS.includes(raw as Tab) ? raw as Tab : 'reviews';
 }
 
-export default function CarSidebarLayout({ makeSlug, modelSlug, makeNameHe, modelNameHe, makeNameEn, modelNameEn, makeEn, modelEn, modelYears, defaultYear, hasSpecs = true, hasImages = true, hasVideos = true, hasRepairCosts = true, sketchfabModel, initialTab, year, safetyHe, techComfortHe, children }: Props) {
-  const hasSafety = !!(safetyHe || techComfortHe);
+export default function CarSidebarLayout({ makeSlug, modelSlug, makeNameHe, modelNameHe, makeNameEn, modelNameEn, makeEn, modelEn, modelYears, defaultYear, hasSpecs = true, hasTrimEquipment = false, hasImages = true, hasVideos = true, hasRepairCosts = true, sketchfabModel, initialTab, year, safetyHe, techComfortHe, children }: Props) {
+  const hasSafety = hasTrimEquipment || !!(safetyHe || techComfortHe);
   const { t, locale } = useLocale();
   const s = t.sidebar;
   const pathname = usePathname();
@@ -119,8 +120,13 @@ export default function CarSidebarLayout({ makeSlug, modelSlug, makeNameHe, mode
   const handleTabClick = async (next: Tab) => {
     setTab(next);
     // Sync tab to URL (shallow replace — no navigation)
-    const url = next === 'reviews' ? pathname : `${pathname}?tab=${next}`;
-    if (typeof window !== 'undefined') window.history.replaceState(null, '', url);
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      if (next === 'reviews') params.delete('tab');
+      else params.set('tab', next);
+      const query = params.toString();
+      window.history.replaceState(null, '', query ? `${pathname}?${query}` : pathname);
+    }
     if (next === 'videos' && videos === null && !videosLoading) {
       setVideosLoading(true);
       fetchMedia('videos', yearFilter);
