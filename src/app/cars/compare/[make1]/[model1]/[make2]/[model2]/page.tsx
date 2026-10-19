@@ -8,6 +8,7 @@ import { findCarModel } from '@/lib/sketchfab';
 import { getTrimSpecs } from '@/lib/trimSpecsDb';
 import type { TrimSpecWithYear } from '@/lib/trimSpecsDb';
 import { getHostLocale, getBaseUrl } from '@/lib/hostLocale';
+import { getComparePolicy } from '@/lib/seoIndexing';
 import { translations } from '@/lib/translations';
 import StarRating from '@/components/StarRating';
 import MakeLogo from '@/components/MakeLogo';
@@ -34,11 +35,14 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
   // Pull real ratings into the snippet — matches the Product/AggregateRating schema
   // on the page itself, and gives the SERP something concrete instead of generic copy.
-  const [reviewsA, reviewsB, expertA, expertB] = await Promise.all([
+  const [reviewsA, reviewsB, expertA, expertB, indexable] = await Promise.all([
     getReviewsForModel(make1, model1).catch(() => []),
     getReviewsForModel(make2, model2).catch(() => []),
     getExpertReviews(make1, model1).catch(() => []),
     getExpertReviews(make2, model2).catch(() => []),
+    // Pairs outside the sitemap are noindex (same rule, see lib/seoIndexing).
+    // Fail open so a D1 error never caches a stray noindex.
+    getComparePolicy().then(p => p.isIndexable(c1, c2)).catch(() => true),
   ]);
   const avgA = reviewsA.length ? reviewsA.reduce((s, r) => s + r.rating, 0) / reviewsA.length : null;
   const avgB = reviewsB.length ? reviewsB.reduce((s, r) => s + r.rating, 0) / reviewsB.length : null;
@@ -64,6 +68,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   return {
     title,
     description,
+    robots: indexable ? { index: true, follow: true } : { index: false, follow: true },
     alternates: {
       canonical,
       languages: {
@@ -72,7 +77,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
         'x-default': `https://carissues.net/cars/compare/${c1}/${c2}`,
       },
     },
-    openGraph: { title, description, url: canonical, images: [{ url: '/og-default.svg', width: 1200, height: 630 }] },
+    openGraph: { title, description, url: canonical, images: [{ url: '/og-default.png', width: 1200, height: 630 }] },
   };
 }
 
@@ -93,6 +98,11 @@ function Score({ label, value, best }: { label: string; value: number | null; be
 
 export default async function ComparePage({ params }: Props) {
   const { make1, model1, make2, model2 } = await params;
+
+  // Block comparing a model to itself
+  if (make1 === make2 && model1 === model2) {
+    redirect(`/cars/${make1}/${model1}`);
+  }
 
   // Enforce canonical slug order (alphabetical) to avoid duplicate pages
   const [c1, c2] = [`${make1}/${model1}`, `${make2}/${model2}`].sort();
@@ -197,17 +207,39 @@ export default async function ComparePage({ params }: Props) {
     format: (v: number) => string;
   };
 
+  // Detect if either side is fully electric
+  const isElectricA = trimsA.some(t => t.engineType === 'electric');
+  const isElectricB = trimsB.some(t => t.engineType === 'electric');
+  const anyElectric = isElectricA || isElectricB;
+
+  // For electric models, use raw L/100km value (which is actually kWh/100km).
+  // For fuel models, convert L/100km → km/L. Keep separate logic.
+  const fuelLabel = anyElectric
+    ? (isEn ? 'Energy / Fuel' : 'צריכה')
+    : (isEn ? 'Fuel Economy' : 'צריכת דלק');
+  const fuelUnit = (v: number, isElec: boolean) => {
+    if (isElec) return isEn ? 'kWh/100km' : 'קוט"ש/100ק"מ';
+    return isEn ? 'km/L' : 'ק"מ/ל';
+  };
+  const fuelFormat = (v: number, isElec: boolean) => {
+    if (isElec) return v.toFixed(1); // Already kWh/100km
+    return (100 / v).toFixed(1); // Convert L/100km → km/L
+  };
+
+  const noDataLabel = isEn ? 'N/A' : 'אין נתון';
+
   const allPerfStats: PerfStat[] = [
-    { key: 'price',    label: isEn ? 'Starting Price' : 'מחיר התחלתי',  unit: isEn ? '$' : '₪',      note: isEn ? 'lower = better' : 'נמוך = טוב יותר',  lowerBetter: true,  format: (v: number) => isEn ? `$${Math.round(v / 3700)}K` : `₪${Math.round(v / 1000)}K` },
+    { key: 'price',    label: isEn ? 'Starting Price' : 'מחיר התחלתי',  unit: isEn ? '$' : '₪',      note: isEn ? 'lower = better' : 'נמוך = טוב יותר',  lowerBetter: true,  format: (v: number) => v > 0 ? (isEn ? `$${Math.round(v / 3700)}K` : `₪${Math.round(v / 1000).toLocaleString()}K`) : noDataLabel },
     { key: 'hp',       label: isEn ? 'Horsepower'     : 'הספק',           unit: isEn ? 'hp' : 'כ"ס',  note: isEn ? 'higher = better' : 'גבוה = טוב יותר', lowerBetter: false, format: (v: number) => Math.round(v).toString() },
-    { key: 'torque',   label: isEn ? 'Torque'         : 'מומנט',           unit: 'Nm',                  note: isEn ? 'higher = better' : 'גבוה = טוב יותר', lowerBetter: false, format: (v: number) => Math.round(v).toString() },
+    { key: 'torque',   label: isEn ? 'Torque'         : 'מומנט',           unit: isEn ? 'Nm' : 'ניוטון-מטר',  note: isEn ? 'higher = better' : 'גבוה = טוב יותר', lowerBetter: false, format: (v: number) => Math.round(v).toString() },
     { key: 'accel',    label: isEn ? '0–100 km/h'     : '0–100 קמ"ש',    unit: isEn ? 'sec' : 'שנ\'', note: isEn ? 'lower = better' : 'נמוך = טוב יותר',  lowerBetter: true,  format: (v: number) => v.toFixed(1) },
     { key: 'topSpeed', label: isEn ? 'Top Speed'      : "מהירות מקס'",   unit: isEn ? 'km/h' : 'קמ"ש', note: isEn ? 'higher = better' : 'גבוה = טוב יותר', lowerBetter: false, format: (v: number) => Math.round(v).toString() },
-    { key: 'fuel',     label: isEn ? 'Fuel Economy'   : 'צריכת דלק',     unit: isEn ? 'km/L' : 'ק"מ/ל',   note: isEn ? 'higher = better' : 'גבוה = טוב יותר', lowerBetter: true, format: (v: number) => (100 / v).toFixed(1) },
+    { key: 'fuel',     label: fuelLabel,               unit: '',           note: anyElectric ? (isEn ? 'lower = better' : 'נמוך = טוב יותר') : (isEn ? 'higher = better' : 'גבוה = טוב יותר'), lowerBetter: true, format: (v: number) => v.toFixed(1) /* overridden in render */ },
     { key: 'cargo',    label: isEn ? 'Cargo Space'    : 'תא מטען',        unit: isEn ? 'L' : "ל'",    note: isEn ? 'higher = better' : 'גבוה = טוב יותר', lowerBetter: false, format: (v: number) => Math.round(v).toString() },
     { key: 'weight',   label: isEn ? 'Curb Weight'    : 'משקל',           unit: isEn ? 'kg' : 'ק"ג',  note: isEn ? 'lower = better' : 'נמוך = טוב יותר',  lowerBetter: true,  format: (v: number) => Math.round(v).toString() },
   ];
-  const perfStats = allPerfStats.filter(s => perfA[s.key] != null && perfB[s.key] != null);
+  // Show rows even if only one side has data (show "אין נתון" for the other)
+  const perfStats = allPerfStats.filter(s => perfA[s.key] != null || perfB[s.key] != null);
 
   const hasPerf = perfStats.length > 0;
 
@@ -415,8 +447,9 @@ export default async function ComparePage({ params }: Props) {
                 {perfStats.map((stat, idx) => {
                   const vA = perfA[stat.key];
                   const vB = perfB[stat.key];
-                  const winA = vA != null && (vB == null || (stat.lowerBetter ? vA < vB : vA > vB));
-                  const winB = vB != null && (vA == null || (stat.lowerBetter ? vB < vA : vB > vA));
+                  // Don't award trophy if either side has no data
+                  const winA = vA != null && vB != null && (stat.lowerBetter ? vA < vB : vA > vB);
+                  const winB = vA != null && vB != null && (stat.lowerBetter ? vB < vA : vB > vA);
                   const tie  = vA != null && vB != null && vA === vB;
 
                   // Compute bar widths so the "better" value = 100%, worse = proportional
@@ -473,16 +506,24 @@ export default async function ComparePage({ params }: Props) {
                       </div>
 
                       {/* Left column value */}
+                      {(() => {
+                        const isLeftA = !swapCols;
+                        const isElecLeft = isLeftA ? isElectricA : isElectricB;
+                        const displayVal = stat.key === 'fuel' && vLeft != null
+                          ? fuelFormat(vLeft, isElecLeft) : (vLeft != null ? stat.format(vLeft) : null);
+                        const displayUnit = stat.key === 'fuel' && vLeft != null
+                          ? fuelUnit(vLeft, isElecLeft) : stat.unit;
+                        return (
                       <div style={{ textAlign: 'center', padding: '0 4px' }}>
-                        {vLeft != null ? (
+                        {vLeft != null && displayVal !== noDataLabel ? (
                           <>
                             <div className="perf-value" style={{
                               fontSize: '1.25rem', fontWeight: 900, lineHeight: 1,
                               color: winLeft ? winColor : tie ? tieColor : 'var(--text)',
                               display: 'flex', alignItems: 'baseline', justifyContent: 'center', gap: 3,
                             }}>
-                              <span>{stat.format(vLeft)}</span>
-                              <span style={{ fontSize: '0.65rem', fontWeight: 500, color: 'var(--text-muted)' }}>{stat.unit}</span>
+                              <span>{displayVal}</span>
+                              <span style={{ fontSize: '0.65rem', fontWeight: 500, color: 'var(--text-muted)' }}>{displayUnit}</span>
                               {winLeft && <span style={{ fontSize: '0.85rem', marginLeft: 2 }}>🏆</span>}
                             </div>
                             <div style={{ height: 6, background: 'var(--border)', borderRadius: 999, marginTop: 7, overflow: 'hidden' }}>
@@ -495,13 +536,23 @@ export default async function ComparePage({ params }: Props) {
                             </div>
                           </>
                         ) : (
-                          <span style={{ color: 'var(--text-muted)', fontSize: '1.1rem' }}>—</span>
+                          <span style={{ color: 'var(--text-muted)', fontSize: '0.82rem' }}>{noDataLabel}</span>
                         )}
                       </div>
+                        );
+                      })()}
 
                       {/* Right column value */}
+                      {(() => {
+                        const isRightA = swapCols;
+                        const isElecRight = isRightA ? isElectricA : isElectricB;
+                        const displayVal = stat.key === 'fuel' && vRight != null
+                          ? fuelFormat(vRight, isElecRight) : (vRight != null ? stat.format(vRight) : null);
+                        const displayUnit = stat.key === 'fuel' && vRight != null
+                          ? fuelUnit(vRight, isElecRight) : stat.unit;
+                        return (
                       <div style={{ textAlign: 'center', padding: '0 4px' }}>
-                        {vRight != null ? (
+                        {vRight != null && displayVal !== noDataLabel ? (
                           <>
                             <div className="perf-value" style={{
                               fontSize: '1.25rem', fontWeight: 900, lineHeight: 1,
@@ -509,8 +560,8 @@ export default async function ComparePage({ params }: Props) {
                               display: 'flex', alignItems: 'baseline', justifyContent: 'center', gap: 3,
                             }}>
                               {winRight && <span style={{ fontSize: '0.85rem', marginRight: 2 }}>🏆</span>}
-                              <span>{stat.format(vRight)}</span>
-                              <span style={{ fontSize: '0.65rem', fontWeight: 500, color: 'var(--text-muted)' }}>{stat.unit}</span>
+                              <span>{displayVal}</span>
+                              <span style={{ fontSize: '0.65rem', fontWeight: 500, color: 'var(--text-muted)' }}>{displayUnit}</span>
                             </div>
                             <div style={{ height: 6, background: 'var(--border)', borderRadius: 999, marginTop: 7, overflow: 'hidden' }}>
                               <div className="perf-bar-fill" style={{
@@ -522,9 +573,11 @@ export default async function ComparePage({ params }: Props) {
                             </div>
                           </>
                         ) : (
-                          <span style={{ color: 'var(--text-muted)', fontSize: '1.1rem' }}>—</span>
+                          <span style={{ color: 'var(--text-muted)', fontSize: '0.82rem' }}>{noDataLabel}</span>
                         )}
                       </div>
+                        );
+                      })()}
                     </div>
                   );
                 })}
@@ -608,12 +661,16 @@ export default async function ComparePage({ params }: Props) {
           const winner = sw ?? rw;
           const winnerName = winner === 'a' ? nameA : winner === 'b' ? nameB : null;
           const loserName  = winner === 'a' ? nameB : winner === 'b' ? nameA : null;
+          const hasOwnerReviews = reviewsA.length > 0 || reviewsB.length > 0;
+          const verdictBasis = hasOwnerReviews
+            ? sp.verdictWinnerPre
+            : (isEn ? 'Based on tests and official data,' : 'על בסיס מבחנים ונתונים רשמיים,');
           return (
             <div className="card" style={{ padding: '24px 28px', marginBottom: 28, borderRight: '4px solid var(--accent)' }}>
               <h2 style={{ fontWeight: 800, fontSize: '1rem', marginBottom: 12 }}>{sp.verdictTitle}</h2>
               {winner && winner !== 'tie' ? (
                 <p style={{ margin: 0, fontSize: '0.9375rem', lineHeight: 1.7, color: 'var(--text-muted)' }}>
-                  {sp.verdictWinnerPre} <strong>{winnerName}</strong> {sp.verdictWinnerMid} {loserName}.
+                  {verdictBasis} <strong>{winnerName}</strong> {sp.verdictWinnerMid} {loserName}.
                   {(expertA[0]?.pros?.length ?? 0) > 0 || (expertB[0]?.pros?.length ?? 0) > 0 ? ` ${sp.verdictHasPros}` : ''}
                 </p>
               ) : (
@@ -621,6 +678,9 @@ export default async function ComparePage({ params }: Props) {
                   {sp.verdictTie}
                 </p>
               )}
+              <div style={{ marginTop: 12, fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+                {isEn ? 'Based on official data' : 'מבוסס על נתונים רשמיים'}
+              </div>
             </div>
           );
         })()}
@@ -713,47 +773,34 @@ export default async function ComparePage({ params }: Props) {
           const base = getBaseUrl(locale);
           const pageUrl = `${base}/cars/compare/${make1}/${model1}/${make2}/${model2}`;
 
-          // Same pattern as the model page: emit Product+AggregateRating when we have
-          // real owner reviews, otherwise fall back to the AI expert score as a Review
-          // so Google's rich-result requirement (rating OR review) is still satisfied.
+          // Same pattern as the model page: emit Product+AggregateRating only when we have
+          // real owner reviews. The AI expert score is NOT marked up as a Review — Google's
+          // review-snippet policy disallows self-authored/AI ratings.
           const productFor = (
             name: string, makeEn: string, url: string,
-            avg: number | null, reviewCount: number, topScore: number | null,
+            avg: number | null, reviewCount: number,
           ) => {
-            if (avg === null && topScore == null) return [];
+            if (avg === null || reviewCount === 0) return [];
             return [{
               '@type': 'Product',
               name,
               brand: { '@type': 'Brand', name: makeEn },
               url,
-              ...(avg !== null ? {
-                aggregateRating: {
-                  '@type': 'AggregateRating',
-                  ratingValue: avg.toFixed(1),
-                  reviewCount,
-                  bestRating: 5,
-                  worstRating: 1,
-                },
-              } : {
-                review: {
-                  '@type': 'Review',
-                  author: { '@type': 'Organization', name: 'CarIssues AI' },
-                  reviewRating: {
-                    '@type': 'Rating',
-                    ratingValue: topScore!.toFixed(1),
-                    bestRating: 10,
-                    worstRating: 0,
-                  },
-                },
-              }),
+              aggregateRating: {
+                '@type': 'AggregateRating',
+                ratingValue: avg.toFixed(1),
+                reviewCount,
+                bestRating: 5,
+                worstRating: 1,
+              },
             }];
           };
 
           return {
             '@context': 'https://schema.org',
             '@graph': [
-              ...productFor(nameA, mA.nameEn, `${base}/cars/${make1}/${model1}`, avgA, reviewsA.length, scoreA),
-              ...productFor(nameB, mB.nameEn, `${base}/cars/${make2}/${model2}`, avgB, reviewsB.length, scoreB),
+              ...productFor(nameA, mA.nameEn, `${base}/cars/${make1}/${model1}`, avgA, reviewsA.length),
+              ...productFor(nameB, mB.nameEn, `${base}/cars/${make2}/${model2}`, avgB, reviewsB.length),
               {
                 '@type': 'WebPage',
                 name: `${nameA} ${sp.vsWord} ${nameB}`,

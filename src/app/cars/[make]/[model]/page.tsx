@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { getMakeBySlug, getModelBySlug, getCategoryLabel, getSimilarModels } from '@/lib/carsDb';
 import { getReviewsForModel, getAverageRating } from '@/lib/reviewsDb';
+import ReviewNudge from '@/components/ReviewNudge';
 import { findCarModel } from '@/lib/sketchfab';
 import { getExpertReviews } from '@/lib/expertReviews';
 import { getTrimSpecs } from '@/lib/trimSpecsDb';
@@ -18,14 +19,22 @@ import RepairCostsSection from '@/components/RepairCostsSection';
 import { getImagesForCar } from '@/lib/carImages';
 import SellerPriceChart from '@/components/SellerPriceChart';
 import RecallsBarChart from '@/components/RecallsBarChart';
-import Car3DViewer from '@/components/Car3DViewer';
+import FuelComparisonChart from '@/components/FuelComparisonChart';
 import VerdictCard from '@/components/VerdictCard';
 import FollowButton from '@/components/FollowButton';
+import HeroMedia from '@/components/HeroMedia';
+import ModelFaq from '@/components/ModelFaq';
+import SourcesBlock from '@/components/SourcesBlock';
+import HeroYearPicker from '@/components/HeroYearPicker';
+import { getRecallsFromCache } from '@/lib/recallsDb';
 
 
 export const revalidate = 900; // cache 15 minutes
 
-interface Props { params: Promise<{ make: string; model: string }> }
+interface Props {
+  params: Promise<{ make: string; model: string }>;
+  searchParams: Promise<{ tab?: string }>;
+}
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { make: makeSlug, model: modelSlug } = await params;
@@ -59,7 +68,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
         title: `${make.nameEn} ${model.nameEn}${ratingStr} | CarIssues`,
         description: `Owner reviews & common problems — ${make.nameEn} ${model.nameEn} ${yearRange}`,
         url,
-        images: [{ url: '/og-default.svg', width: 1200, height: 630 }],
+        images: [{ url: '/og-default.png', width: 1200, height: 630 }],
       },
     };
   }
@@ -77,21 +86,22 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const reviewPart = reviews.length > 0
     ? `${reviews.length} חוות דעת${avgRating ? ` ⭐ ${avgRating.toFixed(1)}` : ''}`
     : 'חוות דעת ובעיות נפוצות';
+  const recentYears = model.years.slice(0, 4).join(', ');
   return {
     title: `${make.nameHe} ${model.nameHe} ${yearRange} — ${reviewPart} | יתרונות וחסרונות`,
-    description: `${reviews.length > 0 ? `${reviews.length} ביקורות אמיתיות` : 'ביקורות אמיתיות'} על ${make.nameHe} ${model.nameHe} (${make.nameEn} ${model.nameEn}) שנים ${yearRange}${avgRating ? `. דירוג ממוצע ${avgRating.toFixed(1)}/5` : ''}.${priceDesc} היסטוריית מחיר 2016–2026.${trimDesc} יתרונות, חסרונות ובעיות נפוצות מבעלי רכב בישראל.`,
+    description: `${reviews.length > 0 ? `${reviews.length} ביקורות אמיתיות` : 'ביקורות אמיתיות'} על ${make.nameHe} ${model.nameHe} (${make.nameEn} ${model.nameEn}) שנים ${yearRange}${avgRating ? `. דירוג ממוצע ${avgRating.toFixed(1)}/5` : ''}.${priceDesc} חוות דעת ${recentYears}.${trimDesc} יתרונות, חסרונות ובעיות נפוצות מבעלי רכב בישראל.`,
     alternates: { canonical: url, languages: { he: url, en: `https://carissues.net/cars/${make.slug}/${model.slug}`, 'x-default': `https://carissues.net/cars/${make.slug}/${model.slug}` } },
     openGraph: {
       title: `${make.nameHe} ${model.nameHe}${ratingStr}${countStr} | CarIssues IL`,
       description: `ביקורות ובעיות נפוצות — ${make.nameHe} ${model.nameHe} ${yearRange}`,
       url,
-      images: [{ url: '/og-default.svg', width: 1200, height: 630 }],
+      images: [{ url: '/og-default.png', width: 1200, height: 630 }],
     },
   };
 }
 
-export default async function ModelPage({ params }: Props) {
-  const { make: makeSlug, model: modelSlug } = await params;
+export default async function ModelPage({ params, searchParams }: Props) {
+  const [{ make: makeSlug, model: modelSlug }, { tab: initialTab }] = await Promise.all([params, searchParams]);
   const [locale, make, model] = await Promise.all([
     getHostLocale(),
     getMakeBySlug(makeSlug),
@@ -100,7 +110,7 @@ export default async function ModelPage({ params }: Props) {
   if (!make) notFound();
   if (!model) notFound();
 
-  const [allReviews, expertReviewsList, sketchfabModel, similarModels, carImages, modelRepairCosts, trimSpecs] = await Promise.all([
+  const [allReviews, expertReviewsList, sketchfabModel, similarModels, carImages, modelRepairCosts, trimSpecs, recalls] = await Promise.all([
     getReviewsForModel(makeSlug, modelSlug).catch(() => []),
     getExpertReviews(makeSlug, modelSlug).catch(() => []),
     findCarModel(makeSlug, modelSlug).catch(() => null),
@@ -108,6 +118,7 @@ export default async function ModelPage({ params }: Props) {
     getImagesForCar(makeSlug, modelSlug).catch(() => []),
     getModelRepairCosts(makeSlug, modelSlug).catch(() => []),
     getTrimSpecs(makeSlug, modelSlug).catch(() => []),
+    getRecallsFromCache(make.nameEn, model.nameEn).catch(() => []),
   ]);
   const [similarRatings, similarImages] = await Promise.all([
     Promise.all(similarModels.map(({ makeSlug: ms, model: m }) => getAverageRating(ms, m.slug).catch(() => null))),
@@ -126,6 +137,19 @@ export default async function ModelPage({ params }: Props) {
   const yearRange = model.years.length > 1
     ? `${model.years[model.years.length - 1]}–${model.years[0]}`
     : `${model.years[0]}`;
+
+  // 3D model relevance: year-aware lookup already handles year_from/year_to entries;
+  // fall back to name-based check for legacy entries
+  const relevantSketchfabModel = (() => {
+    if (!sketchfabModel) return null;
+    if (sketchfabModel.yearFrom != null) return sketchfabModel;
+    const m = sketchfabModel.name.match(/\b(19|20)\d{2}\b/);
+    if (!m) return sketchfabModel;
+    const fab3dYear = parseInt(m[0]);
+    const newestCarYear = model.years[0] ?? new Date().getFullYear();
+    if (fab3dYear < newestCarYear - 12) return null;
+    return sketchfabModel;
+  })();
 
   return (
     <div style={{ background: 'var(--bg)', minHeight: '100vh' }}>
@@ -183,6 +207,23 @@ export default async function ModelPage({ params }: Props) {
                 </span>
               </div>
 
+              {model.activeVehiclesIl != null && model.activeVehiclesIl > 0 && (
+                <div style={{ marginTop: 7, fontSize: 12, color: '#9db1d4' }}>
+                  <span style={{ fontWeight: 700, color: '#c8d8f0' }}>
+                    {model.activeVehiclesIl.toLocaleString('he-IL')}
+                  </span>
+                  {' '}{isEn ? 'active vehicles in Israel' : 'רכבים פעילים בישראל'}
+                  <span style={{ opacity: 0.65, marginInlineStart: 4 }}>
+                    ({isEn ? 'Oct 2026' : 'אוק׳ 2026'})
+                  </span>
+                </div>
+              )}
+              {model.activeVehiclesIl === 0 && (
+                <div style={{ marginTop: 7, fontSize: 12, color: '#f0a050' }}>
+                  {isEn ? 'Not currently marketed in Israel' : 'לא משווק כיום בישראל'}
+                </div>
+              )}
+
               <div style={{ display: 'flex', gap: 8, marginTop: 11, flexWrap: 'wrap' }}>
                 <FollowButton makeSlug={make.slug} modelSlug={model.slug} isEn={isEn} dark />
                 <Link
@@ -193,36 +234,24 @@ export default async function ModelPage({ params }: Props) {
                 </Link>
                 <SharePopup title={`${makeName} ${modelName} — ${cp.shareTitle}`} url={`${getBaseUrl(locale)}/cars/${make.slug}/${model.slug}`} dark />
               </div>
-            </div>
 
-            {/* Hero media — 3D viewer if available, else photo */}
-            <div style={{ display: 'grid', gap: 6, justifySelf: 'end', width: '100%', maxWidth: 380 }}>
-              <div style={{ position: 'relative', aspectRatio: '16/9', borderRadius: 14, overflow: 'hidden', background: '#1a3055', boxShadow: '0 20px 46px -28px rgba(0,0,0,.9)' }}>
-                {sketchfabModel ? (
-                  <Car3DViewer uid={sketchfabModel.uid} modelName={sketchfabModel.name} author={sketchfabModel.author} makeSlug={make.slug} modelSlug={model.slug} carImageUrl={carImages[0]?.url} />
-                ) : carImages[0]?.url ? (
-                  /* eslint-disable-next-line @next/next/no-img-element */
-                  <img src={carImages[0].url} alt={`${make.nameEn} ${model.nameEn}`} style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
-                ) : (
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%' }}>
-                    <span style={{ fontSize: 12, color: '#7ba0e8', letterSpacing: '.1em', fontWeight: 600 }}>
-                      {isEn ? `${make.nameEn} ${model.nameEn}` : `${make.nameHe} ${model.nameHe}`}
-                    </span>
-                  </div>
-                )}
-              </div>
-              {!sketchfabModel && carImages.length > 1 && (
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5,1fr)', gap: 5 }}>
-                  {carImages.slice(0, 5).map((img, i) => (
-                    /* eslint-disable-next-line @next/next/no-img-element */
-                    <img key={i} src={img.url} alt="" style={{ aspectRatio: '4/3', width: '100%', borderRadius: 8, objectFit: 'cover', display: 'block', opacity: i === 0 ? 1 : 0.72, outline: i === 0 ? '2px solid #7ba0e8' : 'none' }} />
-                  ))}
-                  {[...Array(Math.max(0, 5 - carImages.slice(0,5).length))].map((_, i) => (
-                    <span key={`ph-${i}`} style={{ aspectRatio: '4/3', borderRadius: 8, background: 'linear-gradient(140deg,#24406b,#1a3055)', display: 'block', opacity: 0.5 }} />
-                  ))}
-                </div>
+              {/* Year quick-picker — filters images/videos in place */}
+              {model.years.length > 1 && (
+                <HeroYearPicker years={model.years} makeSlug={make.slug} modelSlug={model.slug} />
               )}
             </div>
+
+            {/* Hero media — interactive with clickable thumbnails + year/trim badge */}
+            <HeroMedia
+              images={carImages}
+              sketchfabModel={relevantSketchfabModel}
+              makeSlug={make.slug}
+              modelSlug={model.slug}
+              makeNameEn={make.nameEn}
+              modelNameEn={model.nameEn}
+              yearRange={yearRange}
+              categoryLabel={getCategoryLabel(model.category, locale)}
+            />
           </div>
         </div>
       </section>
@@ -241,9 +270,12 @@ export default async function ModelPage({ params }: Props) {
         modelYears={model.years}
         defaultYear={model.years[0]}
         hasSpecs={trimSpecs.length > 0}
-        hasImages={carImages.length > 0 || sketchfabModel !== null}
+        hasImages={carImages.length > 0 || relevantSketchfabModel !== null}
         hasRepairCosts={modelRepairCosts.length > 0}
-        sketchfabModel={sketchfabModel}
+        sketchfabModel={relevantSketchfabModel}
+        initialTab={initialTab}
+        safetyHe={expertReview?.safetyHe}
+        techComfortHe={expertReview?.techComfortHe}
       >
         {/* ── Owner reviews — write review at top ── */}
         <div id="reviews" style={{ paddingTop: 0 }}>
@@ -274,8 +306,23 @@ export default async function ModelPage({ params }: Props) {
           />
         </div>
 
+        {/* ── FAQ ── */}
+        <ModelFaq
+          trimSpecs={trimSpecs}
+          expertReview={expertReview}
+          avgRating={avgRating}
+          reviewCount={allReviews.length}
+          recallCount={recalls.length}
+          makeNameHe={make.nameHe}
+          modelNameHe={model.nameHe}
+          makeNameEn={make.nameEn}
+          modelNameEn={model.nameEn}
+          category={model.category}
+          isEn={isEn}
+        />
+
         {/* ── Market value + Recalls bar charts ── */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 480px))', gap: 16, marginTop: 40, marginBottom: 28 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: 16, marginTop: 40, marginBottom: 28 }}>
           <SellerPriceChart
             makeSlug={makeSlug}
             modelSlug={modelSlug}
@@ -287,6 +334,11 @@ export default async function ModelPage({ params }: Props) {
             makeEn={make.nameEn}
             modelEn={model.nameEn}
             years={model.years}
+            isEn={isEn}
+          />
+          <FuelComparisonChart
+            makeSlug={makeSlug}
+            modelSlug={modelSlug}
             isEn={isEn}
           />
         </div>
@@ -396,6 +448,9 @@ export default async function ModelPage({ params }: Props) {
           </section>
         )}
 
+        {/* ── Sources ── */}
+        <SourcesBlock expertReview={expertReview} isEn={isEn} />
+
         {/* JSON-LD */}
         <script
           type="application/ld+json"
@@ -410,33 +465,21 @@ export default async function ModelPage({ params }: Props) {
               return {
                 '@context': 'https://schema.org',
                 '@graph': [
-                  // Only emit Product schema when we have the required aggregateRating or review
-                  ...(avgRating !== null || expertReview?.topScore != null ? [{
+                  // Only emit Product schema when real owner reviews give us an aggregateRating.
+                  // The AI expert score is not marked up as a Review: Google's review-snippet
+                  // policy disallows self-authored/AI ratings.
+                  ...(avgRating !== null && allReviews.length > 0 ? [{
                     '@type': 'Product',
                     name: `${make.nameEn} ${model.nameEn}`,
                     brand: { '@type': 'Brand', name: make.nameEn },
                     url: `${base}/cars/${make.slug}/${model.slug}`,
-                    ...(avgRating !== null ? {
-                      aggregateRating: {
-                        '@type': 'AggregateRating',
-                        ratingValue: avgRating.toFixed(1),
-                        reviewCount: allReviews.length,
-                        bestRating: 5,
-                        worstRating: 1,
-                      },
-                    } : {
-                      // No user reviews — use expert AI score as a single Review to satisfy Google's requirement
-                      review: {
-                        '@type': 'Review',
-                        author: { '@type': 'Organization', name: 'CarIssues AI' },
-                        reviewRating: {
-                          '@type': 'Rating',
-                          ratingValue: expertReview!.topScore!.toFixed(1),
-                          bestRating: 10,
-                          worstRating: 0,
-                        },
-                      },
-                    }),
+                    aggregateRating: {
+                      '@type': 'AggregateRating',
+                      ratingValue: avgRating.toFixed(1),
+                      reviewCount: allReviews.length,
+                      bestRating: 5,
+                      worstRating: 1,
+                    },
                   }] : []),
                   {
                     '@type': 'BreadcrumbList',
@@ -498,6 +541,15 @@ export default async function ModelPage({ params }: Props) {
           }}
         />
       </CarSidebarLayout>
+
+      <ReviewNudge
+        makeSlug={makeSlug}
+        modelSlug={modelSlug}
+        makeNameHe={make.nameHe}
+        modelNameHe={model.nameHe}
+        makeNameEn={make.nameEn}
+        modelNameEn={model.nameEn}
+      />
     </div>
   );
 }

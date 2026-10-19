@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 100">
+  <rect width="200" height="100" rx="10" fill="white"/>
+  <!-- Lynk & Co: modern hexagonal mark -->
+  <polygon points="100,12 128,27 128,57 100,72 72,57 72,27" fill="none" stroke="#00b0f0" stroke-width="5"/>
+  <polygon points="100,24 118,34 118,54 100,64 82,54 82,34" fill="#00b0f0"/>
+  <polygon points="100,34 110,40 110,52 100,58 90,52 90,40" fill="white"/>
+  <text x="100" y="88" font-family="Arial,sans-serif" font-weight="700" font-size="11" fill="#00b0f0" text-anchor="middle" letter-spacing="2">LYNK &amp; CO</text>
+</svg>

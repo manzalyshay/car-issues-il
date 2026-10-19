@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 100">
+  <rect width="200" height="100" rx="10" fill="white"/>
+  <!-- SsangYong: twin lion mark simplified as SY in oval -->
+  <ellipse cx="100" cy="44" rx="44" ry="32" fill="#1a3a6b"/>
+  <!-- SY letters -->
+  <text x="100" y="55" font-family="Arial Black,Arial,sans-serif" font-weight="900" font-size="28" fill="white" text-anchor="middle">SY</text>
+  <text x="100" y="88" font-family="Arial,sans-serif" font-weight="700" font-size="10" fill="#1a3a6b" text-anchor="middle" letter-spacing="1">SSANGYONG</text>
+</svg>

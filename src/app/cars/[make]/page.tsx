@@ -97,6 +97,9 @@ export default async function MakePage({ params }: Props) {
                     {getCategoryLabel(c, locale)}
                   </span>
                 ))}
+                <Link href={`/cars/${make.slug}/problems`} style={{ padding: '4px 12px', border: '1px solid rgba(230,57,70,0.3)', fontSize: '0.72rem', fontWeight: 700, color: '#e63946', background: 'rgba(230,57,70,0.06)', borderRadius: 99, textDecoration: 'none' }}>
+                  {isEn ? 'Known Issues' : 'בעיות נפוצות'}
+                </Link>
               </div>
             </div>
           </div>

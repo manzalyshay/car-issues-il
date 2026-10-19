@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 100">
+  <rect width="200" height="100" rx="10" fill="white"/>
+  <!-- Jetour: wing / travel mark -->
+  <path d="M50 50 Q75 20 100 36 Q125 20 150 50 Q125 40 100 48 Q75 40 50 50Z" fill="#0057a8"/>
+  <path d="M60 56 Q80 34 100 44 Q120 34 140 56 Q120 48 100 54 Q80 48 60 56Z" fill="#0057a8" opacity="0.5"/>
+  <text x="100" y="80" font-family="Arial Black,Arial,sans-serif" font-weight="900" font-size="14" fill="#0057a8" text-anchor="middle" letter-spacing="3">JETOUR</text>
+</svg>

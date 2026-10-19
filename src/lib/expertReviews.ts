@@ -20,6 +20,7 @@ import { randomUUID as _uuid } from 'crypto';
 import { cache } from 'react';
 import { dbAll, dbFirst, dbRun } from './db';
 import { getMakeBySlug, getModelBySlug } from '@/lib/carsDb';
+import { getCloudflareContext } from '@opennextjs/cloudflare';
 
 const MISTRAL_URL = 'https://api.mistral.ai/v1/chat/completions';
 
@@ -56,6 +57,23 @@ export interface ExpertReview {
   globalPostCount: number;
   sourcesBreakdown: SourceBreakdown[];
   scrapedAt: string;
+  // New fields from batch data
+  sourcesList: { title: string; url: string }[];
+  safetyHe: string | null;
+  techComfortHe: string | null;
+  whoForHe: string | null;
+  recallsIlCount: number | null;
+  recallsNhtsaCount: number | null;
+  priceFromIls: number | null;
+  recallsIlText: string | null;
+  recallsNhtsaText: string | null;
+  chipsJson: {
+    who_for_chip: string | null;
+    safety_chip: string | null;
+    main_strength_chip: string | null;
+    main_weakness_chip: string | null;
+  } | null;
+  prosConsNote: string | null;
 }
 
 export interface UserPost {
@@ -844,6 +862,11 @@ const NO_DATA_PHRASES = [
   'לא נמצאו', 'לא קיים מידע', 'לא ניתן', 'אין תוצאות',
   'לא נאספו', 'לא ידוע', 'לא נסקר', 'אין די',
   'אזכור כללי', 'ללא פרטים ספציפיים', 'אין ביקורות ספציפיות',
+  // Off-topic / irrelevant-post indicators — scraper found unrelated content
+  'לא קשורה לרכב', 'לא קשורים לרכב', 'לא מתייחסים לרכב', 'לא מתייחסים לחוויה',
+  'סוטים לנושאים', 'נושאים אחרים', 'לא נוגעים לביקורת', 'לא נוגעים לרכב',
+  'בצורה הומוריסטית', 'באופן הומוריסטי', 'לא רלוונטי לרכב',
+  'אינם מתייחסים', 'אינם דנים ברכב', 'הדיון אינו',
 ];
 
 function isEmptySummary(s: string | null | undefined): boolean {
@@ -948,7 +971,92 @@ async function callLlm(prompt: string, temperature: number, defaultScore: number
     } catch { /* ignore */ }
   }
 
+  // Last resort: Cloudflare Workers AI (no external key needed)
+  try {
+    const ctx = await getCloudflareContext({ async: true });
+    const ai = (ctx.env as Record<string, unknown>).AI as {
+      run: (model: string, opts: unknown) => Promise<Record<string, unknown>>;
+    } | undefined;
+    if (ai) {
+      const result = await ai.run('@cf/meta/llama-4-scout-17b-16e-instruct', {
+        messages: [{ role: 'user', content: prompt }],
+        max_tokens: 600,
+        temperature,
+      });
+      const raw = typeof result?.response === 'string' ? result.response :
+        (result?.choices as Array<{ message?: { content?: string } }>)?.[0]?.message?.content ?? '';
+      const parsed = parse(raw.trim());
+      if (parsed) return parsed;
+    }
+  } catch { /* ignore */ }
+
   return null;
+}
+
+// ── Real performance context for prompt enrichment ────────────────────────────
+async function buildPerfContext(makeSlug: string, modelSlug: string): Promise<string> {
+  try {
+    const modelRow = await dbFirst(
+      'SELECT category FROM car_models WHERE make_slug = ? AND slug = ?',
+      makeSlug, modelSlug,
+    ) as { category: string | null } | null;
+    const category = modelRow?.category ?? null;
+
+    const m = await dbFirst(`
+      SELECT
+        AVG(acceleration_0_100) AS accel,
+        AVG(top_speed_kmh)      AS speed,
+        AVG(fuel_consumption)   AS fuel,
+        AVG(torque_nm)          AS torque,
+        AVG(curb_weight_kg)     AS weight
+      FROM car_trims
+      WHERE make_slug = ? AND model_slug = ?
+        AND acceleration_0_100 IS NOT NULL
+    `, makeSlug, modelSlug) as { accel: number | null; speed: number | null; fuel: number | null; torque: number | null; weight: number | null } | null;
+
+    if (!m || (!m.accel && !m.speed && !m.fuel)) return '';
+
+    let seg: { accel: number | null; speed: number | null; fuel: number | null } | null = null;
+    if (category) {
+      seg = await dbFirst(`
+        SELECT
+          AVG(t.acceleration_0_100) AS accel,
+          AVG(t.top_speed_kmh)      AS speed,
+          AVG(t.fuel_consumption)   AS fuel
+        FROM car_trims t
+        JOIN car_models cm ON t.make_slug = cm.make_slug AND t.model_slug = cm.slug
+        WHERE cm.category = ?
+          AND t.acceleration_0_100 IS NOT NULL
+          AND NOT (t.make_slug = ? AND t.model_slug = ?)
+      `, category, makeSlug, modelSlug) as { accel: number | null; speed: number | null; fuel: number | null } | null;
+    }
+
+    const parts: string[] = [];
+
+    if (m.accel) {
+      let tag = '';
+      if (seg?.accel) {
+        const delta = (seg.accel - m.accel) / seg.accel;
+        tag = delta > 0.10 ? ' — מהיר מהממוצע בקטגוריה' : delta < -0.10 ? ' — איטי מהממוצע בקטגוריה' : ' — ממוצע לקטגוריה';
+      }
+      parts.push(`האצה 0-100: ${m.accel.toFixed(1)}s${seg?.accel ? ` (ממוצע קטגוריה: ${seg.accel.toFixed(1)}s${tag})` : tag}`);
+    }
+    if (m.speed) {
+      parts.push(`מהירות מקסימלית: ${Math.round(m.speed)} קמ"ש`);
+    }
+    if (m.fuel) {
+      let tag = '';
+      if (seg?.fuel) {
+        const delta = (m.fuel - seg.fuel) / seg.fuel;
+        tag = delta < -0.10 ? ' — חסכוני מהממוצע' : delta > 0.10 ? ' — גבוה מהממוצע' : ' — ממוצע לקטגוריה';
+      }
+      parts.push(`צריכת דלק: ${m.fuel.toFixed(1)} ל/100ק"מ${seg?.fuel ? ` (ממוצע: ${seg.fuel.toFixed(1)}${tag})` : tag}`);
+    }
+    if (m.torque) parts.push(`מומנט: ${Math.round(m.torque)} Nm`);
+    if (m.weight) parts.push(`משקל: ${Math.round(m.weight)} ק"ג`);
+
+    return parts.length > 0 ? `נתוני ביצועים מאומתים (ממוצע מכל הגרסאות): ${parts.join(' | ')}.` : '';
+  } catch { return ''; }
 }
 
 async function summarizeGroup(
@@ -956,6 +1064,7 @@ async function summarizeGroup(
   makeNameHe: string,
   modelNameHe: string,
   scope: 'local' | 'global',
+  perfContext = '',
 ): Promise<SummarizeOutput | null> {
   if (posts.length === 0) return null;
 
@@ -971,10 +1080,14 @@ async function summarizeGroup(
     ? 'הפוסטים הם מפורומים ישראליים — סכם מנקודת מבט של נהגים ישראלים.'
     : 'הפוסטים הם מפורומים בינלאומיים (Reddit ואחרים) — סכם מנקודת מבט של בעלים בפועל.';
 
+  const perfNote = perfContext
+    ? `\n${perfContext}\nאם הביצועים רלוונטיים לפוסטים (מהירות, תאוצה, צריכת דלק) — אפשר להזכיר אותם בהקשר.\n`
+    : '';
+
   const prompt = `אתה עוזר לאתר ביקורות רכב ישראלי. תפקידך לסכם מה בעלי הרכב אומרים.
 
 ${scopeNote}
-
+${perfNote}
 הנה ${Math.min(posts.length, 20)} פוסטים מפורומי משתמשים על ${makeNameHe} ${modelNameHe} (כולל שנת הביקורת כשידוע):
 
 ${postList}
@@ -988,7 +1101,6 @@ ${postList}
 - אל תכתוב תיאור כללי של הרכב — כתוב מה הנהגים אומרים
 - שפה ברורה: במקום "יושבת טוב" כתוב "הרכב יציב בפניות"
 - אל תשתמש ב"סלון" — השתמש בסדאן / האצ'בק / SUV
-- כתוב רק על מה שמוזכר בפוסטים — אל תמציא מידע ואל תציין נתונים טכניים שאינם בפוסטים
 - ציון: 1=גרוע מאוד, 5=ממוצע, 10=מעולה — לפי הרושם הכולל
 - יתרונות/חסרונות: רק מה שמוזכר — אם אין, החזר []
 - אם אין מספיק מידע — כתוב "אין מספיק ביקורות משתמשים כרגע" וציון 5
@@ -1067,6 +1179,17 @@ function mapRow(r: any): ExpertReview {
     globalPostCount: r.global_post_count ?? 0,
     sourcesBreakdown: (() => { try { return Array.isArray(r.sources_breakdown) ? r.sources_breakdown : JSON.parse(String(r.sources_breakdown || '[]')); } catch { return []; } })(),
     scrapedAt: r.scraped_at,
+    sourcesList: (() => { try { return Array.isArray(r.sources_list) ? r.sources_list : JSON.parse(String(r.sources_list || '[]')); } catch { return []; } })(),
+    safetyHe: r.safety_he ?? null,
+    techComfortHe: r.tech_comfort_he ?? null,
+    whoForHe: r.who_for_he ?? null,
+    recallsIlCount: r.recalls_il_count ?? null,
+    recallsNhtsaCount: r.recalls_nhtsa_count ?? null,
+    priceFromIls: r.price_from_ils ?? null,
+    recallsIlText: r.recalls_il_text ?? null,
+    recallsNhtsaText: r.recalls_nhtsa_text ?? null,
+    chipsJson: (() => { try { const v = r.chips_json; if (!v) return null; return typeof v === 'string' ? JSON.parse(v) : v; } catch { return null; } })(),
+    prosConsNote: r.pros_cons_note ?? null,
   };
 }
 
@@ -1129,13 +1252,20 @@ async function generateKnowledgeSummary(
   makeNameEn: string,
   modelNameEn: string,
   year?: number,
+  perfContext = '',
 ): Promise<SummarizeOutput | null> {
   const yearNote = year ? ` ${year}` : '';
   const yearInstr = year
     ? `\nהתמקד על ${year} ספציפית — מה השתנה, תקלות ידועות לאותה שנה, מה בעלים אומרים על אותה גרסה.`
     : '';
+  const perfNote = perfContext
+    ? `\n${perfContext}\nאפשר להזכיר את הביצועים האלה בסיכום (האצה, מהירות, צריכת דלק) — לפי הרלוונטיות.\n`
+    : '';
+  const techRule = perfContext
+    ? '- מותר להזכיר נתוני ביצועים שסופקו למעלה — אסור להמציא מספרים אחרים'
+    : '- אסור לציין גדלי מנוע, מספרים טכניים ספציפיים, או פרטים שאתה לא בטוח לגביהם — שמור על רמה כללית';
   const prompt = `אתה עוזר לאתר ביקורות רכב ישראלי. הצג את המידע מנקודת מבט של בעלי רכב בפועל.
-
+${perfNote}
 כתוב 2-3 משפטים בעברית שמשקפים מה בעלי ${makeNameHe} ${modelNameHe}${yearNote} (${makeNameEn} ${modelNameEn}${year ? ` ${year}` : ''}) בדרך כלל מדווחים.${yearInstr}
 
 חוקים:
@@ -1143,7 +1273,7 @@ async function generateKnowledgeSummary(
 - התמקד בחוויית נהיגה יומיומית, תקלות שחוזרות, עלויות תחזוקה, מה אוהבים ומה לא
 - אל תכתוב תיאור כללי של הרכב (מנוע, גודל, עיצוב) — כתוב מה הנהגים אומרים
 - אל תשתמש במילה "סלון" — השתמש בסדאן/SUV/האצ'בק
-- אסור לציין גדלי מנוע, מספרים טכניים ספציפיים, או פרטים שאתה לא בטוח לגביהם — שמור על רמה כללית
+${techRule}
 - ציון: 9-10 רכב שבעלים ממליצים בחום, 7-8 שביעות רצון כללית, 5-6 מעורב, 3-4 תלונות רבות
 - יתרונות/חסרונות: רק מה שבעלים בפועל מציינים — תכונות ספציפיות של הרכב, לא כלליות
 - אסור לכתוב יתרון/חיסרון על סרטונים, טיפים לקנייה, מקורות מידע — רק על הרכב עצמו
@@ -1192,13 +1322,20 @@ async function generateIsraeliKnowledgeSummary(
   makeNameEn: string,
   modelNameEn: string,
   year?: number,
+  perfContext = '',
 ): Promise<SummarizeOutput | null> {
   const yearNote = year ? ` ${year}` : '';
   const yearInstr = year
     ? `\nהתמקד על ${year} ספציפית — תקלות ידועות, מה שבעלים מציינים לאותה שנה.`
     : '';
+  const perfNote = perfContext
+    ? `\n${perfContext}\nאפשר להזכיר את הביצועים בסיכום אם רלוונטיים.\n`
+    : '';
+  const techRule = perfContext
+    ? '- מותר להזכיר נתוני ביצועים שסופקו למעלה — אסור להמציא מספרים אחרים'
+    : '- אסור לציין גדלי מנוע או נתונים טכניים ספציפיים — שמור על רמה כללית';
   const prompt = `אתה עוזר לאתר ביקורות רכב. כתוב סיכום מנקודת מבט של בעלי רכב בפועל.
-
+${perfNote}
 כתוב 2-3 משפטים בעברית שמשקפים מה בעלי ${makeNameHe} ${modelNameHe}${yearNote} (${makeNameEn} ${modelNameEn}) בדרך כלל מדווחים — חוויית נהיגה יומיומית, אמינות, תחזוקה, שירות.${yearInstr}
 
 חוקים:
@@ -1207,7 +1344,7 @@ async function generateIsraeliKnowledgeSummary(
 - התמקד בחוויית נהיגה יומיומית ועירונית, תקלות שחוזרות, עלויות תחזוקה, מה אוהבים ומה לא
 - אל תכתוב תיאור כללי של הרכב (מנוע, גודל, עיצוב) — כתוב מה הנהגים אומרים
 - אל תשתמש במילה "סלון" — השתמש בסדאן/SUV/האצ'בק
-- אסור לציין גדלי מנוע או נתונים טכניים ספציפיים — שמור על רמה כללית
+${techRule}
 - ציון: 9-10 ממליצים בחום, 7-8 שביעות רצון כללית, 5-6 מעורב, 3-4 תלונות רבות
 
 החזר JSON בלבד:
@@ -1227,6 +1364,190 @@ export interface RawPost {
   reviewYear?: number; // Year the review was written (from datePublished or source metadata)
 }
 
+// ── Motor1.com (international expert reviews) ─────────────────────────────────
+async function searchMotor1(makeEn: string, modelEn: string): Promise<UserPost[]> {
+  const posts: UserPost[] = [];
+  try {
+    const query = encodeURIComponent(`${makeEn} ${modelEn} review`);
+    const res = await fetch(
+      `https://www.motor1.com/search/?q=${query}`,
+      {
+        headers: {
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/124',
+          'Accept-Language': 'en-US,en;q=0.9',
+        },
+        signal: AbortSignal.timeout(12000),
+      }
+    );
+    if (!res.ok) return posts;
+    const html = await res.text();
+
+    // Motor1 search cards: article links with headline + teaser
+    const cardRe = /href="(https:\/\/www\.motor1\.com\/reviews\/[^"]+)"[^>]*>([\s\S]*?)<\/a>/gi;
+    let m;
+    while ((m = cardRe.exec(html)) !== null && posts.length < 3) {
+      const inner = m[2].replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
+      if (inner.length < 15) continue;
+      const titleM = /([A-Z][^.!?\n]{10,120})/.exec(inner);
+      const title = titleM ? titleM[1].trim() : `Motor1 Review: ${makeEn} ${modelEn}`;
+      posts.push({ title, url: m[1], sourceName: 'Motor1', snippet: inner.slice(0, 350) });
+    }
+
+    // JSON description fallback (metadata snippets in page JSON blobs)
+    if (posts.length === 0) {
+      const descRe = /"description"\s*:\s*"([^"]{50,400})"/g;
+      while ((m = descRe.exec(html)) !== null && posts.length < 2) {
+        const text = m[1].replace(/\\n/g, ' ').replace(/\\"/g, '"').trim();
+        if (text.length > 40) {
+          posts.push({
+            title: `Motor1 Review: ${makeEn} ${modelEn}`,
+            url: `https://www.motor1.com/search/?q=${query}`,
+            sourceName: 'Motor1',
+            snippet: text.slice(0, 350),
+          });
+        }
+      }
+    }
+  } catch { /* ignore */ }
+  return posts;
+}
+
+// ── TopGear.com (BBC — expert road tests) ─────────────────────────────────────
+async function searchTopGear(makeEn: string, modelEn: string): Promise<UserPost[]> {
+  const posts: UserPost[] = [];
+  try {
+    const makeSlug  = makeEn.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
+    const modelSlug = modelEn.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
+    const url = `https://www.topgear.com/car-reviews/${makeSlug}/${modelSlug}`;
+    const res = await fetch(url, {
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 Chrome/124',
+        'Accept-Language': 'en-GB,en;q=0.9',
+      },
+      signal: AbortSignal.timeout(12000),
+    });
+    if (!res.ok) return posts;
+    const html = await res.text();
+
+    // Verdict / standfirst / lead paragraph
+    const verdictRe = /class="[^"]*(?:verdict|standfirst|lead-body|article__standfirst|review-summary)[^"]*"[^>]*>([\s\S]{40,800}?)<\/(?:div|p|section)>/gi;
+    let m;
+    while ((m = verdictRe.exec(html)) !== null && posts.length < 2) {
+      const text = m[1].replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
+      if (text.length > 40) posts.push({ title: `Top Gear: ${makeEn} ${modelEn}`, url, sourceName: 'Top Gear', snippet: text.slice(0, 400) });
+    }
+
+    // JSON-LD reviewBody
+    if (posts.length === 0) {
+      const reviewRe = /"reviewBody"\s*:\s*"([^"]{40,600})"/g;
+      while ((m = reviewRe.exec(html)) !== null && posts.length < 2) {
+        const body = m[1].replace(/\\n/g, ' ').trim();
+        if (body.length > 40) posts.push({ title: `Top Gear: ${makeEn} ${modelEn}`, url, sourceName: 'Top Gear', snippet: body.slice(0, 400) });
+      }
+    }
+
+    // Meta description as final fallback
+    if (posts.length === 0) {
+      const descM = html.match(/<meta[^>]+name="description"[^>]+content="([^"]{40,400})"/i)
+                 ?? html.match(/<meta[^>]+content="([^"]{40,400})"[^>]+name="description"/i);
+      if (descM) posts.push({ title: `Top Gear: ${makeEn} ${modelEn}`, url, sourceName: 'Top Gear', snippet: descM[1].trim() });
+    }
+  } catch { /* ignore */ }
+  return posts;
+}
+
+// ── Autocar.co.uk (UK expert reviews — star ratings & verdicts) ───────────────
+async function searchAutocar(makeEn: string, modelEn: string): Promise<UserPost[]> {
+  const posts: UserPost[] = [];
+  try {
+    const makeSlug  = makeEn.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
+    const modelSlug = modelEn.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
+    const url = `https://www.autocar.co.uk/car-review/${makeSlug}/${modelSlug}`;
+    const res = await fetch(url, {
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+        'Accept-Language': 'en-GB,en;q=0.9',
+      },
+      signal: AbortSignal.timeout(12000),
+    });
+    if (!res.ok) return posts;
+    const html = await res.text();
+
+    // Verdict / intro / standfirst paragraphs
+    const verdictRe = /class="[^"]*(?:verdict|review-verdict|article-intro|standfirst|intro-text)[^"]*"[^>]*>([\s\S]{40,800}?)<\/(?:div|p|section)>/gi;
+    let m;
+    while ((m = verdictRe.exec(html)) !== null && posts.length < 2) {
+      const text = m[1].replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
+      if (text.length > 40) posts.push({ title: `Autocar review: ${makeEn} ${modelEn}`, url, sourceName: 'Autocar', snippet: text.slice(0, 400) });
+    }
+
+    // JSON-LD reviewBody
+    if (posts.length === 0) {
+      const reviewRe = /"reviewBody"\s*:\s*"([^"]{40,600})"/g;
+      while ((m = reviewRe.exec(html)) !== null && posts.length < 2) {
+        const body = m[1].replace(/\\n/g, ' ').trim();
+        if (body.length > 40) posts.push({ title: `Autocar: ${makeEn} ${modelEn}`, url, sourceName: 'Autocar', snippet: body.slice(0, 400) });
+      }
+    }
+
+    // Meta description
+    if (posts.length === 0) {
+      const descM = html.match(/<meta[^>]+name="description"[^>]+content="([^"]{40,400})"/i)
+                 ?? html.match(/<meta[^>]+content="([^"]{40,400})"[^>]+name="description"/i);
+      if (descM) posts.push({ title: `Autocar: ${makeEn} ${modelEn}`, url, sourceName: 'Autocar', snippet: descM[1].trim() });
+    }
+  } catch { /* ignore */ }
+  return posts;
+}
+
+// ── autocar.co.il (Israeli expert reviews — Hebrew) ───────────────────────────
+async function searchAutocarIL(makeHe: string, modelHe: string, makeEn: string, modelEn: string): Promise<UserPost[]> {
+  const posts: UserPost[] = [];
+  try {
+    const query = encodeURIComponent(`${makeEn} ${modelEn}`);
+    const res = await fetch(
+      `https://www.autocar.co.il/?s=${query}`,
+      {
+        headers: {
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)',
+          'Accept-Language': 'he-IL,he;q=0.9,en;q=0.8',
+        },
+        signal: AbortSignal.timeout(12000),
+      }
+    );
+    if (!res.ok) return posts;
+    const html = await res.text();
+
+    // Search result article cards: <h2 class="entry-title"><a href="...">title</a></h2> + excerpt
+    const cardRe = /<h[23][^>]*class="[^"]*(?:entry-title|post-title)[^"]*"[^>]*>\s*<a[^>]+href="(https:\/\/www\.autocar\.co\.il\/[^"]+)"[^>]*>([^<]{5,200})<\/a>/gi;
+    let m;
+    const seen = new Set<string>();
+    while ((m = cardRe.exec(html)) !== null && posts.length < 4) {
+      const url2 = m[1];
+      const title = m[2].replace(/&[a-z#\d]+;/g, ' ').replace(/\s+/g, ' ').trim();
+      if (!title || seen.has(url2)) continue;
+      seen.add(url2);
+      // Look for the excerpt text near this card position
+      const excerptM = html.slice(m.index, m.index + 800).match(/<p[^>]*class="[^"]*excerpt[^"]*"[^>]*>([^<]{30,300})<\/p>/i)
+                    ?? html.slice(m.index, m.index + 800).match(/<p[^>]*>([^<]{30,300})<\/p>/i);
+      const snippet = excerptM ? excerptM[1].replace(/&[a-z#\d]+;/g, '').trim() : title;
+      posts.push({ title, url: url2, sourceName: 'Autocar ישראל', snippet: snippet.slice(0, 350) });
+    }
+
+    // Fallback: plain paragraph text from search results page
+    if (posts.length === 0) {
+      const snippetRe = /<p[^>]*>([^<]{60,400})<\/p>/gi;
+      while ((m = snippetRe.exec(html)) !== null && posts.length < 2) {
+        const text = m[1].replace(/&[a-z#\d]+;/g, '').replace(/\s+/g, ' ').trim();
+        if (text.length > 50 && (text.includes(makeEn) || text.includes(modelEn) || text.includes(makeHe) || text.includes(modelHe))) {
+          posts.push({ title: `Autocar ישראל: ${makeEn} ${modelEn}`, url: `https://www.autocar.co.il/?s=${query}`, sourceName: 'Autocar ישראל', snippet: text.slice(0, 350) });
+        }
+      }
+    }
+  } catch { /* ignore */ }
+  return posts;
+}
+
 async function gatherUserPosts(
   makeNameHe: string, modelNameHe: string,
   makeNameEn: string, modelNameEn: string,
@@ -1236,7 +1557,7 @@ async function gatherUserPosts(
     tapuzPosts, icarPosts, carzonePosts,
     carComplaintsPosts, nhtsaPosts, edmundsPosts, zigWheelsPosts, kbbPosts, drivePosts,
     carsComPosts, autoExpressPosts, whatCarPosts, carExpertPosts, carSalesPosts,
-    facebookPosts,
+    facebookPosts, motor1Posts, topGearPosts, autocarPosts, autocarILPosts,
   ] = await Promise.all([
     searchTapuz(makeNameHe, modelNameHe, year),
     searchIcar(makeNameHe, modelNameHe, year),
@@ -1253,11 +1574,15 @@ async function gatherUserPosts(
     searchCarExpertAu(makeNameEn, modelNameEn),
     searchCarSalesAu(makeNameEn, modelNameEn),
     searchFacebook(makeNameHe, modelNameHe, year),
+    searchMotor1(makeNameEn, modelNameEn),
+    searchTopGear(makeNameEn, modelNameEn),
+    searchAutocar(makeNameEn, modelNameEn),
+    searchAutocarIL(makeNameHe, modelNameHe, makeNameEn, modelNameEn),
   ]);
   return {
-    local:   [...icarPosts, ...drivePosts, ...carzonePosts, ...tapuzPosts, ...facebookPosts],
-    global:  [...kbbPosts, ...zigWheelsPosts, ...edmundsPosts, ...nhtsaPosts, ...carComplaintsPosts, ...carsComPosts, ...autoExpressPosts, ...whatCarPosts, ...carExpertPosts, ...carSalesPosts],
-    primary: tapuzPosts[0] ?? kbbPosts[0] ?? zigWheelsPosts[0] ?? nhtsaPosts[0],
+    local:   [...icarPosts, ...drivePosts, ...carzonePosts, ...tapuzPosts, ...autocarILPosts, ...facebookPosts],
+    global:  [...kbbPosts, ...zigWheelsPosts, ...edmundsPosts, ...nhtsaPosts, ...carComplaintsPosts, ...carsComPosts, ...autoExpressPosts, ...whatCarPosts, ...carExpertPosts, ...carSalesPosts, ...motor1Posts, ...topGearPosts, ...autocarPosts],
+    primary: tapuzPosts[0] ?? autocarILPosts[0] ?? kbbPosts[0] ?? zigWheelsPosts[0] ?? nhtsaPosts[0],
   };
 }
 
@@ -1293,17 +1618,19 @@ export async function summarizeFromPosts(
   // Convert RawPost back to UserPost for summarizeGroup
   const toUserPost = (p: RawPost): UserPost => ({ title: p.title, url: p.url, sourceName: p.sourceName, snippet: p.snippet, score: p.score });
 
+  const perfContext = await buildPerfContext(makeSlug, modelSlug);
+
   let [localOut, globalOut] = await Promise.all([
-    localPosts.length  > 0 ? summarizeGroup(localPosts.map(toUserPost),  makeNameHe, modelNameHe, 'local')  : null,
-    globalPosts.length > 0 ? summarizeGroup(globalPosts.map(toUserPost), makeNameHe, modelNameHe, 'global') : null,
+    localPosts.length  > 0 ? summarizeGroup(localPosts.map(toUserPost),  makeNameHe, modelNameHe, 'local',  perfContext) : null,
+    globalPosts.length > 0 ? summarizeGroup(globalPosts.map(toUserPost), makeNameHe, modelNameHe, 'global', perfContext) : null,
   ]);
 
   if (!globalOut) {
-    globalOut = await generateKnowledgeSummary(makeNameHe, modelNameHe, makeNameEn, modelNameEn);
+    globalOut = await generateKnowledgeSummary(makeNameHe, modelNameHe, makeNameEn, modelNameEn, undefined, perfContext);
     if (!globalOut) return 0;
   }
   if (!localOut) {
-    localOut = await generateIsraeliKnowledgeSummary(makeNameHe, modelNameHe, makeNameEn, modelNameEn);
+    localOut = await generateIsraeliKnowledgeSummary(makeNameHe, modelNameHe, makeNameEn, modelNameEn, undefined, perfContext);
   }
 
   const scores: number[] = [];
@@ -1479,9 +1806,10 @@ export async function scrapeExpertReviews(
   modelNameEn: string,
   year?: number,
 ): Promise<number> {
-  const { local: rawLocal, global: rawGlobal, primary } = await gatherUserPosts(
-    makeNameHe, modelNameHe, makeNameEn, modelNameEn, year,
-  );
+  const [{ local: rawLocal, global: rawGlobal, primary }, perfContext] = await Promise.all([
+    gatherUserPosts(makeNameHe, modelNameHe, makeNameEn, modelNameEn, year),
+    buildPerfContext(makeSlug, modelSlug),
+  ]);
 
   // When generating a year-specific review, only use posts that explicitly
   // mention the target year in their title or snippet.
@@ -1496,16 +1824,16 @@ export async function scrapeExpertReviews(
   }
 
   let [localOut, globalOut] = await Promise.all([
-    localPosts.length  > 0 ? summarizeGroup(localPosts,  makeNameHe, modelNameHe, 'local')  : null,
-    globalPosts.length > 0 ? summarizeGroup(globalPosts, makeNameHe, modelNameHe, 'global') : null,
+    localPosts.length  > 0 ? summarizeGroup(localPosts,  makeNameHe, modelNameHe, 'local',  perfContext) : null,
+    globalPosts.length > 0 ? summarizeGroup(globalPosts, makeNameHe, modelNameHe, 'global', perfContext) : null,
   ]);
 
   if (!globalOut) {
-    globalOut = await generateKnowledgeSummary(makeNameHe, modelNameHe, makeNameEn, modelNameEn, year);
+    globalOut = await generateKnowledgeSummary(makeNameHe, modelNameHe, makeNameEn, modelNameEn, year, perfContext);
     if (!globalOut) return 0;
   }
   if (!localOut) {
-    localOut = await generateIsraeliKnowledgeSummary(makeNameHe, modelNameHe, makeNameEn, modelNameEn, year);
+    localOut = await generateIsraeliKnowledgeSummary(makeNameHe, modelNameHe, makeNameEn, modelNameEn, year, perfContext);
   }
 
   const scores = [localOut?.score, globalOut?.score].filter((s): s is number => s != null);

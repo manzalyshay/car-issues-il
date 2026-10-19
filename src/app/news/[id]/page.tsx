@@ -1,8 +1,9 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
-import { notFound } from 'next/navigation';
+import { notFound, permanentRedirect } from 'next/navigation';
 import { getHostLocale, getBaseUrl } from '@/lib/hostLocale';
-import { getNewsArticle } from '@/lib/carNews';
+import { getNewsArticleBySegment } from '@/lib/carNews';
+import { newsPath, newsSegment } from '@/lib/newsSlug';
 import NewsAdminActions from '@/components/NewsAdminActions';
 
 export const revalidate = 1800;
@@ -28,16 +29,16 @@ interface Props { params: Promise<{ id: string }> }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { id } = await params;
-  const [locale, article] = await Promise.all([getHostLocale(), getNewsArticle(id)]);
+  const [locale, article] = await Promise.all([getHostLocale(), getNewsArticleBySegment(id)]);
   if (!article) return {};
   const base = getBaseUrl(locale);
   const isHe = locale === 'he';
   const title = isHe ? (article.title_he ?? article.title_en) : (article.title_en ?? article.title_he);
   const desc  = isHe ? (article.body_he ?? article.body_en) : (article.body_en ?? article.body_he);
   return {
-    title: `${title} | CarIssues`,
+    title,
     description: desc?.slice(0, 160) ?? '',
-    alternates: { canonical: `${base}/news/${id}` },
+    alternates: { canonical: `${base}${newsPath(article)}` },
     openGraph: {
       title: title ?? '',
       description: desc?.slice(0, 160) ?? '',
@@ -49,8 +50,11 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
 export default async function NewsArticlePage({ params }: Props) {
   const { id } = await params;
-  const [locale, article] = await Promise.all([getHostLocale(), getNewsArticle(id)]);
+  const [locale, article] = await Promise.all([getHostLocale(), getNewsArticleBySegment(id)]);
   if (!article) notFound();
+  // Old hash URLs (/news/<sha1>) and stale slugs → the canonical slug URL (308).
+  // Works as a real HTTP redirect because no loading boundary wraps this segment.
+  if (decodeURIComponent(id) !== newsSegment(article)) permanentRedirect(newsPath(article));
 
   const isHe = locale === 'he';
   const title = isHe ? (article.title_he ?? article.title_en) : (article.title_en ?? article.title_he);
@@ -63,7 +67,7 @@ export default async function NewsArticlePage({ params }: Props) {
     '@type': 'NewsArticle',
     headline: title,
     description: (isHe ? article.body_he : article.body_en)?.slice(0, 160) ?? '',
-    url: `${base}/news/${id}`,
+    url: `${base}${newsPath(article)}`,
     ...(article.image_url ? { image: [article.image_url] } : {}),
     ...(article.published_at ? { datePublished: article.published_at } : {}),
     publisher: {
@@ -158,7 +162,7 @@ export default async function NewsArticlePage({ params }: Props) {
           </Link>
         </div>
 
-        <NewsAdminActions newsId={id} />
+        <NewsAdminActions newsId={article.id} />
 
       </div>
     </div>

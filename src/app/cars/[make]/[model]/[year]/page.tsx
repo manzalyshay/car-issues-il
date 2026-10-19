@@ -5,15 +5,16 @@ import { getMakeBySlug, getModelBySlug, getCategoryLabel, getSimilarModels } fro
 import { getHostLocale, getBaseUrl } from '@/lib/hostLocale';
 import { translations } from '@/lib/translations';
 import { getReviewsForModel } from '@/lib/reviewsDb';
-import { getExpertReviewsForYear } from '@/lib/expertReviews';
+import { getExpertReviews } from '@/lib/expertReviews';
 import { getTrimSpecs } from '@/lib/trimSpecsDb';
 import { findCarModel } from '@/lib/sketchfab';
-import { getImagesForCar } from '@/lib/carImages';
+import { getImagesForYear } from '@/lib/carImages';
 import { getModelRepairCosts } from '@/lib/repairCostsDb';
 import { getRecallsFromCache } from '@/lib/recallsDb';
+import { isModelYearIndexable } from '@/lib/seoIndexing';
 import SharePopup from '@/components/SharePopup';
 import RecallsBadge from '@/components/RecallsBadge';
-import Car3DViewer from '@/components/Car3DViewer';
+import HeroMedia from '@/components/HeroMedia';
 import CarSidebarLayout from '../CarSidebarLayout';
 import ModelReviewsSection from '../ModelReviewsSection';
 import VerdictCard from '@/components/VerdictCard';
@@ -25,6 +26,17 @@ import FollowButton from '@/components/FollowButton';
 export const revalidate = 86400;
 
 interface Props { params: Promise<{ make: string; model: string; year: string }> }
+
+// New-car list prices below this are bad scraped data (e.g. monthly lease figures)
+const MIN_PLAUSIBLE_PRICE_ILS = 20000;
+
+function getPriceRange(trims: { priceIls?: number | null }[]): { minPrice: number | null; maxPrice: number | null } {
+  const prices = trims
+    .map(t => t.priceIls)
+    .filter((p): p is number => typeof p === 'number' && p >= MIN_PLAUSIBLE_PRICE_ILS);
+  if (prices.length === 0) return { minPrice: null, maxPrice: null };
+  return { minPrice: Math.min(...prices), maxPrice: Math.max(...prices) };
+}
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { make: makeSlug, model: modelSlug, year } = await params;
@@ -38,21 +50,21 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const base = getBaseUrl(locale);
   const url = `${base}/cars/${make.slug}/${model.slug}/${year}`;
 
-  const [allReviews, trims, { review: metaExpertReview }, metaRecalls] = await Promise.all([
+  const [allReviews, trims, metaExpertReviewsList, metaRecalls] = await Promise.all([
     getReviewsForModel(makeSlug, modelSlug).catch(() => []),
     getTrimSpecs(makeSlug, modelSlug, yearNum).catch(() => []),
-    getExpertReviewsForYear(makeSlug, modelSlug, yearNum).catch(() => ({ review: null })),
+    getExpertReviews(makeSlug, modelSlug).catch(() => []),
     getRecallsFromCache(make.nameEn, model.nameEn).catch(() => []),
   ]);
+
+  const metaExpertReview = Array.isArray(metaExpertReviewsList) ? (metaExpertReviewsList[0] ?? null) : null;
 
   const yearReviews = allReviews.filter(r => r.year === yearNum);
   const avgRating = yearReviews.length
     ? yearReviews.reduce((s, r) => s + r.rating, 0) / yearReviews.length
     : null;
 
-  const trimsWithPrice = trims.filter(t => t.priceIls);
-  const minPrice = trimsWithPrice.length > 0 ? Math.min(...trimsWithPrice.map(t => t.priceIls!)) : null;
-  const maxPrice = trimsWithPrice.length > 0 ? Math.max(...trimsWithPrice.map(t => t.priceIls!)) : null;
+  const { minPrice, maxPrice } = getPriceRange(trims);
   const priceHook = minPrice
     ? ` · ₪${Math.round(minPrice / 1000)}K${maxPrice && maxPrice !== minPrice ? `–₪${Math.round(maxPrice / 1000)}K` : ''}`
     : '';
@@ -61,7 +73,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     : minPrice ? ` מחיר מומלץ: ₪${minPrice.toLocaleString('he-IL')}.` : '';
   const trimNames = trims.slice(0, 4).map(t => t.name).join(', ');
   const trimDesc = trimNames ? ` גימורים: ${trimNames}${trims.length > 4 ? ' ועוד' : ''}.` : '';
-  const hasContent = yearReviews.length > 0 || !!metaExpertReview || metaRecalls.length > 0;
+  const indexable = await isModelYearIndexable(makeSlug, modelSlug, yearNum, model.years ?? []);
 
   if (locale === 'en') {
     const ratingStr = avgRating ? ` ⭐ ${avgRating.toFixed(1)}` : '';
@@ -75,9 +87,9 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     return {
       title: `${make.nameEn} ${model.nameEn} ${year} — ${reviewPart} | Specs & Price`,
       description: `${yearReviews.length > 0 ? `${yearReviews.length} real owner reviews` : 'Real owner reviews'} for the ${make.nameEn} ${model.nameEn} ${year}${avgRating ? `. Average rating ${avgRating.toFixed(1)}/5` : ''}.${expertPart}${prosPart}${consPart}${recallPart} Common problems and reliability.`,
-      robots: hasContent ? { index: true, follow: true } : { index: false, follow: true },
+      robots: indexable ? { index: true, follow: true } : { index: false, follow: true },
       alternates: { canonical: url, languages: { he: `https://carissues.co.il/cars/${make.slug}/${model.slug}/${year}`, en: url, 'x-default': url } },
-      openGraph: { title: `${make.nameEn} ${model.nameEn} ${year} | CarIssues`, description: `Owner reviews & reliability — ${make.nameEn} ${model.nameEn} ${year}`, url, images: [{ url: '/og-default.svg', width: 1200, height: 630 }] },
+      openGraph: { title: `${make.nameEn} ${model.nameEn} ${year} | CarIssues`, description: `Owner reviews & reliability — ${make.nameEn} ${model.nameEn} ${year}`, url, images: [{ url: '/og-default.png', width: 1200, height: 630 }] },
     };
   }
 
@@ -89,9 +101,9 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   return {
     title: `${make.nameHe} ${model.nameHe} ${year}${priceHook} — ${reviewPart} | מחיר, מפרט ואמינות`,
     description: `${yearReviews.length > 0 ? `${yearReviews.length} ביקורות אמיתיות על` : 'כל מה שצריך לדעת על'} ${make.nameHe} ${model.nameHe} ${year} (${make.nameEn} ${model.nameEn})${avgRating ? ` — דירוג ממוצע ${avgRating.toFixed(1)}/5` : ''}.${priceDesc}${trimDesc}${recallPartHe} יתרונות, חסרונות ובעיות נפוצות מבעלי רכב בישראל.`,
-    robots: hasContent ? { index: true, follow: true } : { index: false, follow: true },
+    robots: indexable ? { index: true, follow: true } : { index: false, follow: true },
     alternates: { canonical: url, languages: { he: url, en: `https://carissues.net/cars/${make.slug}/${model.slug}/${year}`, 'x-default': `https://carissues.net/cars/${make.slug}/${model.slug}/${year}` } },
-    openGraph: { title: `${make.nameHe} ${model.nameHe} ${year}${ratingStr} | CarIssues IL`, description: `ביקורות ואמינות — ${make.nameHe} ${model.nameHe} ${year}`, url, images: [{ url: '/og-default.svg', width: 1200, height: 630 }] },
+    openGraph: { title: `${make.nameHe} ${model.nameHe} ${year}${ratingStr} | CarIssues IL`, description: `ביקורות ואמינות — ${make.nameHe} ${model.nameHe} ${year}`, url, images: [{ url: '/og-default.png', width: 1200, height: 630 }] },
   };
 }
 
@@ -108,15 +120,16 @@ export default async function CarYearPage({ params }: Props) {
 
   const [allReviews, expertReviewsList, sketchfabModel, similarModels, carImages, modelRepairCosts, trimSpecs] = await Promise.all([
     getReviewsForModel(makeSlug, modelSlug).catch(() => []),
-    getExpertReviewsForYear(makeSlug, modelSlug, yearNum).catch(() => ({ review: null, isYearSpecific: false })),
-    findCarModel(makeSlug, modelSlug).catch(() => null),
+    getExpertReviews(makeSlug, modelSlug).catch(() => []),
+    findCarModel(makeSlug, modelSlug, yearNum).catch(() => null),
     getSimilarModels(makeSlug, modelSlug, model.category, 4).catch(() => []),
-    getImagesForCar(makeSlug, modelSlug).catch(() => []),
+    getImagesForYear(makeSlug, modelSlug, yearNum).catch(() => []),
     getModelRepairCosts(makeSlug, modelSlug).catch(() => []),
-    getTrimSpecs(makeSlug, modelSlug).catch(() => []),
+    getTrimSpecs(makeSlug, modelSlug, yearNum).catch(() => []),
   ]);
+  const { minPrice: schemaMinPrice, maxPrice: schemaMaxPrice } = getPriceRange(trimSpecs);
 
-  const expertReview = (expertReviewsList as { review: unknown }).review ?? null;
+  const expertReview = Array.isArray(expertReviewsList) ? (expertReviewsList[0] ?? null) : null;
 
   // Year-specific stats for the hero — model page shows all-time avg
   const yearReviews = allReviews.filter(r => r.year === yearNum);
@@ -133,6 +146,18 @@ export default async function CarYearPage({ params }: Props) {
   const cp = translations[locale].carPage;
   const makeName = isEn ? make.nameEn : make.nameHe;
   const modelName = isEn ? model.nameEn : model.nameHe;
+
+  // 3D relevance: if year_from/year_to set, the lookup already returned the right model;
+  // fall back to name-based year check for legacy entries without year range
+  const relevantSketchfabModel = (() => {
+    if (!sketchfabModel) return null;
+    if (sketchfabModel.yearFrom != null) return sketchfabModel; // year-aware lookup handled it
+    const m = sketchfabModel.name.match(/\b(19|20)\d{2}\b/);
+    if (!m) return sketchfabModel;
+    const fab3dYear = parseInt(m[0]);
+    if (fab3dYear < yearNum - 12) return null;
+    return sketchfabModel;
+  })();
 
   return (
     <div style={{ background: 'var(--bg)', minHeight: '100vh' }}>
@@ -218,33 +243,16 @@ export default async function CarYearPage({ params }: Props) {
             </div>
 
             {/* Hero media */}
-            <div style={{ display: 'grid', gap: 8, justifySelf: 'end', width: '100%' }}>
-              {/* Enlarged 3D viewer frame */}
-              <div style={{ borderRadius: 20, padding: 10, background: 'linear-gradient(160deg,#212c56 0%,#131a3a 100%)', boxShadow: '0 24px 54px -24px rgba(0,0,0,0.65),inset 0 0 0 1px rgba(255,255,255,0.07)' }}>
-                <div style={{ position: 'relative', aspectRatio: '16/10', borderRadius: 12, overflow: 'hidden', background: 'radial-gradient(ellipse at 50% 38%,#171923 0%,#06070c 72%)', border: '1px solid rgba(255,255,255,0.09)' }}>
-                  {sketchfabModel ? (
-                    <Car3DViewer uid={sketchfabModel.uid} modelName={sketchfabModel.name} author={sketchfabModel.author} makeSlug={make.slug} modelSlug={model.slug} carImageUrl={carImages[0]?.url} />
-                  ) : carImages[0]?.url ? (
-                    /* eslint-disable-next-line @next/next/no-img-element */
-                    <img src={carImages[0].url} alt={`${make.nameEn} ${model.nameEn} ${year}`} fetchPriority="high" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
-                  ) : (
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%' }}>
-                      <span style={{ fontSize: 12, color: '#7ba0e8', letterSpacing: '.1em', fontWeight: 600 }}>
-                        {isEn ? `${make.nameEn} ${model.nameEn} ${year}` : `${make.nameHe} ${model.nameHe} ${year}`}
-                      </span>
-                    </div>
-                  )}
-                </div>
-              </div>
-              {!sketchfabModel && carImages.length > 1 && (
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5,1fr)', gap: 5 }}>
-                  {carImages.slice(0, 5).map((img, i) => (
-                    /* eslint-disable-next-line @next/next/no-img-element */
-                    <img key={i} src={img.url} alt="" style={{ aspectRatio: '4/3', width: '100%', borderRadius: 8, objectFit: 'cover', display: 'block', opacity: i === 0 ? 1 : 0.72, outline: i === 0 ? '2px solid #7ba0e8' : 'none' }} loading="lazy" />
-                  ))}
-                </div>
-              )}
-            </div>
+            <HeroMedia
+              images={carImages}
+              sketchfabModel={relevantSketchfabModel}
+              makeSlug={make.slug}
+              modelSlug={model.slug}
+              makeNameEn={make.nameEn}
+              modelNameEn={model.nameEn}
+              yearRange={year}
+              categoryLabel={getCategoryLabel(model.category, locale)}
+            />
           </div>
         </div>
       </section>
@@ -262,9 +270,10 @@ export default async function CarYearPage({ params }: Props) {
         modelYears={model.years}
         defaultYear={yearNum}
         hasSpecs={trimSpecs.length > 0}
-        hasImages={carImages.length > 0 || sketchfabModel !== null}
+        hasImages={carImages.length > 0 || relevantSketchfabModel !== null}
         hasRepairCosts={modelRepairCosts.length > 0}
-        sketchfabModel={sketchfabModel}
+        sketchfabModel={relevantSketchfabModel}
+        year={yearNum}
       >
         {/* ── Owner reviews — pre-filtered to this year ── */}
         <div id="reviews" style={{ paddingTop: 0 }}>
@@ -280,6 +289,10 @@ export default async function CarYearPage({ params }: Props) {
 
         {/* ── AI Verdict Card ── */}
         <div style={{ marginTop: 28 }}>
+          <div style={{ fontSize: 12, color: '#8595a6', background: '#f0f4f8', border: '1px solid #dde3ea', borderRadius: 8, padding: '6px 12px', marginBottom: 10, display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+            <span>ℹ️</span>
+            <span>{isEn ? `AI summary covers the full ${make.nameEn} ${model.nameEn} model range, not ${year} only.` : `סיכום ה-AI מתייחס לדגם ${make.nameHe} ${model.nameHe} בכלל, לא רק לשנת ${year}.`}</span>
+          </div>
           <VerdictCard
             expertReview={expertReview as Parameters<typeof VerdictCard>[0]['expertReview']}
             repairCosts={modelRepairCosts}
@@ -369,11 +382,21 @@ export default async function CarYearPage({ params }: Props) {
             __html: JSON.stringify({
               '@context': 'https://schema.org',
               '@graph': [
-                {
+                // Google rejects Product without offers, review or aggregateRating
+                ...((schemaMinPrice !== null || yearReviews.length > 0) ? [{
                   '@type': 'Product',
                   name: `${make.nameEn} ${model.nameEn} ${year}`,
                   brand: { '@type': 'Brand', name: make.nameEn },
                   url: `${base}/cars/${make.slug}/${model.slug}/${year}`,
+                  ...(schemaMinPrice !== null && schemaMaxPrice !== null && {
+                    offers: {
+                      '@type': 'AggregateOffer',
+                      priceCurrency: 'ILS',
+                      lowPrice: schemaMinPrice,
+                      highPrice: schemaMaxPrice,
+                      offerCount: trimSpecs.filter(t => (t.priceIls ?? 0) >= MIN_PLAUSIBLE_PRICE_ILS).length,
+                    },
+                  }),
                   ...(avgRating !== null && {
                     aggregateRating: {
                       '@type': 'AggregateRating',
@@ -391,7 +414,7 @@ export default async function CarYearPage({ params }: Props) {
                     author: { '@type': 'Person', name: r.authorName },
                     datePublished: r.createdAt.split('T')[0],
                   })),
-                },
+                }] : []),
                 {
                   '@type': 'BreadcrumbList',
                   itemListElement: [

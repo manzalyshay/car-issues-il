@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 100">
+  <rect width="200" height="100" rx="10" fill="white"/>
+  <!-- Geely: G in circle with outer ring -->
+  <circle cx="100" cy="46" r="32" fill="none" stroke="#003087" stroke-width="4"/>
+  <circle cx="100" cy="46" r="24" fill="#003087"/>
+  <!-- G letter cutout style -->
+  <path d="M116 46 L106 46 L106 52 L112 52 Q108 62 98 62 Q84 62 84 46 Q84 30 98 30 Q110 30 114 40 L120 37 Q114 22 98 22 Q78 22 78 46 Q78 70 98 70 Q118 70 118 52 L118 46Z" fill="white"/>
+  <text x="100" y="90" font-family="Arial,sans-serif" font-weight="700" font-size="12" fill="#003087" text-anchor="middle" letter-spacing="3">GEELY</text>
+</svg>

@@ -25,20 +25,35 @@ function titleYearOk(title: string | null, requestedYear: number): boolean {
   return found.some(y => Math.abs(parseInt(y) - requestedYear) <= 5);
 }
 
+// Extract the most recent year mentioned in an image title
+function extractTitleYear(title: string | null): number | null {
+  if (!title) return null;
+  const found = title.match(/\b(19[5-9]\d|20[0-3]\d)\b/g);
+  if (!found) return null;
+  return Math.max(...found.map(y => parseInt(y)));
+}
+
 export async function getImagesForCar(makeSlug: string, modelSlug: string): Promise<CarImage[]> {
-  // Include year-tagged images from the last 12 years + null-year images, newest year first.
-  // 12-year window covers discontinued models (e.g. Giulietta last made 2020)
-  // while still filtering very old photos. Hidden flag handles bad/vintage images.
-  const recentThreshold = new Date().getFullYear() - 12;
-  return dbAll<CarImage>(
+  // Only show images from the last 10 years (year column) + null-year images.
+  // For null-year images, extract year from title and reject if > 10 years old.
+  const cutoff = new Date().getFullYear() - 10;
+  const rows = await dbAll<CarImage>(
     `SELECT * FROM car_images
      WHERE make_slug = ? AND model_slug = ?
        AND (year IS NULL OR year >= ?)
        AND (hidden IS NULL OR hidden != 1)
      ORDER BY year DESC NULLS LAST, created_at ASC
-     LIMIT 20`,
-    makeSlug, modelSlug, recentThreshold,
+     LIMIT 40`,
+    makeSlug, modelSlug, cutoff,
   );
+  // Filter null-year rows whose title reveals an old year
+  return rows
+    .filter(img => {
+      if (img.year !== null) return true;
+      const titleYear = extractTitleYear(img.title);
+      return titleYear === null || titleYear >= cutoff;
+    })
+    .slice(0, 20);
 }
 
 export async function getImagesForYear(makeSlug: string, modelSlug: string, year: number): Promise<CarImage[]> {

@@ -260,7 +260,7 @@ export const translations = {
     },
     recalls: {
       title: 'ריקולים וקריאות חזרה',
-      source: 'מקור: NHTSA',
+      source: 'מקור: ריקולים בארה״ב (NHTSA)',
       allYears: 'כל השנים',
       loading: 'טוען ריקולים...',
       noneFound: 'לא נמצאו ריקולים',
@@ -270,6 +270,19 @@ export const translations = {
       riskLabel: 'סכנה אפשרית',
       fixLabel: 'פתרון / תיקון',
       moreDetails: 'פרטים נוספים באתר NHTSA ←',
+    },
+    complaints: {
+      title: 'תלונות בעלים',
+      loading: 'טוען תלונות...',
+      noneFound: 'לא נמצאו תלונות עבור רכב זה',
+      source: 'מקור: NHTSA (ארה"ב)',
+      total: 'תלונות',
+      byComponent: 'לפי רכיב',
+      moreDetails: 'צפה בתלונה המלאה באתר NHTSA ←',
+      crash: 'תאונה',
+      fire: 'שריפה',
+      injury: 'פציעה',
+      notAvailable: 'נתוני תלונות אינם זמינים עבור רכב זה (כנראה לא נמכר בארה"ב)',
     },
     repairCosts: {
       title: 'עלויות תיקון',
@@ -799,6 +812,19 @@ export const translations = {
       fixLabel: 'Solution / Fix',
       moreDetails: 'More details on NHTSA ←',
     },
+    complaints: {
+      title: 'Owner Complaints',
+      loading: 'Loading complaints...',
+      noneFound: 'No complaints found for this vehicle',
+      source: 'Source: NHTSA (US)',
+      total: 'complaints',
+      byComponent: 'By component',
+      moreDetails: 'View full complaint on NHTSA ←',
+      crash: 'Crash',
+      fire: 'Fire',
+      injury: 'Injury',
+      notAvailable: 'Complaint data not available for this vehicle (likely not sold in the US)',
+    },
     repairCosts: {
       title: 'Repair Costs',
       basedOn: 'Based on',
@@ -1082,6 +1108,7 @@ export type Translations = {
   makePage: { selectModel: string; models: string; issues: string; reviews: string; compare: string };
   reviewForm: { title: string; successTitle: string; successBody: string; addAnother: string; yearLabel: string; trimLabel: string; trimOptional: string; nameLabel: string; namePlaceholder: string; categoryLabel: string; mileageLabel: string; mileagePlaceholder: string; ratingLabel: string; titleLabel: string; titleOptional: string; titlePlaceholder: string; bodyLabel: string; bodyPlaceholder: string; photosLabel: string; required: string; selectYear: string; selectTrim: string; submitLabel: string; saving: string; uploading: string; addPhoto: string; errName: string; errBody: string; errYear: string; errCaptcha: string; errUploadLimit: string; errUpload: string; ratingLabels: Record<number, string>; categories: Record<string, string> };
   recalls: { title: string; source: string; allYears: string; loading: string; noneFound: string; noneForYear: string; component: string; descLabel: string; riskLabel: string; fixLabel: string; moreDetails: string };
+  complaints: { title: string; loading: string; noneFound: string; source: string; total: string; byComponent: string; moreDetails: string; crash: string; fire: string; injury: string; notAvailable: string };
   repairCosts: { title: string; basedOn: string; ownerReports: string; median: string; reports: string; noData: string; noDataSuffix: string; disclaimer: string; garage: Record<string, string> };
   trimSpecs: { loading: string; noData: string; noDataSuffix: string; selectTrim: string; included: string; notIncluded: string; recommended: string; engine: string; interior: string; engineType: string; engineCc: string; engineHp: string; transmission: string; drive: string; upholstery: string; seats: string; screen: string; moreDetails: string; disclaimer: string; hp: string; cc: string; sections: Record<string, string>; engineTypes: Record<string, string>; transmissions: Record<string, string>; drives: Record<string, string>; upholsteries: Record<string, string> };
   firstReviewCta: { title: string; body: string; cta: string };

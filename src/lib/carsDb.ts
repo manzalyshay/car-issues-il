@@ -11,7 +11,7 @@ export { getCategoryLabel } from '@/data/cars';
 
 // In-memory cache per isolate
 const CACHE_TTL_MS = 60 * 60 * 1000; // 1 hour
-const EDGE_CACHE_URL = 'https://cache.internal/allMakes-v6';
+const EDGE_CACHE_URL = 'https://cache.internal/allMakes-v8';
 const g = globalThis as typeof globalThis & {
   _carsCache?: { data: CarMake[]; ts: number };
 };
@@ -26,7 +26,7 @@ async function fetchAllMakes(): Promise<CarMake[]> {
 
   // 2. Cloudflare edge Cache API (survives isolate resets — reduces D1 reads by ~95%)
   try {
-    const edgeCache = await caches.open('cars-v3');
+    const edgeCache = await caches.open('cars-v4');
     const hit = await edgeCache.match(EDGE_CACHE_URL);
     if (hit) {
       const data = await hit.json() as CarMake[];
@@ -44,8 +44,8 @@ async function fetchAllMakes(): Promise<CarMake[]> {
     dbAll<{
       slug: string; make_slug: string; name_he: string; name_en: string;
       years: string; category: string; trims: string; sort_order: number;
-      leading_image_url: string | null;
-    }>('SELECT slug, make_slug, name_he, name_en, years, category, trims, sort_order, leading_image_url FROM car_models ORDER BY make_slug, sort_order'),
+      leading_image_url: string | null; active_vehicles_il: number | null;
+    }>('SELECT slug, make_slug, name_he, name_en, years, category, trims, sort_order, leading_image_url, active_vehicles_il FROM car_models ORDER BY make_slug, sort_order'),
   ]);
 
   const data = makesData.map((m) => ({
@@ -64,6 +64,7 @@ async function fetchAllMakes(): Promise<CarMake[]> {
         years: JSON.parse(mo.years || '[]') as number[],
         category: mo.category as CarModel['category'],
         leadingImageUrl: mo.leading_image_url ?? null,
+        activeVehiclesIl: mo.active_vehicles_il ?? null,
         trims: (() => {
           const t = JSON.parse(mo.trims || '[]');
           return Array.isArray(t) && t.length > 0 ? (t as string[]) : undefined;
@@ -76,7 +77,7 @@ async function fetchAllMakes(): Promise<CarMake[]> {
 
   // Store in edge Cache API (1 hour TTL, fire-and-forget)
   try {
-    const edgeCache = await caches.open('cars-v3');
+    const edgeCache = await caches.open('cars-v4');
     await edgeCache.put(
       EDGE_CACHE_URL,
       new Response(JSON.stringify(data), {
@@ -95,7 +96,7 @@ export async function getAllMakes(): Promise<CarMake[]> {
 export async function invalidateMakesCache(): Promise<void> {
   g._carsCache = undefined;
   try {
-    const edgeCache = await caches.open('cars-v3');
+    const edgeCache = await caches.open('cars-v4');
     await edgeCache.delete(EDGE_CACHE_URL);
   } catch { /* ignore */ }
 }

@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 100">
+  <rect width="200" height="100" rx="10" fill="white"/>
+  <!-- Xpeng: X-shaped mark with clean lines -->
+  <line x1="72" y1="16" x2="128" y2="68" stroke="#1a1a1a" stroke-width="10" stroke-linecap="round"/>
+  <line x1="128" y1="16" x2="72" y2="68" stroke="#1a1a1a" stroke-width="10" stroke-linecap="round"/>
+  <!-- bottom bar completing the P shape -->
+  <rect x="98" y="60" width="10" height="20" fill="#1a1a1a" rx="2"/>
+  <text x="100" y="96" font-family="Arial Black,Arial,sans-serif" font-weight="900" font-size="13" fill="#1a1a1a" text-anchor="middle" letter-spacing="3">XPENG</text>
+</svg>

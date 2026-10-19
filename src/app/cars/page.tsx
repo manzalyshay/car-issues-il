@@ -4,6 +4,7 @@ import { getAllMakes } from '@/lib/carsDb';
 import MakeLogo from '@/components/MakeLogo';
 import { getHostLocale, getBaseUrl } from '@/lib/hostLocale';
 import { translations } from '@/lib/translations';
+import CarsSearch from './CarsSearch';
 
 export async function generateMetadata(): Promise<Metadata> {
   const locale = await getHostLocale();
@@ -59,7 +60,7 @@ export default async function CarsPage({ searchParams }: Props) {
     <div className="page-section">
       <div className="container">
         {/* Header */}
-        <div style={{ marginBottom: 48 }}>
+        <div style={{ marginBottom: 32 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: 'var(--text-muted)', fontSize: '0.875rem', marginBottom: 12 }}>
             <Link href="/" style={{ color: 'var(--text-muted)', textDecoration: 'none' }}>{cp.home}</Link>
             <span>›</span>
@@ -68,9 +69,10 @@ export default async function CarsPage({ searchParams }: Props) {
           <h1 style={{ fontSize: 'clamp(1.75rem, 4vw, 2.5rem)', fontWeight: 800, marginBottom: 8 }}>
             {cp.title}
           </h1>
-          <p style={{ color: 'var(--text-muted)', fontSize: '1.0625rem' }}>
+          <p style={{ color: 'var(--text-muted)', fontSize: '1.0625rem', marginBottom: 20 }}>
             {filtered.length} {cp.subtitle} · {filtered.reduce((s, m) => s + m.models.length, 0)} {cp.models}
           </p>
+          <CarsSearch makes={carDatabase} isEn={isEn} modelsLabel={cp.models} />
         </div>
 
         {/* Groups */}

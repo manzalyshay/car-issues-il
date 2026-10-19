@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 import CarVideosTab from '@/components/CarVideosTab';
 import CarImagesTab from '@/components/CarImagesTab';
 import Car3DViewer from '@/components/Car3DViewer';
@@ -11,7 +12,7 @@ import { useLocale } from '@/lib/localeContext';
 import type { CarVideo } from '@/lib/youtubeVideos';
 import type { CarImage } from '@/lib/carImages';
 
-type Tab = 'reviews' | 'specs' | 'videos' | 'images' | 'recalls';
+type Tab = 'reviews' | 'specs' | 'safety' | 'videos' | 'images' | 'recalls';
 
 interface Props {
   makeSlug: string;
@@ -29,22 +30,76 @@ interface Props {
   hasVideos?: boolean;
   hasRepairCosts?: boolean;
   sketchfabModel?: { uid: string; name: string; author: string } | null;
+  initialTab?: string;
+  year?: number;
+  safetyHe?: string | null;
+  techComfortHe?: string | null;
   children: React.ReactNode;
 }
 
 /* ── Section anchor IDs used by the main content ── */
 const ANCHORS = ['reviews', 'specs', 'trims', 'repair', 'compare'] as const;
+const VALID_TABS: Tab[] = ['reviews', 'specs', 'safety', 'videos', 'images', 'recalls'];
 
-export default function CarSidebarLayout({ makeSlug, modelSlug, makeNameHe, modelNameHe, makeNameEn, modelNameEn, makeEn, modelEn, modelYears, defaultYear, hasSpecs = true, hasImages = true, hasVideos = false, hasRepairCosts = true, sketchfabModel, children }: Props) {
-  const { t } = useLocale();
+function resolveTab(raw?: string): Tab {
+  return VALID_TABS.includes(raw as Tab) ? raw as Tab : 'reviews';
+}
+
+export default function CarSidebarLayout({ makeSlug, modelSlug, makeNameHe, modelNameHe, makeNameEn, modelNameEn, makeEn, modelEn, modelYears, defaultYear, hasSpecs = true, hasImages = true, hasVideos = true, hasRepairCosts = true, sketchfabModel, initialTab, year, safetyHe, techComfortHe, children }: Props) {
+  const hasSafety = !!(safetyHe || techComfortHe);
+  const { t, locale } = useLocale();
   const s = t.sidebar;
-  const [tab, setTab] = useState<Tab>('reviews');
+  const pathname = usePathname();
+  const [tab, setTab] = useState<Tab>(resolveTab(initialTab));
   const [videos, setVideos] = useState<CarVideo[] | null>(null);
   const [images, setImages] = useState<CarImage[] | null>(null);
   const [videosLoading, setVideosLoading] = useState(false);
   const [imagesLoading, setImagesLoading] = useState(false);
   const [activeSection, setActiveSection] = useState('reviews');
+  const [yearFilter, setYearFilter] = useState<number | undefined>(year);
   const navRef = useRef<HTMLDivElement>(null);
+
+  const fetchMedia = (type: 'videos' | 'images', yr?: number) => {
+    const qs = `/api/car-media?make=${makeSlug}&model=${modelSlug}&type=${type}${yr ? `&year=${yr}` : ''}`;
+    if (type === 'videos') {
+      setVideosLoading(true);
+      fetch(qs).then(r => r.json()).then(setVideos).catch(() => setVideos([])).finally(() => setVideosLoading(false));
+    } else {
+      setImagesLoading(true);
+      fetch(qs).then(r => r.json()).then(setImages).catch(() => setImages([])).finally(() => setImagesLoading(false));
+    }
+  };
+
+  const handleYearFilter = (yr: number | undefined) => {
+    setYearFilter(yr);
+    if (tab === 'images') fetchMedia('images', yr);
+    if (tab === 'videos') fetchMedia('videos', yr);
+  };
+
+  /* On mount: sync tab from URL (handles ISR-cached pages where searchParams was empty) */
+  useEffect(() => {
+    const t = new URLSearchParams(window.location.search).get('tab') as Tab | null;
+    if (!t || !VALID_TABS.includes(t) || t === tab) return;
+    // This effect hydrates state from the URL on ISR-cached pages whose server render had no search params.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setTab(t);
+    if (t === 'videos' && videos === null && !videosLoading) {
+      fetchMedia('videos', yearFilter);
+    }
+    if (t === 'images' && images === null && !imagesLoading) {
+      fetchMedia('images', yearFilter);
+    }
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  /* Listen for year filter events from HeroYearPicker */
+  useEffect(() => {
+    const handler = (e: Event) => {
+      const yr = (e as CustomEvent<number>).detail;
+      handleYearFilter(yr);
+    };
+    window.addEventListener('car-year-filter', handler);
+    return () => window.removeEventListener('car-year-filter', handler);
+  }, [tab, videos, images, videosLoading, imagesLoading]); // eslint-disable-line react-hooks/exhaustive-deps
 
   /* Track scroll position to highlight active subnav item */
   useEffect(() => {
@@ -63,21 +118,16 @@ export default function CarSidebarLayout({ makeSlug, modelSlug, makeNameHe, mode
 
   const handleTabClick = async (next: Tab) => {
     setTab(next);
+    // Sync tab to URL (shallow replace — no navigation)
+    const url = next === 'reviews' ? pathname : `${pathname}?tab=${next}`;
+    if (typeof window !== 'undefined') window.history.replaceState(null, '', url);
     if (next === 'videos' && videos === null && !videosLoading) {
       setVideosLoading(true);
-      try {
-        const res = await fetch(`/api/car-media?make=${makeSlug}&model=${modelSlug}&type=videos`);
-        setVideos(await res.json());
-      } catch { setVideos([]); }
-      finally { setVideosLoading(false); }
+      fetchMedia('videos', yearFilter);
     }
     if (next === 'images' && images === null && !imagesLoading) {
       setImagesLoading(true);
-      try {
-        const res = await fetch(`/api/car-media?make=${makeSlug}&model=${modelSlug}&type=images`);
-        setImages(await res.json());
-      } catch { setImages([]); }
-      finally { setImagesLoading(false); }
+      fetchMedia('images', yearFilter);
     }
   };
 
@@ -91,6 +141,7 @@ export default function CarSidebarLayout({ makeSlug, modelSlug, makeNameHe, mode
   const subnavItems: { id: string; label: string; icon: string; isTab?: Tab; isAnchor?: boolean }[] = [
     { id: 'reviews', label: s.reviews, icon: '⭐', isAnchor: true },
     ...(hasSpecs ? [{ id: 'specs', label: s.specs, icon: '📋', isTab: 'specs' as Tab }] : []),
+    ...(hasSafety ? [{ id: 'safety', label: locale === 'en' ? 'Safety' : 'בטיחות ואבזור', icon: '🛡️', isTab: 'safety' as Tab }] : []),
     ...(hasRepairCosts ? [{ id: 'repair', label: s.tco, icon: '🔧', isAnchor: true }] : []),
     { id: 'recalls', label: s.issues, icon: '⚠️', isTab: 'recalls' as Tab },
     ...(hasVideos ? [{ id: 'videos', label: s.videos, icon: '🎬', isTab: 'videos' as Tab }] : []),
@@ -164,7 +215,14 @@ export default function CarSidebarLayout({ makeSlug, modelSlug, makeNameHe, mode
           {/* Specs tab */}
           {tab === 'specs' && (
             <div>
-              <TrimSpecsTab makeSlug={makeSlug} modelSlug={modelSlug} makeNameHe={makeNameHe} modelNameHe={modelNameHe} makeNameEn={makeNameEn} modelNameEn={modelNameEn} defaultYear={defaultYear} />
+              <TrimSpecsTab makeSlug={makeSlug} modelSlug={modelSlug} makeNameHe={makeNameHe} modelNameHe={modelNameHe} makeNameEn={makeNameEn} modelNameEn={modelNameEn} defaultYear={defaultYear} mode="specs" />
+            </div>
+          )}
+
+          {/* Safety & Equipment tab — uses TrimSpecsTab in safety mode */}
+          {tab === 'safety' && (
+            <div>
+              <TrimSpecsTab makeSlug={makeSlug} modelSlug={modelSlug} makeNameHe={makeNameHe} modelNameHe={modelNameHe} makeNameEn={makeNameEn} modelNameEn={modelNameEn} defaultYear={defaultYear} safetyHe={safetyHe} techComfortHe={techComfortHe} mode="safety" />
             </div>
           )}
 
@@ -187,7 +245,7 @@ export default function CarSidebarLayout({ makeSlug, modelSlug, makeNameHe, mode
             </div>
           )}
 
-          {/* Recalls tab */}
+          {/* Issues tab — recalls */}
           {tab === 'recalls' && makeEn && modelEn && (
             <div>
               <RecallsSection makeEn={makeEn} modelEn={modelEn} years={modelYears} />

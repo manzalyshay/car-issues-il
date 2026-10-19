@@ -5,6 +5,7 @@
  */
 import { dbRun, dbAll } from '@/lib/db';
 import { runWorkersAI } from '@/lib/workersAi';
+import { parseNewsSegment } from './newsSlug';
 
 export interface CarNewsItem {
   id: string;
@@ -82,18 +83,113 @@ async function fetchRss(url: string): Promise<RssItem[]> {
   }
 }
 
-function buildHebrewPrompt(titleEn: string, bodyEn: string): string {
-  return `You are an Israeli automotive journalist writing for carissues.co.il.
-Write a full, original Hebrew news article based on the following source material.
-Write as if you are the author — not a translator. Use natural, engaging Hebrew with Israeli automotive terminology.
-Structure the article with 3–5 paragraphs covering: the news angle, key details, context/background, and what it means for Israeli car buyers.
-Aim for 350–450 words.
+/**
+ * Fetch the full article body from the original URL.
+ * Extracts <p> paragraphs from the main article container.
+ * Returns null on failure so callers can fall back to the RSS description.
+ */
+async function fetchArticleBody(url: string): Promise<string | null> {
+  try {
+    const res = await fetch(url, {
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
+        'Accept': 'text/html,application/xhtml+xml',
+        'Accept-Language': 'en-US,en;q=0.9',
+      },
+      signal: AbortSignal.timeout(20000),
+    });
+    if (!res.ok) return null;
 
-Return ONLY a JSON object (no markdown, no code block):
-{"title": "<Hebrew headline>", "body": "<Full Hebrew article, paragraphs separated by \\n\\n>"}
+    // Read only the first 200KB to avoid memory issues on long pages
+    const reader = res.body?.getReader();
+    if (!reader) return null;
+    const chunks: Uint8Array[] = [];
+    let total = 0;
+    while (total < 200_000) {
+      const { done, value } = await reader.read();
+      if (done || !value) break;
+      chunks.push(value);
+      total += value.length;
+    }
+    reader.cancel();
+    const html = new TextDecoder().decode(
+      chunks.reduce((acc, c) => { const n = new Uint8Array(acc.length + c.length); n.set(acc); n.set(c, acc.length); return n; }, new Uint8Array(0))
+    );
+
+    return extractArticleText(html);
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Extract clean article text from HTML.
+ * Tries common article containers, then falls back to all <p> tags.
+ */
+function extractArticleText(html: string): string | null {
+  // Remove script, style, nav, header, footer, aside, figure blocks entirely
+  const cleaned = html
+    .replace(/<script[\s\S]*?<\/script>/gi, '')
+    .replace(/<style[\s\S]*?<\/style>/gi, '')
+    .replace(/<nav[\s\S]*?<\/nav>/gi, '')
+    .replace(/<header[\s\S]*?<\/header>/gi, '')
+    .replace(/<footer[\s\S]*?<\/footer>/gi, '')
+    .replace(/<aside[\s\S]*?<\/aside>/gi, '')
+    .replace(/<figure[\s\S]*?<\/figure>/gi, '');
+
+  // Try to isolate the article body using common class/id patterns
+  const articlePatterns = [
+    /(<article[^>]*>[\s\S]*?<\/article>)/i,
+    /(<div[^>]+class="[^"]*(?:article-body|article__body|story-body|post-body|entry-content|article-content|content-body|single-article|article-text)[^"]*"[^>]*>[\s\S]*?<\/div>)/i,
+    /(<div[^>]+id="[^"]*(?:article-body|story-body|post-body|article-content)[^"]*"[^>]*>[\s\S]*?<\/div>)/i,
+  ];
+
+  let articleHtml = cleaned;
+  for (const pat of articlePatterns) {
+    const m = cleaned.match(pat);
+    if (m) { articleHtml = m[1]; break; }
+  }
+
+  // Extract text from <p> tags
+  const paragraphs: string[] = [];
+  const pRegex = /<p[^>]*>([\s\S]*?)<\/p>/gi;
+  let match;
+  while ((match = pRegex.exec(articleHtml)) !== null) {
+    const text = stripHtml(match[1]).replace(/\s+/g, ' ').trim();
+    if (text.length > 40) paragraphs.push(text); // skip very short fragments
+  }
+
+  if (!paragraphs.length) return null;
+
+  // Return up to ~3000 chars of article body
+  let body = '';
+  for (const p of paragraphs) {
+    if (body.length + p.length > 3000) break;
+    body += p + '\n\n';
+  }
+  return body.trim() || null;
+}
+
+function buildHebrewPrompt(titleEn: string, bodyEn: string): string {
+  const source = bodyEn.slice(0, 3000);
+  return `You are an Israeli automotive journalist writing for carissues.co.il.
+
+Your job: rewrite the source material below as a proper Hebrew news article in your own words.
+
+Rules:
+- Every specific claim (numbers, specs, prices, quotes, names, dates) must come from the source — do not invent them.
+- You MAY add well-known, undisputed background context about the car model, brand, or technology to fill out the article (e.g. "Toyota is known for reliability", "the model is in its third generation"). Only add context you are 100% certain is accurate.
+- Do NOT speculate about Israeli pricing, local availability, or future plans unless the source says so.
+- Brand and model names stay as in the source (Latin letters OK).
+- Natural Israeli Hebrew, news tone, no marketing phrases.
+
+Length: 2–4 paragraphs, 200–350 words.
+
+Return ONLY a JSON object (no markdown fences):
+{"title": "<Hebrew headline>", "body": "<Hebrew article, paragraphs separated by \\n\\n>"}
 
 Source title: ${titleEn}
-Source content: ${bodyEn.slice(0, 1200)}`;
+Source content: ${source}`;
 }
 
 function parseHebrewJson(raw: string): { titleHe: string; bodyHe: string } | null {
@@ -114,7 +210,7 @@ async function rewriteWithGemini(titleEn: string, bodyEn: string): Promise<{ tit
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           contents: [{ parts: [{ text: buildHebrewPrompt(titleEn, bodyEn) }] }],
-          generationConfig: { temperature: 0.5, maxOutputTokens: 1200 },
+          generationConfig: { temperature: 0.2, maxOutputTokens: 1200 },
         }),
         signal: AbortSignal.timeout(20000),
       }
@@ -131,7 +227,7 @@ async function rewriteWithGemini(titleEn: string, bodyEn: string): Promise<{ tit
 
 async function rewriteWithWorkersAI(titleEn: string, bodyEn: string): Promise<{ titleHe: string; bodyHe: string } | null> {
   try {
-    const raw = await runWorkersAI([{ role: 'user', content: buildHebrewPrompt(titleEn, bodyEn) }], { max_tokens: 1200, temperature: 0.5 });
+    const raw = await runWorkersAI([{ role: 'user', content: buildHebrewPrompt(titleEn, bodyEn) }], { max_tokens: 1200, temperature: 0.2 });
     if (!raw) return null;
     return parseHebrewJson(raw);
   } catch {
@@ -140,8 +236,7 @@ async function rewriteWithWorkersAI(titleEn: string, bodyEn: string): Promise<{ 
 }
 
 async function rewriteInHebrew(titleEn: string, bodyEn: string): Promise<{ titleHe: string; bodyHe: string } | null> {
-  // Try Gemini first (better quality), fall back to Cloudflare Workers AI
-  return (await rewriteWithGemini(titleEn, bodyEn)) ?? (await rewriteWithWorkersAI(titleEn, bodyEn));
+  return rewriteWithGemini(titleEn, bodyEn);
 }
 
 export async function ensureNewsTable(): Promise<void> {
@@ -196,7 +291,12 @@ export async function refreshCarNews(maxPerRun = 15): Promise<number> {
 
   for (const { source, item } of batch) {
     const id = await urlHash(item.link);
-    const rewritten = await rewriteInHebrew(item.title, item.description);
+
+    // Try to fetch the full article; fall back to RSS description if it fails
+    const fullBody = await fetchArticleBody(item.link);
+    const articleBody = fullBody ?? item.description;
+
+    const rewritten = await rewriteInHebrew(item.title, articleBody);
 
     await dbRun(
       `INSERT OR IGNORE INTO car_news (id, source, original_url, title_he, body_he, title_en, body_en, image_url, published_at)
@@ -207,7 +307,8 @@ export async function refreshCarNews(maxPerRun = 15): Promise<number> {
       rewritten?.titleHe ?? null,
       rewritten?.bodyHe ?? null,
       item.title,
-      item.description.slice(0, 500),
+      // Store the full body_en so retranslation also benefits from it
+      (articleBody).slice(0, 3000),
       item.imageUrl,
       item.pubDate ? new Date(item.pubDate).toISOString() : null,
     );
@@ -252,6 +353,40 @@ export async function getLatestNews(limit = 20, offset = 0, locale?: string): Pr
 export async function getNewsArticle(id: string): Promise<CarNewsItem | null> {
   const rows = await dbAll<CarNewsItem>(`SELECT * FROM car_news WHERE id = ? AND (hidden IS NULL OR hidden = 0) LIMIT 1`, id);
   return rows[0] ?? null;
+}
+
+/** Resolve a /news/[id] URL segment (legacy 40-hex hash or `slug-shortid`) to an article. */
+export async function getNewsArticleBySegment(segment: string): Promise<CarNewsItem | null> {
+  const parsed = parseNewsSegment(segment);
+  if (!parsed) return null;
+  if ('fullId' in parsed) return getNewsArticle(parsed.fullId);
+  // idPrefix is validated hex, so it's safe inside LIKE
+  const rows = await dbAll<CarNewsItem>(
+    `SELECT * FROM car_news WHERE id LIKE ? AND (hidden IS NULL OR hidden = 0) ORDER BY published_at DESC LIMIT 1`,
+    `${parsed.idPrefix}%`,
+  );
+  return rows[0] ?? null;
+}
+
+/**
+ * Retranslate articles that have a very short body_he (likely generated by Workers AI).
+ * Forces regeneration with Claude/Gemini for proper length and quality.
+ */
+export async function retranslateShort(maxRetry = 10, minBodyLen = 150): Promise<number> {
+  const rows = await dbAll<{ id: string; title_en: string | null; body_en: string | null }>(
+    `SELECT id, title_en, body_en FROM car_news WHERE body_he IS NOT NULL AND length(body_he) < ? AND title_en IS NOT NULL AND body_en IS NOT NULL ORDER BY published_at DESC LIMIT ?`,
+    String(minBodyLen), String(maxRetry),
+  );
+  let fixed = 0;
+  for (const row of rows) {
+    if (!row.title_en || !row.body_en) continue;
+    const result = await rewriteInHebrew(row.title_en, row.body_en);
+    if (result) {
+      await dbRun(`UPDATE car_news SET title_he=?, body_he=? WHERE id=?`, result.titleHe, result.bodyHe, row.id);
+      fixed++;
+    }
+  }
+  return fixed;
 }
 
 export async function deleteNewsArticle(id: string): Promise<void> {

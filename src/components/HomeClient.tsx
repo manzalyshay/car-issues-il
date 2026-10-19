@@ -4,14 +4,16 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useState, useEffect, useRef, useMemo } from 'react';
 import { useLocale } from '@/lib/localeContext';
+import { newsPath } from '@/lib/newsSlug';
 
 /* ── Types ──────────────────────────────────────────────── */
 interface Make { slug: string; nameHe: string; nameEn: string; logoUrl: string; country: string; models: { slug: string; nameHe: string; nameEn: string }[]; }
 interface TopCar { makeSlug: string; modelSlug: string; makeHe: string; modelHe: string; makeEn: string; modelEn: string; logoUrl: string; combined: number; avgRating: number | null; imageUrl?: string | null; }
 interface Review { id: string; make_slug: string; model_slug: string; year: number | null; rating: number; title: string; body: string; title_en?: string | null; body_en?: string | null; author: string; created_at: string; makeHe: string; modelHe: string; makeEn: string; modelEn: string; logoUrl: string; }
+interface ComparePair { href: string; aHe: string; aEn: string; bHe: string; bEn: string; }
 interface TickerItem { code: string; textHe: string; textEn: string; color: string; }
 interface NewsItem { id: string; title_he: string | null; title_en: string | null; body_he: string | null; body_en: string | null; image_url: string | null; published_at: string | null; original_url: string; source: string; }
-interface Props { popularMakes: Make[]; allMakes: Make[]; topRanked: TopCar[]; recentReviews: Review[]; tickerItems?: TickerItem[]; initialNews?: NewsItem[]; }
+interface Props { popularMakes: Make[]; allMakes: Make[]; topRanked: TopCar[]; recentReviews: Review[]; tickerItems?: TickerItem[]; initialNews?: NewsItem[]; topPairs?: ComparePair[]; }
 
 /* ── Helpers ─────────────────────────────────────────────── */
 function timeAgo(dateStr: string, isHe: boolean) {
@@ -138,7 +140,7 @@ const TICKER_FALLBACK: TickerItem[] = [
 /* ═══════════════════════════════════════════════════════════
    Main component
    ═══════════════════════════════════════════════════════════ */
-export default function HomeClient({ allMakes, topRanked, recentReviews, tickerItems: tickerProp, initialNews }: Props) {
+export default function HomeClient({ allMakes, topRanked, recentReviews, tickerItems: tickerProp, initialNews, topPairs = [] }: Props) {
   const { locale } = useLocale();
   const isHe = locale === 'he';
   const totalModels = allMakes.reduce((s, m) => s + m.models.length, 0);
@@ -284,6 +286,7 @@ export default function HomeClient({ allMakes, topRanked, recentReviews, tickerI
                 <div style={{ display: 'flex', gap: 10, alignItems: 'center', border: '1px solid #e0e6f1', borderRadius: 12, padding: 6, background: '#fbfcfe' }}>
                   <input
                     type="text"
+                    aria-label={isHe ? 'חיפוש לפי מספר רישוי או שם דגם' : 'Search by plate number or car model'}
                     value={searchQ}
                     onChange={e => { setSearchQ(e.target.value); setAcOpen(true); setAcIdx(-1); }}
                     onKeyDown={handleKeyDown}
@@ -347,23 +350,32 @@ export default function HomeClient({ allMakes, topRanked, recentReviews, tickerI
                 <div style={{ minWidth: 0, flex: 1 }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                     <span style={{ fontSize: 10.5, letterSpacing: '.14em', color: '#5b6a86', fontWeight: 700 }}>{isHe ? 'דגם מוביל' : 'TOP MODEL'}</span>
-                    <span style={{ fontSize: 11, fontWeight: 700, color: '#0f7a3d', background: '#e6f7ed', padding: '2px 8px', borderRadius: 999 }}>{isHe ? 'מומלץ' : 'RECOMMENDED'}</span>
+                    {topCar.combined >= 8.5
+                      ? <span style={{ fontSize: 11, fontWeight: 700, color: '#0f7a3d', background: '#e6f7ed', padding: '2px 8px', borderRadius: 999 }}>{isHe ? 'מומלץ מאוד' : 'HIGHLY RECOMMENDED'}</span>
+                      : topCar.combined >= 7.5
+                        ? <span style={{ fontSize: 11, fontWeight: 700, color: '#0f7a3d', background: '#e6f7ed', padding: '2px 8px', borderRadius: 999 }}>{isHe ? 'מומלץ' : 'RECOMMENDED'}</span>
+                        : null}
                   </div>
                   <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 10, marginTop: 4 }}>
                     <span style={{ fontFamily: 'Heebo,sans-serif', fontWeight: 900, fontSize: 18, letterSpacing: '-.03em' }}>
                       {isHe ? `${topCar.makeHe} ${topCar.modelHe}` : `${topCar.makeEn} ${topCar.modelEn}`}
                     </span>
-                    <span style={{ lineHeight: 1 }}>
+                    <span style={{ lineHeight: 1, display: 'inline-flex', alignItems: 'baseline', gap: 1, direction: 'ltr' }}>
                       <span style={{ fontFamily: 'Heebo,sans-serif', fontWeight: 900, fontSize: 26, letterSpacing: '-.04em', color: '#17408f' }}>
                         {(Math.round(topCar.combined * 10) / 10).toFixed(1)}
                       </span>
-                      <span style={{ fontSize: 12, color: '#5b6a86', fontWeight: 700 }}>10/</span>
+                      <span style={{ fontSize: 12, color: '#5b6a86', fontWeight: 700 }}>/10</span>
                     </span>
                   </div>
                   <div style={{ display: 'flex', gap: 6, marginTop: 8, flexWrap: 'wrap' }}>
-                    <span style={{ fontSize: 11.5, fontWeight: 700, color: '#0f7a3d', background: '#f1f9f4', border: '1px solid #dbeee3', padding: '3px 8px', borderRadius: 7 }}>{isHe ? 'אמינות 88%' : 'Reliability 88%'}</span>
-                    <span style={{ fontSize: 11.5, fontWeight: 700, color: '#17408f', background: '#f1f5fc', border: '1px solid #dde6f6', padding: '3px 8px', borderRadius: 7 }}>{isHe ? 'נוחות 82%' : 'Comfort 82%'}</span>
-                    <span style={{ fontSize: 11.5, fontWeight: 700, color: '#0f7a3d', background: '#f1f9f4', border: '1px solid #dbeee3', padding: '3px 8px', borderRadius: 7 }}>{isHe ? 'בטיחות 90%' : 'Safety 90%'}</span>
+                    <span style={{ fontSize: 11.5, fontWeight: 700, color: '#17408f', background: '#f1f5fc', border: '1px solid #dde6f6', padding: '3px 8px', borderRadius: 7 }}>
+                      {isHe ? `ציון AI: ${(Math.round(topCar.combined * 10) / 10).toFixed(1)}` : `AI Score: ${(Math.round(topCar.combined * 10) / 10).toFixed(1)}`}
+                    </span>
+                    {topCar.avgRating != null && (
+                      <span style={{ fontSize: 11.5, fontWeight: 700, color: '#0f7a3d', background: '#f1f9f4', border: '1px solid #dbeee3', padding: '3px 8px', borderRadius: 7 }}>
+                        {isHe ? `בעלים: ${topCar.avgRating.toFixed(1)}/5` : `Owners: ${topCar.avgRating.toFixed(1)}/5`}
+                      </span>
+                    )}
                   </div>
                   <Link href={`/cars/${topCar.makeSlug}/${topCar.modelSlug}`} style={{ display: 'inline-block', marginTop: 9, fontSize: 13, fontWeight: 700, color: '#17408f' }}>
                     {isHe ? 'לדוח המלא ←' : 'Full report →'}
@@ -397,53 +409,6 @@ export default function HomeClient({ allMakes, topRanked, recentReviews, tickerI
       {/* ── Sections wrapper ─────────────────────────────── */}
       <div style={{ maxWidth: MAXW, margin: '0 auto' }}>
 
-        {/* ── Owner Reviews ─────────────────────────────── */}
-        <section id="reviews" style={{ padding: `clamp(34px,3.6vw,52px) ${GUTTER} 0` }}>
-          <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: 24, flexWrap: 'wrap', marginBottom: 18 }}>
-            <div data-ci-reveal>
-              <h2 style={{ fontFamily: 'Heebo,sans-serif', fontWeight: 900, fontSize: 'clamp(26px,3vw,38px)', letterSpacing: '-.035em', margin: '0 0 4px' }}>
-                {isHe ? 'מה הבעלים אומרים' : 'What owners say'}
-              </h2>
-              <p style={{ color: '#5b6a86', fontSize: 16, margin: 0 }}>
-                {isHe ? 'הביקורות שנכתבו השבוע, מאנשים שנוסעים בדגם כל יום.' : 'Reviews written this week, by people who drive the car every day.'}
-              </p>
-            </div>
-            <Link href="/cars" style={{ fontWeight: 700, fontSize: 15, color: '#17408f', whiteSpace: 'nowrap' }}>
-              {isHe ? 'כל הביקורות ←' : 'All reviews →'}
-            </Link>
-          </div>
-          <div data-ci-group="70" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(240px,1fr))', gap: 16 }}>
-            {recentReviews.slice(0, 3).map(r => {
-              const showEn = locale === 'en' && Boolean(r.title_en || r.body_en);
-              const cName  = showEn ? `${r.makeEn} ${r.modelEn}` : `${r.makeHe} ${r.modelHe}`;
-              const body   = showEn ? (r.body_en || r.body || '') : (r.body || '');
-              const ago    = timeAgo(r.created_at, isHe);
-              const init   = initials(r.author || cName);
-              return (
-                <Link key={r.id} href={`/cars/${r.make_slug}/${r.model_slug}${r.id ? `#review-${r.id}` : ''}`} style={{ textDecoration: 'none', color: 'inherit' }}>
-                  <article style={{ background: '#fff', border: '1px solid #e4e9f2', borderRadius: 16, padding: 17, height: '100%' }} className="ci-card-hover">
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 12 }}>
-                      <div>
-                        <h3 style={{ fontFamily: 'Heebo,sans-serif', fontWeight: 700, fontSize: 17, margin: 0 }}>{cName}{r.year ? ` ${r.year}` : ''}</h3>
-                        <div style={{ fontSize: 13, color: '#a06a00', marginTop: 5 }}>
-                          {'★'.repeat(Math.round(r.rating))}{'☆'.repeat(5 - Math.round(r.rating))}
-                          <span style={{ color: '#5b6a86' }}> · {ago}</span>
-                        </div>
-                      </div>
-                      <span style={{ width: 36, height: 36, borderRadius: 10, background: '#f2f5fa', display: 'grid', placeItems: 'center', fontWeight: 800, fontSize: 12, color: '#5b6a86', flexShrink: 0 }}>
-                        {init}
-                      </span>
-                    </div>
-                    <p style={{ color: '#41506c', fontSize: 15, lineHeight: 1.6, margin: '14px 0 0', direction: showEn ? 'ltr' : 'rtl', overflow: 'hidden', display: '-webkit-box', WebkitLineClamp: 3, WebkitBoxOrient: 'vertical' }}>
-                      {body}
-                    </p>
-                  </article>
-                </Link>
-              );
-            })}
-          </div>
-        </section>
-
         {/* ── News ─────────────────────────────────────── */}
         {news.length > 0 && (
           <section id="news" style={{ padding: `clamp(34px,3.6vw,52px) ${GUTTER} 0` }}>
@@ -463,7 +428,7 @@ export default function HomeClient({ allMakes, topRanked, recentReviews, tickerI
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(300px,1fr))', gap: 20 }}>
               {/* Lead story */}
               {news[0] && (
-                <Link href={`/news/${news[0].id}`} style={{ textDecoration: 'none', color: 'inherit' }} data-ci-reveal>
+                <Link href={newsPath(news[0])} style={{ textDecoration: 'none', color: 'inherit' }} data-ci-reveal>
                   <article style={{ background: '#fff', border: '1px solid #e4e9f2', borderRadius: 18, overflow: 'hidden' }} className="ci-card-hover">
                     {news[0].image_url ? (
                       /* eslint-disable-next-line @next/next/no-img-element */
@@ -492,7 +457,7 @@ export default function HomeClient({ allMakes, topRanked, recentReviews, tickerI
               {/* Headline list */}
               <div data-ci-group="80" style={{ display: 'grid', gap: 14, alignContent: 'start' }}>
                 {news.slice(1, 4).map(item => (
-                  <Link key={item.id} href={`/news/${item.id}`} style={{ display: 'flex', gap: 14, background: '#fff', border: '1px solid #e4e9f2', borderRadius: 16, padding: 14, alignItems: 'center', textDecoration: 'none', color: 'inherit' }} className="ci-news-row">
+                  <Link key={item.id} href={newsPath(item)} style={{ display: 'flex', gap: 14, background: '#fff', border: '1px solid #e4e9f2', borderRadius: 16, padding: 14, alignItems: 'center', textDecoration: 'none', color: 'inherit' }} className="ci-news-row">
                     {item.image_url ? (
                       /* eslint-disable-next-line @next/next/no-img-element */
                       <img src={item.image_url} alt="" loading="lazy" style={{ width: 96, height: 70, flexShrink: 0, borderRadius: 11, objectFit: 'cover', display: 'block' }} />
@@ -552,6 +517,55 @@ export default function HomeClient({ allMakes, topRanked, recentReviews, tickerI
           </section>
         )}
 
+        {/* ── Recent Reviews ───────────────────────────── */}
+        {recentReviews.length > 0 && (
+          <section style={{ padding: `clamp(34px,3.6vw,52px) ${GUTTER} 0` }}>
+            <div data-ci-reveal style={{ marginBottom: 18 }}>
+              <h2 style={{ fontFamily: 'Heebo,sans-serif', fontWeight: 900, fontSize: 'clamp(22px,2.4vw,32px)', letterSpacing: '-.035em', margin: '0 0 6px' }}>
+                {isHe ? 'ביקורות אחרונות' : 'Recent Reviews'}
+              </h2>
+              <p style={{ color: '#5b6a86', fontSize: 15, margin: 0 }}>{isHe ? 'מה בעלי רכב כותבים לאחרונה' : 'What owners are saying lately'}</p>
+            </div>
+            <div data-ci-group="60" style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+              {recentReviews.slice(0, 5).map(rv => {
+                const carName = isHe ? `${rv.makeHe} ${rv.modelHe}` : `${rv.makeEn} ${rv.modelEn}`;
+                const title   = isHe ? rv.title : (rv.title_en ?? rv.title);
+                const body    = isHe ? rv.body  : (rv.body_en  ?? rv.body);
+                const stars   = Math.round(rv.rating);
+                return (
+                  <Link
+                    key={rv.id}
+                    href={`/cars/${rv.make_slug}/${rv.model_slug}`}
+                    style={{ background: '#fff', border: '1px solid #e4e9f2', borderRadius: 16, padding: '16px 20px', display: 'flex', gap: 16, textDecoration: 'none', alignItems: 'flex-start' }}
+                    className="ci-card-hover"
+                  >
+                    {/* Logo */}
+                    <span style={{ flexShrink: 0, width: 40, height: 40, borderRadius: 10, border: '1px solid #e4e9f2', background: '#f7f9fd', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
+                      {rv.logoUrl
+                        ? <img src={rv.logoUrl} alt={rv.makeEn} style={{ width: 28, height: 28, objectFit: 'contain' }} />
+                        : <span style={{ fontSize: 18 }}>🚗</span>
+                      }
+                    </span>
+                    {/* Content */}
+                    <span style={{ flex: 1, minWidth: 0 }}>
+                      <span style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4, flexWrap: 'wrap' }}>
+                        <span style={{ fontFamily: 'Heebo,sans-serif', fontWeight: 700, fontSize: 14, color: '#0d1b2f' }}>{carName}</span>
+                        {rv.year && <span style={{ fontSize: 12, color: '#8595a6' }}>{rv.year}</span>}
+                        <span style={{ fontSize: 13, color: '#f59e0b', letterSpacing: 1 }}>{'★'.repeat(stars)}{'☆'.repeat(5 - stars)}</span>
+                        <span style={{ fontSize: 11.5, color: '#a0adb8', marginInlineStart: 'auto' }}>{timeAgo(rv.created_at, isHe)}</span>
+                      </span>
+                      {title && <span style={{ display: 'block', fontWeight: 700, fontSize: 14, color: '#1c2733', marginBottom: 3 }}>{title}</span>}
+                      <span style={{ display: 'block', fontSize: 13, color: '#5b6a86', lineHeight: 1.5, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                        {body.length > 160 ? body.slice(0, 160) + '…' : body}
+                      </span>
+                    </span>
+                  </Link>
+                );
+              })}
+            </div>
+          </section>
+        )}
+
         {/* ── Head to Head ─────────────────────────────── */}
         <section id="head" style={{ padding: `clamp(34px,3.6vw,52px) ${GUTTER} 0` }}>
           <div data-ci-reveal style={{ marginBottom: 18 }}>
@@ -561,13 +575,7 @@ export default function HomeClient({ allMakes, topRanked, recentReviews, tickerI
             <p style={{ color: '#5b6a86', fontSize: 16, margin: 0 }}>{isHe ? 'ההשוואות שנבדקות הכי הרבה' : 'The comparisons people run most'}</p>
           </div>
           <div data-ci-group="70" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(240px,1fr))', gap: 16 }}>
-            {[
-              { aHe: 'טויוטה RAV4',   bHe: 'יונדאי טוסון', aEn: 'Toyota RAV4',     bEn: 'Hyundai Tucson', aScore: 8.7, bScore: 8.3, cmp: '2,340', href: '/cars/compare/toyota/rav4/hyundai/tucson' },
-              { aHe: 'מאזדה CX-5',    bHe: 'קיה ספורטז׳',  aEn: 'Mazda CX-5',      bEn: 'Kia Sportage',   aScore: 8.9, bScore: 8.1, cmp: '1,820', href: '/cars/compare/mazda/cx5/kia/sportage' },
-              { aHe: 'יונדאי אלנטרה', bHe: 'קיה סראטו',    aEn: 'Hyundai Elantra', bEn: 'Kia Cerato',     aScore: 8.2, bScore: 8.0, cmp: '1,550', href: '/cars/compare/hyundai/elantra/kia/cerato' },
-            ].map((vs, i) => {
-              const total = vs.aScore + vs.bScore;
-              const aPct  = `${((vs.aScore / total) * 100).toFixed(0)}%`;
+            {topPairs.map((vs, i) => {
               return (
                 <Link key={i} href={vs.href} style={{ background: '#fff', border: '1px solid #e4e9f2', borderRadius: 16, padding: 20, display: 'block', textDecoration: 'none' }} className="ci-vs-card">
                   <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontFamily: 'Heebo,sans-serif', fontWeight: 700, fontSize: 16.5, color: '#0d1b2f' }}>
@@ -575,13 +583,8 @@ export default function HomeClient({ allMakes, topRanked, recentReviews, tickerI
                     <span style={{ fontSize: 11, letterSpacing: '.14em', color: '#5f6e88' }}>VS</span>
                     <span>{isHe ? vs.bHe : vs.bEn}</span>
                   </span>
-                  <span style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 14, fontFamily: 'Heebo,sans-serif', fontWeight: 900, fontSize: 17 }}>
-                    <span style={{ color: '#0f7a3d' }}>{vs.aScore.toFixed(1)}</span>
-                    <span style={{ flex: 1, height: 7, borderRadius: 999, background: `linear-gradient(90deg,#17408f 0 ${aPct},#12a150 ${aPct} 100%)`, display: 'block' }} />
-                    <span style={{ color: '#17408f' }}>{vs.bScore.toFixed(1)}</span>
-                  </span>
-                  <span style={{ display: 'block', fontSize: 12.5, color: '#5b6a86', marginTop: 10 }}>
-                    {vs.cmp} {isHe ? 'השוואות' : 'comparisons'}
+                  <span style={{ display: 'block', fontSize: 12.5, color: '#5b6a86', marginTop: 12 }}>
+                    {isHe ? 'להשוואת דגמים' : 'Compare these models'}
                   </span>
                 </Link>
               );
@@ -595,13 +598,13 @@ export default function HomeClient({ allMakes, topRanked, recentReviews, tickerI
       <section style={{ background: '#0d1b2f', color: '#fff', padding: 'clamp(40px,4.5vw,64px) clamp(16px,3vw,32px)', marginTop: 'clamp(34px,3.6vw,52px)' }}>
         <div data-ci-group="90" style={{ maxWidth: 820, margin: '0 auto', textAlign: 'center' }}>
           <h2 style={{ fontFamily: 'Heebo,sans-serif', fontWeight: 900, fontSize: 'clamp(24px,2.8vw,38px)', lineHeight: 1.12, letterSpacing: '-.04em', margin: 0, color: '#fff' }}>
-            {isHe ? 'בדקו את הרכב לפני שאתם חותמים.' : 'Check the car before you sign.'}
+            {isHe ? 'בדיקת פרטי רכב לפי מספר רישוי' : 'Full vehicle check by plate number'}
           </h2>
           <p style={{ color: '#b8c8e4', fontSize: 'clamp(15px,1.2vw,17px)', margin: '12px 0 20px' }}>
-            {isHe ? '22 בדיקות לפי סדר ביצוע, מהיסטוריית הרכב ועד ריקולים פתוחים.' : '22 checks in running order — from vehicle history to open recalls.'}
+            {isHe ? 'בעלות, ריקולים פתוחים, נסועה, בטיחות וצבע מקורי — הכל במקום אחד.' : 'Ownership history, open recalls, mileage, safety rating and original colour — all in one place.'}
           </p>
-          <Link href="/checklist" style={{ display: 'inline-block', background: '#fff', color: '#0d1b2f', fontWeight: 800, fontSize: 16, padding: '13px 30px', borderRadius: 13 }}>
-            {isHe ? 'התחילו צ׳קליסט ←' : 'Start the checklist →'}
+          <Link href="/vehicle-lookup" style={{ display: 'inline-block', background: '#fff', color: '#0d1b2f', fontWeight: 800, fontSize: 16, padding: '13px 30px', borderRadius: 13 }}>
+            {isHe ? 'בדיקת רכב ←' : 'Check a vehicle →'}
           </Link>
         </div>
       </section>

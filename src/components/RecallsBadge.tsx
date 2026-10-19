@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { usePathname, useRouter } from 'next/navigation';
 import { useLocale } from '@/lib/localeContext';
 
 interface Props {
@@ -12,6 +13,8 @@ interface Props {
 
 export default function RecallsBadge({ makeEn, modelEn, year, years }: Props) {
   const { locale } = useLocale();
+  const pathname = usePathname();
+  const router = useRouter();
   const [count, setCount] = useState<number | null>(null);
 
   useEffect(() => {
@@ -28,7 +31,7 @@ export default function RecallsBadge({ makeEn, modelEn, year, years }: Props) {
 
   return (
     <a
-      href="#recalls"
+      href={`${pathname}?tab=recalls`}
       style={{
         display: 'inline-flex', alignItems: 'center', gap: 5,
         padding: '3px 10px', borderRadius: 999,
@@ -39,7 +42,7 @@ export default function RecallsBadge({ makeEn, modelEn, year, years }: Props) {
       }}
       onClick={e => {
         e.preventDefault();
-        document.getElementById('recalls')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        router.push(`${pathname}?tab=recalls`);
       }}
     >
       ⚠️ {count} {locale === 'en' ? (count === 1 ? 'Recall' : 'Recalls') : `ריקול${count > 1 ? 'ים' : ''}`}

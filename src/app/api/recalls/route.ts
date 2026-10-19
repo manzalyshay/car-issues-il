@@ -7,6 +7,7 @@ export interface Recall {
   year: number | null;
   date: string;
   component: string;
+  componentEn?: string;
   summary: string;
   consequence: string;
   remedy: string;
@@ -17,8 +18,15 @@ export interface Recall {
 
 function formatDate(raw: string): string {
   if (!raw) return '';
+  // Try MM/DD/YYYY (NHTSA format)
+  const slashMatch = raw.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+  if (slashMatch) {
+    const [, mm, dd, yyyy] = slashMatch;
+    return `${dd.padStart(2, '0')}/${mm.padStart(2, '0')}/${yyyy}`;
+  }
+  // Try YYYYMMDD
   const digits = raw.replace(/\D/g, '');
-  if (digits.length === 8) {
+  if (digits.length === 8 && parseInt(digits.slice(0, 4)) > 1900) {
     return `${digits.slice(6, 8)}/${digits.slice(4, 6)}/${digits.slice(0, 4)}`;
   }
   const d = new Date(raw);
@@ -30,7 +38,7 @@ function formatDate(raw: string): string {
 
 // Format raw NHTSA component strings like "ENGINE AND ENGINE COOLING:ENGINE:COOLING FAN"
 // into readable title case: "Cooling Fan"
-function formatComponent(raw: string): string {
+function formatComponent(raw: string | null | undefined): string {
   if (!raw) return '';
   // Take the last segment after the last colon (most specific)
   const parts = raw.split(':');
@@ -39,7 +47,7 @@ function formatComponent(raw: string): string {
 }
 
 // Same cleanup for Hebrew — AI translates the full NHTSA path, take last colon-segment
-function formatHeComponent(raw: string): string {
+function formatHeComponent(raw: string | null | undefined): string {
   if (!raw) return '';
   const parts = raw.split(':');
   return parts[parts.length - 1].trim();
@@ -57,6 +65,34 @@ function extractYear(raw: string): number | null {
 // ── Translation via Cloudflare Workers AI ───────────────────────────────────
 
 interface RecallFields { component: string; summary: string; consequence: string; remedy: string; }
+
+interface NhtsaRecall {
+  NHTSACampaignNumber: string;
+  ModelYear?: string;
+  ReportReceivedDate?: string;
+  Component?: string;
+  Summary?: string;
+  Consequence?: string;
+  Remedy?: string;
+  Manufacturer?: string;
+}
+
+interface RecallCacheRow {
+  id: string;
+  date?: string | null;
+  component_en?: string | null;
+  summary_en?: string | null;
+  consequence_en?: string | null;
+  remedy_en?: string | null;
+  component_he?: string | null;
+  summary_he?: string | null;
+  consequence_he?: string | null;
+  remedy_he?: string | null;
+  make?: string;
+  model?: string;
+  manufacturer?: string;
+  recall_year?: number | null;
+}
 
 async function translateRecalls(recalls: RecallFields[]): Promise<RecallFields[]> {
   if (recalls.length === 0) return recalls;
@@ -94,6 +130,28 @@ async function translateRecalls(recalls: RecallFields[]): Promise<RecallFields[]
   return out;
 }
 
+// ── NHTSA model aliases (EU/non-US models → US-market equivalents) ───────────
+// Keyed by lowercase "make|model" as sent in the URL (English names from our DB)
+const NHTSA_ALIASES: Record<string, { make: string; model: string }> = {
+  'nissan|qashqai':           { make: 'Nissan',     model: 'Rogue Sport' },
+  'nissan|x-trail':           { make: 'Nissan',     model: 'Rogue' },
+  'nissan|navara':            { make: 'Nissan',     model: 'Frontier' },
+  'nissan|note':              { make: 'Nissan',     model: 'Versa Note' },
+  'honda|jazz':               { make: 'Honda',      model: 'Fit' },
+  'honda|hr-v':               { make: 'Honda',      model: 'HR-V' },
+  'ford|kuga':                { make: 'Ford',       model: 'Escape' },
+  'ford|puma':                { make: 'Ford',       model: 'Bronco Sport' },
+  'ford|mondeo':              { make: 'Ford',       model: 'Fusion' },
+  'mitsubishi|asx':           { make: 'Mitsubishi', model: 'Outlander Sport' },
+  'mitsubishi|eclipse cross': { make: 'Mitsubishi', model: 'Eclipse Cross' },
+  'mitsubishi|pajero sport':  { make: 'Mitsubishi', model: 'Montero Sport' },
+  'toyota|hilux':             { make: 'Toyota',     model: 'Tacoma' },
+  'toyota|yaris':             { make: 'Toyota',     model: 'Yaris' },
+  'toyota|corolla cross':     { make: 'Toyota',     model: 'Corolla Cross' },
+  'mazda|cx-3':               { make: 'Mazda',      model: 'CX-3' },
+  'mazda|cx-30':              { make: 'Mazda',      model: 'CX-30' },
+};
+
 // ── Main handler ──────────────────────────────────────────────────────────────
 
 export async function GET(req: NextRequest) {
@@ -111,12 +169,18 @@ export async function GET(req: NextRequest) {
   try {
     const currentYear = new Date().getFullYear();
 
+    // Resolve NHTSA alias (EU models like Qashqai → Rogue Sport)
+    const aliasKey = `${make.toLowerCase()}|${model.toLowerCase()}`;
+    const alias = NHTSA_ALIASES[aliasKey];
+    const nhtsaMake  = alias?.make  ?? make;
+    const nhtsaModel = alias?.model ?? model;
+
     // 1. Fetch raw recalls from NHTSA
-    let rawRecalls: any[] = [];
+    let rawRecalls: NhtsaRecall[] = [];
     if (yearParam) {
-      const url = `https://api.nhtsa.gov/recalls/recallsByVehicle?make=${encodeURIComponent(make)}&model=${encodeURIComponent(model)}&modelYear=${yearParam}`;
+      const url = `https://api.nhtsa.gov/recalls/recallsByVehicle?make=${encodeURIComponent(nhtsaMake)}&model=${encodeURIComponent(nhtsaModel)}&modelYear=${yearParam}`;
       const res = await fetch(url, { signal: AbortSignal.timeout(10000) });
-      if (res.ok) rawRecalls = (await res.json()).results ?? [];
+      if (res.ok) rawRecalls = ((await res.json()) as { results?: NhtsaRecall[] }).results ?? [];
     } else {
       const years = yearsParam
         ? yearsParam.split(',').map(y => y.trim()).filter(Boolean)
@@ -124,10 +188,10 @@ export async function GET(req: NextRequest) {
       const batches = await Promise.all(
         years.map(async (y) => {
           try {
-            const url = `https://api.nhtsa.gov/recalls/recallsByVehicle?make=${encodeURIComponent(make)}&model=${encodeURIComponent(model)}&modelYear=${y}`;
+            const url = `https://api.nhtsa.gov/recalls/recallsByVehicle?make=${encodeURIComponent(nhtsaMake)}&model=${encodeURIComponent(nhtsaModel)}&modelYear=${y}`;
             const res = await fetch(url, { signal: AbortSignal.timeout(10000) });
             if (!res.ok) return [];
-            return (await res.json()).results ?? [];
+            return ((await res.json()) as { results?: NhtsaRecall[] }).results ?? [];
           } catch { return []; }
         })
       );
@@ -136,9 +200,10 @@ export async function GET(req: NextRequest) {
 
     // Deduplicate + sort newest first
     const seen = new Set<string>();
-    const unique: any[] = [];
+    const unique: NhtsaRecall[] = [];
     for (const r of rawRecalls) {
-      const id = r.NHTSACampaignNumber ?? `${r.ReportReceivedDate}-${r.Component}`;
+      const id = r.NHTSACampaignNumber;
+      if (!id) continue;
       if (!seen.has(id)) { seen.add(id); unique.push(r); }
     }
     unique.sort((a, b) =>
@@ -148,22 +213,20 @@ export async function GET(req: NextRequest) {
     if (unique.length === 0) return NextResponse.json({ recalls: [] });
 
     // 2. Load cached records for all locales
-    const ids = unique.map(r => r.NHTSACampaignNumber ?? '').filter(Boolean);
+    const ids = unique.map(r => r.NHTSACampaignNumber);
     const allCached = ids.length > 0
-      ? await dbAll(`SELECT * FROM recalls_cache WHERE id IN (${ids.map(() => '?').join(',')})`, ...ids).catch(() => [])
+      ? await dbAll<RecallCacheRow>(`SELECT * FROM recalls_cache WHERE id IN (${ids.map(() => '?').join(',')})`, ...ids).catch(() => [])
       : [];
 
-    const hasHebrew = (s: string) => /[\u0590-\u05FF]/.test(s ?? '');
-    const cacheMap = new Map<string, any>();
-    for (const row of allCached) cacheMap.set(row.id as string, row);
+    const cacheMap = new Map<string, RecallCacheRow>();
+    for (const row of allCached) cacheMap.set(row.id, row);
 
     // For English locale — serve from cache (English fields) or fall back to formatted NHTSA data
     if (locale === 'en') {
       // Identify which recalls are missing English in cache — store them
       const missingEn = unique.filter(r => {
-        const id = r.NHTSACampaignNumber ?? '';
-        const cached = id ? cacheMap.get(id) : null;
-        return id && !cached?.component_en;
+        const cached = cacheMap.get(r.NHTSACampaignNumber);
+        return !cached?.component_en;
       });
       if (missingEn.length > 0) {
         await Promise.all(missingEn.map(r =>
@@ -181,8 +244,9 @@ export async function GET(req: NextRequest) {
         ));
         // Update local map
         for (const r of missingEn) {
-          const existing = cacheMap.get(r.NHTSACampaignNumber) ?? {};
-          cacheMap.set(r.NHTSACampaignNumber, {
+          const id = r.NHTSACampaignNumber;
+          const existing = cacheMap.get(id) ?? { id };
+          cacheMap.set(id, {
             ...existing,
             component_en: formatComponent(r.Component ?? ''),
             summary_en: r.Summary ?? '',
@@ -192,12 +256,14 @@ export async function GET(req: NextRequest) {
         }
       }
       const recalls: Recall[] = unique.map(r => {
-        const c = cacheMap.get(r.NHTSACampaignNumber ?? '');
+        const c = cacheMap.get(r.NHTSACampaignNumber);
+        const compEn = c?.component_en || formatComponent(r.Component ?? '');
         return {
           id:           r.NHTSACampaignNumber ?? '',
           year:         r.ModelYear ? parseInt(r.ModelYear) : extractYear(r.ReportReceivedDate ?? ''),
           date:         c?.date || formatDate(r.ReportReceivedDate ?? ''),
-          component:    c?.component_en || formatComponent(r.Component ?? ''),
+          component:    compEn,
+          componentEn:  compEn,
           summary:      c?.summary_en   || (r.Summary     ?? ''),
           consequence:  c?.consequence_en || (r.Consequence ?? ''),
           remedy:       c?.remedy_en    || (r.Remedy      ?? ''),
@@ -211,14 +277,13 @@ export async function GET(req: NextRequest) {
 
     // 3. Hebrew locale — translate only truly uncached recalls (not in DB at all)
     const toTranslate = unique.filter(r => {
-      const id = r.NHTSACampaignNumber ?? '';
-      return id && !cacheMap.has(id);
+      return !cacheMap.has(r.NHTSACampaignNumber);
     });
 
     // 4. Translate new ones in chunks of 6 and save to DB (with English fields too)
     if (toTranslate.length > 0) {
       const CHUNK = 6;
-      const rows: any[] = [];
+      const rows: RecallCacheRow[] = [];
 
       for (let i = 0; i < toTranslate.length; i += CHUNK) {
         const chunk = toTranslate.slice(i, i + CHUNK);
@@ -270,17 +335,16 @@ export async function GET(req: NextRequest) {
              remedy_he=CASE WHEN excluded.remedy_he != '' THEN excluded.remedy_he ELSE remedy_he END,
              component_en=excluded.component_en, summary_en=excluded.summary_en,
              consequence_en=excluded.consequence_en, remedy_en=excluded.remedy_en`,
-          row.id, row.make, row.model, row.date,
-          row.component_he, row.summary_he, row.consequence_he, row.remedy_he,
-          row.component_en, row.summary_en, row.consequence_en, row.remedy_en,
-          row.manufacturer, row.recall_year,
+          row.id, row.make ?? make.toLowerCase(), row.model ?? model.toLowerCase(), row.date ?? '',
+          row.component_he ?? '', row.summary_he ?? '', row.consequence_he ?? '', row.remedy_he ?? '',
+          row.component_en ?? '', row.summary_en ?? '', row.consequence_en ?? '', row.remedy_en ?? '',
+          row.manufacturer ?? '', row.recall_year ?? null,
         ).catch(err => console.error('[Recalls cache upsert]', err))
       ));
     }
 
     // 5. Build final Hebrew response from cache
     const recalls: Recall[] = unique
-      .filter(r => r.NHTSACampaignNumber)
       .map(r => {
         const cached = cacheMap.get(r.NHTSACampaignNumber);
         return {
@@ -288,6 +352,7 @@ export async function GET(req: NextRequest) {
           year:        r.ModelYear ? parseInt(r.ModelYear) : extractYear(r.ReportReceivedDate ?? ''),
           date:        cached?.date || formatDate(r.ReportReceivedDate ?? ''),
           component:   formatHeComponent(cached?.component_he) || formatComponent(r.Component ?? ''),
+          componentEn: cached?.component_en || formatComponent(r.Component ?? ''),
           summary:     cached?.summary_he    || r.Summary     || '',
           consequence: cached?.consequence_he || r.Consequence || '',
           remedy:      cached?.remedy_he     || r.Remedy      || '',

@@ -28,22 +28,20 @@ export default function SearchBox({ fullWidth = false, compact = false }: { full
 
   useEffect(() => {
     if (!query.trim()) { setResults([]); setOpen(false); return; }
-    const q = query.toLowerCase().trim();
+    const words = query.toLowerCase().trim().split(/\s+/);
+    const norm = (s: string) => s.toLowerCase().replace(/[אהוי]/g, '');
+    const matches = (target: string) => words.every(w => target.toLowerCase().includes(w) || norm(target).includes(norm(w)));
     const found: SearchResult[] = [];
     for (const make of carDatabase) {
-      if (
-        make.nameHe.toLowerCase().includes(q) ||
-        make.nameEn.toLowerCase().includes(q)
-      ) {
+      if (matches(make.nameHe) || matches(make.nameEn) || matches(make.slug)) {
         const makeName = isEn ? make.nameEn : make.nameHe;
         const allModels = isEn ? 'All Models' : 'כל הדגמים';
         found.push({ label: `${makeName} — ${allModels}`, href: `/cars/${make.slug}`, type: 'make' });
       }
       for (const model of make.models) {
-        if (
-          model.nameHe.toLowerCase().includes(q) ||
-          model.nameEn.toLowerCase().includes(q)
-        ) {
+        const combined = `${make.nameHe} ${model.nameHe}`;
+        const combinedEn = `${make.nameEn} ${model.nameEn}`;
+        if (matches(combined) || matches(combinedEn) || matches(model.nameHe) || matches(model.nameEn) || matches(model.slug)) {
           const makeName = isEn ? make.nameEn : make.nameHe;
           const modelName = isEn ? model.nameEn : model.nameHe;
           found.push({ label: `${makeName} ${modelName}`, href: `/cars/${make.slug}/${model.slug}`, type: 'model' });

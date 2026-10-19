@@ -62,12 +62,8 @@ export default function CarYearClient({ makeSlug, modelSlug, year, initialReview
     if (next === 'videos' && videos === null && !videosLoading) {
       setVideosLoading(true);
       try {
-        const res = await fetch(`/api/car-media?make=${makeSlug}&model=${modelSlug}&type=videos`);
-        const all: CarVideo[] = await res.json();
-        // Only show videos that mention this specific year; fall back to all if none found
-        const yearStr = String(year);
-        const yearVideos = all.filter(v => v.title.includes(yearStr));
-        setVideos(yearVideos.length > 0 ? yearVideos : all);
+        const res = await fetch(`/api/car-media?make=${makeSlug}&model=${modelSlug}&type=videos&year=${year}`);
+        setVideos(await res.json());
       } catch { setVideos([]); }
       finally { setVideosLoading(false); }
     }

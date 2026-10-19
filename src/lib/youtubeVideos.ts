@@ -10,6 +10,20 @@ export interface CarVideo {
   channel: string;
   published_at: string;
   thumbnail_url: string;
+  year: number | null;
+}
+
+interface YouTubeText { runs?: Array<{ text?: string }>; simpleText?: string; }
+interface YouTubeVideoRenderer {
+  videoId?: string;
+  title?: YouTubeText;
+  ownerText?: YouTubeText;
+  publishedTimeText?: YouTubeText;
+  thumbnail?: { thumbnails?: Array<{ url?: string }> };
+}
+interface YouTubeSearchItem { videoRenderer?: YouTubeVideoRenderer; }
+interface YouTubeSearchResponse {
+  contents?: { twoColumnSearchResultsRenderer?: { primaryContents?: { sectionListRenderer?: { contents?: Array<{ itemSectionRenderer?: { contents?: YouTubeSearchItem[] } }> } } } };
 }
 
 // Words that indicate a video is NOT a review
@@ -51,6 +65,59 @@ export async function getVideosForCar(makeSlug: string, modelSlug: string): Prom
   );
 }
 
+export async function getVideosForYear(makeSlug: string, modelSlug: string, year: number): Promise<CarVideo[]> {
+  // Try year-tagged videos first
+  const yearVideos = await dbAll<CarVideo>(
+    'SELECT * FROM car_videos WHERE make_slug = ? AND model_slug = ? AND year = ? ORDER BY published_at DESC LIMIT 12',
+    makeSlug, modelSlug, year,
+  );
+  if (yearVideos.length > 0) return yearVideos;
+
+  // Fall back: any video whose title mentions the year
+  const all = await getVideosForCar(makeSlug, modelSlug);
+  const yearStr = String(year);
+  const titled = all.filter(v => v.title.includes(yearStr));
+  return titled.length > 0 ? titled : all;
+}
+
+/** Search YouTube via the public InnerTube API — no API key required. */
+async function youtubeSearch(query: string): Promise<Array<{
+  ytId: string; title: string; channel: string;
+  publishedAt: string; thumbnail: string;
+}>> {
+  try {
+    const res = await fetch('https://www.youtube.com/youtubei/v1/search', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'User-Agent': 'Mozilla/5.0' },
+      body: JSON.stringify({
+        context: { client: { clientName: 'WEB', clientVersion: '2.20240101.00.00' } },
+        query,
+        params: 'EgIQAQ%3D%3D', // filter: videos only
+      }),
+    });
+    if (!res.ok) return [];
+    const data = await res.json() as YouTubeSearchResponse;
+    const contents = data.contents?.twoColumnSearchResultsRenderer?.primaryContents
+      ?.sectionListRenderer?.contents?.[0]?.itemSectionRenderer?.contents ?? [];
+
+    return contents
+      .filter((c): c is YouTubeSearchItem & { videoRenderer: YouTubeVideoRenderer } => Boolean(c.videoRenderer))
+      .map(({ videoRenderer: v }) => {
+        const ytId: string = v.videoId ?? '';
+        const title: string = v.title?.runs?.[0]?.text ?? '';
+        const channel: string = v.ownerText?.runs?.[0]?.text ?? '';
+        const publishedAt: string = v.publishedTimeText?.simpleText ?? '';
+        const thumbnail: string =
+          v.thumbnail?.thumbnails?.slice(-1)?.[0]?.url ?? // largest thumbnail
+          `https://i.ytimg.com/vi/${ytId}/hqdefault.jpg`;
+        return { ytId, title, channel, publishedAt, thumbnail };
+      })
+      .filter(v => v.ytId && v.title);
+  } catch {
+    return [];
+  }
+}
+
 export async function fetchAndStoreVideos(
   makeSlug: string,
   modelSlug: string,
@@ -58,12 +125,14 @@ export async function fetchAndStoreVideos(
   modelEn: string,
   makeHe: string,
   modelHe: string,
+  year?: number,
 ): Promise<{ inserted: number; skipped: number; error?: string }> {
-  const apiKey = process.env.YOUTUBE_API_KEY;
-  if (!apiKey) return { inserted: 0, skipped: 0, error: 'YOUTUBE_API_KEY missing' };
-
-  // Search with review-specific queries to get better results up front
-  const queries = [
+  const yearSuffix = year ? ` ${year}` : '';
+  const queries = year ? [
+    `${makeEn} ${modelEn}${yearSuffix} review`,
+    `${makeEn} ${modelEn}${yearSuffix} test drive`,
+    `${makeHe} ${modelHe}${yearSuffix} ביקורת`,
+  ] : [
     `${makeEn} ${modelEn} review`,
     `${makeEn} ${modelEn} test drive`,
     `${makeHe} ${modelHe} ביקורת`,
@@ -74,33 +143,13 @@ export async function fetchAndStoreVideos(
   let skipped = 0;
 
   for (const q of queries) {
-    const url = new URL('https://www.googleapis.com/youtube/v3/search');
-    url.searchParams.set('part', 'snippet');
-    url.searchParams.set('q', q);
-    url.searchParams.set('type', 'video');
-    url.searchParams.set('maxResults', '10');
-    url.searchParams.set('videoDuration', 'medium'); // 4–20 min — filters out clips & full films
-    url.searchParams.set('relevanceLanguage', 'iw');
-    url.searchParams.set('key', apiKey);
-
     try {
-      const res = await fetch(url.toString());
-      const data = await res.json();
-      if (!data.items) continue;
-
-      for (const item of data.items) {
-        const ytId: string = item.id?.videoId;
+      const results = await youtubeSearch(q);
+      for (const { ytId, title, channel, publishedAt, thumbnail } of results) {
         if (!ytId || seen.has(ytId)) continue;
         seen.add(ytId);
 
-        const title: string = item.snippet.title ?? '';
-        const channel: string = item.snippet.channelTitle ?? '';
-
-        // Filter: must look like a real review
-        if (!isLikelyReview(title)) {
-          skipped++;
-          continue;
-        }
+        if (!isLikelyReview(title)) { skipped++; continue; }
 
         videos.push({
           make_slug: makeSlug,
@@ -108,11 +157,9 @@ export async function fetchAndStoreVideos(
           youtube_id: ytId,
           title,
           channel,
-          published_at: item.snippet.publishedAt,
-          thumbnail_url:
-            item.snippet.thumbnails?.high?.url ??
-            item.snippet.thumbnails?.medium?.url ??
-            item.snippet.thumbnails?.default?.url ?? '',
+          published_at: publishedAt,
+          thumbnail_url: thumbnail,
+          year: year ?? null,
         });
       }
     } catch { /* skip failed query */ }
@@ -122,9 +169,9 @@ export async function fetchAndStoreVideos(
 
   for (const v of videos) {
     await dbRun(
-      `INSERT OR REPLACE INTO car_videos (id, make_slug, model_slug, youtube_id, title, channel, published_at, thumbnail_url)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-      randomUUID(), v.make_slug, v.model_slug, v.youtube_id, v.title, v.channel, v.published_at, v.thumbnail_url,
+      `INSERT OR REPLACE INTO car_videos (id, make_slug, model_slug, youtube_id, title, channel, published_at, thumbnail_url, year)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      randomUUID(), v.make_slug, v.model_slug, v.youtube_id, v.title, v.channel, v.published_at, v.thumbnail_url, v.year ?? null,
     ).catch(() => {});
   }
   return { inserted: videos.length, skipped };

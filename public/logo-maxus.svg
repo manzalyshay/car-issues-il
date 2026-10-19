@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 100">
+  <rect width="200" height="100" rx="10" fill="white"/>
+  <!-- Maxus: bold M shape -->
+  <path d="M38 70 L38 28 L70 58 L100 28 L130 58 L162 28 L162 70" fill="none" stroke="#e4002b" stroke-width="9" stroke-linejoin="round" stroke-linecap="round"/>
+  <text x="100" y="92" font-family="Arial,sans-serif" font-weight="700" font-size="12" fill="#e4002b" text-anchor="middle" letter-spacing="3">MAXUS</text>
+</svg>

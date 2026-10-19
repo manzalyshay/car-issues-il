@@ -9,7 +9,6 @@ const isCfBuild = process.env.CF_BUILD === '1';
 
 const nextConfig: NextConfig = {
   typescript: { ignoreBuildErrors: true },
-  eslint: { ignoreDuringBuilds: true },
   experimental: { cpus: 2 },
   ...(isCfBuild ? {
     turbopack: {

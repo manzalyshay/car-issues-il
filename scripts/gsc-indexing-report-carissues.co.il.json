@@ -1,0 +1,532 @@
+{
+  "indexed": [
+    {
+      "url": "/"
+    },
+    {
+      "url": "/news"
+    },
+    {
+      "url": "/cars"
+    },
+    {
+      "url": "/rankings"
+    },
+    {
+      "url": "/repairs"
+    },
+    {
+      "url": "/tco"
+    },
+    {
+      "url": "/vehicle-lookup"
+    },
+    {
+      "url": "/contact"
+    },
+    {
+      "url": "/terms"
+    },
+    {
+      "url": "/privacy"
+    },
+    {
+      "url": "/news/fe28d6ef87e0ae244fda6f66107267557776fea6"
+    },
+    {
+      "url": "/news/855bc1d8f7a498f26ed3180a81330296f97bea58"
+    },
+    {
+      "url": "/news/fa8152f7a650a99adcf29eaff67cdd814695db17"
+    },
+    {
+      "url": "/news/47c5e2a0c6d6a77b8049925bc006d62eacd21f62"
+    },
+    {
+      "url": "/news/b9138378e926e71a2c967b85f98db794de32de43"
+    },
+    {
+      "url": "/news/cd316badbf152f4dbf5340eda0f7a22e9e2dde0a"
+    },
+    {
+      "url": "/news/6df0c99efcbfbee5d80b0b641cd8a57b2000f679"
+    },
+    {
+      "url": "/news/9115d6b25991d0c78fad9fe5fe2074b99bc3b66f"
+    },
+    {
+      "url": "/news/cd03f645e09074f425f8795d1e5296470552b2ba"
+    },
+    {
+      "url": "/news/6513f79af7054db46e437c938e4c27bf0c6c2bf9"
+    },
+    {
+      "url": "/news/677928a302e8d08f5875d58d8b84298f3ef009c3"
+    },
+    {
+      "url": "/news/7ba5afe8d51f71cedaeea9aedfbb372b7de2757d"
+    },
+    {
+      "url": "/news/c25db8f33bac4da50fcfb37e3f244c4504c89090"
+    },
+    {
+      "url": "/news/4ba17da0b78cea714744ba417d10890e3e534619"
+    },
+    {
+      "url": "/news/0dceec61ad331e9f18505db2e115ebfb4c45c0b3"
+    },
+    {
+      "url": "/news/2d4dd382dcece98f375f2b50b9284507098e7acc"
+    },
+    {
+      "url": "/news/81d4e484da561cdc733a5f76c45a3064ef942550"
+    },
+    {
+      "url": "/news/6064e5f8b0ecad93e13b3b25cf1225096ef4dc8e"
+    },
+    {
+      "url": "/news/9b9d521b3f41476620a36d6d8b86ea30b9a9656d"
+    },
+    {
+      "url": "/news/56ae6d474878f3ee114c92918238fc960a128b0a"
+    },
+    {
+      "url": "/news/f3817b9424b443885e6bf3fcf05f3142ccc9ecfa"
+    },
+    {
+      "url": "/news/7301443b6588b73476967af93029896f7669d1dc"
+    },
+    {
+      "url": "/news/435060a721d338cfd94d732504e93ac88f75d2ce"
+    },
+    {
+      "url": "/news/96135ca6d618b607bc617eebd6e30cbb92139a1c"
+    },
+    {
+      "url": "/news/004c07366e62d7fcc62bd4dff4dc2db17735ae19"
+    },
+    {
+      "url": "/news/7deac6a03ca3772fd81ca2e747f8636e0ee09daf"
+    },
+    {
+      "url": "/news/9b97de92f7e37d93dbc24076ac570e33f392f7a4"
+    },
+    {
+      "url": "/news/3b672011c613f201e40607634d44adea3cc5a90d"
+    },
+    {
+      "url": "/news/f1379792d636889c529e96e2c2b0b9b1d22bea5e"
+    },
+    {
+      "url": "/news/16ab6b3a741310bd206a925bd8bcdbf0f581537b"
+    },
+    {
+      "url": "/news/e6e3ee5ee3fbb66ac46ccecc0805c181fca1a915"
+    },
+    {
+      "url": "/news/3660a8bcbb92be0f6b572aaa876e489051754478"
+    },
+    {
+      "url": "/news/ac82858fd467f9fca0a757b998de4d2c68a5f0b0"
+    },
+    {
+      "url": "/news/da1c94a58b0b0e36623bcd588bb684b92857283f"
+    },
+    {
+      "url": "/news/8eb524ee62250ac03d44ff245f199a4383718187"
+    },
+    {
+      "url": "/news/b1b0e89d9467133b7fc4e316e5ba1ab7156481e0"
+    },
+    {
+      "url": "/news/71cf45b47a4ce7d7291567ae216902ab0ecd8584"
+    },
+    {
+      "url": "/news/4e3c491cc020d67baf556b4c374b924796434181"
+    },
+    {
+      "url": "/news/755e624a6bf04a7d0802411668a7462efa9c4209"
+    },
+    {
+      "url": "/news/02436afbd63bbbdcc8872f5295b030f736e23c08"
+    },
+    {
+      "url": "/news/8010918000f20847ca7392046aa0bb2baa37357a"
+    },
+    {
+      "url": "/news/12b5fb3580a29fecdc04a7cdc513f311ab9fc669"
+    },
+    {
+      "url": "/news/eee26c19d556d550a712bc18722148e4deb8a1f2"
+    },
+    {
+      "url": "/news/bb0747f3e180fdd5c637ce8407fe00ad1f7db9fd"
+    },
+    {
+      "url": "/news/ac1a8df0c516b750c9ed86fb27fb462a59e68bc3"
+    },
+    {
+      "url": "/news/957f0f594eafecacbbb7c36a05a5bfa881e447a2"
+    },
+    {
+      "url": "/news/84f03cb85e260d82b5be6600ada38b156534d627"
+    },
+    {
+      "url": "/cars/toyota/corolla"
+    },
+    {
+      "url": "/cars/toyota/yaris"
+    },
+    {
+      "url": "/cars/toyota/hilux"
+    },
+    {
+      "url": "/cars/toyota/chr"
+    },
+    {
+      "url": "/cars/toyota/prius"
+    },
+    {
+      "url": "/cars/toyota/bz4x"
+    },
+    {
+      "url": "/cars/toyota/yaris-cross"
+    },
+    {
+      "url": "/cars/toyota/corolla-cross"
+    },
+    {
+      "url": "/cars/toyota/land-cruiser"
+    },
+    {
+      "url": "/cars/fiat/500"
+    },
+    {
+      "url": "/cars/fiat/tipo"
+    },
+    {
+      "url": "/cars/fiat/tipo-cross"
+    },
+    {
+      "url": "/cars/fiat/panda"
+    },
+    {
+      "url": "/cars/fiat/ducato"
+    },
+    {
+      "url": "/cars/fiat/doblo"
+    },
+    {
+      "url": "/cars/chevrolet/spark"
+    },
+    {
+      "url": "/cars/chevrolet/cruze"
+    },
+    {
+      "url": "/cars/chevrolet/captiva"
+    },
+    {
+      "url": "/cars/chevrolet/trailblazer"
+    },
+    {
+      "url": "/cars/chevrolet/malibu"
+    },
+    {
+      "url": "/cars/chevrolet/tahoe"
+    },
+    {
+      "url": "/cars/chevrolet/colorado"
+    },
+    {
+      "url": "/cars/chevrolet/camaro"
+    },
+    {
+      "url": "/cars/toyota/corolla/2026"
+    },
+    {
+      "url": "/cars/toyota/corolla/2025"
+    },
+    {
+      "url": "/cars/toyota/corolla/2024"
+    },
+    {
+      "url": "/cars/toyota/corolla/2023"
+    },
+    {
+      "url": "/cars/toyota/corolla/2022"
+    },
+    {
+      "url": "/cars/toyota/corolla/2021"
+    },
+    {
+      "url": "/cars/toyota/corolla/2020"
+    },
+    {
+      "url": "/cars/toyota/corolla/2019"
+    },
+    {
+      "url": "/cars/toyota/corolla/2017"
+    },
+    {
+      "url": "/cars/toyota/corolla/2016"
+    },
+    {
+      "url": "/cars/toyota/corolla/2015"
+    },
+    {
+      "url": "/cars/toyota/corolla/2014"
+    },
+    {
+      "url": "/cars/toyota/camry/2026"
+    },
+    {
+      "url": "/cars/toyota/camry/2025"
+    },
+    {
+      "url": "/cars/toyota/camry/2024"
+    },
+    {
+      "url": "/cars/toyota/camry/2023"
+    },
+    {
+      "url": "/cars/toyota/camry/2022"
+    },
+    {
+      "url": "/cars/toyota/camry/2018"
+    },
+    {
+      "url": "/cars/toyota/camry/2016"
+    },
+    {
+      "url": "/cars/toyota/camry/2015"
+    },
+    {
+      "url": "/cars/toyota/yaris/2026"
+    },
+    {
+      "url": "/cars/toyota/yaris/2025"
+    },
+    {
+      "url": "/cars/toyota/yaris/2024"
+    },
+    {
+      "url": "/cars/toyota/yaris/2023"
+    },
+    {
+      "url": "/cars/toyota/yaris/2022"
+    },
+    {
+      "url": "/cars/compare/toyota/camry/toyota/corolla"
+    },
+    {
+      "url": "/cars/compare/toyota/corolla/toyota/prius"
+    },
+    {
+      "url": "/cars/compare/fiat/tipo/toyota/corolla"
+    },
+    {
+      "url": "/cars/compare/chevrolet/cruze/toyota/corolla"
+    },
+    {
+      "url": "/cars/compare/chevrolet/malibu/toyota/corolla"
+    },
+    {
+      "url": "/cars/compare/porsche/panamera/toyota/corolla"
+    },
+    {
+      "url": "/cars/compare/alfa-romeo/giulia/toyota/corolla"
+    },
+    {
+      "url": "/cars/compare/honda/civic/toyota/corolla"
+    },
+    {
+      "url": "/cars/compare/mazda/mazda3/toyota/corolla"
+    },
+    {
+      "url": "/cars/compare/mazda/mazda6/toyota/corolla"
+    },
+    {
+      "url": "/cars/compare/hyundai/sonata/toyota/corolla"
+    },
+    {
+      "url": "/cars/compare/hyundai/elantra/toyota/corolla"
+    },
+    {
+      "url": "/cars/compare/kia/cerato/toyota/corolla"
+    },
+    {
+      "url": "/cars/compare/toyota/corolla/volkswagen/passat"
+    },
+    {
+      "url": "/cars/compare/bmw/series3/toyota/corolla"
+    },
+    {
+      "url": "/cars/compare/bmw/series5/toyota/corolla"
+    }
+  ],
+  "notIndexed": [
+    {
+      "url": "/embed",
+      "verdict": "NEUTRAL",
+      "coverageState": "Alternate page with proper canonical tag",
+      "crawledAs": "MOBILE",
+      "robotsTxtState": "ALLOWED",
+      "indexingState": "INDEXING_ALLOWED"
+    },
+    {
+      "url": "/news/6e07f0fe4810a0ff81c0d0ac1fca3b0335f16231",
+      "verdict": "NEUTRAL",
+      "coverageState": "URL is unknown to Google",
+      "robotsTxtState": "ROBOTS_TXT_STATE_UNSPECIFIED",
+      "indexingState": "INDEXING_STATE_UNSPECIFIED"
+    },
+    {
+      "url": "/news/6d89ef3b4a7413fd1b2a0f72cc6eb629de869a13",
+      "verdict": "NEUTRAL",
+      "coverageState": "URL is unknown to Google",
+      "robotsTxtState": "ROBOTS_TXT_STATE_UNSPECIFIED",
+      "indexingState": "INDEXING_STATE_UNSPECIFIED"
+    },
+    {
+      "url": "/news/af83d895039c9ea57cdc3d5c1504f1dd3804ab73",
+      "verdict": "NEUTRAL",
+      "coverageState": "URL is unknown to Google",
+      "robotsTxtState": "ROBOTS_TXT_STATE_UNSPECIFIED",
+      "indexingState": "INDEXING_STATE_UNSPECIFIED"
+    },
+    {
+      "url": "/news/edd6e98be0fa1b326e35dbe5dce2296f62ac7bd7",
+      "verdict": "NEUTRAL",
+      "coverageState": "Discovered - currently not indexed",
+      "crawledAs": "CRAWLING_USER_AGENT_UNSPECIFIED",
+      "robotsTxtState": "ROBOTS_TXT_STATE_UNSPECIFIED",
+      "indexingState": "INDEXING_STATE_UNSPECIFIED"
+    },
+    {
+      "url": "/cars/toyota/camry",
+      "verdict": "NEUTRAL",
+      "coverageState": "Crawled - currently not indexed",
+      "crawledAs": "MOBILE",
+      "robotsTxtState": "ALLOWED",
+      "indexingState": "INDEXING_ALLOWED"
+    },
+    {
+      "url": "/cars/toyota/rav4",
+      "verdict": "NEUTRAL",
+      "coverageState": "Crawled - currently not indexed",
+      "crawledAs": "MOBILE",
+      "robotsTxtState": "ALLOWED",
+      "indexingState": "INDEXING_ALLOWED"
+    },
+    {
+      "url": "/cars/toyota/supra",
+      "verdict": "NEUTRAL",
+      "coverageState": "URL is unknown to Google",
+      "robotsTxtState": "ROBOTS_TXT_STATE_UNSPECIFIED",
+      "indexingState": "INDEXING_STATE_UNSPECIFIED"
+    },
+    {
+      "url": "/cars/toyota/gr86",
+      "verdict": "NEUTRAL",
+      "coverageState": "URL is unknown to Google",
+      "robotsTxtState": "ROBOTS_TXT_STATE_UNSPECIFIED",
+      "indexingState": "INDEXING_STATE_UNSPECIFIED"
+    },
+    {
+      "url": "/cars/fiat/500e",
+      "verdict": "NEUTRAL",
+      "coverageState": "Server error (5xx)",
+      "crawledAs": "MOBILE",
+      "robotsTxtState": "ALLOWED",
+      "indexingState": "INDEXING_STATE_UNSPECIFIED"
+    },
+    {
+      "url": "/cars/fiat/500x",
+      "verdict": "NEUTRAL",
+      "coverageState": "Page with redirect",
+      "crawledAs": "MOBILE",
+      "robotsTxtState": "ALLOWED",
+      "indexingState": "INDEXING_ALLOWED"
+    },
+    {
+      "url": "/cars/chevrolet/equinox",
+      "verdict": "NEUTRAL",
+      "coverageState": "Page with redirect",
+      "crawledAs": "MOBILE",
+      "robotsTxtState": "ALLOWED",
+      "indexingState": "INDEXING_ALLOWED"
+    },
+    {
+      "url": "/cars/toyota/corolla/2018",
+      "verdict": "NEUTRAL",
+      "coverageState": "Page with redirect",
+      "crawledAs": "MOBILE",
+      "robotsTxtState": "ALLOWED",
+      "indexingState": "INDEXING_ALLOWED"
+    },
+    {
+      "url": "/cars/toyota/camry/2021",
+      "verdict": "NEUTRAL",
+      "coverageState": "Crawled - currently not indexed",
+      "crawledAs": "MOBILE",
+      "robotsTxtState": "ALLOWED",
+      "indexingState": "INDEXING_ALLOWED"
+    },
+    {
+      "url": "/cars/toyota/camry/2020",
+      "verdict": "NEUTRAL",
+      "coverageState": "Crawled - currently not indexed",
+      "crawledAs": "MOBILE",
+      "robotsTxtState": "ALLOWED",
+      "indexingState": "INDEXING_ALLOWED"
+    },
+    {
+      "url": "/cars/toyota/camry/2019",
+      "verdict": "NEUTRAL",
+      "coverageState": "Duplicate without user-selected canonical",
+      "crawledAs": "MOBILE",
+      "robotsTxtState": "ALLOWED",
+      "indexingState": "INDEXING_ALLOWED"
+    },
+    {
+      "url": "/cars/toyota/camry/2017",
+      "verdict": "NEUTRAL",
+      "coverageState": "Duplicate without user-selected canonical",
+      "crawledAs": "MOBILE",
+      "robotsTxtState": "ALLOWED",
+      "indexingState": "INDEXING_ALLOWED"
+    },
+    {
+      "url": "/cars/compare/toyota/corolla/volkswagen/arteon",
+      "verdict": "NEUTRAL",
+      "coverageState": "URL is unknown to Google",
+      "robotsTxtState": "ROBOTS_TXT_STATE_UNSPECIFIED",
+      "indexingState": "INDEXING_STATE_UNSPECIFIED"
+    },
+    {
+      "url": "/cars/compare/mercedes/cla/toyota/corolla",
+      "verdict": "NEUTRAL",
+      "coverageState": "Page with redirect",
+      "crawledAs": "MOBILE",
+      "robotsTxtState": "ALLOWED",
+      "indexingState": "INDEXING_ALLOWED"
+    },
+    {
+      "url": "/cars/compare/mercedes/a-class/toyota/corolla",
+      "verdict": "NEUTRAL",
+      "coverageState": "Alternate page with proper canonical tag",
+      "crawledAs": "MOBILE",
+      "robotsTxtState": "ALLOWED",
+      "indexingState": "INDEXING_ALLOWED"
+    },
+    {
+      "url": "/cars/compare/mercedes/e-class/toyota/corolla",
+      "verdict": "NEUTRAL",
+      "coverageState": "Page with redirect",
+      "crawledAs": "MOBILE",
+      "robotsTxtState": "ALLOWED",
+      "indexingState": "INDEXING_ALLOWED"
+    }
+  ],
+  "errors": []
+}

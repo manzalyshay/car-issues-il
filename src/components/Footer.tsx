@@ -27,7 +27,9 @@ function LangSwitch({ isEn }: { isEn: boolean }) {
   // the switcher works as a real internal link into every deep page on the
   // other domain (crawl/discovery signal, not just a UX nicety).
   const targetOrigin = isEn ? 'https://carissues.co.il' : 'https://carissues.net';
-  const href = `${targetOrigin}${pathname && pathname !== '/' ? pathname : ''}`;
+  // ?clang=1 tells the middleware this is an explicit user choice — sets the preference
+  // cookie so the geo-redirect doesn't immediately bounce them back to the other domain
+  const href = `${targetOrigin}${pathname && pathname !== '/' ? pathname : ''}?clang=1`;
 
   return (
     <a
@@ -72,6 +74,7 @@ export default function Footer() {
       head: isEn ? 'Info' : 'מידע',
       links: [
         { href: '/privacy', label: isEn ? 'Privacy Policy' : 'מדיניות פרטיות' },
+        { href: '/accessibility', label: isEn ? 'Accessibility' : 'הצהרת נגישות' },
         { href: '/news',    label: isEn ? 'News'           : 'חדשות' },
         { href: '/sales',   label: isEn ? 'Deals'          : 'מבצעים' },
       ],

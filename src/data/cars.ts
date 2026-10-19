@@ -12,6 +12,7 @@ export interface CarModel {
   category: 'sedan' | 'suv' | 'hatchback' | 'pickup' | 'van' | 'coupe' | 'electric';
   trims?: string[];
   leadingImageUrl?: string | null;
+  activeVehiclesIl?: number | null;
 }
 
 export type EngineType = 'petrol' | 'hybrid' | 'phev' | 'electric' | 'diesel';
@@ -97,5 +98,7 @@ export function getCategoryLabel(cat: CarModel['category'], locale: 'he' | 'en' 
     sedan: 'Sedan', suv: 'SUV', hatchback: 'Hatchback', pickup: 'Pickup',
     van: 'Van', coupe: 'Coupe', electric: 'Electric',
   };
-  return (locale === 'en' ? MAP_EN : MAP_HE)[cat] ?? cat;
+  // DB also uses categories outside the type (e.g. 'sports')
+  const EXTRA: Record<string, { he: string; en: string }> = { sports: { he: 'ספורט', en: 'Sports' } };
+  return (locale === 'en' ? MAP_EN : MAP_HE)[cat] ?? EXTRA[cat as string]?.[locale] ?? cat;
 }

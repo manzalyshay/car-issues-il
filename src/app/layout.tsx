@@ -55,7 +55,15 @@ export async function generateMetadata(): Promise<Metadata> {
       template: '%s | CarIssues',
     },
     metadataBase: new URL(baseUrl),
-    icons: { icon: isEn ? '/favicon-net.svg' : '/favicon.svg', apple: isEn ? '/favicon-net.svg' : '/favicon.svg' },
+    icons: {
+      icon: [
+        { url: isEn ? '/favicon-net.svg' : '/favicon.svg', type: 'image/svg+xml' },
+        { url: '/favicon-32.png', type: 'image/png', sizes: '32x32' },
+        { url: '/favicon-16.png', type: 'image/png', sizes: '16x16' },
+      ],
+      apple: '/apple-touch-icon.png',
+    },
+    manifest: '/manifest.webmanifest',
     description: isEn
       ? 'Real car owner reviews, common problems, recalls and reliability data — by make, model and year.'
       : "המאגר הגדול ביותר בישראל לבעיות רכב, ביקורות וחוות דעת. מצא בעיות נפוצות לפי יצרן, דגם ושנה.",
@@ -69,7 +77,7 @@ export async function generateMetadata(): Promise<Metadata> {
       alternateLocale: isEn ? 'he_IL' : 'en_US',
       siteName: 'CarIssues',
       url: baseUrl,
-      images: [{ url: '/og-default.svg', width: 1200, height: 630, alt: 'CarIssues' }],
+      images: [{ url: '/og-default.png', width: 1200, height: 630, alt: 'CarIssues' }],
     },
     twitter: { card: 'summary_large_image' },
     alternates: {
@@ -133,14 +141,17 @@ export default async function RootLayout({ children }: { children: React.ReactNo
     <html lang={isEn ? 'en' : 'he'} dir={isEn ? 'ltr' : 'rtl'} className={`${heebo.variable} ${rubik.variable} ${assistant.variable}`}>
       <body className="flex flex-col min-h-screen">
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(orgJsonLd) }} />
-        {isProdHost && (
+        {isProdHost && !isEmbed && (
           <>
             <Script src={`https://www.googletagmanager.com/gtag/js?id=${isEn ? GA4_EN : GA4_HE}`} strategy="afterInteractive" />
             <Script id="ga4-init" strategy="afterInteractive">{`
               window.dataLayer = window.dataLayer || [];
               function gtag(){dataLayer.push(arguments);}
               gtag('js', new Date());
-              gtag('config', '${isEn ? GA4_EN : GA4_HE}');
+              gtag('config', '${isEn ? GA4_EN : GA4_HE}', {
+                page_location: window.location.href,
+                page_title: document.title,
+              });
             `}</Script>
           </>
         )}
@@ -148,8 +159,11 @@ export default async function RootLayout({ children }: { children: React.ReactNo
           <AuthProvider>
             {!isEmbed && <NavigationProgress />}
             {!isEmbed && <PageViewTracker />}
+            {!isEmbed && (
+              <a href="#main-content" className="skip-link">{isEn ? 'Skip to main content' : 'דלגו לתוכן הראשי'}</a>
+            )}
             {!isEmbed && <Header />}
-            <main className={isEmbed ? '' : 'flex-1'}>{children}</main>
+            <main id="main-content" tabIndex={-1} className={isEmbed ? '' : 'flex-1'}>{children}</main>
             {!isEmbed && <Footer />}
           </AuthProvider>
         </LocaleProvider>

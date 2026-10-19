@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 100">
+  <rect width="200" height="100" rx="10" fill="white"/>
+  <!-- GAC: circular G mark with ring -->
+  <circle cx="100" cy="44" r="34" fill="none" stroke="#c8102e" stroke-width="5"/>
+  <!-- Stylized G -->
+  <path d="M118 44 L104 44 L104 56 Q118 56 122 44 Q126 28 110 20 Q88 12 80 32 Q72 52 86 64 Q100 76 118 66" fill="none" stroke="#c8102e" stroke-width="6" stroke-linecap="round"/>
+  <text x="100" y="90" font-family="Arial Black,Arial,sans-serif" font-weight="900" font-size="13" fill="#c8102e" text-anchor="middle" letter-spacing="5">GAC</text>
+</svg>

@@ -22,17 +22,22 @@ export default function HeroSearch() {
   useEffect(() => { fetch('/api/cars').then(r => r.json()).then(setDb); }, []);
 
   useEffect(() => {
-    const q = query.trim().toLowerCase();
+    const q = query.trim();
     if (!q) { setResults([]); setOpen(false); setActive(-1); return; }
+    const words = q.toLowerCase().split(/\s+/);
+    const norm = (s: string) => s.toLowerCase().replace(/[אהוי]/g, '');
+    const matches = (target: string) => words.every(w => target.toLowerCase().includes(w) || norm(target).includes(norm(w)));
     const makes: Result[] = [];
     const models: Result[] = [];
     for (const make of db) {
-      if (make.nameHe.toLowerCase().includes(q) || make.nameEn.toLowerCase().includes(q)) {
+      if (matches(make.nameHe) || matches(make.nameEn) || matches(make.slug)) {
         makes.push({ label: locale==='en' ? make.nameEn : make.nameHe, sublabel: `${make.models.length} ${t.search.model}s`, href: `/cars/${make.slug}`, type: 'make', logoUrl: make.logoUrl, nameEn: make.nameEn });
       }
       for (const model of make.models) {
-        if (model.nameHe.toLowerCase().includes(q) || model.nameEn.toLowerCase().includes(q) || (`${make.nameHe} ${model.nameHe}`).toLowerCase().includes(q) || (`${make.nameEn} ${model.nameEn}`).toLowerCase().includes(q)) {
-          models.push({ label: locale==='en' ? `${make.nameEn} ${model.nameEn}` : `${make.nameHe} ${model.nameHe}`, sublabel: locale==='en' ? '' : model.nameEn, href: `/cars/${make.slug}/${model.slug}`, type: 'model', logoUrl: make.logoUrl, nameEn: make.nameEn });
+        const combinedHe = `${make.nameHe} ${model.nameHe}`;
+        const combinedEn = `${make.nameEn} ${model.nameEn}`;
+        if (matches(combinedHe) || matches(combinedEn) || matches(model.nameHe) || matches(model.nameEn) || matches(model.slug)) {
+          models.push({ label: locale==='en' ? combinedEn : combinedHe, sublabel: locale==='en' ? '' : model.nameEn, href: `/cars/${make.slug}/${model.slug}`, type: 'model', logoUrl: make.logoUrl, nameEn: make.nameEn });
         }
       }
     }

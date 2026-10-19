@@ -104,7 +104,7 @@ export default function RecallsBarChart({ makeEn, modelEn, years, isEn }: Props)
       {header(isEn)}
 
       <div style={{ padding: '16px 20px 12px' }}>
-        <svg viewBox={`0 0 ${W} ${H}`} style={{ width: '100%', display: 'block', overflow: 'visible' }} dir="ltr">
+        <svg viewBox={`0 0 ${W} ${H}`} style={{ width: '100%', display: 'block', overflow: 'visible', direction: 'ltr' }}>
           <defs>
             <filter id="rbc-shadow" x="-25%" y="-25%" width="150%" height="150%">
               <feDropShadow dx="0" dy="1" stdDeviation="3" floodColor="rgba(0,0,0,0.12)" />
@@ -252,7 +252,7 @@ function header(isEn: boolean) {
       <span style={{ fontSize: 15, fontWeight: 700, color: '#0d1b2f' }}>
         {isEn ? 'Recalls by Model Year' : 'ריקולים לפי שנת דגם'}
       </span>
-      <span style={{ fontSize: 12, color: '#5b6a86' }}>NHTSA</span>
+      <span style={{ fontSize: 12, color: '#5b6a86' }}>{isEn ? 'NHTSA' : 'ארה״ב'}</span>
     </div>
   );
 }

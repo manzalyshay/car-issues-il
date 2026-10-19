@@ -51,6 +51,7 @@ function CarSelector({ value, onChange, options, label }: {
     <div className="card cmp-selector-card" style={{ padding: 24, flex: '1 1 0', minWidth: 0 }}>
       <div style={{ fontWeight: 700, fontSize: '0.875rem', color: 'var(--text-muted)', marginBottom: 16, textTransform: 'uppercase', letterSpacing: '0.06em' }}>{label}</div>
       <select
+        aria-label={`${label} — ${locale === 'en' ? 'make' : 'יצרן'}`}
         value={make}
         onChange={e => { setMake(e.target.value); setModel(''); onChange(null); }}
         style={{ width: '100%', height: 42, padding: '0 12px', border: '1.5px solid var(--border)', borderRadius: 10, background: 'var(--bg)', color: 'var(--text)', fontSize: '0.9375rem', marginBottom: 12, cursor: 'pointer' }}
@@ -62,6 +63,7 @@ function CarSelector({ value, onChange, options, label }: {
         })}
       </select>
       <select
+        aria-label={`${label} — ${locale === 'en' ? 'model' : 'דגם'}`}
         value={model}
         onChange={e => setModel(e.target.value)}
         disabled={!make}
@@ -95,7 +97,7 @@ function ScoreBar({ label, value, max = 10 }: { label: string; value: number | n
   );
 }
 
-function ComparePageInner() {
+function ComparePageInner({ showHeader = true }: { showHeader?: boolean }) {
   const searchParams = useSearchParams();
   const router = useRouter();
   const { locale, t } = useLocale();
@@ -200,15 +202,19 @@ function ComparePageInner() {
         }
       `}</style>
       <div className="container">
-        {/* Breadcrumb */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: 'var(--text-muted)', fontSize: '0.875rem', marginBottom: 20, flexWrap: 'wrap' }}>
-          <Link href="/" style={{ color: 'var(--text-muted)', textDecoration: 'none' }}>{t.carsPage.home}</Link>
-          <span>›</span>
-          <span style={{ color: 'var(--text)' }}>{cmp.breadcrumb}</span>
-        </div>
+        {showHeader && (
+          <>
+            {/* Breadcrumb */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: 'var(--text-muted)', fontSize: '0.875rem', marginBottom: 20, flexWrap: 'wrap' }}>
+              <Link href="/" style={{ color: 'var(--text-muted)', textDecoration: 'none' }}>{t.carsPage.home}</Link>
+              <span>›</span>
+              <span style={{ color: 'var(--text)' }}>{cmp.breadcrumb}</span>
+            </div>
 
-        <h1 style={{ fontSize: 'clamp(1.3rem, 4vw, 2rem)', fontWeight: 900, marginBottom: 6 }}>{cmp.title}</h1>
-        <p style={{ color: 'var(--text-muted)', marginBottom: 28, fontSize: '0.9375rem' }}>{cmp.subtitle}</p>
+            <h1 style={{ fontSize: 'clamp(1.3rem, 4vw, 2rem)', fontWeight: 900, marginBottom: 6 }}>{cmp.title}</h1>
+            <p style={{ color: 'var(--text-muted)', marginBottom: 28, fontSize: '0.9375rem' }}>{cmp.subtitle}</p>
+          </>
+        )}
 
         {/* Selectors */}
         <div className="cmp-selector-row" style={{ display: 'flex', gap: 16, flexWrap: 'nowrap', marginBottom: 32, alignItems: 'stretch' }}>
@@ -379,10 +385,10 @@ function ComparePageInner() {
   );
 }
 
-export function CompareClient() {
+export function CompareClient({ showHeader = true }: { showHeader?: boolean }) {
   return (
     <Suspense fallback={<div style={{ padding: 80, textAlign: 'center', color: 'var(--text-muted)' }}>Loading...</div>}>
-      <ComparePageInner />
+      <ComparePageInner showHeader={showHeader} />
     </Suspense>
   );
 }

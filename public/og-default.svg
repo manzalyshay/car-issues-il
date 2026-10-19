@@ -1,29 +1,36 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630">
   <defs>
     <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0%" stop-color="#1a1a2e"/>
-      <stop offset="50%" stop-color="#2d1b2e"/>
-      <stop offset="100%" stop-color="#1a1d3b"/>
-    </linearGradient>
-    <linearGradient id="red" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0%" stop-color="#e63946"/>
-      <stop offset="100%" stop-color="#e76f51"/>
+      <stop offset="0%" stop-color="#0a1520"/>
+      <stop offset="100%" stop-color="#162033"/>
     </linearGradient>
   </defs>
   <rect width="1200" height="630" fill="url(#bg)"/>
-  <!-- glow -->
-  <ellipse cx="600" cy="200" rx="500" ry="300" fill="rgba(230,57,70,0.15)"/>
-  <!-- logo box -->
-  <rect x="530" y="180" width="140" height="140" rx="32" fill="url(#red)"/>
-  <!-- car body -->
-  <rect x="553" y="275" width="94" height="26" rx="6" fill="white"/>
-  <path d="M568,275 L577,248 Q581,244 586,244 L617,244 Q622,244 626,248 L635,275 Z" fill="white"/>
-  <path d="M580,273 L586,255 Q588,253 590,253 L613,253 Q615,253 617,255 L623,273 Z" fill="rgba(230,57,70,0.7)"/>
-  <circle cx="572" cy="301" r="10" fill="url(#red)" stroke="white" stroke-width="5"/>
-  <circle cx="631" cy="301" r="10" fill="url(#red)" stroke="white" stroke-width="5"/>
+  <!-- subtle glow -->
+  <circle cx="900" cy="100" r="300" fill="#1a3050" opacity="0.5"/>
+  <circle cx="200" cy="550" r="200" fill="#1a3050" opacity="0.3"/>
+  <!-- car-on-lift icon scaled from favicon, centered -->
+  <g transform="translate(470,60) scale(0.5)">
+    <rect x="3" y="3" width="506" height="506" rx="112" fill="#0F1D30" stroke="#1e3350" stroke-width="4"/>
+    <g transform="translate(-42 4) scale(1.15)">
+      <rect x="96" y="118" width="36" height="196" rx="5" fill="#3578F4"/>
+      <rect x="82" y="306" width="64" height="14" rx="4" fill="#3578F4"/>
+      <rect x="384" y="156" width="32" height="158" rx="5" fill="#3578F4"/>
+      <rect x="370" y="306" width="60" height="14" rx="4" fill="#3578F4"/>
+      <rect x="132" y="276" width="70" height="12" rx="3" fill="#3578F4"/>
+      <rect x="314" y="276" width="70" height="12" rx="3" fill="#3578F4"/>
+      <path fill="#FFFFFF" d="M74 236 C64 236 60 224 64 212 C70 196 90 190 118 186 L156 181 C188 154 230 138 280 138 C330 138 364 156 396 180 C424 184 444 190 452 200 C458 208 458 224 452 232 C448 238 440 242 430 242 L80 242 Z"/>
+      <path fill="#FFFFFF" fill-opacity="0.9" d="M432 198 l14 2 c2 4 2 7 0 9 l-12 -2 z" opacity="1"/>
+      <circle cx="150" cy="248" r="32" fill="#FFFFFF" stroke="#0F1D30" stroke-width="9"/>
+      <circle cx="368" cy="248" r="32" fill="#FFFFFF" stroke="#0F1D30" stroke-width="9"/>
+    </g>
+  </g>
   <!-- title -->
-  <text x="600" y="390" text-anchor="middle" font-family="Arial, sans-serif" font-weight="900" font-size="72" fill="white">CarIssues<tspan fill="#e63946">IL</tspan></text>
-  <text x="600" y="450" text-anchor="middle" font-family="Arial, sans-serif" font-size="32" fill="rgba(255,255,255,0.6)">בעיות רכב בישראל</text>
+  <text x="600" y="390" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-weight="800" font-size="80" letter-spacing="-1">
+    <tspan fill="#FFFFFF">car</tspan><tspan fill="#3578F4">issues</tspan>
+  </text>
+  <!-- Hebrew subtitle -->
+  <text x="600" y="450" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="34" fill="rgba(255,255,255,0.6)" direction="rtl" xml:lang="he">בעיות רכב בישראל</text>
   <!-- tagline -->
-  <text x="600" y="530" text-anchor="middle" font-family="Arial, sans-serif" font-size="22" fill="rgba(255,255,255,0.4)">ביקורות אמיתיות · בעיות נפוצות · סיכומי AI</text>
+  <text x="600" y="530" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="22" fill="rgba(255,255,255,0.35)" direction="rtl" xml:lang="he">ביקורות אמיתיות · בעיות נפוצות · סיכומי AI</text>
 </svg>

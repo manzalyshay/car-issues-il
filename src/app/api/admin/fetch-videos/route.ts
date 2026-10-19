@@ -7,7 +7,7 @@ export async function POST(req: NextRequest) {
   if (!await isAdmin(req)) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
   const body = await req.json().catch(() => ({}));
-  const { makeSlug, modelSlug, makeEn, modelEn, makeHe, modelHe, all } = body;
+  const { makeSlug, modelSlug, makeEn, modelEn, makeHe, modelHe, all, year } = body;
 
   // Fetch for all cars (bulk, slow — runs in background)
   if (all) {
@@ -32,6 +32,6 @@ export async function POST(req: NextRequest) {
   if (!makeSlug || !modelSlug) {
     return NextResponse.json({ error: 'makeSlug, modelSlug required' }, { status: 400 });
   }
-  const result = await fetchAndStoreVideos(makeSlug, modelSlug, makeEn, modelEn, makeHe, modelHe);
+  const result = await fetchAndStoreVideos(makeSlug, modelSlug, makeEn, modelEn, makeHe, modelHe, year);
   return NextResponse.json({ ok: !result.error, ...result });
 }

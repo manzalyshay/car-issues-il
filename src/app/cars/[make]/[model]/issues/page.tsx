@@ -5,6 +5,7 @@ import { getMakeBySlug, getModelBySlug } from '@/lib/carsDb';
 import { getExpertReviews } from '@/lib/expertReviews';
 import { getReviewsForModel } from '@/lib/reviewsDb';
 import { getRepairCosts } from '@/lib/repairCostsDb';
+import { getRecallsFromCache } from '@/lib/recallsDb';
 import MakeLogo from '@/components/MakeLogo';
 import { getHostLocale, getBaseUrl } from '@/lib/hostLocale';
 import { translations } from '@/lib/translations';
@@ -64,10 +65,11 @@ export default async function IssuesPage({ params }: Props) {
   const makeName = isEn ? make.nameEn : make.nameHe;
   const modelName = isEn ? model.nameEn : model.nameHe;
 
-  const [expertReviewsList, allReviews, repairCosts] = await Promise.all([
+  const [expertReviewsList, allReviews, repairCosts, recalls] = await Promise.all([
     getExpertReviews(makeSlug, modelSlug),
-    getReviewsForModel(makeSlug, modelSlug),
+    getReviewsForModel(makeSlug, modelSlug).catch(() => []),
     getRepairCosts(model.category),
+    getRecallsFromCache(make.nameEn, model.nameEn),
   ]);
 
   const expertReview = expertReviewsList[0] ?? null;
@@ -93,6 +95,14 @@ export default async function IssuesPage({ params }: Props) {
         ? `What are the pros of the ${make.nameEn} ${model.nameEn}?`
         : `מה היתרונות של ${make.nameHe} ${model.nameHe}?`,
       a: pros.join('. '),
+    },
+    recalls.length > 0 && {
+      q: isEn
+        ? `Have there been recalls for the ${make.nameEn} ${model.nameEn}?`
+        : `האם היו ריקולים ל${make.nameHe} ${model.nameHe}?`,
+      a: isEn
+        ? `Yes, ${recalls.length} recall(s) have been recorded. Components involved: ${recalls.slice(0, 3).map(r => r.component_en ?? r.component_he ?? '').filter(Boolean).join(', ')}.`
+        : `כן, תועדו ${recalls.length} ריקולים. רכיבים מעורבים: ${recalls.slice(0, 3).map(r => r.component_he ?? r.component_en ?? '').filter(Boolean).join(', ')}.`,
     },
     repairCosts.length > 0 && {
       q: isEn
@@ -228,6 +238,45 @@ export default async function IssuesPage({ params }: Props) {
             </div>
             <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: 10 }}>
               {ip.pricesNote} · <Link href="/repairs" style={{ color: 'var(--text-muted)' }}>{ip.allRepairCosts}</Link>
+            </p>
+          </section>
+        )}
+
+        {/* Recalls */}
+        {recalls.length > 0 && (
+          <section style={{ marginBottom: 32 }}>
+            <h2 style={{ fontSize: '1.1rem', fontWeight: 700, marginBottom: 14, display: 'flex', alignItems: 'center', gap: 8 }}>
+              {isEn ? `⚠️ Recalls (${recalls.length})` : `⚠️ ריקולים (${recalls.length})`}
+            </h2>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+              {recalls.slice(0, 8).map(r => {
+                const component = isEn ? (r.component_en ?? r.component_he) : (r.component_he ?? r.component_en);
+                const summary = isEn ? (r.summary_en ?? r.summary_he) : (r.summary_he ?? r.summary_en);
+                const remedy = isEn ? (r.remedy_en ?? r.remedy_he) : (r.remedy_he ?? r.remedy_en);
+                return (
+                  <div key={r.id} style={{ background: 'rgba(234,179,8,0.06)', border: '1px solid rgba(234,179,8,0.25)', borderRadius: 10, padding: '12px 16px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6, flexWrap: 'wrap' }}>
+                      <span style={{ fontWeight: 700, fontSize: '0.85rem' }}>{component}</span>
+                      {r.recall_year && (
+                        <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', background: 'var(--surface-2)', padding: '1px 8px', borderRadius: 99, border: '1px solid var(--border)' }}>
+                          {r.recall_year}
+                        </span>
+                      )}
+                    </div>
+                    {summary && (
+                      <p style={{ margin: '0 0 6px', fontSize: '0.82rem', lineHeight: 1.6, color: 'var(--text-muted)' }}>{summary}</p>
+                    )}
+                    {remedy && (
+                      <p style={{ margin: 0, fontSize: '0.8rem', lineHeight: 1.5, color: 'var(--text-muted)' }}>
+                        <strong style={{ color: 'var(--text)' }}>{isEn ? 'Fix: ' : 'תיקון: '}</strong>{remedy}
+                      </p>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+            <p style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginTop: 8 }}>
+              {isEn ? 'Source: NHTSA (US)' : 'מקור: ריקולים בארה״ב'}
             </p>
           </section>
         )}

@@ -92,19 +92,19 @@ export default function Header() {
   }, []);
 
   const NAV_LINKS = locale === 'he' ? [
-    { href: '/news',           label: 'חדשות' },
-    { href: '/rankings',       label: 'דירוגים' },
+    { href: '/vehicle-lookup', label: 'בדיקת רכב' },
     { href: '/cars/compare',   label: 'השוואה' },
     { href: '/cars',           label: 'ביקורות' },
+    { href: '/rankings',       label: 'דירוגים' },
     { href: '/repairs',        label: 'עלויות תיקון' },
-    { href: '/vehicle-lookup', label: 'בדיקת רכב' },
+    { href: '/news',           label: 'חדשות' },
   ] : [
-    { href: '/news',           label: t.nav.news },
-    { href: '/rankings',       label: t.nav.rankings },
+    { href: '/vehicle-lookup', label: t.nav.vehicleLookup },
     { href: '/cars/compare',   label: t.nav.compare },
     { href: '/cars',           label: t.nav.allMakes },
+    { href: '/rankings',       label: t.nav.rankings },
     { href: '/repairs',        label: t.nav.repairs },
-    { href: '/vehicle-lookup', label: t.nav.vehicleLookup },
+    { href: '/news',           label: t.nav.news },
   ];
 
   const logoEl = (

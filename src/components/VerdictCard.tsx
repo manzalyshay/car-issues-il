@@ -2,6 +2,7 @@ import type { ExpertReview } from '@/lib/expertReviews';
 import type { ModelRepairCost } from '@/lib/repairCostsDb';
 import type { TrimSpecWithYear } from '@/lib/trimSpecsDb';
 import VerdictCardClient from './VerdictCardClient';
+import { aiSourceLabel } from '@/lib/aiSource';
 
 interface Props {
   expertReview: ExpertReview | null;
@@ -65,7 +66,9 @@ export default function VerdictCard({
               {isEn ? 'CarIssues Intelligence' : 'CarIssues Intelligence'}
             </div>
             <div style={{ fontSize: 12, color: '#66788c' }}>
-              {isEn ? 'Based on owner reviews' : 'מבוסס על ביקורות בעלים'}
+              {reviewCount > 0
+                ? (isEn ? 'Based on owner reviews' : 'מבוסס על ביקורות בעלים')
+                : (isEn ? 'Limited data available' : 'מידע מוגבל')}
             </div>
           </div>
         </div>
@@ -139,11 +142,24 @@ export default function VerdictCard({
 
   const leadSummary = localSummary ?? globalSummary ?? null;
 
+  // Chips from batch data
+  const chips = expertReview.chipsJson;
+  const chipItems: { label: string; color: string }[] = [];
+  if (chips?.who_for_chip) chipItems.push({ label: chips.who_for_chip, color: '#1b4f8a' });
+  if (chips?.safety_chip) chipItems.push({ label: chips.safety_chip, color: '#1b7a4b' });
+  if (chips?.main_strength_chip) chipItems.push({ label: `✓ ${chips.main_strength_chip}`, color: '#2563eb' });
+  if (chips?.main_weakness_chip) chipItems.push({ label: `✗ ${chips.main_weakness_chip}`, color: '#b23b2e' });
+
+  // Sources list
+  const sourcesList = expertReview.sourcesList?.length ? expertReview.sourcesList : [];
+
+  // Pros/cons note (replaces pros/cons when present and arrays are empty)
+  const prosConsNote = expertReview.prosConsNote;
+
   // ── Performance stats from trims ──
   const hpVals = trimSpecs.map(t => t.engineHp).filter((v): v is number => v != null);
   const accVals = trimSpecs.map(t => t.acceleration).filter((v): v is number => v != null);
   const topVals = trimSpecs.map(t => t.topSpeedKmh).filter((v): v is number => v != null);
-  const fcVals = trimSpecs.map(t => t.fuelConsumption).filter((v): v is number => v != null && v > 0);
   const priceVals = trimSpecs.map(t => t.priceIls).filter((v): v is number => v != null && v > 0);
 
   const perfStats: { labelHe: string; labelEn: string; value: string; unit: string }[] = [];
@@ -159,9 +175,16 @@ export default function VerdictCard({
     const best = Math.max(...topVals);
     perfStats.push({ labelHe: 'מהירות מקס׳', labelEn: 'Top Speed', value: `${best}`, unit: 'קמ"ש' });
   }
-  if (fcVals.length) {
-    const avg = fcVals.reduce((a, b) => a + b, 0) / fcVals.length;
-    perfStats.push({ labelHe: 'צריכת דלק', labelEn: 'Fuel Avg', value: `${avg.toFixed(1)}`, unit: 'ל/100' });
+  const fcElectric = trimSpecs.filter(t => t.engineType === 'electric' && t.fuelConsumption != null && t.fuelConsumption > 0).map(t => t.fuelConsumption!);
+  const fcFuel = trimSpecs.filter(t => t.engineType !== 'electric' && t.fuelConsumption != null && t.fuelConsumption! >= 3.0).map(t => t.fuelConsumption!);
+  if (fcElectric.length) {
+    const avg = fcElectric.reduce((a, b) => a + b, 0) / fcElectric.length;
+    perfStats.push({ labelHe: 'צריכת חשמל', labelEn: 'Energy', value: avg.toFixed(1), unit: isEn ? 'kWh/100km' : 'קוט״ש/100ק"מ' });
+  }
+  if (fcFuel.length) {
+    const avgL100 = fcFuel.reduce((a, b) => a + b, 0) / fcFuel.length;
+    const kmL = (100 / avgL100).toFixed(1);
+    perfStats.push({ labelHe: 'צריכת דלק', labelEn: 'Fuel Avg', value: kmL, unit: isEn ? 'km/L' : 'ק"מ/ל׳' });
   }
   if (priceVals.length) {
     const mn = Math.min(...priceVals), mx = Math.max(...priceVals);
@@ -199,18 +222,14 @@ export default function VerdictCard({
               {isEn ? 'CarIssues Intelligence' : 'CarIssues Intelligence'}
             </div>
             <div style={{ fontSize: 12, color: '#66788c' }}>
-              {isEn ? 'Owner reviews & expert data · AI summarized' : 'ביקורות בעלים ונתוני מומחים · סיכום AI'}
+              {aiSourceLabel(expertReview, isEn)}
             </div>
           </div>
         </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          <span style={{ fontSize: 12, fontWeight: 600, color: '#66788c' }}>
-            {isEn ? 'Confidence' : 'רמת ודאות'}
-          </span>
-          <div style={{ width: 110, height: 6, borderRadius: 999, background: '#e3e8ee', overflow: 'hidden' }}>
-            <div style={{ width: '92%', height: '100%', background: '#2f6fb0' }} />
-          </div>
-          <span style={{ fontSize: 13, fontWeight: 700, color: '#1c2733' }}>92%</span>
+        <div style={{ fontSize: 12, color: '#66788c' }}>
+          {reviewCount > 0
+            ? (isEn ? `${reviewCount} owner review${reviewCount > 1 ? 's' : ''} on CarIssues` : (reviewCount === 1 ? 'ביקורת בעלים אחת באתר' : `${reviewCount} ביקורות בעלים באתר`))
+            : (isEn ? 'No owner reviews on CarIssues yet' : 'עדיין אין ביקורות בעלים באתר')}
         </div>
       </div>
 
@@ -246,6 +265,18 @@ export default function VerdictCard({
           <p style={{ margin: 0, fontSize: 14, color: '#4a5b6d', maxWidth: '60ch', flex: 1, minWidth: 200, lineHeight: 1.6 }}>
             {leadSummary}
           </p>
+        )}
+        {/* Chips */}
+        {chipItems.length > 0 && (
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, width: '100%', marginTop: leadSummary ? 4 : 0 }}>
+            {chipItems.map((c, i) => (
+              <span key={i} style={{
+                display: 'inline-block', fontSize: 12, fontWeight: 600,
+                color: c.color, background: c.color + '12', border: `1px solid ${c.color}30`,
+                borderRadius: 999, padding: '3px 12px',
+              }}>{c.label}</span>
+            ))}
+          </div>
         )}
       </div>
 
@@ -298,8 +329,17 @@ export default function VerdictCard({
         </div>
       )}
 
-      {/* ── Pros / Cons ── */}
-      {(pros.length > 0 || cons.length > 0) && (
+      {/* ── Pros / Cons (or note) ── */}
+      {prosConsNote ? (
+        <div style={{ padding: '12px clamp(16px,3vw,28px)', borderBottom: '1px solid #eef1f5' }}>
+          <div style={{ fontSize: 12, fontWeight: 700, color: '#8595a6', marginBottom: 6 }}>
+            {isEn ? 'Pros & Cons' : 'יתרונות וחסרונות'}
+          </div>
+          <p style={{ margin: 0, fontSize: 13.5, color: '#4a5b6d', lineHeight: 1.6 }}>
+            {prosConsNote}
+          </p>
+        </div>
+      ) : (pros.length > 0 || cons.length > 0) && (
         <div style={{ padding: '8px clamp(16px,3vw,28px) 4px', borderBottom: '1px solid #eef1f5' }}>
           <div className="vc-pc-grid">
             {pros.length > 0 && (
@@ -343,6 +383,7 @@ export default function VerdictCard({
         modelNameHe={modelNameHe}
         makeNameEn={makeNameEn}
         modelNameEn={modelNameEn}
+        sources={sourcesList}
       />
     </section>
   );

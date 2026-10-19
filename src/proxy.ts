@@ -7,7 +7,21 @@ const PREF_COOKIE = 'clang';
 // One year in seconds
 const ONE_YEAR = 60 * 60 * 24 * 365;
 
-export function middleware(req: NextRequest) {
+// Crawlers, AI agents and SEO tools must always get the page they asked for — never a
+// geo/cookie redirect. Named agents first, then generic patterns as a catch-all.
+const BOT_UA = new RegExp(
+  [
+    'googlebot', 'google-extended', 'google-inspectiontool', 'storebot-google', 'adsbot-google',
+    'bingbot', 'bingpreview', 'slurp', 'duckduckbot', 'baiduspider', 'yandex', 'applebot',
+    'gptbot', 'oai-searchbot', 'chatgpt-user', 'claudebot', 'claude-user', 'claude-searchbot',
+    'anthropic-ai', 'perplexitybot', 'perplexity-user', 'ccbot', 'bytespider', 'amazonbot',
+    'meta-externalagent', 'facebookexternalhit', 'twitterbot', 'linkedinbot', 'petalbot',
+    'bot', 'crawler', 'spider', 'crawl', 'headless', 'lighthouse',
+  ].join('|'),
+  'i',
+);
+
+export function proxy(req: NextRequest) {
   const { pathname, searchParams } = req.nextUrl;
   const host = req.headers.get('host') ?? '';
   const isHeHost = host === HE_HOST || host === `www.${HE_HOST}`;
@@ -45,14 +59,12 @@ export function middleware(req: NextRequest) {
     }
   }
 
-  // ── Geo-redirect — only on production domains ───────────────────────────────
+  // ── Language routing — only on production domains ───────────────────────────
   if (!isHeHost && !isEnHost) return NextResponse.next();
 
-  // Never redirect crawlers — let them see the canonical page they requested
+  // Never redirect crawlers / AI agents / SEO tools — they see the page they requested
   const ua = req.headers.get('user-agent') ?? '';
-  if (/googlebot|bingbot|slurp|duckduckbot|baiduspider|yandexbot|facebookexternalhit|twitterbot|linkedinbot|applebot/i.test(ua)) {
-    return NextResponse.next();
-  }
+  if (!ua || BOT_UA.test(ua)) return NextResponse.next();
 
   // If user explicitly toggled language (?clang=1), set a preference cookie and
   // serve the page directly (no redirect). Client-side JS cleans up the param.
@@ -69,12 +81,10 @@ export function middleware(req: NextRequest) {
     return res;
   }
 
-  // Respect existing explicit preference cookie
+  // Respect an explicit preference cookie (set only by the user's own toggle)
   const pref = req.cookies.get(PREF_COOKIE)?.value;
   if (pref === 'en' && isEnHost) return NextResponse.next();
   if (pref === 'he' && isHeHost) return NextResponse.next();
-
-  // Cross-domain cookie redirect (user has cookie for the other domain)
   if (pref === 'en' && isHeHost) {
     return NextResponse.redirect(`https://${EN_HOST}${pathname}${req.nextUrl.search}`, { status: 302 });
   }
@@ -82,21 +92,11 @@ export function middleware(req: NextRequest) {
     return NextResponse.redirect(`https://${HE_HOST}${pathname}${req.nextUrl.search}`, { status: 302 });
   }
 
-  // Geo-detect via Cloudflare header — only ever applied on the bare homepage.
-  // A visitor who reaches a specific page (hreflang link, shared URL, typed deep link)
-  // has already told us which site they want; bouncing them off it by IP guess broke
-  // carissues.net for the ~98% Israeli audience, since every non-homepage link back to
-  // it (hreflang, sitemap, direct nav) was immediately redirected to .co.il.
-  if (pathname !== '/') return NextResponse.next();
-
-  const country = req.headers.get('cf-ipcountry') ?? '';
-  const isIsrael = country === 'IL';
-
-  if (isIsrael && isEnHost) {
-    return NextResponse.redirect(`https://${HE_HOST}${pathname}${req.nextUrl.search}`, { status: 302 });
-  }
-  if (!isIsrael && isHeHost) {
-    return NextResponse.redirect(`https://${EN_HOST}${pathname}${req.nextUrl.search}`, { status: 302 });
+  // Geo: carissues.co.il is NEVER auto-redirected (non-Israeli visitors get a dismissible
+  // client-side "English version" banner instead — see EnglishVersionBanner). Only Israeli
+  // humans landing on the bare carissues.net homepage are sent to the Hebrew site.
+  if (isEnHost && pathname === '/' && req.headers.get('cf-ipcountry') === 'IL') {
+    return NextResponse.redirect(`https://${HE_HOST}/${req.nextUrl.search}`, { status: 302 });
   }
 
   return NextResponse.next();
@@ -104,7 +104,8 @@ export function middleware(req: NextRequest) {
 
 export const config = {
   matcher: [
-    // All paths except Next.js internals, static assets, and API routes
-    '/((?!api/|_next/static|_next/image|favicon|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico|woff2?|ttf)).*)',
+    // All paths except Next.js internals, API routes and static files. Root .txt/.xml files
+    // (robots.txt, llms.txt, sitemap*.xml, IndexNow keys) must never be redirected.
+    '/((?!api/|_next/static|_next/image|favicon|robots\\.txt|llms\\.txt|sitemap|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico|woff2?|ttf|txt|xml)).*)',
   ],
 };

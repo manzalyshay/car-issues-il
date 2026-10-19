@@ -60,7 +60,7 @@ function RecallsYearChart({ recalls1, recalls2, name1, name2, isHe }: {
       <div style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 10 }}>
         {isHe ? 'ריקולים לפי שנת דגם' : 'Recalls by Model Year'}
       </div>
-      <svg viewBox={`0 0 ${W} ${H}`} style={{ width: '100%', display: 'block', overflow: 'visible' }} dir="ltr">
+      <svg viewBox={`0 0 ${W} ${H}`} style={{ width: '100%', display: 'block', overflow: 'visible', direction: 'ltr' }}>
         <g transform={`translate(${PAD.left},${PAD.top})`}>
           <rect x={0} y={0} width={cW} height={cH} fill="rgba(255,255,255,0.018)" rx={3} />
 
@@ -252,7 +252,7 @@ export default function RecallsCompare({ make1, model1, name1, make2, model2, na
         />
 
         <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)', marginTop: 16, borderTop: '1px solid var(--border)', paddingTop: 8 }}>
-          {isHe ? 'מקור: NHTSA · מוצגים ריקולים מ-6 שנים אחרונות' : 'Source: NHTSA · Showing recalls from the last 6 years'}
+          {isHe ? 'מקור: ריקולים בארה״ב · מוצגים ריקולים מ-6 שנים אחרונות' : 'Source: NHTSA (US) · Showing recalls from the last 6 years'}
         </div>
       </div>
     </div>

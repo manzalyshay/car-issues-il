@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 100">
+  <rect width="200" height="100" rx="10" fill="white"/>
+  <!-- Changan: V-shape / forward arrow emblem -->
+  <path d="M100 12 L148 52 L136 52 L100 26 L64 52 L52 52 Z" fill="#003087"/>
+  <path d="M100 30 L136 60 L124 60 L100 40 L76 60 L64 60 Z" fill="#003087"/>
+  <path d="M100 48 L124 68 L112 68 L100 58 L88 68 L76 68 Z" fill="#003087"/>
+  <text x="100" y="88" font-family="Arial,sans-serif" font-weight="700" font-size="12" fill="#003087" text-anchor="middle" letter-spacing="2">CHANGAN</text>
+</svg>

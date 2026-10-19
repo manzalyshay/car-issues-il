@@ -3,6 +3,14 @@ main = "worker-entry.js"
 compatibility_date = "2025-04-01"
 compatibility_flags = ["nodejs_compat"]
 
+# Custom routes — carissues.net (EN) and carissues.co.il (HE) serve the same Worker
+routes = [
+  { pattern = "carissues.co.il/*", zone_name = "carissues.co.il" },
+  { pattern = "en.carissues.co.il/*", zone_name = "carissues.co.il", custom_domain = true },
+  { pattern = "carissues.net/*", zone_name = "carissues.net" },
+  { pattern = "www.carissues.net/*", zone_name = "carissues.net" },
+]
+
 # Cloudflare Cron Triggers — dispatched in worker-entry.js's scheduled() handler
 [triggers]
 crons = ["0 3 * * *", "0 6 * * *"]
@@ -11,14 +19,6 @@ crons = ["0 3 * * *", "0 6 * * *"]
 [assets]
 directory = ".open-next/assets"
 binding = "ASSETS"
-
-# Custom routes — carissues.net (EN) and carissues.co.il (HE) serve the same Worker
-routes = [
-  { pattern = "carissues.co.il/*", zone_name = "carissues.co.il" },
-  { pattern = "en.carissues.co.il/*", zone_name = "carissues.co.il", custom_domain = true },
-  { pattern = "carissues.net/*", zone_name = "carissues.net" },
-  { pattern = "www.carissues.net/*", zone_name = "carissues.net" },
-]
 
 # Public env vars (non-sensitive — secrets go in Cloudflare dashboard or wrangler secret put)
 [vars]
@@ -29,6 +29,9 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOi
 #   wrangler secret put MISTRAL_API_KEY
 # UK DVLA vehicle lookup API key (register free at https://developer-portal.driver-vehicle-licensing.api.gov.uk/):
 #   wrangler secret put DVLA_API_KEY
+# UK DVSA recall data — covers EU/non-US models (Qashqai, MG, Peugeot, Duster, etc.)
+# Register free at https://developer-portal.driver-vehicle-licensing.agency.gov.uk/ → subscribe to "Vehicle Recalls and Faults"
+#   wrangler secret put DVSA_API_KEY
 
 # D1 database binding — replace REPLACE_WITH_D1_DATABASE_ID with the actual ID from CF dashboard
 [[d1_databases]]

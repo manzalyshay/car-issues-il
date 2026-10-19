@@ -26,23 +26,42 @@ const CURRENT_YEAR = 2026;
 const ILS_TO_USD = 3.7;
 
 /**
- * Returns estimated used-car market value for model years 2016–2026.
- * 2026 = current new price; earlier years = used car value today.
+ * Returns estimated used-car market value for model years the car actually existed.
+ * Uses the model's years array from the DB to determine the earliest year to show.
  */
 export async function getPriceHistory(makeSlug: string, modelSlug: string): Promise<PricePoint[]> {
-  const row = await dbFirst<{ price_ils: number }>(
-    'SELECT MIN(price_ils) as price_ils FROM car_trims WHERE make_slug = ? AND model_slug = ? AND price_ils IS NOT NULL',
-    makeSlug, modelSlug,
-  ).catch(() => null);
+  const [trimRow, modelRow] = await Promise.all([
+    dbFirst<{ price_ils: number }>(
+      'SELECT MIN(price_ils) as price_ils FROM car_trims WHERE make_slug = ? AND model_slug = ? AND price_ils IS NOT NULL',
+      makeSlug, modelSlug,
+    ).catch(() => null),
+    dbFirst<{ years: string }>(
+      'SELECT years FROM car_models WHERE make_slug = ? AND slug = ? LIMIT 1',
+      makeSlug, modelSlug,
+    ).catch(() => null),
+  ]);
 
-  if (!row?.price_ils) return [];
+  if (!trimRow?.price_ils) return [];
 
-  const newIls = row.price_ils;
+  const newIls = trimRow.price_ils;
   const newUsd = Math.round(newIls / ILS_TO_USD);
 
-  return DEPRECIATION.map((mult, i) => ({
-    year: CURRENT_YEAR - i,
-    price_ils: Math.round(newIls * mult / 1000) * 1000,
-    price_usd: Math.round(newUsd * mult / 500) * 500,
-  })).reverse(); // oldest first (2016 → 2026)
+  // Determine earliest year to show from the model's years list
+  let firstYear = CURRENT_YEAR - DEPRECIATION.length + 1; // default: oldest in curve
+  if (modelRow?.years) {
+    try {
+      const years: number[] = JSON.parse(modelRow.years);
+      if (years.length > 0) firstYear = Math.min(...years);
+    } catch { /* ignore parse error */ }
+  }
+
+  return DEPRECIATION
+    .map((mult, i) => ({ year: CURRENT_YEAR - i, mult }))
+    .filter(({ year }) => year >= firstYear)
+    .map(({ year, mult }) => ({
+      year,
+      price_ils: Math.round(newIls * mult / 1000) * 1000,
+      price_usd: Math.round(newUsd * mult / 500) * 500,
+    }))
+    .reverse(); // oldest first
 }

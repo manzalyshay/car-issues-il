@@ -167,6 +167,8 @@ function AdminPageInner() {
   const [screenshotting, setScreenshotting] = useState<Record<string, boolean>>({});
   const [screenshotPath, setScreenshotPath] = useState<Record<string, string>>({});
   const [publishingPost, setPublishingPost] = useState<Record<string, boolean>>({});
+  const [regenRunning, setRegenRunning] = useState(false);
+  const [regenStatus, setRegenStatus] = useState<string | null>(null);
   const [previewPost, setPreviewPost] = useState<SocialPostRow | null>(null);
   const [igPosts, setIgPosts] = useState<{ id: string; media_url: string; caption?: string; timestamp: string; permalink: string }[]>([]);
   const [fbPosts, setFbPosts] = useState<{ id: string; message?: string; full_picture?: string; created_time: string }[]>([]);
@@ -735,6 +737,35 @@ function AdminPageInner() {
     fetchStatus();
   };
 
+  const regenSummaries = async (mode: 'generic' | 'all') => {
+    if (!confirm(`מחדש סיכומים (${mode === 'generic' ? 'גנריים בלבד' : 'הכל'})? יכול לקחת מספר דקות.`)) return;
+    setRegenRunning(true);
+    setRegenStatus('מתחיל...');
+    const token = await getToken();
+    let totalGenerated = 0;
+    let round = 0;
+    // Keep calling until done (5 per round, max 60 rounds)
+    while (round < 60) {
+      const body = mode === 'generic'
+        ? { generic: true, limit: 5 }
+        : { force: true, limit: 5 };
+      const res = await fetch('/api/admin/generate-cd-summaries', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify(body),
+      });
+      if (!res.ok) { setRegenStatus(`שגיאה: ${res.status}`); break; }
+      const data = await res.json() as { generated: number; message?: string };
+      totalGenerated += data.generated ?? 0;
+      setRegenStatus(`מחדש... ${totalGenerated} בוצע`);
+      if (data.generated === 0) { setRegenStatus(`✅ הושלם — ${totalGenerated} סיכומים חודשו`); break; }
+      round++;
+      await new Promise((r) => setTimeout(r, 2000));
+    }
+    setRegenRunning(false);
+    fetchStatus();
+  };
+
   const deleteReview = async (id: string) => {
     const token = await getToken();
     await fetch('/api/admin', {
@@ -892,6 +923,22 @@ function AdminPageInner() {
               <button onClick={fetchStatus} disabled={fetching} style={{ padding: '10px 20px', borderRadius: 8, border: '1px solid var(--border)', background: 'transparent', cursor: 'pointer', fontWeight: 600, color: 'var(--text-secondary)' }}>
                 {fetching ? 'טוען...' : 'רענן'}
               </button>
+            </div>
+
+            {/* Hebrew summary regeneration — uses trim/spec data from auto.co.il */}
+            <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', marginBottom: 16, padding: '16px', background: 'var(--bg-muted)', borderRadius: 12 }}>
+              <div style={{ width: '100%', fontWeight: 700, fontSize: '0.9rem', marginBottom: 4 }}>
+                🔧 חידוש סיכומים עשירים (כולל נתוני גימורים מ-auto.co.il)
+              </div>
+              <button className="btn btn-primary" onClick={() => regenSummaries('generic')} disabled={regenRunning} style={{ background: '#d97706' }}>
+                {regenRunning ? regenStatus : '🔄 חדש גנריים (136)'}
+              </button>
+              <button className="btn btn-primary" onClick={() => regenSummaries('all')} disabled={regenRunning} style={{ background: '#6b7280' }}>
+                {regenRunning ? regenStatus : '🔄 חדש הכל (284)'}
+              </button>
+              {regenStatus && !regenRunning && (
+                <span style={{ alignSelf: 'center', fontSize: '0.875rem', color: 'var(--text-muted)' }}>{regenStatus}</span>
+              )}
             </div>
 
             <div style={{ display: 'flex', gap: 8, marginBottom: 20, flexWrap: 'wrap' }}>

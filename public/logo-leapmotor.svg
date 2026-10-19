@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 100">
+  <rect width="200" height="100" rx="10" fill="white"/>
+  <!-- Leapmotor: leap/dynamic forward mark -->
+  <path d="M55 65 L85 20 L100 38 L115 20 L145 65" fill="none" stroke="#00a0e9" stroke-width="7" stroke-linejoin="round" stroke-linecap="round"/>
+  <path d="M68 65 L85 38 L100 52 L115 38 L132 65" fill="none" stroke="#00a0e9" stroke-width="4" stroke-linejoin="round" stroke-linecap="round" opacity="0.5"/>
+  <text x="100" y="88" font-family="Arial,sans-serif" font-weight="700" font-size="11" fill="#00a0e9" text-anchor="middle" letter-spacing="2">LEAPMOTOR</text>
+</svg>

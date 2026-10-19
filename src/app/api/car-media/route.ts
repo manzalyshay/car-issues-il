@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getVideosForCar } from '@/lib/youtubeVideos';
+import { getVideosForCar, getVideosForYear } from '@/lib/youtubeVideos';
 import { getImagesForCar, getImagesForYear } from '@/lib/carImages';
 
 export const revalidate = 3600;
@@ -16,7 +16,9 @@ export async function GET(req: NextRequest) {
   }
 
   if (type === 'videos') {
-    const videos = await getVideosForCar(makeSlug, modelSlug);
+    const videos = yearParam
+      ? await getVideosForYear(makeSlug, modelSlug, parseInt(yearParam))
+      : await getVideosForCar(makeSlug, modelSlug);
     return NextResponse.json(videos);
   }
 
