@@ -74,6 +74,19 @@ export interface ExpertReview {
     main_weakness_chip: string | null;
   } | null;
   prosConsNote: string | null;
+  curatedModelData: CuratedModelData | null;
+}
+
+export interface CuratedModelData {
+  summary_short?: string | null;
+  summary_integrated?: string | null;
+  consumption?: { text?: string | null; figures?: { value: number; unit: string }[] } | null;
+  trunk?: string | null;
+  price_note?: string | null;
+  on_sale_il?: boolean;
+  status_note?: string | null;
+  sources?: { name: string; url: string }[];
+  [key: string]: unknown;
 }
 
 export interface UserPost {
@@ -1209,6 +1222,7 @@ function mapRow(r: any): ExpertReview {
     recallsNhtsaText: r.recalls_nhtsa_text ?? null,
     chipsJson: (() => { try { const v = r.chips_json; if (!v) return null; return typeof v === 'string' ? JSON.parse(v) : v; } catch { return null; } })(),
     prosConsNote: r.pros_cons_note ?? null,
+    curatedModelData: (() => { try { return r.model_data_json ? JSON.parse(String(r.model_data_json)) as CuratedModelData : null; } catch { return null; } })(),
   };
   return normalizeVisiblePunctuation(review);
 }

@@ -87,6 +87,8 @@ export default function VerdictCard({
     );
   }
 
+  const curatedData = expertReview.curatedModelData;
+
   // Language-appropriate content
   const localSummary = isEn
     ? (!hasHebrew(expertReview.localSummaryEn) ? expertReview.localSummaryEn : null)
@@ -134,13 +136,15 @@ export default function VerdictCard({
   const badgeBg = isHighlyRated ? '#e7f5ed' : isRecommended ? '#e7f0fb' : '#fef3cd';
   const badgeColor = isHighlyRated ? '#1b7a4b' : isRecommended ? '#1b4f8a' : '#92620a';
   const badgeDot = isHighlyRated ? '#1b9e5f' : isRecommended ? '#2f6fb0' : '#d97706';
-  const badgeLabel = isHighlyRated
+  const badgeLabel = curatedData && overallScore == null && reviewCount === 0
+    ? (isEn ? 'Model information' : 'מידע על הדגם')
+    : isHighlyRated
     ? (isEn ? 'Highly Recommended' : 'מומלץ מאוד')
     : isRecommended
       ? (isEn ? 'Recommended' : 'מומלץ')
       : (isEn ? 'Mixed Reviews' : 'ביקורות מעורבות');
 
-  const leadSummary = localSummary ?? globalSummary ?? null;
+  const leadSummary = curatedData?.summary_integrated ?? localSummary ?? globalSummary ?? null;
 
   // Chips from batch data
   const chips = expertReview.chipsJson;
@@ -157,7 +161,7 @@ export default function VerdictCard({
   const hpVals = trimSpecs.map(t => t.engineHp).filter((v): v is number => v != null);
   const accVals = trimSpecs.map(t => t.acceleration).filter((v): v is number => v != null);
   const topVals = trimSpecs.map(t => t.topSpeedKmh).filter((v): v is number => v != null);
-  const priceVals = trimSpecs.map(t => t.priceIls).filter((v): v is number => v != null && v > 0);
+  const priceVals = curatedData?.on_sale_il === false ? [] : trimSpecs.map(t => t.priceIls).filter((v): v is number => v != null && v > 0);
 
   const perfStats: { labelHe: string; labelEn: string; value: string; unit: string }[] = [];
   if (hpVals.length) {
@@ -172,8 +176,23 @@ export default function VerdictCard({
     const best = Math.max(...topVals);
     perfStats.push({ labelHe: 'מהירות מקס׳', labelEn: 'Top Speed', value: `${best}`, unit: 'קמ"ש' });
   }
-  const fcElectric = trimSpecs.filter(t => t.engineType === 'electric' && t.fuelConsumption != null && t.fuelConsumption > 0).map(t => t.fuelConsumption!);
-  const fcFuel = trimSpecs.filter(t => t.engineType !== 'electric' && t.fuelConsumption != null && t.fuelConsumption! >= 3.0).map(t => t.fuelConsumption!);
+  const suppliedConsumption = curatedData?.consumption?.figures ?? [];
+  for (const figure of suppliedConsumption) {
+    const isFuel = figure.unit === 'km/L';
+    const unit = figure.unit === 'km/L'
+      ? (isEn ? 'km/L' : 'ק״מ/ל׳')
+      : figure.unit === 'kWh/100km'
+        ? (isEn ? 'kWh/100 km' : 'קוט״ש ל-100 ק״מ')
+        : figure.unit;
+    perfStats.push({
+      labelHe: isFuel ? 'צריכת דלק' : 'צריכת חשמל',
+      labelEn: isFuel ? 'Fuel Economy' : 'Energy Use',
+      value: String(figure.value),
+      unit,
+    });
+  }
+  const fcElectric = suppliedConsumption.length ? [] : trimSpecs.filter(t => t.engineType === 'electric' && t.fuelConsumption != null && t.fuelConsumption > 0).map(t => t.fuelConsumption!);
+  const fcFuel = suppliedConsumption.length ? [] : trimSpecs.filter(t => t.engineType !== 'electric' && t.fuelConsumption != null && t.fuelConsumption! >= 3.0).map(t => t.fuelConsumption!);
   if (fcElectric.length) {
     const avg = fcElectric.reduce((a, b) => a + b, 0) / fcElectric.length;
     perfStats.push({ labelHe: 'צריכת חשמל', labelEn: 'Energy', value: avg.toFixed(1), unit: isEn ? 'kWh/100km' : 'קוט״ש/100ק"מ' });
@@ -183,7 +202,9 @@ export default function VerdictCard({
     const kmL = (100 / avgL100).toFixed(1);
     perfStats.push({ labelHe: 'צריכת דלק', labelEn: 'Fuel Avg', value: kmL, unit: isEn ? 'km/L' : 'ק"מ/ל׳' });
   }
-  if (priceVals.length) {
+  if (curatedData?.on_sale_il === true && typeof curatedData.price_from_ils === 'number') {
+    perfStats.push({ labelHe: 'מחיר התחלתי', labelEn: 'Starting Price', value: `₪${curatedData.price_from_ils.toLocaleString(isEn ? 'en-US' : 'he-IL')}`, unit: '' });
+  } else if (priceVals.length) {
     const mn = Math.min(...priceVals), mx = Math.max(...priceVals);
     const fmt = (v: number) => `₪${Math.round(v / 1000)}K`;
     perfStats.push({ labelHe: 'מחיר', labelEn: 'Price', value: mn === mx ? fmt(mn) : `${fmt(mn)}–${fmt(mx)}`, unit: '' });
@@ -219,7 +240,9 @@ export default function VerdictCard({
               {isEn ? 'CarIssues Intelligence' : 'CarIssues Intelligence'}
             </div>
             <div style={{ fontSize: 12, color: '#66788c' }}>
-              {aiSourceLabel(expertReview, isEn)}
+              {curatedData?.on_sale_il === true && reviewCount === 0
+                ? (isEn ? 'Based on tests and official data' : 'מבוסס על מבחנים ונתונים רשמיים')
+                : aiSourceLabel(expertReview, isEn)}
             </div>
           </div>
         </div>
@@ -301,12 +324,12 @@ export default function VerdictCard({
       )}
 
       {/* ── Performance strip ── */}
-      {perfStats.length > 0 && (
+      {(perfStats.length > 0 || curatedData?.consumption?.text) && (
         <div style={{ padding: '12px clamp(16px,3vw,28px)', borderBottom: '1px solid #eef1f5', background: '#fafbfc' }}>
           <div style={{ fontSize: 11.5, fontWeight: 700, color: '#8595a6', letterSpacing: '.06em', textTransform: 'uppercase', marginBottom: 10 }}>
             {isEn ? 'Performance' : 'נתוני ביצועים'}
           </div>
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+          {perfStats.length > 0 && <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
             {perfStats.map(({ labelHe, labelEn, value, unit }) => (
               <div key={labelHe} style={{
                 display: 'flex', flexDirection: 'column', alignItems: 'center',
@@ -322,7 +345,12 @@ export default function VerdictCard({
                 {unit && <span style={{ fontSize: 10.5, color: '#a0adb8', marginTop: 1 }}>{unit}</span>}
               </div>
             ))}
-          </div>
+          </div>}
+          {curatedData?.consumption?.text && (
+            <p style={{ margin: perfStats.length ? '10px 0 0' : 0, fontSize: 12.5, color: '#66788c', lineHeight: 1.5 }}>
+              {curatedData.consumption.text}
+            </p>
+          )}
         </div>
       )}
 

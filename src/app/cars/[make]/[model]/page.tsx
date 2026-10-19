@@ -52,7 +52,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   ]);
   const yearRange = model.years.length > 1
     ? `${model.years[model.years.length - 1]}-${model.years[0]}`
-    : `${model.years[0]}`;
+    : model.years.length === 1 ? `${model.years[0]}` : '';
+  const yearSuffix = yearRange ? ` ${yearRange}` : '';
 
   if (locale === 'en') {
     const ratingStr = avgRating ? ` · ${avgRating.toFixed(1)}★` : '';
@@ -60,12 +61,12 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       ? `${reviews.length} reviews${avgRating ? ` ⭐ ${avgRating.toFixed(1)}` : ''}`
       : 'Reviews & Common Problems';
     return {
-      title: `${make.nameEn} ${model.nameEn} ${yearRange}: ${reviewPart} | Pros & Cons`,
-      description: `${reviews.length > 0 ? `${reviews.length} real owner reviews` : 'Real owner reviews'} for the ${make.nameEn} ${model.nameEn} (${yearRange})${avgRating ? `. Average rating ${avgRating.toFixed(1)}/5` : ''}. Price history 2016-2026, common problems, pros, cons and reliability from real car owners.`,
+      title: `${make.nameEn} ${model.nameEn}${yearSuffix}: ${reviewPart} | Pros & Cons`,
+      description: `${reviews.length > 0 ? `${reviews.length} real owner reviews` : 'Real owner reviews'} for the ${make.nameEn} ${model.nameEn}${yearRange ? ` (${yearRange})` : ''}${avgRating ? `. Average rating ${avgRating.toFixed(1)}/5` : ''}. Price history 2016-2026, common problems, pros, cons and reliability from real car owners.`,
       alternates: { canonical: url, languages: { he: `https://carissues.co.il/cars/${make.slug}/${model.slug}`, en: url, 'x-default': url } },
       openGraph: {
         title: `${make.nameEn} ${model.nameEn}${ratingStr} | CarIssues`,
-        description: `Owner reviews & common problems: ${make.nameEn} ${model.nameEn} ${yearRange}`,
+        description: `Owner reviews & common problems: ${make.nameEn} ${model.nameEn}${yearSuffix}`,
         url,
         images: [{ url: '/og-default.png', width: 1200, height: 630 }],
       },
@@ -87,12 +88,12 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     : 'חוות דעת ובעיות נפוצות';
   const recentYears = model.years.slice(0, 4).join(', ');
   return {
-    title: `${make.nameHe} ${model.nameHe} ${yearRange}: ${reviewPart} | יתרונות וחסרונות`,
-    description: `${reviews.length > 0 ? `${reviews.length} ביקורות אמיתיות` : 'ביקורות אמיתיות'} על ${make.nameHe} ${model.nameHe} (${make.nameEn} ${model.nameEn}) שנים ${yearRange}${avgRating ? `. דירוג ממוצע ${avgRating.toFixed(1)}/5` : ''}.${priceDesc} חוות דעת ${recentYears}.${trimDesc} יתרונות, חסרונות ובעיות נפוצות מבעלי רכב בישראל.`,
+    title: `${make.nameHe} ${model.nameHe}${yearSuffix}: ${reviewPart} | יתרונות וחסרונות`,
+    description: `${reviews.length > 0 ? `${reviews.length} ביקורות אמיתיות` : 'ביקורות אמיתיות'} על ${make.nameHe} ${model.nameHe} (${make.nameEn} ${model.nameEn})${yearRange ? ` שנים ${yearRange}` : ''}${avgRating ? `. דירוג ממוצע ${avgRating.toFixed(1)}/5` : ''}.${priceDesc}${recentYears ? ` חוות דעת ${recentYears}.` : ''}${trimDesc} יתרונות, חסרונות ובעיות נפוצות מבעלי רכב בישראל.`,
     alternates: { canonical: url, languages: { he: url, en: `https://carissues.net/cars/${make.slug}/${model.slug}`, 'x-default': `https://carissues.net/cars/${make.slug}/${model.slug}` } },
     openGraph: {
       title: `${make.nameHe} ${model.nameHe}${ratingStr}${countStr} | CarIssues IL`,
-      description: `ביקורות ובעיות נפוצות: ${make.nameHe} ${model.nameHe} ${yearRange}`,
+      description: `ביקורות ובעיות נפוצות: ${make.nameHe} ${model.nameHe}${yearSuffix}`,
       url,
       images: [{ url: '/og-default.png', width: 1200, height: 630 }],
     },
@@ -124,6 +125,7 @@ export default async function ModelPage({ params, searchParams }: Props) {
     Promise.all(similarModels.map(({ makeSlug: ms, model: m }) => getImagesForCar(ms, m.slug).catch(() => []))),
   ]);
   const expertReview = expertReviewsList[0] ?? null;
+  const curatedModelData = expertReview?.curatedModelData ?? null;
   const avgRating = allReviews.length
     ? allReviews.reduce((s, r) => s + r.rating, 0) / allReviews.length
     : null;
@@ -135,7 +137,7 @@ export default async function ModelPage({ params, searchParams }: Props) {
 
   const yearRange = model.years.length > 1
     ? `${model.years[model.years.length - 1]}-${model.years[0]}`
-    : `${model.years[0]}`;
+    : model.years.length === 1 ? `${model.years[0]}` : '';
 
   // 3D model relevance: year-aware lookup already handles year_from/year_to entries;
   // fall back to name-based check for legacy entries
@@ -182,7 +184,7 @@ export default async function ModelPage({ params, searchParams }: Props) {
             {/* Info column */}
             <div>
               <div style={{ fontSize: 12.5, color: '#9db1d4', fontWeight: 600 }}>
-                {yearRange} · {getCategoryLabel(model.category, locale)} · {translations[locale].carsPage.countryNames[make.country] ?? make.country}
+                {yearRange ? `${yearRange} · ` : ''}{getCategoryLabel(model.category, locale)} · {translations[locale].carsPage.countryNames[make.country] ?? make.country}
               </div>
               <h1 style={{ fontFamily: 'Heebo,sans-serif', fontWeight: 900, fontSize: 'clamp(21px,2.2vw,30px)', lineHeight: 1.1, letterSpacing: '-.04em', margin: '4px 0 2px', color: '#fff' }}>
                 {isEn ? `${make.nameEn} ${model.nameEn}` : `${make.nameHe} ${model.nameHe}`}
@@ -221,9 +223,22 @@ export default async function ModelPage({ params, searchParams }: Props) {
                   </span>
                 </div>
               )}
-              {model.activeVehiclesIl === 0 && (
+              {model.activeVehiclesIl === 0 && curatedModelData?.on_sale_il !== false && (
                 <div style={{ marginTop: 7, fontSize: 12, color: '#f0a050' }}>
                   {isEn ? 'Not currently marketed in Israel' : 'לא משווק כיום בישראל'}
+                </div>
+              )}
+              {curatedModelData?.on_sale_il === false && curatedModelData.status_note && (
+                <div style={{ marginTop: 7, fontSize: 12.5, color: '#f0a050', fontWeight: 700 }}>
+                  {curatedModelData.status_note}
+                </div>
+              )}
+              {curatedModelData?.on_sale_il === true && typeof curatedModelData.price_from_ils === 'number' && (
+                <div style={{ marginTop: 7, fontSize: 12.5, color: '#9db1d4' }}>
+                  <span style={{ color: '#c8d8f0', fontWeight: 700 }}>
+                    {isEn ? `From ₪${curatedModelData.price_from_ils.toLocaleString('en-US')}` : `החל מ-${curatedModelData.price_from_ils.toLocaleString('he-IL')} ₪`}
+                  </span>
+                  {curatedModelData.price_note ? ` · ${curatedModelData.price_note}` : ''}
                 </div>
               )}
 
@@ -375,7 +390,7 @@ export default async function ModelPage({ params, searchParams }: Props) {
               {similarModels.map(({ makeSlug: ms, makeNameHe, makeNameEn, logoUrl, model: m }, idx) => {
                 const rating = similarRatings[idx];
                 const simImg = similarImages[idx]?.[0] ?? null;
-                const yearRange = m.years.length > 1 ? `${m.years[m.years.length - 1]}-${m.years[0]}` : `${m.years[0]}`;
+                const yearRange = m.years.length > 1 ? `${m.years[m.years.length - 1]}-${m.years[0]}` : m.years.length === 1 ? `${m.years[0]}` : '';
                 const carName = isEn ? `${makeNameEn} ${m.nameEn}` : `${makeNameHe} ${m.nameHe}`;
                 return (
                   <Link key={`${ms}/${m.slug}`} href={`/cars/${ms}/${m.slug}`} style={{ textDecoration: 'none', color: 'inherit', display: 'block' }}>
@@ -400,7 +415,7 @@ export default async function ModelPage({ params, searchParams }: Props) {
                           <div style={{ fontSize: '0.68rem', color: 'var(--text-muted)', marginBottom: 5 }}>{makeNameEn} {m.nameEn}</div>
                         )}
                         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4, marginBottom: 7 }}>
-                          <span style={{ fontSize: '0.63rem', fontWeight: 600, background: 'var(--bg-muted)', color: 'var(--text-muted)', padding: '2px 6px', borderRadius: 999 }}>{yearRange}</span>
+                          {yearRange && <span style={{ fontSize: '0.63rem', fontWeight: 600, background: 'var(--bg-muted)', color: 'var(--text-muted)', padding: '2px 6px', borderRadius: 999 }}>{yearRange}</span>}
                           <span style={{ fontSize: '0.63rem', fontWeight: 600, background: 'var(--bg-muted)', color: 'var(--text-muted)', padding: '2px 6px', borderRadius: 999 }}>{getCategoryLabel(m.category, locale)}</span>
                         </div>
                         {rating !== null ? (

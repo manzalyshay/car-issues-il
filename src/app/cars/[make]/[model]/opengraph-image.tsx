@@ -98,7 +98,7 @@ export default async function OgImage({ params }: Props) {
             <div style={{ color: 'rgba(255,255,255,0.4)', fontSize: 14 }}>מבעלי רכב בישראל</div>
           </div>
 
-          {model && (
+          {model && model.years.length > 0 && (
             <div style={{
               background: 'rgba(255,255,255,0.07)',
               border: '1px solid rgba(255,255,255,0.12)',

@@ -751,7 +751,7 @@ export const translations = {
       makes: 'Makes',
       models: 'Models',
       other: 'Other',
-      countryNames: { 'יפן': 'Japan', 'קוריאה': 'Korea', 'גרמניה': 'Germany', 'צרפת': 'France', 'שוודיה': 'Sweden', 'ארה"ב': 'USA', "צ'כיה": 'Czechia', 'איטליה': 'Italy' } as Record<string,string>,
+      countryNames: { 'יפן': 'Japan', 'קוריאה': 'Korea', 'גרמניה': 'Germany', 'צרפת': 'France', 'שוודיה': 'Sweden', 'סין': 'China', 'ארה"ב': 'USA', "צ'כיה": 'Czechia', 'איטליה': 'Italy' } as Record<string,string>,
     },
     makePage: {
       selectModel: 'Select a Model',
