@@ -11,7 +11,7 @@ export { getCategoryLabel } from '@/data/cars';
 
 // In-memory cache per isolate
 const CACHE_TTL_MS = 60 * 60 * 1000; // 1 hour
-const EDGE_CACHE_URL = 'https://cache.internal/allMakes-v8';
+const EDGE_CACHE_URL = 'https://cache.internal/allMakes-v9';
 const g = globalThis as typeof globalThis & {
   _carsCache?: { data: CarMake[]; ts: number };
 };
@@ -26,7 +26,7 @@ async function fetchAllMakes(): Promise<CarMake[]> {
 
   // 2. Cloudflare edge Cache API (survives isolate resets — reduces D1 reads by ~95%)
   try {
-    const edgeCache = await caches.open('cars-v4');
+    const edgeCache = await caches.open('cars-v5');
     const hit = await edgeCache.match(EDGE_CACHE_URL);
     if (hit) {
       const data = await hit.json() as CarMake[];
@@ -77,7 +77,7 @@ async function fetchAllMakes(): Promise<CarMake[]> {
 
   // Store in edge Cache API (1 hour TTL, fire-and-forget)
   try {
-    const edgeCache = await caches.open('cars-v4');
+    const edgeCache = await caches.open('cars-v5');
     await edgeCache.put(
       EDGE_CACHE_URL,
       new Response(JSON.stringify(data), {
