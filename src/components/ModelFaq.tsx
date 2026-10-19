@@ -24,7 +24,7 @@ function range(vals: number[], toFixed = 0): string {
   const mn = Math.min(...vals);
   const mx = Math.max(...vals);
   if (mn === mx) return toFixed > 0 ? mn.toFixed(toFixed) : String(mn);
-  return `${toFixed > 0 ? mn.toFixed(toFixed) : mn}–${toFixed > 0 ? mx.toFixed(toFixed) : mx}`;
+  return `${toFixed > 0 ? mn.toFixed(toFixed) : mn}-${toFixed > 0 ? mx.toFixed(toFixed) : mx}`;
 }
 
 function buildFaqs(props: Props): FaqItem[] {
@@ -57,7 +57,7 @@ function buildFaqs(props: Props): FaqItem[] {
   if (accVals.length) {
     const val = range(accVals, 1);
     faqs.push(isEn
-      ? { q: `What is the 0–100 km/h acceleration of the ${carEn}?`, a: `The ${carEn} accelerates from 0 to 100 km/h in ${val} seconds.` }
+      ? { q: `What is the 0-100 km/h acceleration of the ${carEn}?`, a: `The ${carEn} accelerates from 0 to 100 km/h in ${val} seconds.` }
       : { q: `כמה שניות לוקח ל${carHe} מ-0 ל-100 קמ"ש?`, a: `ה${carHe} מאיץ מ-0 ל-100 קמ"ש ב-${val} שניות.` }
     );
   }
@@ -102,7 +102,7 @@ function buildFaqs(props: Props): FaqItem[] {
     const fmtEn = (v: number) => `₪${Math.round(v / 1000)}K`;
     const priceStr = mn === mx
       ? (isEn ? fmtEn(mn) : fmtHe(mn))
-      : (isEn ? `${fmtEn(mn)}–${fmtEn(mx)}` : `${fmtHe(mn)} עד ${fmtHe(mx)}`);
+      : (isEn ? `${fmtEn(mn)}-${fmtEn(mx)}` : `${fmtHe(mn)} עד ${fmtHe(mx)}`);
     faqs.push(isEn
       ? { q: `What is the price of the ${carEn} in Israel?`, a: `The ${carEn} is priced between ${priceStr} in Israel.` }
       : { q: `מה המחיר של ה${carHe} בישראל?`, a: `מחיר ה${carHe} בישראל נע בין ${priceStr}.` }
@@ -117,14 +117,14 @@ function buildFaqs(props: Props): FaqItem[] {
       ? {
           q: `Is the ${carEn} a reliable car?`,
           a: recommended
-            ? `Yes — the ${carEn} is rated ${score}/10 by ${reviewCount} reviewers on this site.`
+            ? `Yes, the ${carEn} is rated ${score}/10 by ${reviewCount} reviewers on this site.`
             : `The ${carEn} has a mixed reputation, rated ${score}/10 by ${reviewCount} reviewers. Check the reviews section for details.`,
         }
       : {
           q: `האם ה${carHe} רכב אמין?`,
           a: recommended
-            ? `כן — ה${carHe} קיבל ציון ${score}/10 מתוך ${reviewCount} ביקורות באתר.`
-            : `ל${carHe} יש ביקורות מעורבות — ציון ${score}/10 מתוך ${reviewCount} ביקורות. מומלץ לעיין בחוות הדעת לפרטים.`,
+            ? `כן, ה${carHe} קיבל ציון ${score}/10 מתוך ${reviewCount} ביקורות באתר.`
+            : `ל${carHe} יש ביקורות מעורבות, ציון ${score}/10 מתוך ${reviewCount} ביקורות. מומלץ לעיין בחוות הדעת לפרטים.`,
         }
     );
   }
@@ -154,13 +154,13 @@ function buildFaqs(props: Props): FaqItem[] {
       if (isFamily && !smallCargo) answer = `Yes, the ${carEn} is well-suited for families with children thanks to its spacious ${category} body style${minCargo ? ` and ${minCargo}+ liters of trunk space` : ''}.`;
       else if (isFamily && smallCargo) answer = `The ${carEn} is a ${category} but has only ${minCargo} liters of trunk space, which may be tight for families. Best suited for couples or small families.`;
       else if (notFamily) answer = `The ${carEn} is a ${category} and is less practical for families with children. Consider a larger SUV or sedan.`;
-      else answer = `The ${carEn} can work for a family — it has ${minCargo} liters of trunk space. Check the full specs for passenger and cargo dimensions.`;
+      else answer = `The ${carEn} can work for a family: it has ${minCargo} liters of trunk space. Check the full specs for passenger and cargo dimensions.`;
     } else {
       const smallCargo = minCargo !== null && minCargo < 200;
       if (isFamily && !smallCargo) answer = `כן, ה${carHe} מתאים למשפחות עם ילדים הודות למבנה ה-${catLabel} המרווח${minCargo ? ` ו-${minCargo} ליטר תא מטען ומעלה` : ''}.`;
       else if (isFamily && smallCargo) answer = `ה${carHe} הוא ${catLabel} אבל עם תא מטען של ${minCargo} ליטר בלבד, מה שעלול להיות צפוף למשפחות. מתאים יותר לזוגות או משפחות קטנות.`;
       else if (notFamily) answer = `ה${carHe} הוא ${catLabel} ופחות פרקטי למשפחות עם ילדים. מומלץ לשקול SUV או סדאן מרווח יותר.`;
-      else answer = `ה${carHe} יכול להתאים למשפחה — יש לו ${minCargo} ליטר תא מטען. מומלץ לבדוק את נתוני המרווח המלאים.`;
+      else answer = `ה${carHe} יכול להתאים למשפחה: יש לו ${minCargo} ליטר תא מטען. מומלץ לבדוק את נתוני המרווח המלאים.`;
     }
     faqs.push(isEn
       ? { q: `Is the ${carEn} suitable for a family with children?`, a: answer }
@@ -173,13 +173,13 @@ function buildFaqs(props: Props): FaqItem[] {
     ? {
         q: `Have there been any recalls for the ${carEn}?`,
         a: recallCount > 0
-          ? `Yes — there are ${recallCount} recorded recall(s) for the ${carEn}. See the Recalls section on this page for details.`
+          ? `Yes, there are ${recallCount} recorded recall(s) for the ${carEn}. See the Recalls section on this page for details.`
           : `No recalls have been recorded for the ${carEn} in our database. Always check the manufacturer's official recall portal for the latest information.`,
       }
     : {
         q: `האם היו קריאות חזרה ל${carHe}?`,
         a: recallCount > 0
-          ? `כן — נמצאו ${recallCount} קריאות חזרה ל${carHe}. ראו את סעיף הקריאות חזרה בדף זה לפרטים.`
+          ? `כן, נמצאו ${recallCount} קריאות חזרה ל${carHe}. ראו את סעיף הקריאות חזרה בדף זה לפרטים.`
           : `לא נמצאו קריאות חזרה ל${carHe} במסד הנתונים שלנו. מומלץ לבדוק בפורטל הרשמי של היצרן.`,
       }
   );

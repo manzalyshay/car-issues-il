@@ -150,9 +150,6 @@ export default function VerdictCard({
   if (chips?.main_strength_chip) chipItems.push({ label: `✓ ${chips.main_strength_chip}`, color: '#2563eb' });
   if (chips?.main_weakness_chip) chipItems.push({ label: `✗ ${chips.main_weakness_chip}`, color: '#b23b2e' });
 
-  // Sources list
-  const sourcesList = expertReview.sourcesList?.length ? expertReview.sourcesList : [];
-
   // Pros/cons note (replaces pros/cons when present and arrays are empty)
   const prosConsNote = expertReview.prosConsNote;
 
@@ -383,7 +380,6 @@ export default function VerdictCard({
         modelNameHe={modelNameHe}
         makeNameEn={makeNameEn}
         modelNameEn={modelNameEn}
-        sources={sourcesList}
       />
     </section>
   );

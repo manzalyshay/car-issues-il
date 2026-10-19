@@ -17,6 +17,49 @@ export interface CarImage {
   hidden_reason: string | null;
 }
 
+// Exclude clearly misassigned lead/gallery images found during the catalog audit.
+// Keep these rules title-based so they apply consistently to model and year pages.
+const MISASSIGNED_IMAGE_TITLES: Record<string, RegExp[]> = {
+  'audi/q4-etron': [/\bAudi\s+e-tron\b/i],
+  'bmw/series1': [/\bBMW\s+5[ -]?Series\b/i],
+  'bmw/series3': [/\b5\s*series\b/i],
+  'byd/atto3': [/\bBYD\s+Seal\b/i],
+  'chevrolet/spark': [/\bChery\s+Eastar\b/i],
+  'fiat/doblo': [/\bJeep\s+Renegade\b/i],
+  'jeep/renegade': [/\bMitsubishi\s+Pajero\s+Sport\b/i],
+  'lexus/is': [/\bRZ\b/i],
+  'maxus/edeliver9': [/\be[ -]?deliver\s*7\b/i],
+  'mazda/cx3': [/\bCX[ -]?5\b/i],
+  'mazda/cx5': [/\bCX[ -]?30\b/i],
+  'mazda/cx30': [/\bCX[ -]?5\b/i],
+  'mercedes/a-class': [/\b(?:C|V|E|S)[ -]?Class\b/i],
+  'mercedes/b-class': [/\b(?:C|E|S|V)[ -]?Class\b/i, /\bC[ -]?Klasse\b/i],
+  'mercedes/g-class': [/\bC\s?220\b/i, /\bC[ -]?Class\b/i],
+  'mercedes/glc': [/\bGLA[ -]?Class\b/i],
+  'mercedes/ml-class': [/\bGLE[ -]?Class\s+timeline\b/i],
+  'mercedes/v-class': [/\bW206\b/i, /\bC[ -]?Class\b/i],
+  'mitsubishi/asx': [/\bOutlander\b/i, /\bSpace\s+Star\b/i],
+  'mitsubishi/eclipse-cross': [/\bRenault\s+Scenic\b/i],
+  'nissan/note': [/\bQashqai\b/i],
+  'opel/mokka': [/\bAstra\b/i],
+  'peugeot/3008': [/\b5008\b/i],
+  'skoda/karoq': [/\bKodiaq\b/i],
+  'tesla/model-s': [/\bModel\s*3\b/i],
+  'tesla/model-x': [/\bModel\s*3\b/i],
+  'volkswagen/id4': [/\bID[ .-]?[35]\b/i],
+  'volkswagen/id5': [/\bID[ .-]?[34]\b/i],
+  'hyundai/ioniq-6': [/\bIONIQ\s*5\b/i],
+  'hyundai/ioniq-9': [/\bIONIQ\s*5\b/i],
+  'omoda/omoda9': [/\bOmoda\s+C7\b/i],
+};
+
+function isUnsuitableImage(makeSlug: string, modelSlug: string, title: string | null): boolean {
+  if (!title) return false;
+  // These are law-enforcement vehicles rather than ordinary consumer examples.
+  if (/\b(?:police|polizia|polizei|carabinieri)\b/i.test(title)) return true;
+  return (MISASSIGNED_IMAGE_TITLES[`${makeSlug}/${modelSlug}`] ?? []).some(pattern => pattern.test(title));
+}
+
 // Reject images whose title explicitly mentions a year >5 years off from requested year.
 function titleYearOk(title: string | null, requestedYear: number): boolean {
   if (!title) return true;
@@ -49,6 +92,7 @@ export async function getImagesForCar(makeSlug: string, modelSlug: string): Prom
   // Filter null-year rows whose title reveals an old year
   const images = rows
     .filter(img => {
+      if (isUnsuitableImage(makeSlug, modelSlug, img.title)) return false;
       if (img.year !== null) return true;
       const titleYear = extractTitleYear(img.title);
       return titleYear === null || titleYear >= cutoff;
@@ -81,7 +125,9 @@ export async function getImagesForYear(makeSlug: string, modelSlug: string, year
     `SELECT * FROM car_images WHERE make_slug = ? AND model_slug = ? AND year >= ? AND year <= ? AND (hidden IS NULL OR hidden != 1) ORDER BY year DESC LIMIT 20`,
     makeSlug, modelSlug, year - 3, year + 1,
   );
-  const filtered = nearby.filter(img => titleYearOk(img.title, year));
+  const filtered = nearby.filter(img =>
+    !isUnsuitableImage(makeSlug, modelSlug, img.title) && titleYearOk(img.title, year),
+  );
   if (filtered.length > 0) return filtered;
 
   // Fall back to general model images (year=null)

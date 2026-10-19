@@ -705,7 +705,7 @@ button { font-family: inherit; cursor: pointer; }
 }
 :where(input, select, textarea):focus-visible,
 :where(input, select, textarea):focus {
-  outline: none !important;
+  outline: 2px solid var(--accent, #17408f) !important;
+  outline-offset: 2px !important;
   border-color: var(--accent, #17408f) !important;
-  box-shadow: 0 0 0 2px rgba(23, 64, 143, 0.22) !important;
 }

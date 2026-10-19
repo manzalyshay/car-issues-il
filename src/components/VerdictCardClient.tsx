@@ -11,11 +11,6 @@ interface Issue {
   notes?: string;
 }
 
-interface Source {
-  title: string;
-  url: string;
-}
-
 interface Props {
   issues: Issue[];
   makeSlug: string;
@@ -26,11 +21,10 @@ interface Props {
   modelNameHe: string;
   makeNameEn: string;
   modelNameEn: string;
-  sources?: Source[];
 }
 
 export default function VerdictCardClient({
-  issues, makeSlug, modelSlug, isEn, verdictText, sources,
+  issues, makeSlug, modelSlug, isEn, verdictText,
 }: Props) {
   const [openIssue, setOpenIssue] = useState<string | null>(null);
   const [feedback, setFeedback] = useState<'agree' | 'disagree' | null>(null);
@@ -102,8 +96,6 @@ export default function VerdictCardClient({
           </p>
         </div>
       )}
-
-      {/* Sources section hidden per user request */}
 
       {/* ── Owner feedback ── */}
       <div style={{

@@ -24,7 +24,6 @@ import VerdictCard from '@/components/VerdictCard';
 import FollowButton from '@/components/FollowButton';
 import HeroMedia from '@/components/HeroMedia';
 import ModelFaq from '@/components/ModelFaq';
-import SourcesBlock from '@/components/SourcesBlock';
 import HeroYearPicker from '@/components/HeroYearPicker';
 import { getRecallsFromCache } from '@/lib/recallsDb';
 
@@ -52,7 +51,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     getTrimSpecs(makeSlug, modelSlug).catch(() => []),
   ]);
   const yearRange = model.years.length > 1
-    ? `${model.years[model.years.length - 1]}–${model.years[0]}`
+    ? `${model.years[model.years.length - 1]}-${model.years[0]}`
     : `${model.years[0]}`;
 
   if (locale === 'en') {
@@ -61,12 +60,12 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       ? `${reviews.length} reviews${avgRating ? ` ⭐ ${avgRating.toFixed(1)}` : ''}`
       : 'Reviews & Common Problems';
     return {
-      title: `${make.nameEn} ${model.nameEn} ${yearRange} — ${reviewPart} | Pros & Cons`,
-      description: `${reviews.length > 0 ? `${reviews.length} real owner reviews` : 'Real owner reviews'} for the ${make.nameEn} ${model.nameEn} (${yearRange})${avgRating ? `. Average rating ${avgRating.toFixed(1)}/5` : ''}. Price history 2016–2026, common problems, pros, cons and reliability from real car owners.`,
+      title: `${make.nameEn} ${model.nameEn} ${yearRange}: ${reviewPart} | Pros & Cons`,
+      description: `${reviews.length > 0 ? `${reviews.length} real owner reviews` : 'Real owner reviews'} for the ${make.nameEn} ${model.nameEn} (${yearRange})${avgRating ? `. Average rating ${avgRating.toFixed(1)}/5` : ''}. Price history 2016-2026, common problems, pros, cons and reliability from real car owners.`,
       alternates: { canonical: url, languages: { he: `https://carissues.co.il/cars/${make.slug}/${model.slug}`, en: url, 'x-default': url } },
       openGraph: {
         title: `${make.nameEn} ${model.nameEn}${ratingStr} | CarIssues`,
-        description: `Owner reviews & common problems — ${make.nameEn} ${model.nameEn} ${yearRange}`,
+        description: `Owner reviews & common problems: ${make.nameEn} ${model.nameEn} ${yearRange}`,
         url,
         images: [{ url: '/og-default.png', width: 1200, height: 630 }],
       },
@@ -79,7 +78,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const minPrice = trimsWithPrice.length > 0 ? Math.min(...trimsWithPrice.map(t => t.priceIls!)) : null;
   const maxPrice = trimsWithPrice.length > 0 ? Math.max(...trimsWithPrice.map(t => t.priceIls!)) : null;
   const priceDesc = minPrice && maxPrice && minPrice !== maxPrice
-    ? ` מחיר: ₪${Math.round(minPrice / 1000)}K–₪${Math.round(maxPrice / 1000)}K.`
+    ? ` מחיר: ₪${Math.round(minPrice / 1000)}K-₪${Math.round(maxPrice / 1000)}K.`
     : minPrice ? ` מחיר מומלץ: ₪${minPrice.toLocaleString('he-IL')}.` : '';
   const trimNames = trims.slice(0, 6).map(t => t.name).join(', ');
   const trimDesc = trimNames ? ` גימורים: ${trimNames}${trims.length > 6 ? ' ועוד' : ''}.` : '';
@@ -88,12 +87,12 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     : 'חוות דעת ובעיות נפוצות';
   const recentYears = model.years.slice(0, 4).join(', ');
   return {
-    title: `${make.nameHe} ${model.nameHe} ${yearRange} — ${reviewPart} | יתרונות וחסרונות`,
+    title: `${make.nameHe} ${model.nameHe} ${yearRange}: ${reviewPart} | יתרונות וחסרונות`,
     description: `${reviews.length > 0 ? `${reviews.length} ביקורות אמיתיות` : 'ביקורות אמיתיות'} על ${make.nameHe} ${model.nameHe} (${make.nameEn} ${model.nameEn}) שנים ${yearRange}${avgRating ? `. דירוג ממוצע ${avgRating.toFixed(1)}/5` : ''}.${priceDesc} חוות דעת ${recentYears}.${trimDesc} יתרונות, חסרונות ובעיות נפוצות מבעלי רכב בישראל.`,
     alternates: { canonical: url, languages: { he: url, en: `https://carissues.net/cars/${make.slug}/${model.slug}`, 'x-default': `https://carissues.net/cars/${make.slug}/${model.slug}` } },
     openGraph: {
       title: `${make.nameHe} ${model.nameHe}${ratingStr}${countStr} | CarIssues IL`,
-      description: `ביקורות ובעיות נפוצות — ${make.nameHe} ${model.nameHe} ${yearRange}`,
+      description: `ביקורות ובעיות נפוצות: ${make.nameHe} ${model.nameHe} ${yearRange}`,
       url,
       images: [{ url: '/og-default.png', width: 1200, height: 630 }],
     },
@@ -135,7 +134,7 @@ export default async function ModelPage({ params, searchParams }: Props) {
   const modelName = isEn ? model.nameEn : model.nameHe;
 
   const yearRange = model.years.length > 1
-    ? `${model.years[model.years.length - 1]}–${model.years[0]}`
+    ? `${model.years[model.years.length - 1]}-${model.years[0]}`
     : `${model.years[0]}`;
 
   // 3D model relevance: year-aware lookup already handles year_from/year_to entries;
@@ -236,7 +235,7 @@ export default async function ModelPage({ params, searchParams }: Props) {
                 >
                   {isEn ? 'Compare' : 'השוואה'}
                 </Link>
-                <SharePopup title={`${makeName} ${modelName} — ${cp.shareTitle}`} url={`${getBaseUrl(locale)}/cars/${make.slug}/${model.slug}`} dark />
+                <SharePopup title={`${makeName} ${modelName}: ${cp.shareTitle}`} url={`${getBaseUrl(locale)}/cars/${make.slug}/${model.slug}`} dark />
               </div>
 
               {/* Year quick-picker — filters images/videos in place */}
@@ -376,7 +375,7 @@ export default async function ModelPage({ params, searchParams }: Props) {
               {similarModels.map(({ makeSlug: ms, makeNameHe, makeNameEn, logoUrl, model: m }, idx) => {
                 const rating = similarRatings[idx];
                 const simImg = similarImages[idx]?.[0] ?? null;
-                const yearRange = m.years.length > 1 ? `${m.years[m.years.length - 1]}–${m.years[0]}` : `${m.years[0]}`;
+                const yearRange = m.years.length > 1 ? `${m.years[m.years.length - 1]}-${m.years[0]}` : `${m.years[0]}`;
                 const carName = isEn ? `${makeNameEn} ${m.nameEn}` : `${makeNameHe} ${m.nameHe}`;
                 return (
                   <Link key={`${ms}/${m.slug}`} href={`/cars/${ms}/${m.slug}`} style={{ textDecoration: 'none', color: 'inherit', display: 'block' }}>
@@ -452,9 +451,6 @@ export default async function ModelPage({ params, searchParams }: Props) {
             </div>
           </section>
         )}
-
-        {/* ── Sources ── */}
-        <SourcesBlock expertReview={expertReview} isEn={isEn} />
 
         {/* JSON-LD */}
         <script

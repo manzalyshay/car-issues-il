@@ -1153,8 +1153,27 @@ function stripIsraelEn(text: string): string {
     .trim();
 }
 
+function normalizeVisiblePunctuation<T>(value: T, key = ''): T {
+  if (typeof value === 'string') {
+    if (key === 'sourceUrl' || key === 'url' || key === 'sourcesList') return value;
+    return value.replace(/\s*—\s*/g, ', ').replace(/–/g, '-') as T;
+  }
+  if (Array.isArray(value)) {
+    return value.map(item => normalizeVisiblePunctuation(item)) as T;
+  }
+  if (value && typeof value === 'object') {
+    return Object.fromEntries(
+      Object.entries(value).map(([childKey, child]) => [
+        childKey,
+        childKey === 'sourcesList' ? child : normalizeVisiblePunctuation(child, childKey),
+      ]),
+    ) as T;
+  }
+  return value;
+}
+
 function mapRow(r: any): ExpertReview {
-  return {
+  const review: ExpertReview = {
     id: r.id,
     makeSlug: r.make_slug,
     modelSlug: r.model_slug,
@@ -1191,6 +1210,7 @@ function mapRow(r: any): ExpertReview {
     chipsJson: (() => { try { const v = r.chips_json; if (!v) return null; return typeof v === 'string' ? JSON.parse(v) : v; } catch { return null; } })(),
     prosConsNote: r.pros_cons_note ?? null,
   };
+  return normalizeVisiblePunctuation(review);
 }
 
 /**

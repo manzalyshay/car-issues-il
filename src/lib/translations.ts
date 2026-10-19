@@ -161,10 +161,10 @@ export const translations = {
       overallScore: 'ציון כולל',
       reviews: 'ביקורות',
       discussions: 'דיונים',
-      sources: 'מקורות',
+      sources: 'דיונים',
       aiKnowledge: 'AI ידע',
       generalSummary: 'סיכום כללי',
-      moreSources: 'עוד מקורות ↓',
+      moreSources: 'עוד דיונים ↓',
     },
     repairCostSubmit: {
       ownersOf: 'דיווחי בעלי',
