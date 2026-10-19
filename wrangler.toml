@@ -6,7 +6,7 @@ compatibility_flags = ["nodejs_compat"]
 # Custom routes — carissues.net (EN) and carissues.co.il (HE) serve the same Worker
 routes = [
   { pattern = "carissues.co.il/*", zone_name = "carissues.co.il" },
-  { pattern = "en.carissues.co.il", custom_domain = true },
+  { pattern = "en.carissues.co.il/*", zone_name = "carissues.co.il" },
   { pattern = "carissues.net/*", zone_name = "carissues.net" },
   { pattern = "www.carissues.net/*", zone_name = "carissues.net" },
 ]
