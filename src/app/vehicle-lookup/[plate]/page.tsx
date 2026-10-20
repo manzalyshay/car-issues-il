@@ -52,14 +52,14 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
   return {
     title: isHe
-      ? `${name}${yearStr} – בדיקת רכב ${displayPlate} | CarIssues`
-      : `${name}${yearStr} – Vehicle Check ${displayPlate} | CarIssues`,
+      ? `${name}${yearStr} - בדיקת רכב ${displayPlate} | CarIssues`
+      : `${name}${yearStr} - Vehicle Check ${displayPlate} | CarIssues`,
     description: isHe
       ? `פרטי הרכב ${displayPlate}: ${name}${yearStr}. דלק: ${v.fuel}. צבע: ${v.color}.${kmStr}${damageStr} תוקף טסט ועוד ממשרד התחבורה.`
       : `Vehicle ${displayPlate}: ${name}${yearStr}. Fuel: ${v.fuel}. Color: ${v.color}.${kmStr}${damageStr} MOT status and more from Israel's Ministry of Transport.`,
     alternates: { canonical: `${base}/vehicle-lookup/${plate}`, languages: langs },
     openGraph: {
-      title: `${name}${yearStr} – ${displayPlate}`,
+      title: `${name}${yearStr} - ${displayPlate}`,
       description: isHe ? `בדיקת רכב ${displayPlate}` : `Vehicle check for plate ${displayPlate}`,
       url: `${base}/vehicle-lookup/${plate}`,
     },

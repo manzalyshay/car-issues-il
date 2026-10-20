@@ -33,7 +33,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   if (!article) return {};
   const base = getBaseUrl(locale);
   const isHe = locale === 'he';
-  const title = isHe ? (article.title_he ?? article.title_en) : (article.title_en ?? article.title_he);
+  const title = (isHe ? (article.title_he ?? article.title_en) : (article.title_en ?? article.title_he))?.replace(/[—–]/g, '-');
   const desc  = isHe ? (article.body_he ?? article.body_en) : (article.body_en ?? article.body_he);
   return {
     title,
@@ -58,8 +58,11 @@ export default async function NewsArticlePage({ params }: Props) {
 
   const isHe = locale === 'he';
   const title = isHe ? (article.title_he ?? article.title_en) : (article.title_en ?? article.title_he);
-  const body  = isHe ? (article.body_he ?? article.body_en) : (article.body_en ?? article.body_he);
+  const rawBody = isHe ? (article.body_he ?? article.body_en) : (article.body_en ?? article.body_he);
+  const body = rawBody?.replace(/אחד מה-SUV החשמליים החזקים שהושקו אי פעם/g, 'מבין רכבי ה-SUV החשמליים החזקים שהוצגו השנה').replace(/[—–]/g, '-') ?? null;
   const sourceName = SOURCE_LABELS[article.source] ?? article.source;
+  const imageUrl = article.image_url && !article.image_url.includes('cdn.motor1.com') ? article.image_url : null;
+  const isUsCitiesStudy = article.id.startsWith('b70e9563ca');
 
   const base = getBaseUrl(locale);
   const jsonLd = {
@@ -68,7 +71,7 @@ export default async function NewsArticlePage({ params }: Props) {
     headline: title,
     description: (isHe ? article.body_he : article.body_en)?.slice(0, 160) ?? '',
     url: `${base}${newsPath(article)}`,
-    ...(article.image_url ? { image: [article.image_url] } : {}),
+      ...(imageUrl ? { image: [imageUrl] } : {}),
     ...(article.published_at ? { datePublished: article.published_at } : {}),
     publisher: {
       '@type': 'Organization',
@@ -92,11 +95,8 @@ export default async function NewsArticlePage({ params }: Props) {
           <span style={{ color: 'var(--text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '40ch' }}>{title}</span>
         </div>
 
-        {/* Source + time */}
+        {/* Publication time; the source is credited once below the article. */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16 }}>
-          <span style={{ background: 'var(--accent-soft)', color: 'var(--accent)', fontSize: '0.72rem', fontWeight: 700, padding: '3px 10px', borderRadius: 4 }}>
-            {sourceName}
-          </span>
           <span style={{ fontSize: '0.78rem', color: 'var(--text-faint)' }}>{timeAgo(article.published_at, isHe)}</span>
         </div>
 
@@ -104,7 +104,7 @@ export default async function NewsArticlePage({ params }: Props) {
         {isHe && !article.body_he && (
           <div style={{ background: '#fff6e0', border: '1px solid #f6e2b2', borderRadius: 10, padding: '10px 14px', marginBottom: 18, fontSize: 13.5, color: '#7a5000', display: 'flex', alignItems: 'center', gap: 8 }}>
             <span>⏳</span>
-            <span>תרגום המאמר בדרך — יהיה זמין בקרוב</span>
+            <span>תרגום המאמר בדרך - יהיה זמין בקרוב</span>
           </div>
         )}
         {!isHe && !article.body_en && (
@@ -120,10 +120,10 @@ export default async function NewsArticlePage({ params }: Props) {
         </h1>
 
         {/* Hero image */}
-        {article.image_url && (
+        {imageUrl && (
           /* eslint-disable-next-line @next/next/no-img-element */
           <img
-            src={article.image_url}
+            src={imageUrl}
             alt={title ?? ''}
             style={{ width: '100%', aspectRatio: '16/9', objectFit: 'cover', borderRadius: 12, marginBottom: 28, display: 'block' }}
           />
@@ -132,6 +132,7 @@ export default async function NewsArticlePage({ params }: Props) {
         {/* Body */}
         {body ? (
           <div style={{ fontSize: '1rem', lineHeight: 1.8, color: 'var(--text)', direction: isHe ? 'rtl' : 'ltr' }}>
+            {isHe && isUsCitiesStudy && <p style={{ margin: '0 0 1.2em' }}>המחקר המתואר בכתבה נערך בארה״ב; הנתונים אינם מתייחסים לערים בישראל.</p>}
             {body.split(/\n\n+/).map((para, i) => (
               <p key={i} style={{ margin: '0 0 1.2em' }}>{para.trim()}</p>
             ))}

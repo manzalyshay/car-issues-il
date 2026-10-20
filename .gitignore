@@ -49,3 +49,7 @@ scripts/gsc-token.json
 .open-next/
 .pages-output/
 .wrangler/
+
+# local data / scrape cache
+*.sqlite
+.cache/

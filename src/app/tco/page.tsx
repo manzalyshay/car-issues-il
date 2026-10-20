@@ -13,7 +13,7 @@ export async function generateMetadata(): Promise<Metadata> {
     alternates: { canonical: `${base}/tco`, languages: { he: 'https://carissues.co.il/tco', en: 'https://carissues.net/tco', 'x-default': 'https://carissues.net/tco' } },
   } : {
     title: 'מחשבון עלות בעלות על רכב',
-    description: 'כמה עולה להחזיק רכב בישראל לשנה? חשב דלק, ביטוח, טיפולים, פחת ורישוי — עלות החזקה מלאה לכל דגם.',
+    description: 'כמה עולה להחזיק רכב בישראל לשנה? חשב דלק, ביטוח, טיפולים, פחת ורישוי - עלות החזקה מלאה לכל דגם.',
     alternates: { canonical: `${base}/tco`, languages: { he: 'https://carissues.co.il/tco', en: 'https://carissues.net/tco', 'x-default': 'https://carissues.net/tco' } },
   };
 }
@@ -35,17 +35,17 @@ export default async function TcoPage() {
           {
             '@type': 'Question',
             name: 'כמה עולה להחזיק רכב בישראל לשנה?',
-            acceptedAnswer: { '@type': 'Answer', text: 'עלות החזקת רכב ממוצע בישראל עומדת על ₪25,000–₪45,000 לשנה, כולל דלק, ביטוח מקיף, טיפולים שוטפים, רישוי ופחת.' },
+            acceptedAnswer: { '@type': 'Answer', text: 'עלות החזקת רכב ממוצע בישראל עומדת על ₪25,000-₪45,000 לשנה, כולל דלק, ביטוח מקיף, טיפולים שוטפים, רישוי ופחת.' },
           },
           {
             '@type': 'Question',
             name: 'מה הפחת השנתי על רכב בישראל?',
-            acceptedAnswer: { '@type': 'Answer', text: 'פחת ממוצע של 15% בשנה הראשונה, 10% בשנים 2–5, ו-7% לאחר מכן. רכב חדש מאבד כ-30% מערכו בשלוש השנים הראשונות.' },
+            acceptedAnswer: { '@type': 'Answer', text: 'פחת ממוצע של 15% בשנה הראשונה, 10% בשנים 2-5, ו-7% לאחר מכן. רכב חדש מאבד כ-30% מערכו בשלוש השנים הראשונות.' },
           },
           {
             '@type': 'Question',
             name: 'כמה עולה ביטוח מקיף לרכב בישראל?',
-            acceptedAnswer: { '@type': 'Answer', text: 'ביטוח מקיף לרכב ממוצע בישראל עולה ₪3,000–₪8,000 לשנה, תלוי בגיל הנהג, וותק נהיגה, דגם הרכב ומיקום.' },
+            acceptedAnswer: { '@type': 'Answer', text: 'ביטוח מקיף לרכב ממוצע בישראל עולה ₪3,000-₪8,000 לשנה, תלוי בגיל הנהג, וותק נהיגה, דגם הרכב ומיקום.' },
           },
         ],
       },

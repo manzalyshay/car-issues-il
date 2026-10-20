@@ -14,13 +14,13 @@ export async function generateMetadata(): Promise<Metadata> {
   const base = getBaseUrl(locale);
   const langs = { he: 'https://carissues.co.il/cars/compare', en: 'https://carissues.net/cars/compare', 'x-default': 'https://carissues.net/cars/compare' };
   return locale === 'en' ? {
-    title: 'Compare Cars — Price, Reliability & Owner Reviews',
-    description: 'Compare any two cars side by side: trim prices, specs, owner reviews, recalls and common problems — with a clear verdict for each pair.',
+    title: 'Compare Cars - Price, Reliability & Owner Reviews',
+    description: 'Compare any two cars side by side: trim prices, specs, owner reviews, recalls and common problems - with a clear verdict for each pair.',
     alternates: { canonical: `${base}/cars/compare`, languages: langs },
   } : {
     // Over ~65 chars with the "| CarIssues" suffix, so the suffix is dropped.
-    title: { absolute: 'השוואת רכבים — השוו כל שני דגמים (מחיר, אמינות, ביקורות)' },
-    description: 'השוואת רכבים בין כל שני דגמים: מחירון גרסאות בישראל, מפרט, ביקורות בעלים, ריקולים ובעיות נפוצות — עם שורה תחתונה למי מתאים כל רכב.',
+    title: { absolute: 'השוואת רכבים - השוו כל שני דגמים (מחיר, אמינות, ביקורות)' },
+    description: 'השוואת רכבים בין כל שני דגמים: מחירון גרסאות בישראל, מפרט, ביקורות בעלים, ריקולים ובעיות נפוצות - עם שורה תחתונה למי מתאים כל רכב.',
     alternates: { canonical: `${base}/cars/compare`, languages: langs },
   };
 }
@@ -59,8 +59,8 @@ const CATEGORY_ENTRIES = [
 
 const BUDGET_BANDS = [
   { min: 0, max: 150_000, he: 'עד ₪150,000', en: 'Up to ₪150,000' },
-  { min: 150_000, max: 200_000, he: '₪150,000–₪200,000', en: '₪150,000–₪200,000' },
-  { min: 200_000, max: 300_000, he: '₪200,000–₪300,000', en: '₪200,000–₪300,000' },
+  { min: 150_000, max: 200_000, he: '₪150,000-₪200,000', en: '₪150,000-₪200,000' },
+  { min: 200_000, max: 300_000, he: '₪200,000-₪300,000', en: '₪200,000-₪300,000' },
   { min: 300_000, max: Infinity, he: 'מעל ₪300,000', en: 'Over ₪300,000' },
 ] as const;
 
@@ -144,22 +144,22 @@ export default async function ComparePage() {
         <p style={{ color: 'var(--text-muted)', marginBottom: 28, fontSize: '0.9375rem' }}>{cmp.subtitle}</p>
       </div>
 
-      {/* Two-car picker — first interactive element */}
+      {/* Two-car picker - first interactive element */}
       <CompareClient showHeader={false} />
 
       <div className="container" style={{ paddingBottom: 64 }}>
-        {/* Intro — template copy, counts are live */}
+        {/* Intro - template copy, counts are live */}
         <section style={{ maxWidth: 820, marginBottom: 36, fontSize: '0.95rem', lineHeight: 1.8, color: 'var(--text-muted)' }}>
           {isEn ? (
             <>
-              <p style={{ margin: '0 0 10px' }}>Compare any two of the {modelCount} models from {makes.length} brands on CarIssues. Each comparison puts side by side the Israeli trim prices, key specs (power, fuel consumption, boot space), owner reviews from this site, recalls recorded by NHTSA and an AI summary of what owners write on forums.</p>
-              <p style={{ margin: '0 0 10px' }}>How to use it: pick a make and model in both boxes above to open the full comparison page — with a short verdict on who each car suits, common questions and links to both model pages. You can also start from one of the most-read comparisons below, or browse by body type or price range.</p>
+              <p style={{ margin: '0 0 10px' }}>Compare any two of the {modelCount} models from {makes.length} brands on CarIssues. Each comparison puts side by side the Israeli trim prices, key specs (power, fuel consumption, boot space), owner reviews available on this site, US recall records and an AI summary of the information available for each model.</p>
+              <p style={{ margin: '0 0 10px' }}>How to use it: pick a make and model in both boxes above to open the full comparison page - with a short verdict on who each car suits, common questions and links to both model pages. You can also start from one of the most-read comparisons below, or browse by body type or price range.</p>
               <p style={{ margin: 0 }}>Data is refreshed regularly. When we don&apos;t have a figure for one of the models, the comparison simply leaves it out.</p>
             </>
           ) : (
             <>
-              <p style={{ margin: '0 0 10px' }}>בעמוד הזה אפשר להשוות בין כל שני דגמים מתוך {modelCount} דגמים של {makes.length} יצרנים שנמכרים או נמכרו בישראל. כל השוואה מציגה זה לצד זה את מחירון הגרסאות בישראל, נתוני מפרט (הספק, צריכת דלק, נפח תא מטען), ביקורות של בעלי רכב באתר, ריקולים שמתועדים במאגר NHTSA, וסיכום AI של מה שבעלי רכב כותבים בפורומים.</p>
-              <p style={{ margin: '0 0 10px' }}>איך משתמשים: בוחרים יצרן ודגם בשני השדות למעלה ועוברים לדף ההשוואה המלא — עם שורה תחתונה למי מתאים כל רכב, שאלות נפוצות וקישורים לדפי שני הדגמים. אפשר גם להתחיל מאחת ההשוואות הנקראות ביותר למטה, או לבחור לפי סוג רכב או טווח מחיר.</p>
+              <p style={{ margin: '0 0 10px' }}>בעמוד הזה אפשר להשוות בין כל שני דגמים מתוך {modelCount} דגמים של {makes.length} יצרנים שנמכרים או נמכרו בישראל. כל השוואה מציגה זה לצד זה מחירוני גרסאות בישראל, נתוני מפרט, ביקורות בעלים הזמינות באתר, נתוני קריאות חזרה בארה״ב וסיכום של המידע הזמין לכל דגם.</p>
+              <p style={{ margin: '0 0 10px' }}>איך משתמשים: בוחרים יצרן ודגם בשני השדות למעלה ועוברים לדף ההשוואה המלא - עם שורה תחתונה למי מתאים כל רכב, שאלות נפוצות וקישורים לדפי שני הדגמים. אפשר גם להתחיל מאחת ההשוואות הנקראות ביותר למטה, או לבחור לפי סוג רכב או טווח מחיר.</p>
               <p style={{ margin: 0 }}>הנתונים מתעדכנים מעת לעת. כשאין לנו נתון מסוים על אחד הדגמים, ההשוואה פשוט לא מציגה אותו.</p>
             </>
           )}

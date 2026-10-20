@@ -66,7 +66,7 @@ export async function generateMetadata(): Promise<Metadata> {
     manifest: '/manifest.webmanifest',
     description: isEn
       ? 'Real car owner reviews, common problems, recalls and reliability data — by make, model and year.'
-      : "המאגר הגדול ביותר בישראל לבעיות רכב, ביקורות וחוות דעת. מצא בעיות נפוצות לפי יצרן, דגם ושנה.",
+      : 'מידע על דגמי רכב בישראל, כולל ביקורות בעלים, בעיות נפוצות, ריקולים ועלויות תיקון.',
     keywords: isEn
       ? ['car reviews', 'car problems', 'car reliability', 'car recalls', 'car issues', 'owner reviews']
       : ['car issues israel', 'israel car reviews', 'car problems', 'recall israel', 'בעיות רכב', 'ביקורות רכב', 'ישראל'],
@@ -119,7 +119,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         logo: { '@type': 'ImageObject', url: `${baseUrl}/favicon.svg` },
         description: isEn
           ? 'Real car owner reviews, common problems, recalls and reliability data — by make, model and year.'
-          : 'המאגר הגדול ביותר בישראל לבעיות רכב, ביקורות וחוות דעת',
+          : 'מידע על דגמי רכב, ביקורות בעלים, בעיות נפוצות וריקולים בישראל',
       },
       {
         '@type': 'WebSite',

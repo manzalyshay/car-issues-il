@@ -24,16 +24,7 @@ export default function CarComparisonAI({ make1, model1, make2, model2, nameAhe,
       .catch(() => setLoading(false));
   }, [make1, model1, make2, model2, locale]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  if (loading) {
-    return (
-      <div style={{ overflow: 'hidden', borderRadius: 12, border: '1px solid var(--border)', background: 'var(--surface)', marginBottom: 28 }}>
-        {header(locale)}
-        <div style={{ padding: '20px 24px', color: 'var(--text-muted)', fontSize: '0.875rem' }}>
-          {locale === 'he' ? 'מייצר השוואה...' : 'Generating comparison...'}
-        </div>
-      </div>
-    );
-  }
+  if (loading) return null;
 
   if (!text) return null;
 

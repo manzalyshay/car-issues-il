@@ -8,12 +8,12 @@ import { newsPath } from '@/lib/newsSlug';
 
 /* ── Types ──────────────────────────────────────────────── */
 interface Make { slug: string; nameHe: string; nameEn: string; logoUrl: string; country: string; models: { slug: string; nameHe: string; nameEn: string }[]; }
-interface TopCar { makeSlug: string; modelSlug: string; makeHe: string; modelHe: string; makeEn: string; modelEn: string; logoUrl: string; combined: number; avgRating: number | null; imageUrl?: string | null; }
+interface TopCar { makeSlug: string; modelSlug: string; makeHe: string; modelHe: string; makeEn: string; modelEn: string; logoUrl: string; combined: number; avgRating: number | null; reviewCount: number; imageUrl?: string | null; }
 interface Review { id: string; make_slug: string; model_slug: string; year: number | null; rating: number; title: string; body: string; title_en?: string | null; body_en?: string | null; author: string; created_at: string; makeHe: string; modelHe: string; makeEn: string; modelEn: string; logoUrl: string; }
 interface ComparePair { href: string; aHe: string; aEn: string; bHe: string; bEn: string; }
 interface TickerItem { code: string; textHe: string; textEn: string; color: string; }
 interface NewsItem { id: string; title_he: string | null; title_en: string | null; body_he: string | null; body_en: string | null; image_url: string | null; published_at: string | null; original_url: string; source: string; }
-interface Props { popularMakes: Make[]; allMakes: Make[]; topRanked: TopCar[]; recentReviews: Review[]; tickerItems?: TickerItem[]; initialNews?: NewsItem[]; topPairs?: ComparePair[]; }
+interface Props { popularMakes: Make[]; allMakes: Make[]; topRanked: TopCar[]; recentReviews: Review[]; tickerItems?: TickerItem[]; initialNews?: NewsItem[]; topPairs?: ComparePair[]; reviewTotal: number; recallTotal: number; }
 
 /* ── Helpers ─────────────────────────────────────────────── */
 function timeAgo(dateStr: string, isHe: boolean) {
@@ -126,26 +126,15 @@ function useTilt(ref: React.RefObject<HTMLElement | null>, max = 6) {
   }, [ref, max]);
 }
 
-/* ── Ticker fallback ────────────────────────────────────── */
-const TICKER_FALLBACK: TickerItem[] = [
-  { code: 'ריקול', textHe: 'מאזדה 3 · בעיית מתלה דווחה', textEn: 'Mazda 3 · suspension issue reported', color: '#ff8a8a' },
-  { code: 'ביקורת', textHe: 'יונדאי טוסון 2020 · 5/5', textEn: 'Hyundai Tucson 2020 · 5/5', color: '#7ba0e8' },
-  { code: 'ביקורת', textHe: 'קיה סלטוס 2025 · 5/5', textEn: 'Kia Seltos 2025 · 5/5', color: '#7ba0e8' },
-  { code: 'מבצע', textHe: 'טויוטה קורולה 2021 · ‎-9%', textEn: 'Toyota Corolla 2021 · -9%', color: '#ffd166' },
-  { code: 'ריקול', textHe: 'ג׳יפ גרנד צ׳רוקי · מערכת בלמים', textEn: 'Jeep Grand Cherokee · brakes', color: '#ff8a8a' },
-  { code: 'ביקורת', textHe: 'שברולט ספארק 2017 · 5/5', textEn: 'Chevrolet Spark 2017 · 5/5', color: '#7ba0e8' },
-];
-
-
 /* ═══════════════════════════════════════════════════════════
    Main component
    ═══════════════════════════════════════════════════════════ */
-export default function HomeClient({ allMakes, topRanked, recentReviews, tickerItems: tickerProp, initialNews, topPairs = [] }: Props) {
+export default function HomeClient({ allMakes, topRanked, recentReviews, tickerItems: tickerProp, initialNews, topPairs = [], reviewTotal, recallTotal }: Props) {
   const { locale } = useLocale();
   const isHe = locale === 'he';
   const totalModels = allMakes.reduce((s, m) => s + m.models.length, 0);
 
-  const tickerItems = tickerProp && tickerProp.length > 0 ? tickerProp : TICKER_FALLBACK;
+  const tickerItems = tickerProp ?? [];
   const topCar = topRanked[0] ?? null;
 
   /* Search + autocomplete */
@@ -223,7 +212,7 @@ export default function HomeClient({ allMakes, topRanked, recentReviews, tickerI
   useReveal();
   useCountUp(refMakes,   allMakes.length,     0);
   useCountUp(refModels,  totalModels,          0);
-  useCountUp(refReviews, 2400,                 0);
+  useCountUp(refReviews, reviewTotal,          0);
   useTilt(tiltRef);
 
   /* News feed — server-provided, no client fetch needed */
@@ -236,15 +225,12 @@ export default function HomeClient({ allMakes, topRanked, recentReviews, tickerI
     <div style={{ background: '#f2f5fa', color: '#0d1b2f', minHeight: '100vh', overflowX: 'clip', direction: isHe ? 'rtl' : 'ltr' }}>
 
       {/* ── Ticker ───────────────────────────────────────── */}
-      <div style={{ background: '#0d1b2f', color: '#dbe4f2', overflow: 'hidden', height: 38, display: 'flex', alignItems: 'center' }}>
+      {tickerItems.length > 0 && <div style={{ background: '#0d1b2f', color: '#dbe4f2', overflow: 'hidden', height: 38, display: 'flex', alignItems: 'center' }}>
         <div style={{ display: 'flex', width: 'max-content', animation: 'ci-ticker 42s linear infinite' }}>
-          {[0, 1].map(copy => (
-            <div key={copy} aria-hidden={copy === 1 || undefined}
-              style={{ display: 'flex', gap: 34, flex: 'none', width: 'max-content', alignItems: 'center', padding: '0 17px', whiteSpace: 'nowrap', fontSize: 13 }}
-            >
+            <div style={{ display: 'flex', gap: 34, flex: 'none', width: 'max-content', alignItems: 'center', padding: '0 17px', whiteSpace: 'nowrap', fontSize: 13 }}>
               {tickerItems.map((item, i) => (
                 <span key={i} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                  {item.code === 'ריקול' && copy === 0 && (
+                  {item.code === 'ריקול' && (
                     <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#ff5b5b', flexShrink: 0, animation: 'ci-pulse 1.6s ease-in-out infinite' }} />
                   )}
                   <span style={{ color: item.color, fontWeight: 700 }}>
@@ -254,9 +240,8 @@ export default function HomeClient({ allMakes, topRanked, recentReviews, tickerI
                 </span>
               ))}
             </div>
-          ))}
         </div>
-      </div>
+      </div>}
 
       {/* ── Hero ─────────────────────────────────────────── */}
       <section style={{
@@ -373,7 +358,7 @@ export default function HomeClient({ allMakes, topRanked, recentReviews, tickerI
                     </span>
                     {topCar.avgRating != null && (
                       <span style={{ fontSize: 11.5, fontWeight: 700, color: '#0f7a3d', background: '#f1f9f4', border: '1px solid #dbeee3', padding: '3px 8px', borderRadius: 7 }}>
-                        {isHe ? `בעלים: ${topCar.avgRating.toFixed(1)}/5` : `Owners: ${topCar.avgRating.toFixed(1)}/5`}
+                        {isHe ? `${topCar.reviewCount} ${topCar.reviewCount === 1 ? 'ביקורת' : 'ביקורות'} · דירוג ${topCar.avgRating.toFixed(1)}/5` : `${topCar.reviewCount} reviews · ${topCar.avgRating.toFixed(1)}/5`}
                       </span>
                     )}
                   </div>
@@ -393,12 +378,12 @@ export default function HomeClient({ allMakes, topRanked, recentReviews, tickerI
           {[
             { ref: refMakes,   value: allMakes.length, label: isHe ? 'יצרנים' : 'Makes' },
             { ref: refModels,  value: totalModels,     label: isHe ? 'דגמים' : 'Models' },
-            { ref: refReviews, value: 2400,            label: isHe ? 'ביקורות' : 'Reviews' },
-            { ref: null,       value: null,            label: isHe ? 'ריקולים' : 'Recalls', static: '+13K' },
+            { ref: refReviews, value: reviewTotal,      label: isHe ? 'ביקורות בעלים' : 'Owner reviews' },
+            { ref: null,       value: recallTotal,      label: isHe ? 'ריקולים' : 'Recalls' },
           ].map((s, i, arr) => (
             <div key={i} style={{ padding: '10px 12px', textAlign: 'center', borderInlineEnd: i < arr.length - 1 ? '1px solid #eef2f9' : 'none' }}>
               <div style={{ fontFamily: 'Heebo,sans-serif', fontWeight: 900, fontSize: 'clamp(20px,2vw,26px)', letterSpacing: '-.04em' }}>
-                {s.static ?? <>+<span ref={s.ref as React.RefObject<HTMLSpanElement>}>{s.value}</span></>}
+                <span ref={s.ref as React.RefObject<HTMLSpanElement>}>{Number(s.value ?? 0).toLocaleString(isHe ? 'he-IL' : 'en-US')}</span>
               </div>
               <div style={{ fontSize: 12, color: '#5b6a86', fontWeight: 600, marginTop: 2 }}>{s.label}</div>
             </div>
@@ -507,7 +492,9 @@ export default function HomeClient({ allMakes, topRanked, recentReviews, tickerI
                     <span style={{ display: 'block', padding: '13px 16px 16px' }}>
                       <span style={{ display: 'block', fontFamily: 'Heebo,sans-serif', fontWeight: 700, fontSize: 18, color: '#0d1b2f' }}>{name}</span>
                       <span style={{ display: 'block', fontSize: 13.5, color: '#5b6a86', marginTop: 4 }}>
-                        {car.avgRating != null ? `${(car.avgRating * (car.avgRating <= 5 ? 20 : 10)).toFixed(0)} ${isHe ? 'ביקורות בעלים' : 'owner reviews'}` : (isHe ? 'ביקורות בעלים' : 'owner reviews')}
+                        {car.reviewCount > 0
+                          ? (isHe ? `${car.reviewCount} ${car.reviewCount === 1 ? 'ביקורת בעלים' : 'ביקורות בעלים'}` : `${car.reviewCount} owner review${car.reviewCount === 1 ? '' : 's'}`)
+                          : (isHe ? `ציון AI ${score}/10, ללא ביקורות בעלים` : `AI score ${score}/10, no owner reviews`)}
                       </span>
                     </span>
                   </Link>

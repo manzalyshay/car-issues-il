@@ -4,14 +4,14 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { useLocale } from '@/lib/localeContext';
 
-const FUEL_PRICES = { petrol: 7.0, diesel: 6.8, hybrid: 5.2, electric: 0.7 };
+const FUEL_PRICES = { petrol: 7.0, diesel: 6.8, hybrid: 7.0, electric: 0.7 };
 const RATE = 3.65;
 
 const CATEGORY_DEFAULTS: Record<string, { consumption: number; insurance: number; service: number; registration: number }> = {
-  city:     { consumption: 7.5,  insurance: 3800, service: 2500, registration: 1200 },
-  family:   { consumption: 8.0,  insurance: 4500, service: 3000, registration: 1400 },
-  suv:      { consumption: 9.5,  insurance: 5500, service: 3800, registration: 1800 },
-  luxury:   { consumption: 10.5, insurance: 9000, service: 6000, registration: 2500 },
+  city:     { consumption: 13.3, insurance: 3800, service: 2500, registration: 1200 },
+  family:   { consumption: 12.5, insurance: 4500, service: 3000, registration: 1400 },
+  suv:      { consumption: 10.5, insurance: 5500, service: 3800, registration: 1800 },
+  luxury:   { consumption: 9.5,  insurance: 9000, service: 6000, registration: 2500 },
   electric: { consumption: 18,   insurance: 5000, service: 1200, registration: 1400 }, // kWh/100km
 };
 
@@ -31,7 +31,7 @@ export default function TcoCalculator() {
   const [kmYear, setKmYear] = useState(18000);
   const [fuelType, setFuelType] = useState<'petrol' | 'diesel' | 'hybrid' | 'electric'>('petrol');
   const [category, setCategory] = useState<'city' | 'family' | 'suv' | 'luxury' | 'electric'>('family');
-  const [consumption, setConsumption] = useState(8.0);
+  const [consumption, setConsumption] = useState(12.5);
   const [insurance, setInsurance] = useState(4500);
   const [service, setService] = useState(3000);
   const [registration, setRegistration] = useState(1400);
@@ -52,7 +52,7 @@ export default function TcoCalculator() {
   const fuelCostPerUnit = FUEL_PRICES[fuelType];
   const fuelAnnual = fuelType === 'electric'
     ? (consumption / 100) * kmYear * fuelCostPerUnit  // kWh * price per kWh
-    : (consumption / 100) * kmYear * fuelCostPerUnit; // liters * price per liter
+    : (kmYear / Math.max(consumption, 1)) * fuelCostPerUnit; // km/year ÷ km/L × price per liter
 
   // Total over N years
   const rows: { year: number; depreciation: number; fuel: number; insurance: number; service: number; registration: number; total: number; cumulative: number }[] = [];

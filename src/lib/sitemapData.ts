@@ -41,7 +41,6 @@ const STATIC_PAGES: { path: string; changeFrequency: 'daily' | 'weekly' | 'month
   { path: '/news', changeFrequency: 'daily', priority: 0.7 },
   { path: '/cars', changeFrequency: 'weekly', priority: 0.8 },
   { path: '/cars/compare', changeFrequency: 'weekly', priority: 0.7 },
-  { path: '/embed', changeFrequency: 'monthly', priority: 0.6 },
   { path: '/rankings', changeFrequency: 'daily', priority: 0.7 },
   { path: '/repairs', changeFrequency: 'weekly', priority: 0.8 },
   { path: '/tco', changeFrequency: 'monthly', priority: 0.75 },
@@ -213,7 +212,7 @@ function enEntries(d: EnData): Record<EnChildSitemap, MetadataRoute.Sitemap> {
   const datedStatic: Record<string, string | undefined> = {
     '': catalogueLatest, '/cars': catalogueLatest, '/cars/compare': catalogueLatest, '/rankings': catalogueLatest, '/news': d.newsLatest,
   };
-  const statics: MetadataRoute.Sitemap = STATIC_PAGES.map((s) => ({
+  const statics: MetadataRoute.Sitemap = [...STATIC_PAGES, { path: '/embed', changeFrequency: 'monthly' as const, priority: 0.6 }].map((s) => ({
     url: `${BASE}${s.path}`, lastModified: datedStatic[s.path], changeFrequency: s.changeFrequency, priority: s.priority,
   }));
 

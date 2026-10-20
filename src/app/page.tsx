@@ -1,11 +1,12 @@
 import { getAllMakes, getPopularMakes } from '@/lib/carsDb';
-import { dbAll } from '@/lib/db';
+import { dbAll, dbFirst } from '@/lib/db';
 import { getLatestNews } from '@/lib/carNews';
 import { getHostLocale } from '@/lib/hostLocale';
 import HomeClient from '@/components/HomeClient';
 import EnglishVersionBanner from '@/components/EnglishVersionBanner';
 import { resolvePairs } from '@/lib/comparePairs';
 import { TOP_COMPARE_PAIRS } from '@/data/top-compare-pairs';
+import { getValidatedRepairReports } from '@/lib/repairReports';
 
 export const revalidate = 300; // cache home page for 5 minutes
 
@@ -41,7 +42,7 @@ async function getTopRanked(limit = 3) {
     fabMap.set(`${row.make_slug}/${row.model_slug}`, row.sketchfab_uid);
   }
 
-  const ranked: { makeSlug: string; modelSlug: string; makeHe: string; modelHe: string; makeEn: string; modelEn: string; logoUrl: string; combined: number; avgRating: number | null; imageUrl: string | null; sketchfabUid: string | null }[] = [];
+  const ranked: { makeSlug: string; modelSlug: string; makeHe: string; modelHe: string; makeEn: string; modelEn: string; logoUrl: string; combined: number; avgRating: number | null; reviewCount: number; imageUrl: string | null; sketchfabUid: string | null }[] = [];
   for (const [key, info] of lookup.entries()) {
     const topScore = scoreMap.get(key) ?? null;
     const ratings = reviewMap.get(key) ?? [];
@@ -52,7 +53,7 @@ async function getTopRanked(limit = 3) {
     if (!scores.length) continue;
     const combined = scores.reduce((a, b) => a + b, 0) / scores.length;
     const [makeSlug, modelSlug] = key.split('/');
-    ranked.push({ makeSlug, modelSlug, ...info, combined, avgRating, imageUrl: info.leadingImageUrl, sketchfabUid: fabMap.get(key) ?? null });
+    ranked.push({ makeSlug, modelSlug, ...info, combined, avgRating, reviewCount: ratings.length, imageUrl: info.leadingImageUrl, sketchfabUid: fabMap.get(key) ?? null });
   }
   // Shuffle the ranked pool and pick randomly so the homepage shows different cars each visit
   for (let i = ranked.length - 1; i > 0; i--) {
@@ -116,9 +117,7 @@ async function getTickerItems(): Promise<TickerItem[]> {
     dbAll<{ make_slug: string; model_slug: string; year: number | null; rating: number }>(
       'SELECT make_slug, model_slug, year, rating FROM reviews ORDER BY created_at DESC LIMIT 6',
     ).catch(() => []),
-    dbAll<{ make_slug: string; model_slug: string; repair_name_he: string; repair_key: string; cost_ils: number }>(
-      'SELECT make_slug, model_slug, repair_name_he, repair_key, cost_ils FROM user_repair_costs ORDER BY created_at DESC LIMIT 4',
-    ).catch(() => []),
+    getValidatedRepairReports(20).catch(() => []),
     dbAll<{ make: string; model: string; component_he: string }>(
       "SELECT make, model, component_he FROM recalls_cache WHERE component_he IS NOT NULL AND component_he NOT LIKE '%:%' ORDER BY ROWID DESC LIMIT 4",
     ).catch(() => []),
@@ -156,10 +155,11 @@ async function getTickerItems(): Promise<TickerItem[]> {
     const modelHe = info?.modelHe ?? r.model;
     const makeEn = info?.makeEn ?? r.make;
     const modelEn = info?.modelEn ?? r.model;
+    const component = r.component_he.replace(/[\u0591-\u05C7]/g, '').trim();
     items.push({
       code: 'ריקול',
-      textHe: `ריקול · ${makeHe} ${modelHe} · ${r.component_he}`,
-      textEn: `Recall · ${makeEn} ${modelEn} · ${r.component_he}`,
+      textHe: `ריקול · ${makeHe} ${modelHe} · ${component}`,
+      textEn: `Recall · ${makeEn} ${modelEn} · ${component}`,
       color: '#ff9b8d',
     });
   }
@@ -170,18 +170,21 @@ async function getTickerItems(): Promise<TickerItem[]> {
     [items[i], items[j]] = [items[j], items[i]];
   }
 
-  return items.slice(0, 10);
+  const unique = [...new Map(items.map(item => [`${item.code}/${item.textHe.replace(/\s+/g, ' ').trim()}`, item])).values()];
+  return unique.slice(0, 10);
 }
 
 export default async function HomePage() {
   const locale = await getHostLocale().catch(() => 'he');
-  const [popularMakes, allMakes, topRanked, recentReviews, tickerItems, news] = await Promise.all([
+  const [popularMakes, allMakes, topRanked, recentReviews, tickerItems, news, reviewTotal, recallTotal] = await Promise.all([
     getPopularMakes().catch(() => []),
     getAllMakes().catch(() => []),
     getTopRanked(3).catch(() => []),
     getRecentReviews(3, locale).catch(() => []),
     getTickerItems().catch(() => []),
     getLatestNews(4, 0, locale).catch(() => []),
+    dbFirst<{ count: number }>('SELECT COUNT(*) AS count FROM reviews').then(r => r?.count ?? 0).catch(() => 0),
+    dbFirst<{ count: number }>('SELECT COUNT(*) AS count FROM recalls_cache').then(r => r?.count ?? 0).catch(() => 0),
   ]);
 
   const topPairs = resolvePairs(allMakes, TOP_COMPARE_PAIRS).slice(0, 6).map((p) => ({
@@ -201,6 +204,8 @@ export default async function HomePage() {
         tickerItems={tickerItems}
         initialNews={news}
         topPairs={topPairs}
+        reviewTotal={reviewTotal}
+        recallTotal={recallTotal}
       />
     </>
   );

@@ -322,21 +322,7 @@ export default function PriceHistoryChart({ cars, isEn, compact, withCard }: Pro
 
   // ── Loading state ────────────────────────────────────────────────────────────
   if (loading) {
-    const msg = (
-      <div style={{ textAlign: 'center', color: 'var(--text-muted)', fontSize: '0.875rem', padding: '32px 0' }}>
-        {isEn ? 'Loading market prices...' : 'טוען נתוני שוק...'}
-      </div>
-    );
-    if (withCard) return (
-      <div style={{ overflow: 'hidden', borderRadius: 12, border: '1px solid var(--border)', background: 'var(--surface)' }}>
-        <div style={{ padding: '14px 20px', background: 'linear-gradient(135deg, #0f172a 0%, #1e293b 100%)', display: 'flex', alignItems: 'center', gap: 10 }}>
-          <span style={{ fontSize: '1.1rem' }}>💰</span>
-          <h2 style={{ margin: 0, color: '#f1f5f9', fontWeight: 800, fontSize: '1rem' }}>{withCard}</h2>
-        </div>
-        <div style={{ padding: '16px 20px 12px' }}>{msg}</div>
-      </div>
-    );
-    return msg;
+    return null;
   }
 
   const allYears = Array.from(new Set(series.flatMap(s => s.rows.map(r => r.year)))).sort((a, b) => a - b);

@@ -27,8 +27,9 @@ export function middleware(req: NextRequest) {
   const isHeHost = host === HE_HOST || host === `www.${HE_HOST}`;
   const isEnHost = host === EN_HOST || host === `www.${EN_HOST}`;
 
-  // ── Embed routes: skip geo-redirect + flag for layout ───────────────────────
+  // The embed tool is an English-only utility for carissues.net.
   if (pathname.startsWith('/embed')) {
+    if (isHeHost) return NextResponse.redirect(`https://${EN_HOST}${pathname}${req.nextUrl.search}`, { status: 308 });
     const res = NextResponse.next();
     res.headers.set('x-is-embed', '1');
     return res;
@@ -56,6 +57,18 @@ export function middleware(req: NextRequest) {
       url.pathname = `/cars/compare/${s1}/${s2}`;
       url.search = '';
       return NextResponse.redirect(url, { status: 301 });
+    }
+  }
+
+  // Normalize reversed comparison pairs before rendering so crawlers receive a real HTTP 308.
+  const comparePath = pathname.match(/^\/cars\/compare\/([^/]+)\/([^/]+)\/([^/]+)\/([^/]+)$/);
+  if (comparePath) {
+    const pairA = `${comparePath[1]}/${comparePath[2]}`;
+    const pairB = `${comparePath[3]}/${comparePath[4]}`;
+    if (pairA !== pairB && pairA > pairB) {
+      const url = req.nextUrl.clone();
+      url.pathname = `/cars/compare/${pairB}/${pairA}`;
+      return NextResponse.redirect(url, { status: 308 });
     }
   }
 

@@ -51,7 +51,7 @@ function CarSelector({ value, onChange, options, label }: {
     <div className="card cmp-selector-card" style={{ padding: 24, flex: '1 1 0', minWidth: 0 }}>
       <div style={{ fontWeight: 700, fontSize: '0.875rem', color: 'var(--text-muted)', marginBottom: 16, textTransform: 'uppercase', letterSpacing: '0.06em' }}>{label}</div>
       <select
-        aria-label={`${label} — ${locale === 'en' ? 'make' : 'יצרן'}`}
+        aria-label={`${label} - ${locale === 'en' ? 'make' : 'יצרן'}`}
         value={make}
         onChange={e => { setMake(e.target.value); setModel(''); onChange(null); }}
         style={{ width: '100%', height: 42, padding: '0 12px', border: '1.5px solid var(--border)', borderRadius: 10, background: 'var(--bg)', color: 'var(--text)', fontSize: '0.9375rem', marginBottom: 12, cursor: 'pointer' }}
@@ -63,7 +63,7 @@ function CarSelector({ value, onChange, options, label }: {
         })}
       </select>
       <select
-        aria-label={`${label} — ${locale === 'en' ? 'model' : 'דגם'}`}
+        aria-label={`${label} - ${locale === 'en' ? 'model' : 'דגם'}`}
         value={model}
         onChange={e => setModel(e.target.value)}
         disabled={!make}
@@ -88,7 +88,7 @@ function ScoreBar({ label, value, max = 10 }: { label: string; value: number | n
     <div style={{ marginBottom: 8 }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
         <span style={{ fontSize: '0.8125rem', color: 'var(--text-muted)' }}>{label}</span>
-        <span style={{ fontSize: '0.8125rem', fontWeight: 700, color }}>{value != null ? value.toFixed(1) : '—'}</span>
+        <span style={{ fontSize: '0.8125rem', fontWeight: 700, color }}>{value != null ? value.toFixed(1) : '-'}</span>
       </div>
       <div style={{ height: 6, background: 'var(--bg-muted)', borderRadius: 999 }}>
         <div style={{ width: `${pct}%`, height: '100%', background: color, borderRadius: 999, transition: 'width 0.6s ease' }} />
@@ -300,7 +300,7 @@ function ComparePageInner({ showHeader = true }: { showHeader?: boolean }) {
                 {[data1, data2].map((d, i) => (
                   <div key={i} style={{ textAlign: 'center' }}>
                     <div style={{ fontSize: '2.5rem', fontWeight: 900, marginBottom: 4 }}>
-                      {d.avgRating != null ? d.avgRating.toFixed(1) : '—'}
+                      {d.avgRating != null ? d.avgRating.toFixed(1) : '-'}
                     </div>
                     {d.avgRating != null && (
                       <div style={{ display: 'flex', justifyContent: 'center' }}>
@@ -352,7 +352,7 @@ function ComparePageInner({ showHeader = true }: { showHeader?: boolean }) {
             <div className="cmp-two-col" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
               {[data1, data2].map((d, i) => (
                 <div key={i} className="card" style={{ padding: 24 }}>
-                  <div style={{ fontWeight: 800, fontSize: '1rem', marginBottom: 16 }}>{carName(d)} — {cmp.aiSummary}</div>
+                  <div style={{ fontWeight: 800, fontSize: '1rem', marginBottom: 16 }}>{carName(d)} - {cmp.aiSummary}</div>
                   {(d.localSummary ?? d.globalSummary) ? (
                     <p style={{ margin: 0, fontSize: '0.875rem', lineHeight: 1.7, color: 'var(--text-muted)' }}>{d.localSummary ?? d.globalSummary}</p>
                   ) : (

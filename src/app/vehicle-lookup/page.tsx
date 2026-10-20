@@ -14,8 +14,8 @@ export async function generateMetadata(): Promise<Metadata> {
   const locale = await getHostLocale();
   const base = getBaseUrl(locale);
   return locale === 'en' ? {
-    title: 'Israeli License Plate Lookup — Free Vehicle History',
-    description: 'Check any Israeli vehicle by plate: test date, ownership history, odometer, damage record, VIN and fuel type — free, live from the Ministry of Transport.',
+    title: 'Israeli License Plate Lookup - Free Vehicle History',
+    description: 'Check any Israeli vehicle by plate: test date, ownership history, odometer, damage record, VIN and fuel type - free, live from the Ministry of Transport.',
     alternates: { canonical: `${base}/vehicle-lookup`, languages: LANGS },
     openGraph: {
       title: 'Israeli License Plate Lookup | CarIssues',
@@ -24,12 +24,12 @@ export async function generateMetadata(): Promise<Metadata> {
     },
   } : {
     // The root layout's title template appends " | CarIssues"
-    title: 'בדיקת רכב חינם לפי מספר רישוי — היסטוריית רכב מלאה',
-    description: 'בדוק כל רכב ישראלי לפי מספר לוחית רישוי: תוקף טסט, בעלות, קילומטראז׳, היסטוריית נזק, VIN, צבע, סוג דלק ועוד — נתונים חיים ממשרד התחבורה.',
+    title: 'בדיקת רכב חינם לפי מספר רישוי - היסטוריית רכב מלאה',
+    description: 'בדוק כל רכב ישראלי לפי מספר לוחית רישוי: תוקף טסט, בעלות, קילומטראז׳, היסטוריית נזק, VIN, צבע, סוג דלק ועוד - נתונים חיים ממשרד התחבורה.',
     alternates: { canonical: `${base}/vehicle-lookup`, languages: LANGS },
     openGraph: {
       title: 'בדיקת רכב לפי מספר רישוי | CarIssues',
-      description: 'בדיקת רכב מהירה לפי לוחית רישוי — טסט, נזק, קילומטראז׳ ועוד.',
+      description: 'בדיקת רכב מהירה לפי לוחית רישוי - טסט, נזק, קילומטראז׳ ועוד.',
       url: `${base}/vehicle-lookup`,
     },
   };
@@ -44,32 +44,32 @@ export default async function VehicleLookupPage() {
     { icon: '📋', title: 'פרטי רכב מלאים', desc: 'יצרן, דגם, שנת ייצור, צבע, סוג דלק' },
     { icon: '🔧', title: 'תוקף טסט ורישיון', desc: 'תאריך הטסט האחרון ותאריך פקיעת הרישיון' },
     { icon: '⚠️', title: 'נזק וצביעה', desc: 'האם נרשמה תאונה? האם הרכב צובע מחדש? (כשהמידע קיים ברשומות)' },
-    { icon: '🔢', title: 'קילומטראז׳', desc: 'מד-האוץ בטסט האחרון — כשקיים במאגר משרד התחבורה' },
+    { icon: '🔢', title: 'קילומטראז׳', desc: 'מד-האוץ בטסט האחרון - כשקיים במאגר משרד התחבורה' },
     { icon: '🪪', title: 'מספר שלדה ובעלות', desc: 'מספר שלדה (VIN) וסוג הבעלות (פרטי / עסקי)' },
-    { icon: '🌍', title: 'מקור הרכב', desc: 'רכב מקורי, מיובא מאירופה, ארה"ב או אחר — כשקיים' },
+    { icon: '🌍', title: 'מקור הרכב', desc: 'רכב מקורי, מיובא מאירופה, ארה"ב או אחר - כשקיים' },
   ] : [
     { icon: '📋', title: 'Full Vehicle Details', desc: 'Make, model, year, color, fuel type' },
-    { icon: '🔧', title: 'Test & License Status', desc: 'Last test date and license expiry — instantly' },
-    { icon: '⚠️', title: 'Damage & Repaint', desc: 'Recorded accident or repaint — when available in Ministry records' },
-    { icon: '🔢', title: 'Odometer Reading', desc: 'Mileage at last test — when available in Ministry of Transport records' },
+    { icon: '🔧', title: 'Test & License Status', desc: 'Last test date and license expiry - instantly' },
+    { icon: '⚠️', title: 'Damage & Repaint', desc: 'Recorded accident or repaint - when available in Ministry records' },
+    { icon: '🔢', title: 'Odometer Reading', desc: 'Mileage at last test - when available in Ministry of Transport records' },
     { icon: '🪪', title: 'VIN & Ownership Type', desc: 'Vehicle frame number and ownership type (private / business)' },
-    { icon: '🌍', title: 'Vehicle Origin', desc: 'Original, European import, US or other — when recorded' },
+    { icon: '🌍', title: 'Vehicle Origin', desc: 'Original, European import, US or other - when recorded' },
   ];
 
   const steps = isHe ? [
     { n: '1', title: 'הזן מספר רישוי', desc: 'הקלד את מספר הלוחית של הרכב (7 ספרות לרכב ישראלי)' },
     { n: '2', title: 'בדיקה מיידית', desc: 'המערכת מחפשת ברשומות משרד התחבורה בזמן אמת' },
-    { n: '3', title: 'קבל את הדו"ח', desc: 'צפה בכל הנתונים מיד — ללא הרשמה, ללא עלות' },
+    { n: '3', title: 'קבל את הדו"ח', desc: 'צפה בכל הנתונים מיד - ללא הרשמה, ללא עלות' },
   ] : [
     { n: '1', title: 'Enter the plate number', desc: 'Type the vehicle\'s license plate (7 digits for Israeli, e.g. AB12 CDE for UK)' },
     { n: '2', title: 'Instant lookup', desc: 'We query the Ministry of Transport records in real time' },
-    { n: '3', title: 'Get the full report', desc: 'View all details immediately — no registration, no cost' },
+    { n: '3', title: 'Get the full report', desc: 'View all details immediately - no registration, no cost' },
   ];
 
   const faqs = isHe ? [
     {
       q: 'מה ניתן לבדוק לפי מספר רישוי?',
-      a: 'ניתן לבדוק: שם הרכב (יצרן + דגם), שנת ייצור, צבע, סוג דלק, תוקף טסט ורישיון, מסגרת (VIN), בעלות, קילומטראז׳ בטסט האחרון, היסטוריית נזק ומקור הרכב — הכל ישירות ממשרד התחבורה.',
+      a: 'ניתן לבדוק: שם הרכב (יצרן + דגם), שנת ייצור, צבע, סוג דלק, תוקף טסט ורישיון, מסגרת (VIN), בעלות, קילומטראז׳ בטסט האחרון, היסטוריית נזק ומקור הרכב - הכל ישירות ממשרד התחבורה.',
     },
     {
       q: 'האם השירות בחינם?',
@@ -80,16 +80,16 @@ export default async function VehicleLookupPage() {
       a: 'לפני רכישת רכב יד שנייה מומלץ לבדוק: כמה בעלים היו לרכב, האם נרשם נזק בתאונה, מה הקילומטראז׳ בטסט האחרון, והאם תוקף הטסט תקף. הכניסו את מספר הרישוי בשדה למעלה וכל המידע יוצג מיד.',
     },
     {
-      q: 'כמה בעלים היו לרכב — איך בודקים?',
+      q: 'כמה בעלים היו לרכב - איך בודקים?',
       a: 'בדיקת הרכב לפי מספר רישוי מציגה את מספר העברות הבעלות הרשומות במשרד התחבורה. מספר בעלים גבוה יחסית לגיל הרכב יכול להיות סימן לבעיות. הזינו את מספר הרישוי לבדיקה מיידית.',
     },
     {
       q: 'מה ההבדל בין בדיקה כאן לבין אתרים אחרים?',
-      a: 'רוב האתרים גובים תשלום, דורשים הרשמה, או מציגים פרסומות מסיחות. CarIssues מציג את אותו המידע — ישירות ממשרד התחבורה — בחינם, ללא פרסומות וללא הרשמה, בממשק נקי וברור.',
+      a: 'רוב האתרים גובים תשלום, דורשים הרשמה, או מציגים פרסומות מסיחות. CarIssues מציג את אותו המידע - ישירות ממשרד התחבורה - בחינם, ללא פרסומות וללא הרשמה, בממשק נקי וברור.',
     },
     {
       q: 'מאיפה המידע?',
-      a: 'הנתונים מגיעים ישירות מ-data.gov.il — מסד הנתונים הפתוח של ממשלת ישראל ומשרד התחבורה.',
+      a: 'הנתונים מגיעים ישירות מ-data.gov.il - מסד הנתונים הפתוח של ממשלת ישראל ומשרד התחבורה.',
     },
     {
       q: 'האם ניתן לבדוק רכב אנגלי (בריטי)?',
@@ -98,15 +98,15 @@ export default async function VehicleLookupPage() {
   ] : [
     {
       q: 'What information can I check by license plate?',
-      a: 'You can check: vehicle name (make + model), year, color, fuel type, MOT and license expiry, VIN/frame number, ownership count, odometer at last test, damage history and vehicle origin — all directly from Israel\'s Ministry of Transport.',
+      a: 'You can check: vehicle name (make + model), year, color, fuel type, MOT and license expiry, VIN/frame number, ownership count, odometer at last test, damage history and vehicle origin - all directly from Israel\'s Ministry of Transport.',
     },
     {
       q: 'Is this service free?',
-      a: 'Yes, completely free. No registration, no subscription, no ads. Enter a plate number and get the full report instantly — no strings attached.',
+      a: 'Yes, completely free. No registration, no subscription, no ads. Enter a plate number and get the full report instantly - no strings attached.',
     },
     {
       q: 'How do I check a vehicle\'s history before buying?',
-      a: 'Enter the license plate in the search box above. You\'ll instantly see ownership count, any recorded damage, odometer at last MOT, and whether the MOT is still valid — everything you need to make an informed purchase decision.',
+      a: 'Enter the license plate in the search box above. You\'ll instantly see ownership count, any recorded damage, odometer at last MOT, and whether the MOT is still valid - everything you need to make an informed purchase decision.',
     },
     {
       q: 'How accurate is the data?',
@@ -118,7 +118,7 @@ export default async function VehicleLookupPage() {
     },
     {
       q: 'What does the damage history field mean?',
-      a: 'This indicates whether the vehicle has a recorded accident in the Ministry of Transport database. A "no damage recorded" result doesn\'t guarantee the vehicle was never in an accident — only that none was officially registered.',
+      a: 'This indicates whether the vehicle has a recorded accident in the Ministry of Transport database. A "no damage recorded" result doesn\'t guarantee the vehicle was never in an accident - only that none was officially registered.',
     },
   ];
 
@@ -127,14 +127,14 @@ export default async function VehicleLookupPage() {
     '@graph': [
       {
         '@type': 'WebApplication',
-        name: isHe ? 'בדיקת רכב לפי מספר רישוי — CarIssues' : 'Israeli License Plate Lookup — CarIssues',
+        name: isHe ? 'בדיקת רכב לפי מספר רישוי - CarIssues' : 'Israeli License Plate Lookup - CarIssues',
         url: `${base}/vehicle-lookup`,
         applicationCategory: 'UtilityApplication',
         operatingSystem: 'Any',
         offers: { '@type': 'Offer', price: '0', priceCurrency: 'ILS' },
         description: isHe
-          ? 'כלי חינמי לבדיקת רכב ישראלי לפי מספר רישוי — נתונים ממשרד התחבורה'
-          : 'Free tool to check any Israeli vehicle by license plate — live data from Ministry of Transport',
+          ? 'כלי חינמי לבדיקת רכב ישראלי לפי מספר רישוי - נתונים ממשרד התחבורה'
+          : 'Free tool to check any Israeli vehicle by license plate - live data from Ministry of Transport',
       },
       {
         '@type': 'FAQPage',
@@ -169,14 +169,14 @@ export default async function VehicleLookupPage() {
           </h1>
           <p style={{ color: '#94a3b8', fontSize: '1rem', lineHeight: 1.7, marginBottom: 32, maxWidth: 560 }}>
             {isHe
-              ? 'הזן מספר לוחית רישוי וקבל מיד את כל הפרטים — תוקף טסט, היסטוריית נזק, קילומטראז׳ ועוד, ישירות ממשרד התחבורה.'
-              : 'Enter any Israeli license plate and instantly get full vehicle details — MOT status, damage history, odometer reading and more, live from Israel\'s Ministry of Transport.'}
+              ? 'הזן מספר לוחית רישוי וקבל מיד את כל הפרטים - תוקף טסט, היסטוריית נזק, קילומטראז׳ ועוד, ישירות ממשרד התחבורה.'
+              : 'Enter any Israeli license plate and instantly get full vehicle details - MOT status, damage history, odometer reading and more, live from Israel\'s Ministry of Transport.'}
           </p>
           <PlateSearch isHe={isHe} navigateOnSearch />
           <p style={{ color: '#475569', fontSize: '0.72rem', marginTop: 14 }}>
             {isHe
-              ? 'מקור: data.gov.il (משרד התחבורה) • DVLA לרכבים בריטיים'
-              : 'Source: data.gov.il (Israel Ministry of Transport) • DVLA for UK vehicles'}
+              ? 'מקור: משרד התחבורה (data.gov.il)'
+              : 'Source: Israel Ministry of Transport (data.gov.il)'}
           </p>
         </div>
       </div>
@@ -236,12 +236,12 @@ export default async function VehicleLookupPage() {
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 12 }}>
           {(isHe ? [
             { icon: '🆓', title: 'חינם לחלוטין', desc: 'אין תשלום, אין מנוי, אין "בדיקות מוגבלות בחינם"' },
-            { icon: '🚫', title: 'ללא פרסומות', desc: 'ממשק נקי — בלי פרסומות מסיחות ובלי חלונות קופצים' },
+            { icon: '🚫', title: 'ללא פרסומות', desc: 'ממשק נקי - בלי פרסומות מסיחות ובלי חלונות קופצים' },
             { icon: '🔓', title: 'ללא הרשמה', desc: 'אין צורך ליצור חשבון או למסור פרטים אישיים' },
-            { icon: '⚡', title: 'תוצאות מיידיות', desc: 'הנתונים מגיעים ישירות ממשרד התחבורה — בשניות' },
+            { icon: '⚡', title: 'תוצאות מיידיות', desc: 'הנתונים מגיעים ישירות ממשרד התחבורה - בשניות' },
           ] : [
             { icon: '🆓', title: 'Completely free', desc: 'No payment, no subscription, no "limited free checks"' },
-            { icon: '🚫', title: 'No ads', desc: 'Clean interface — no pop-ups, no banner ads, no distractions' },
+            { icon: '🚫', title: 'No ads', desc: 'Clean interface - no pop-ups, no banner ads, no distractions' },
             { icon: '🔓', title: 'No registration', desc: 'No account needed, no personal details required' },
             { icon: '⚡', title: 'Instant results', desc: 'Data pulled directly from Ministry of Transport in seconds' },
           ]).map(item => (

@@ -4,6 +4,7 @@ import { dbAll } from '@/lib/db';
 import { getAllMakes } from '@/lib/carsDb';
 import { getHostLocale, getBaseUrl } from '@/lib/hostLocale';
 import { translations } from '@/lib/translations';
+import { getValidatedRepairReports } from '@/lib/repairReports';
 
 export const revalidate = 3600; // cache 1 hour
 
@@ -12,29 +13,33 @@ export async function generateMetadata(): Promise<Metadata> {
   const base = getBaseUrl(locale);
   return locale === 'en' ? {
     title: 'Car Repair & Maintenance Costs',
-    description: 'Real repair and maintenance prices for cars: brakes, service, engine, electrical and more — based on owner reports and forum data.',
+    description: 'Real repair and maintenance prices for cars: brakes, service, engine, electrical and more - based on owner reports and forum data.',
     alternates: { canonical: `${base}/repairs`, languages: { he: 'https://carissues.co.il/repairs', en: 'https://carissues.net/repairs', 'x-default': 'https://carissues.net/repairs' } },
   } : {
-    title: 'עלויות תיקון ותחזוקה לרכב בישראל — מדריך מחירים',
+    title: 'עלויות תיקון ותחזוקה לרכב בישראל - מדריך מחירים',
     description: 'מחירי תיקון ותחזוקה לרכב בישראל: החלפת בלמים, טיפולים תקופתיים, מנוע, חשמל ועוד.',
     alternates: { canonical: `${base}/repairs`, languages: { he: 'https://carissues.co.il/repairs', en: 'https://carissues.net/repairs', 'x-default': 'https://carissues.net/repairs' } },
   };
 }
 
 const CATEGORY_ORDER = ['service', 'brakes', 'engine', 'suspension', 'electrical'];
+interface RepairCostRow {
+  repair_key: string; repair_name_he: string; repair_name_en?: string; cost_min_ils: number; cost_max_ils: number;
+  category: string; applies_to: string; notes?: string;
+}
 
-// Common issues per category — known Israeli market pain points
+// Common issues per category - known Israeli market pain points
 const COMMON_ISSUES = [
-  { issue: 'ממיר קטליטי (קטליזטור)', issueEn: 'Catalytic Converter', minIls: 1400, maxIls: 7000, category: 'engine', note: 'שחזור: ₪1,400–1,800. מקורי: ₪4,000–7,000', noteEn: 'Rebuilt: $380–$490. OEM: $1,100–$1,920' },
-  { issue: 'רצועת תזמון', issueEn: 'Timing Belt', minIls: 1100, maxIls: 2800, category: 'engine', note: 'חובה להחליף כל 60-80K ק"מ. כולל פומפת מים', noteEn: 'Replace every 60–80K km. Includes water pump' },
+  { issue: 'ממיר קטליטי (קטליזטור)', issueEn: 'Catalytic Converter', minIls: 1400, maxIls: 7000, category: 'engine', note: 'שחזור: ₪1,400-1,800. מקורי: ₪4,000-7,000', noteEn: 'Rebuilt: $380-$490. OEM: $1,100-$1,920' },
+  { issue: 'רצועת תזמון', issueEn: 'Timing Belt', minIls: 1100, maxIls: 2800, category: 'engine', note: 'חובה להחליף כל 60-80K ק"מ. כולל פומפת מים', noteEn: 'Replace every 60-80K km. Includes water pump' },
   { issue: 'בלמים קדמיים', issueEn: 'Front Brakes', minIls: 500, maxIls: 1400, category: 'brakes', note: 'רפידות + צלחות. SUV יקר יותר', noteEn: 'Pads + rotors. SUV costs more' },
   { issue: 'טיפול 10,000 ק"מ', issueEn: '10,000 km Service', minIls: 450, maxIls: 1400, category: 'service', note: 'שמן + פילטרים. יבואן מורשה יקר יותר', noteEn: 'Oil + filters. Authorized dealer costs more' },
-  { issue: 'מצבר', issueEn: 'Battery', minIls: 500, maxIls: 1900, category: 'electrical', note: 'רגיל: ₪500–1,000. Start-Stop: ₪1,000–1,900', noteEn: 'Standard: $140–$275. Start-Stop: $275–$520' },
-  { issue: 'כיוון פרונט', issueEn: 'Wheel Alignment', minIls: 150, maxIls: 600, category: 'suspension', note: '2 גלגלים. 4 גלגלים: ₪350–800', noteEn: '2 wheels. 4 wheels: $95–$220' },
-  { issue: 'מסרק הגה', issueEn: 'Steering Rack', minIls: 800, maxIls: 3000, category: 'suspension', note: 'יד שנייה: ₪800–1,200. חדש: ₪2,200–3,000', noteEn: 'Used: $220–$330. New: $600–$820' },
-  { issue: 'מזרקי דלק', issueEn: 'Fuel Injectors', minIls: 1500, maxIls: 2500, category: 'engine', note: 'חלקים + עבודה. ניקוי בלבד: ₪250–400', noteEn: 'Parts + labor. Cleaning only: $70–$110' },
+  { issue: 'מצבר', issueEn: 'Battery', minIls: 500, maxIls: 1900, category: 'electrical', note: 'רגיל: ₪500-1,000. Start-Stop: ₪1,000-1,900', noteEn: 'Standard: $140-$275. Start-Stop: $275-$520' },
+  { issue: 'כיוון פרונט', issueEn: 'Wheel Alignment', minIls: 150, maxIls: 600, category: 'suspension', note: '2 גלגלים. 4 גלגלים: ₪350-800', noteEn: '2 wheels. 4 wheels: $95-$220' },
+  { issue: 'מסרק הגה', issueEn: 'Steering Rack', minIls: 800, maxIls: 3000, category: 'suspension', note: 'יד שנייה: ₪800-1,200. חדש: ₪2,200-3,000', noteEn: 'Used: $220-$330. New: $600-$820' },
+  { issue: 'מזרקי דלק', issueEn: 'Fuel Injectors', minIls: 1500, maxIls: 2500, category: 'engine', note: 'חלקים + עבודה. ניקוי בלבד: ₪250-400', noteEn: 'Parts + labor. Cleaning only: $70-$110' },
   { issue: 'החלפת שמן', issueEn: 'Oil Change', minIls: 180, maxIls: 700, category: 'engine', note: 'כולל פילטר. SUV: יותר נפח שמן', noteEn: 'Includes filter. SUV: larger oil capacity' },
-  { issue: 'מצתים', issueEn: 'Spark Plugs', minIls: 200, maxIls: 1200, category: 'engine', note: 'רגיל: ₪200–300. אירידיום (100K): ₪500–1,200', noteEn: 'Standard: $55–$82. Iridium (100K km): $140–$330' },
+  { issue: 'מצתים', issueEn: 'Spark Plugs', minIls: 200, maxIls: 1200, category: 'engine', note: 'רגיל: ₪200-300. אירידיום (100K): ₪500-1,200', noteEn: 'Standard: $55-$82. Iridium (100K km): $140-$330' },
 ];
 
 export default async function RepairsPage() {
@@ -42,21 +47,13 @@ export default async function RepairsPage() {
   const rp = translations[locale].repairsPage;
   const isEn = locale === 'en';
   // Fetch all repair cost records
-  const allCosts = await dbAll<{
-    repair_key: string; repair_name_he: string; repair_name_en?: string; cost_min_ils: number; cost_max_ils: number;
-    category: string; applies_to: string; notes?: string;
-  }>('SELECT * FROM repair_costs ORDER BY category, repair_key').catch(() => []);
+  const allCosts = await dbAll<RepairCostRow>('SELECT * FROM repair_costs ORDER BY category, repair_key').catch(() => [] as RepairCostRow[]);
 
   // Fetch recent user submissions
-  const recentSubmissions = await dbAll<{
-    make_slug: string; model_slug: string; repair_name_he: string;
-    cost_ils: number; workshop_type: string | null; created_at: string;
-  }>('SELECT make_slug, model_slug, repair_name_he, cost_ils, workshop_type, created_at FROM user_repair_costs ORDER BY created_at DESC LIMIT 12').catch(() => []);
+  const recentSubmissions = await getValidatedRepairReports(12).catch(() => []);
 
   // Fetch submission count per model for leaderboard
-  const topModels = await dbAll<{ make_slug: string; model_slug: string }>(
-    'SELECT make_slug, model_slug FROM user_repair_costs LIMIT 200',
-  ).catch(() => []);
+  const topModels = await getValidatedRepairReports(1000).catch(() => []);
 
   const modelCounts: Record<string, number> = {};
   for (const r of topModels) {
@@ -94,7 +91,7 @@ export default async function RepairsPage() {
     mainEntity: COMMON_ISSUES.map(issue => ({
       '@type': 'Question',
       name: `כמה עולה ${issue.issue} בישראל?`,
-      acceptedAnswer: { '@type': 'Answer', text: `${issue.issue} עולה ₪${issue.minIls.toLocaleString()}–₪${issue.maxIls.toLocaleString()} בישראל. ${issue.note}.` },
+      acceptedAnswer: { '@type': 'Answer', text: `${issue.issue} עולה ₪${issue.minIls.toLocaleString()}-₪${issue.maxIls.toLocaleString()} בישראל. ${issue.note}.` },
     })),
   };
 
@@ -124,8 +121,8 @@ export default async function RepairsPage() {
                 <div style={{ fontWeight: 700, fontSize: '0.9rem', marginBottom: 4 }}>{isEn ? item.issueEn : item.issue}</div>
                 <div style={{ fontSize: '1.15rem', fontWeight: 800, color: 'var(--accent)', marginBottom: 4 }}>
                   {isEn
-                    ? `$${Math.round(item.minIls / 3.65).toLocaleString()}–$${Math.round(item.maxIls / 3.65).toLocaleString()}`
-                    : `₪${item.minIls.toLocaleString()}–₪${item.maxIls.toLocaleString()}`}
+                    ? `$${Math.round(item.minIls / 3.65).toLocaleString()}-$${Math.round(item.maxIls / 3.65).toLocaleString()}`
+                    : `₪${item.minIls.toLocaleString()}-₪${item.maxIls.toLocaleString()}`}
                 </div>
                 <div style={{ fontSize: '0.73rem', color: 'var(--text-muted)', lineHeight: 1.4 }}>{isEn ? item.noteEn : item.note}</div>
               </div>
@@ -139,7 +136,7 @@ export default async function RepairsPage() {
           {CATEGORY_ORDER.filter(cat => grouped[cat]?.length).map(cat => (
             <div key={cat} style={{ marginBottom: 32 }}>
               <div style={{ fontSize: '0.85rem', fontWeight: 800, color: 'var(--text-muted)', marginBottom: 12, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                {rp.categories[cat] ?? cat}
+                {(rp.categories as Record<string, string>)[cat] ?? cat}
               </div>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 10 }}>
                 {grouped[cat]!.map(cost => (
@@ -155,8 +152,8 @@ export default async function RepairsPage() {
                     </div>
                     <div style={{ fontSize: '1.1rem', fontWeight: 800, color: 'var(--accent)', marginBottom: 6 }}>
                       {isEn
-                        ? `$${Math.round(cost.cost_min_ils / 3.65).toLocaleString()}–$${Math.round(cost.cost_max_ils / 3.65).toLocaleString()}`
-                        : `₪${cost.cost_min_ils.toLocaleString()}–₪${cost.cost_max_ils.toLocaleString()}`}
+                        ? `$${Math.round(cost.cost_min_ils / 3.65).toLocaleString()}-$${Math.round(cost.cost_max_ils / 3.65).toLocaleString()}`
+                        : `₪${cost.cost_min_ils.toLocaleString()}-₪${cost.cost_max_ils.toLocaleString()}`}
                     </div>
                     {cost.notes && (
                       <div style={{ fontSize: '0.73rem', color: 'var(--text-muted)', lineHeight: 1.45 }}>{cost.notes}</div>
@@ -194,7 +191,7 @@ export default async function RepairsPage() {
                     </span>
                     {r.workshop_type && (
                       <span style={{ fontSize: '0.73rem', color: 'var(--text-muted)', background: 'var(--bg-muted)', padding: '2px 8px', borderRadius: 20 }}>
-                        {rp.workshopTypes[r.workshop_type] ?? r.workshop_type}
+                        {(rp.workshopTypes as Record<string, string>)[r.workshop_type] ?? r.workshop_type}
                       </span>
                     )}
                   </div>
@@ -204,7 +201,7 @@ export default async function RepairsPage() {
           </section>
         )}
 
-        {/* CTA — find your car */}
+        {/* CTA - find your car */}
         <div className="card" style={{ padding: '24px 28px', textAlign: 'center' }}>
           <div style={{ fontWeight: 800, fontSize: '1.1rem', marginBottom: 8 }}>{rp.ctaTitle}</div>
           <p style={{ color: 'var(--text-muted)', fontSize: '0.875rem', marginBottom: 20 }}>{rp.ctaBody}</p>

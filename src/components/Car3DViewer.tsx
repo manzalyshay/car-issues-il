@@ -128,9 +128,6 @@ export default function Car3DViewer({ uid, modelName, author, makeSlug, modelSlu
             <div style={{ color: '#fff', fontWeight: 700, fontSize: '0.875rem', letterSpacing: '0.02em' }}>
               {modelName}
             </div>
-            <div style={{ color: 'rgba(255,255,255,0.65)', fontSize: '0.78rem', fontWeight: 600, letterSpacing: '0.04em', textTransform: 'uppercase' }}>
-              {t.viewer3d.loading}
-            </div>
             {author && <div style={{ color: 'rgba(255,255,255,0.35)', fontSize: '0.7rem' }}>by {author}</div>}
           </div>
         </div>

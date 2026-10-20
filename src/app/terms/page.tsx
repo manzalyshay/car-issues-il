@@ -58,11 +58,11 @@ export default async function TermsPage() {
 
             <Section title="4. Limitation of Liability">
               <p>The Site is provided "as is". We are not liable for direct, indirect, incidental, special, or consequential damages arising from reliance on information on the Site.</p>
-              <p style={{ marginTop: 12 }}>Before making any vehicle-related decision — repair, purchase, or sale — consult qualified professionals. Vehicle details, prices, and technical issues change; information on the Site may not reflect current conditions.</p>
+              <p style={{ marginTop: 12 }}>Before making any vehicle-related decision - repair, purchase, or sale - consult qualified professionals. Vehicle details, prices, and technical issues change; information on the Site may not reflect current conditions.</p>
             </Section>
 
             <Section title="5. Intellectual Property">
-              <p>All content created by the Site team — text, design, code — is owned by the Site. User reviews remain the property of their authors; by posting, the user grants the Site a non-exclusive license to display them.</p>
+              <p>All content created by the Site team - text, design, code - is owned by the Site. User reviews remain the property of their authors; by posting, the user grants the Site a non-exclusive license to display them.</p>
             </Section>
 
             <Section title="6. Privacy">
@@ -122,11 +122,11 @@ export default async function TermsPage() {
 
           <Section title="4. הגבלת אחריות">
             <p>האתר מסופק "כפי שהוא" (AS IS). אנו אינו אחראים לנזקים ישירים, עקיפים, מקריים, מיוחדים או תוצאתיים הנובעים מהסתמכות על המידע באתר.</p>
-            <p style={{ marginTop: 12 }}>לפני כל החלטה הנוגעת לרכב — תיקון, קנייה, מכירה — יש להתייעץ עם אנשי מקצוע מוסמכים. פרטי רכב, מחירים ובעיות טכניות משתנים; המידע באתר עשוי שלא לשקף את המצב העדכני.</p>
+            <p style={{ marginTop: 12 }}>לפני כל החלטה הנוגעת לרכב - תיקון, קנייה, מכירה - יש להתייעץ עם אנשי מקצוע מוסמכים. פרטי רכב, מחירים ובעיות טכניות משתנים; המידע באתר עשוי שלא לשקף את המצב העדכני.</p>
           </Section>
 
           <Section title="5. קניין רוחני">
-            <p>כל התוכן שנוצר על ידי צוות האתר — טקסטים, עיצוב, קוד — שמור לאתר. ביקורות משתמשים נותרות בבעלות כותביהן; המשתמש מעניק לאתר רישיון לא-בלעדי להציגן.</p>
+            <p>כל התוכן שנוצר על ידי צוות האתר - טקסטים, עיצוב, קוד - שמור לאתר. ביקורות משתמשים נותרות בבעלות כותביהן; המשתמש מעניק לאתר רישיון לא-בלעדי להציגן.</p>
           </Section>
 
           <Section title="6. פרטיות">

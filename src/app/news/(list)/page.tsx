@@ -11,11 +11,11 @@ export async function generateMetadata(): Promise<Metadata> {
   const base = getBaseUrl(locale);
   return locale === 'he' ? {
     title: 'חדשות רכב',
-    description: 'חדשות רכב עדכניות מהעולם — עיבוד ותרגום AI, מתעדכן יומית',
+    description: 'חדשות רכב עדכניות מהעולם - עיבוד ותרגום AI, מתעדכן יומית',
     alternates: { canonical: `${base}/news` },
   } : {
     title: 'Car News',
-    description: 'Latest car news from around the world — AI-rewritten daily',
+    description: 'Latest car news from around the world - AI-rewritten daily',
     alternates: { canonical: `${base}/news` },
   };
 }
@@ -59,15 +59,15 @@ export default async function NewsPage() {
           </h1>
           <p style={{ margin: 0, color: 'var(--text-muted)', fontSize: '0.875rem' }}>
             {isHe
-              ? 'חדשות מהעולם, עיבוד מחדש בידי AI — מתעדכן יומית'
-              : 'World automotive news, AI-rewritten — updated daily'}
+              ? 'חדשות מהעולם, עיבוד מחדש בידי AI - מתעדכן יומית'
+              : 'World automotive news, AI-rewritten - updated daily'}
           </p>
         </div>
 
         {news.length === 0 ? (
           <div className="card" style={{ padding: 48, textAlign: 'center', color: 'var(--text-muted)' }}>
             <div style={{ fontSize: 48, marginBottom: 12 }}>📡</div>
-            <p style={{ margin: 0, fontWeight: 600 }}>{isHe ? 'החדשות הראשונות בדרך — חזור מחר' : 'First articles on the way — check back tomorrow'}</p>
+            <p style={{ margin: 0, fontWeight: 600 }}>{isHe ? 'החדשות הראשונות בדרך - חזור מחר' : 'First articles on the way - check back tomorrow'}</p>
           </div>
         ) : (
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: 16 }}>
@@ -78,7 +78,7 @@ export default async function NewsPage() {
                 style={{ textDecoration: 'none', color: 'inherit', display: 'block' }}
               >
                 <div className="card" style={{ height: '100%', overflow: 'hidden', padding: 0, display: 'flex', flexDirection: 'column', transition: 'border-color 0.15s, box-shadow 0.15s' }}>
-                  {item.image_url && (
+                  {item.image_url && !item.image_url.includes('cdn.motor1.com') && (
                     /* eslint-disable-next-line @next/next/no-img-element */
                     <img
                       src={item.image_url}
@@ -89,19 +89,18 @@ export default async function NewsPage() {
                   )}
                   <div style={{ padding: '14px 16px', flex: 1, display: 'flex', flexDirection: 'column', gap: 8 }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                      <span style={{ background: 'var(--accent-soft)', color: 'var(--accent)', fontSize: '0.68rem', fontWeight: 700, padding: '2px 8px', borderRadius: 4 }}>
-                        {SOURCE_LABELS[item.source] ?? item.source}
-                      </span>
                       <span style={{ fontSize: '0.72rem', color: 'var(--text-faint)' }}>{timeAgo(item.published_at, isHe)}</span>
                     </div>
                     <div style={{ fontWeight: 700, fontSize: '0.9rem', lineHeight: 1.4, color: 'var(--text)' }}>
-                      {isHe ? (item.title_he ?? item.title_en) : (item.title_en ?? item.title_he)}
+                      {(isHe ? (item.title_he ?? item.title_en) : (item.title_en ?? item.title_he))?.replace(/אחד מה-SUV החשמליים החזקים שהושקו אי פעם/g, 'מבין רכבי ה-SUV החשמליים החזקים שהוצגו השנה').replace(/[—–]/g, '-')}
                     </div>
                     {(isHe ? item.body_he : item.body_en) && (
                       <p style={{ margin: 0, fontSize: '0.82rem', color: 'var(--text-muted)', lineHeight: 1.55, overflow: 'hidden', display: '-webkit-box', WebkitLineClamp: 3, WebkitBoxOrient: 'vertical' }}>
-                        {isHe ? item.body_he : item.body_en}
+                        {(isHe ? item.body_he : item.body_en)?.replace(/אחד מה-SUV החשמליים החזקים שהושקו אי פעם/g, 'מבין רכבי ה-SUV החשמליים החזקים שהוצגו השנה').replace(/[—–]/g, '-')}
                       </p>
                     )}
+                    {isHe && item.id.startsWith('b70e9563ca') && <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>המחקר נערך בארה״ב, והנתונים אינם מתייחסים לישראל.</span>}
+                    <span style={{ marginTop: 'auto', paddingTop: 6, fontSize: '0.7rem', color: 'var(--text-faint)' }}>{isHe ? `מקור: ${SOURCE_LABELS[item.source] ?? item.source}` : `Source: ${SOURCE_LABELS[item.source] ?? item.source}`}</span>
                   </div>
                 </div>
               </Link>

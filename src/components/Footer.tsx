@@ -66,8 +66,8 @@ export default function Footer() {
       head: isEn ? 'Tools' : 'כלים',
       links: [
         { href: '/tco',            label: isEn ? 'TCO Calculator'  : 'מחשבון TCO' },
-        { href: '/vehicle-lookup', label: isEn ? 'Car Check'       : 'צ׳קליסט קנייה' },
-        { href: '/repairs',        label: isEn ? 'Repair Costs'    : 'בדיקת ריקולים' },
+        { href: '/checklist',      label: isEn ? 'Buying checklist' : 'צ׳קליסט קנייה' },
+        { href: '/repairs',        label: isEn ? 'Repair Costs'     : 'עלויות תיקון' },
       ],
     },
     {
@@ -76,7 +76,6 @@ export default function Footer() {
         { href: '/privacy', label: isEn ? 'Privacy Policy' : 'מדיניות פרטיות' },
         { href: '/accessibility', label: isEn ? 'Accessibility' : 'הצהרת נגישות' },
         { href: '/news',    label: isEn ? 'News'           : 'חדשות' },
-        { href: '/sales',   label: isEn ? 'Deals'          : 'מבצעים' },
       ],
     },
   ];
@@ -94,8 +93,8 @@ export default function Footer() {
             </span>
             <p style={{ fontSize: 13.5, lineHeight: 1.5, margin: 0, color: '#93a5c0' }} className="footer-tagline">
               {isEn
-                ? 'Israel\'s largest database for car problems, recalls & repair costs.'
-                : 'המאגר הגדול ביותר בישראל לבעיות רכב, ריקולים ועלויות תיקון.'}
+                ? 'Car model information, owner reviews, recalls and repair costs.'
+                : 'מידע על דגמי רכב, ביקורות בעלים, ריקולים ועלויות תיקון.'}
             </p>
           </div>
           <LangSwitch isEn={isEn} />

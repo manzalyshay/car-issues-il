@@ -15,8 +15,8 @@ export async function generateMetadata(): Promise<Metadata> {
   const base = getBaseUrl(locale);
   return {
     title: locale === 'en'
-      ? 'Car Reliability Rankings Israel 2026 — Best & Worst Cars'
-      : 'דירוג רכבים בישראל 2026 — אמינות, חוות דעת ובעיות נפוצות',
+      ? 'Car Reliability Rankings Israel 2026 - Best & Worst Cars'
+      : 'דירוג רכבים בישראל 2026 - אמינות, חוות דעת ובעיות נפוצות',
     description: rp.subtitle,
     alternates: { canonical: `${base}/rankings`, languages: { he: 'https://carissues.co.il/rankings', en: 'https://carissues.net/rankings', 'x-default': 'https://carissues.net/rankings' } },
   };
@@ -127,7 +127,7 @@ export default async function RankingsPage({ searchParams }: { searchParams: Pro
               data-active={cat === c ? '1' : '0'}
               style={cat === c ? { background: 'var(--accent)', borderColor: 'var(--accent)', color: '#fff' } : {}}
             >
-              {rp.categories[c] ?? c}
+              {(rp.categories as Record<string, string>)[c] ?? c}
             </Link>
           ))}
         </div>
@@ -140,6 +140,10 @@ export default async function RankingsPage({ searchParams }: { searchParams: Pro
               href={`/cars/${car.makeSlug}/${car.modelSlug}`}
               style={{ textDecoration: 'none', color: 'inherit' }}
             >
+              {(() => {
+                const modelHe = car.makeSlug === 'lexus' && car.modelSlug === 'rx' ? car.modelHe.replace(/^LE\s+/i, '') : car.modelHe;
+                const modelEn = car.makeSlug === 'lexus' && car.modelSlug === 'rx' ? car.modelEn.replace(/^LE\s+/i, '') : car.modelEn;
+                return (
               <div className="card ranking-card" style={{ padding: '16px 20px', display: 'flex', alignItems: 'center', gap: 16, transition: 'border-color 0.15s' }}>
                 {/* Rank */}
                 <div style={{
@@ -158,10 +162,10 @@ export default async function RankingsPage({ searchParams }: { searchParams: Pro
                 {/* Name */}
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ fontWeight: 700, fontSize: '0.9375rem' }}>
-                    {isEn ? `${car.makeEn} ${car.modelEn}` : `${car.makeHe} ${car.modelHe}`}
+                    {isEn ? `${car.makeEn} ${modelEn}` : `${car.makeHe} ${modelHe}`}
                   </div>
                   <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
-                    {!isEn && `${car.makeEn} ${car.modelEn} · `}{rp.categories[car.category] ?? car.category}
+                    {!isEn && `${car.makeEn} ${modelEn} · `}{(rp.categories as Record<string, string>)[car.category] ?? car.category}
                   </div>
                 </div>
 
@@ -179,6 +183,8 @@ export default async function RankingsPage({ searchParams }: { searchParams: Pro
                   <span className="of">{isEn ? '/10' : 'מתוך 10'}</span>
                 </div>
               </div>
+                );
+              })()}
             </Link>
           ))}
         </div>
