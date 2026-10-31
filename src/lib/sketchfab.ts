@@ -109,8 +109,9 @@ async function fetch3dModels(): Promise<ModelsMap> {
 function pickEntry(entries: ModelEntry[], year?: number): ModelEntry | null {
   if (!entries.length) return null;
   if (!year) {
-    // No year requested: prefer generic (null range), else first entry
-    return entries.find(e => e.yearFrom == null && e.yearTo == null) ?? entries[0];
+    // No year requested: prefer generic (null range), else the newest year range
+    return entries.find(e => e.yearFrom == null && e.yearTo == null)
+      ?? [...entries].sort((a, b) => (b.yearFrom ?? 0) - (a.yearFrom ?? 0))[0];
   }
   // Find all year-specific entries that cover this year
   const yearMatches = entries.filter(e =>
