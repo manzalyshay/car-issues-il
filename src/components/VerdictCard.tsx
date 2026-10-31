@@ -3,6 +3,8 @@ import type { ModelRepairCost } from '@/lib/repairCostsDb';
 import type { TrimSpecWithYear } from '@/lib/trimSpecsDb';
 import VerdictCardClient from './VerdictCardClient';
 import { aiSourceLabel } from '@/lib/aiSource';
+import type { ExternalScoreSet } from '@/lib/proReviewScores';
+import ExternalScoresInfo from './ExternalScoresInfo';
 
 interface Props {
   expertReview: ExpertReview | null;
@@ -17,6 +19,7 @@ interface Props {
   isEn: boolean;
   avgRating: number | null;
   reviewCount: number;
+  externalScores?: ExternalScoreSet[];
 }
 
 function hasHebrew(s: string | null | undefined): boolean {
@@ -39,7 +42,7 @@ function scoreColor(score: number) {
 export default function VerdictCard({
   expertReview, repairCosts, trimSpecs, makeSlug, modelSlug,
   makeNameHe, modelNameHe, makeNameEn, modelNameEn,
-  isEn, avgRating, reviewCount,
+  isEn, avgRating, reviewCount, externalScores = [],
 }: Props) {
   if (!expertReview && avgRating === null) return null;
 
@@ -79,6 +82,7 @@ export default function VerdictCard({
             </span>
             <span style={{ fontSize: 15, color: '#8595a6' }}>/5</span>
           </div>
+          <ExternalScoresInfo sets={externalScores} isEn={isEn} />
           <div style={{ fontSize: 13, color: '#66788c' }}>
             {reviewCount} {isEn ? 'owner reviews' : 'ביקורות בעלים'}
           </div>
@@ -279,6 +283,7 @@ export default function VerdictCard({
               <span style={{ fontSize: 15, color: '#8595a6' }}>/10</span>
             </div>
           )}
+          <ExternalScoresInfo sets={externalScores} isEn={isEn} />
         </div>
         {/* Summary */}
         {leadSummary && (

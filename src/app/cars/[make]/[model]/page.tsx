@@ -21,6 +21,7 @@ import SellerPriceChart from '@/components/SellerPriceChart';
 import RecallsBarChart from '@/components/RecallsBarChart';
 import FuelComparisonChart from '@/components/FuelComparisonChart';
 import VerdictCard from '@/components/VerdictCard';
+import { getExternalScores } from '@/lib/proReviewScores';
 import FollowButton from '@/components/FollowButton';
 import HeroMedia from '@/components/HeroMedia';
 import ModelFaq from '@/components/ModelFaq';
@@ -110,7 +111,7 @@ export default async function ModelPage({ params, searchParams }: Props) {
   if (!make) notFound();
   if (!model) notFound();
 
-  const [allReviews, expertReviewsList, sketchfabModel, similarModels, carImages, modelRepairCosts, trimSpecs, recalls] = await Promise.all([
+  const [allReviews, expertReviewsList, sketchfabModel, similarModels, carImages, modelRepairCosts, trimSpecs, recalls, externalScores] = await Promise.all([
     getReviewsForModel(makeSlug, modelSlug).catch(() => []),
     getExpertReviews(makeSlug, modelSlug).catch(() => []),
     findCarModel(makeSlug, modelSlug).catch(() => null),
@@ -119,6 +120,7 @@ export default async function ModelPage({ params, searchParams }: Props) {
     getModelRepairCosts(makeSlug, modelSlug).catch(() => []),
     getTrimSpecs(makeSlug, modelSlug).catch(() => []),
     getRecallsFromCache(make.nameEn, model.nameEn).catch(() => []),
+    getExternalScores(makeSlug, modelSlug, locale === 'en').catch(() => []),
   ]);
   const [similarRatings, similarImages] = await Promise.all([
     Promise.all(similarModels.map(({ makeSlug: ms, model: m }) => getAverageRating(ms, m.slug).catch(() => null))),
@@ -322,6 +324,7 @@ export default async function ModelPage({ params, searchParams }: Props) {
             isEn={isEn}
             avgRating={avgRating}
             reviewCount={allReviews.length}
+            externalScores={externalScores}
           />
         </div>
 
