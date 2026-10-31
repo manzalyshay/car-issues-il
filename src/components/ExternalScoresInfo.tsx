@@ -1,6 +1,6 @@
 'use client';
 
-import { useId } from 'react';
+import { useId, useRef } from 'react';
 import type { ExternalScoreSet } from '@/lib/proReviewScores';
 
 const SITE_NAMES: Record<string, string> = {
@@ -27,14 +27,51 @@ function scoreColor(score: number): string {
  */
 export default function ExternalScoresInfo({ sets, isEn }: { sets: ExternalScoreSet[]; isEn: boolean }) {
   const panelId = useId();
+  const btnRef = useRef<HTMLButtonElement>(null);
+  const panelRef = useRef<HTMLDivElement>(null);
+  const hideTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   if (!sets.length) return null;
   const title = isEn ? 'External test scores' : 'ציוני מבחנים חיצוניים';
+
+  // Desktop (mouse/trackpad): open on hover, anchored under the button.
+  // Touch: open on tap, centred on screen (the popover's default placement).
+  const canHover = () => typeof window !== 'undefined' && window.matchMedia('(hover: hover) and (pointer: fine)').matches;
+  const isOpen = () => !!panelRef.current?.matches(':popover-open');
+  const cancelHide = () => { if (hideTimer.current) { clearTimeout(hideTimer.current); hideTimer.current = null; } };
+  const show = (anchored: boolean) => {
+    const panel = panelRef.current, btn = btnRef.current;
+    if (!panel || !btn) return;
+    cancelHide();
+    if (anchored) {
+      const r = btn.getBoundingClientRect();
+      const width = Math.min(340, window.innerWidth - 32);
+      const left = isEn ? r.left : r.right - width; // grow towards the text direction
+      Object.assign(panel.style, {
+        position: 'fixed', margin: '0', inset: 'auto',
+        top: `${Math.min(r.bottom + 8, window.innerHeight - 120)}px`,
+        left: `${Math.max(16, Math.min(left, window.innerWidth - width - 16))}px`,
+      });
+    } else {
+      Object.assign(panel.style, { position: '', margin: '', inset: '', top: '', left: '' });
+    }
+    if (!isOpen()) panel.showPopover();
+  };
+  const scheduleHide = () => {
+    cancelHide();
+    hideTimer.current = setTimeout(() => { if (isOpen()) panelRef.current?.hidePopover(); }, 200);
+  };
 
   return (
     <>
       <button
+        ref={btnRef}
         type="button"
-        popoverTarget={panelId}
+        aria-controls={panelId}
+        aria-haspopup="dialog"
+        onClick={() => { const hover = canHover(); if (isOpen() && !hover) panelRef.current?.hidePopover(); else show(hover); }}
+        onMouseEnter={() => { if (canHover()) show(true); }}
+        onMouseLeave={() => { if (canHover()) scheduleHide(); }}
+        onFocus={() => { if (canHover()) show(true); }}
         aria-label={title}
         title={title}
         style={{
@@ -48,8 +85,11 @@ export default function ExternalScoresInfo({ sets, isEn }: { sets: ExternalScore
       </button>
 
       <div
+        ref={panelRef}
         id={panelId}
         popover="auto"
+        onMouseEnter={cancelHide}
+        onMouseLeave={() => { if (canHover()) scheduleHide(); }}
         role="dialog"
         aria-label={title}
         style={{
