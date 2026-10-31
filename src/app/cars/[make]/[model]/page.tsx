@@ -176,7 +176,7 @@ export default async function ModelPage({ params, searchParams }: Props) {
             <span>›</span>
             <Link href={`/cars/${make.slug}`} style={{ color: '#9db1d4', textDecoration: 'none' }}>{makeName}</Link>
             <span>›</span>
-            <span style={{ color: '#fff', fontWeight: 600 }}>{modelName}</span>
+            <span style={{ color: '#fff', fontWeight: 600, whiteSpace: 'nowrap' }}>{modelName}</span>
           </nav>
 
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(240px,1fr))', gap: 'clamp(14px,2vw,26px)', alignItems: 'center' }}>
