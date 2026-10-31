@@ -19,6 +19,9 @@ export interface CarNewsItem {
   image_url: string | null;
   published_at: string | null;
   created_at: string;
+  image_author?: string | null;
+  image_license?: string | null;
+  image_source_url?: string | null;
 }
 
 /** RSS source definitions */

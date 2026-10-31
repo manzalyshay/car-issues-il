@@ -126,8 +126,19 @@ export default async function NewsArticlePage({ params }: Props) {
           src={imageUrl}
           alt={title ?? ''}
           isHe={isHe}
-          style={{ width: '100%', aspectRatio: '16/9', borderRadius: 12, marginBottom: 28 }}
+          style={{ width: '100%', aspectRatio: '16/9', borderRadius: 12, marginBottom: imageUrl && article.image_license ? 6 : 28 }}
         />
+        {imageUrl && article.image_license && (
+          <p style={{ margin: '0 0 28px', fontSize: '0.72rem', color: 'var(--text-faint)', direction: 'ltr', textAlign: isHe ? 'right' : 'left' }}>
+            {isHe ? 'צילום' : 'Photo'}: {article.image_author || (isHe ? 'לא ידוע' : 'Unknown')}
+            {' · '}
+            {article.image_source_url ? (
+              <a href={article.image_source_url} target="_blank" rel="noopener noreferrer" style={{ color: 'inherit' }}>
+                {article.image_license}, Wikimedia Commons
+              </a>
+            ) : `${article.image_license}, Wikimedia Commons`}
+          </p>
+        )}
 
         {/* Body */}
         {body ? (
