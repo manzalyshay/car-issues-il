@@ -47,6 +47,8 @@ const MISASSIGNED_3D_TITLES: Record<string, RegExp[]> = {
   'fiat/500': [/\boutlaw\b/i],
   'fiat/500e': [/\b500e\s+2013\b/i],
   'land-rover/range-rover-velar': [/\bland\s+rover\s+range\s+rover\s+2022\b/i],
+  // Stylized model (glowing wheels, flat paint); replaced by a realistic X290 model.
+  'mercedes/amg-gt-4door': [/^mercedes amg gt 63$/i],
   'mercedes/c43-amg': [/\bamg\s+gt2\b/i],
   'mercedes/eqa': [/\beqs\s+580\b/i],
   'mercedes/eqe-suv': [/\beqs[_ -]?suv\b/i],
