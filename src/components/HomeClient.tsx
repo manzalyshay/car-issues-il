@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useState, useEffect, useRef, useMemo } from 'react';
 import { useLocale } from '@/lib/localeContext';
 import { newsPath } from '@/lib/newsSlug';
+import NewsImage from '@/components/NewsImage';
 
 /* ── Types ──────────────────────────────────────────────── */
 interface Make { slug: string; nameHe: string; nameEn: string; logoUrl: string; country: string; models: { slug: string; nameHe: string; nameEn: string }[]; }
@@ -415,14 +416,7 @@ export default function HomeClient({ allMakes, topRanked, recentReviews, tickerI
               {news[0] && (
                 <Link href={newsPath(news[0])} style={{ textDecoration: 'none', color: 'inherit' }} data-ci-reveal>
                   <article style={{ background: '#fff', border: '1px solid #e4e9f2', borderRadius: 18, overflow: 'hidden' }} className="ci-card-hover">
-                    {news[0].image_url ? (
-                      /* eslint-disable-next-line @next/next/no-img-element */
-                      <img src={news[0].image_url} alt="" style={{ width: '100%', aspectRatio: '16/9', objectFit: 'cover', display: 'block' }} />
-                    ) : (
-                      <div style={{ aspectRatio: '16/9', background: 'linear-gradient(140deg,#dfe6f3,#c9d4e8)', display: 'grid', placeItems: 'center' }}>
-                        <span style={{ fontSize: 12, color: '#5f6e88', letterSpacing: '.12em' }}>{isHe ? 'תמונת כתבה' : 'Article image'}</span>
-                      </div>
-                    )}
+                    <NewsImage src={news[0].image_url} isHe={isHe} style={{ width: '100%', aspectRatio: '16/9' }} />
                     <div style={{ padding: 18 }}>
                       <div style={{ display: 'flex', gap: 10, alignItems: 'center', fontSize: 12.5, color: '#5b6a86', fontWeight: 600 }}>
                         <span style={{ color: '#17408f' }}>{news[0].source}</span>
@@ -443,12 +437,7 @@ export default function HomeClient({ allMakes, topRanked, recentReviews, tickerI
               <div data-ci-group="80" style={{ display: 'grid', gap: 14, alignContent: 'start' }}>
                 {news.slice(1, 4).map(item => (
                   <Link key={item.id} href={newsPath(item)} style={{ display: 'flex', gap: 14, background: '#fff', border: '1px solid #e4e9f2', borderRadius: 16, padding: 14, alignItems: 'center', textDecoration: 'none', color: 'inherit' }} className="ci-news-row">
-                    {item.image_url ? (
-                      /* eslint-disable-next-line @next/next/no-img-element */
-                      <img src={item.image_url} alt="" loading="lazy" style={{ width: 96, height: 70, flexShrink: 0, borderRadius: 11, objectFit: 'cover', display: 'block' }} />
-                    ) : (
-                      <span style={{ width: 96, height: 70, flexShrink: 0, borderRadius: 11, background: 'linear-gradient(140deg,#e8edf6,#d5deee)', display: 'block' }} />
-                    )}
+                    <NewsImage src={item.image_url} isHe={isHe} loading="lazy" style={{ width: 96, height: 70, flexShrink: 0, borderRadius: 11, padding: '0 8px' }} />
                     <span>
                       <span style={{ fontFamily: 'Heebo,sans-serif', fontWeight: 700, fontSize: 16, lineHeight: 1.3, color: '#0d1b2f', direction: isHe ? 'rtl' : 'ltr', overflow: 'hidden', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' } as React.CSSProperties}>
                         {isHe ? (item.title_he ?? item.title_en) : (item.title_en ?? item.title_he)}

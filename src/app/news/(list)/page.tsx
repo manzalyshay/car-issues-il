@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { getHostLocale, getBaseUrl } from '@/lib/hostLocale';
 import { getLatestNews, ensureNewsTable } from '@/lib/carNews';
 import { newsPath } from '@/lib/newsSlug';
+import NewsImage from '@/components/NewsImage';
 
 export const revalidate = 1800;
 
@@ -78,15 +79,13 @@ export default async function NewsPage() {
                 style={{ textDecoration: 'none', color: 'inherit', display: 'block' }}
               >
                 <div className="card" style={{ height: '100%', overflow: 'hidden', padding: 0, display: 'flex', flexDirection: 'column', transition: 'border-color 0.15s, box-shadow 0.15s' }}>
-                  {item.image_url && !item.image_url.includes('cdn.motor1.com') && (
-                    /* eslint-disable-next-line @next/next/no-img-element */
-                    <img
-                      src={item.image_url}
-                      alt={item.title_he ?? item.title_en ?? ''}
-                      style={{ width: '100%', aspectRatio: '16/9', objectFit: 'cover', display: 'block' }}
-                      loading="lazy"
-                    />
-                  )}
+                  <NewsImage
+                    src={item.image_url}
+                    alt={item.title_he ?? item.title_en ?? ''}
+                    isHe={isHe}
+                    loading="lazy"
+                    style={{ width: '100%', aspectRatio: '16/9' }}
+                  />
                   <div style={{ padding: '14px 16px', flex: 1, display: 'flex', flexDirection: 'column', gap: 8 }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                       <span style={{ fontSize: '0.72rem', color: 'var(--text-faint)' }}>{timeAgo(item.published_at, isHe)}</span>

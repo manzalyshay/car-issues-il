@@ -4,7 +4,7 @@
  * Protected by CRON_SECRET. Called by Cloudflare Cron Trigger (daily at 06:00 UTC).
  */
 import { NextRequest, NextResponse } from 'next/server';
-import { refreshCarNews, retranslateUntranslated, retranslateShort } from '@/lib/carNews';
+import { refreshCarNews, retranslateUntranslated, retranslateShort, fillMissingNewsImages } from '@/lib/carNews';
 
 export async function GET(req: NextRequest) {
   const secret = process.env.CRON_SECRET;
@@ -18,7 +18,9 @@ export async function GET(req: NextRequest) {
       retranslateUntranslated(10),
       retranslateShort(10),
     ]);
-    return NextResponse.json({ ok: true, newArticles, retranslated, retranslatedShort });
+    // Run after the refresh so freshly inserted articles without a photo are covered too.
+    const imagesFilled = await fillMissingNewsImages(10);
+    return NextResponse.json({ ok: true, newArticles, retranslated, retranslatedShort, imagesFilled });
   } catch (err) {
     console.error('[refresh-news]', err);
     return NextResponse.json({ error: String(err) }, { status: 500 });

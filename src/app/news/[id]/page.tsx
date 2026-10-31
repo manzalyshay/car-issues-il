@@ -5,6 +5,8 @@ import { getHostLocale, getBaseUrl } from '@/lib/hostLocale';
 import { getNewsArticleBySegment } from '@/lib/carNews';
 import { newsPath, newsSegment } from '@/lib/newsSlug';
 import NewsAdminActions from '@/components/NewsAdminActions';
+import NewsImage from '@/components/NewsImage';
+import { isUsableNewsImage } from '@/lib/newsImageUrl';
 
 export const revalidate = 1800;
 
@@ -61,7 +63,7 @@ export default async function NewsArticlePage({ params }: Props) {
   const rawBody = isHe ? (article.body_he ?? article.body_en) : (article.body_en ?? article.body_he);
   const body = rawBody?.replace(/אחד מה-SUV החשמליים החזקים שהושקו אי פעם/g, 'מבין רכבי ה-SUV החשמליים החזקים שהוצגו השנה').replace(/[—–]/g, '-') ?? null;
   const sourceName = SOURCE_LABELS[article.source] ?? article.source;
-  const imageUrl = article.image_url && !article.image_url.includes('cdn.motor1.com') ? article.image_url : null;
+  const imageUrl = isUsableNewsImage(article.image_url) ? article.image_url : null;
   const isUsCitiesStudy = article.id.startsWith('b70e9563ca');
 
   const base = getBaseUrl(locale);
@@ -120,14 +122,12 @@ export default async function NewsArticlePage({ params }: Props) {
         </h1>
 
         {/* Hero image */}
-        {imageUrl && (
-          /* eslint-disable-next-line @next/next/no-img-element */
-          <img
-            src={imageUrl}
-            alt={title ?? ''}
-            style={{ width: '100%', aspectRatio: '16/9', objectFit: 'cover', borderRadius: 12, marginBottom: 28, display: 'block' }}
-          />
-        )}
+        <NewsImage
+          src={imageUrl}
+          alt={title ?? ''}
+          isHe={isHe}
+          style={{ width: '100%', aspectRatio: '16/9', borderRadius: 12, marginBottom: 28 }}
+        />
 
         {/* Body */}
         {body ? (

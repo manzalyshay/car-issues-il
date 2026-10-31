@@ -6,6 +6,7 @@
 import { dbRun, dbAll } from '@/lib/db';
 import { runWorkersAI } from '@/lib/workersAi';
 import { parseNewsSegment } from './newsSlug';
+import { findNewsImage } from './newsImage';
 
 export interface CarNewsItem {
   id: string;
@@ -257,6 +258,9 @@ export async function ensureNewsTable(): Promise<void> {
   await dbRun(`CREATE INDEX IF NOT EXISTS car_news_published_at ON car_news(published_at DESC)`).catch(() => {});
   // Add hidden column if table already existed without it
   await dbRun(`ALTER TABLE car_news ADD COLUMN hidden INTEGER DEFAULT 0`).catch(() => {});
+  for (const col of ['image_author', 'image_license', 'image_source_url']) {
+    await dbRun(`ALTER TABLE car_news ADD COLUMN ${col} TEXT`).catch(() => {});
+  }
 }
 
 /**
@@ -297,10 +301,12 @@ export async function refreshCarNews(maxPerRun = 15): Promise<number> {
     const articleBody = fullBody ?? item.description;
 
     const rewritten = await rewriteInHebrew(item.title, articleBody);
+    // Source-site photos can't be republished; use a freely licensed Commons photo instead.
+    const image = await findNewsImage(item.title).catch(() => null);
 
     await dbRun(
-      `INSERT OR IGNORE INTO car_news (id, source, original_url, title_he, body_he, title_en, body_en, image_url, published_at)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      `INSERT OR IGNORE INTO car_news (id, source, original_url, title_he, body_he, title_en, body_en, image_url, published_at, image_author, image_license, image_source_url)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       id,
       source,
       item.link,
@@ -309,13 +315,41 @@ export async function refreshCarNews(maxPerRun = 15): Promise<number> {
       item.title,
       // Store the full body_en so retranslation also benefits from it
       (articleBody).slice(0, 3000),
-      item.imageUrl,
+      image?.url ?? null,
       item.pubDate ? new Date(item.pubDate).toISOString() : null,
+      image?.author ?? null,
+      image?.license ?? null,
+      image?.sourceUrl ?? null,
     );
     saved++;
   }
 
   return saved;
+}
+
+/**
+ * Attach a Commons photo to articles that have none (or only a source-site photo).
+ * @param max Max articles to process per call
+ */
+export async function fillMissingNewsImages(max = 10): Promise<number> {
+  const rows = await dbAll<{ id: string; title_en: string | null }>(
+    `SELECT id, title_en FROM car_news
+     WHERE (hidden IS NULL OR hidden != 1) AND title_en IS NOT NULL
+       AND (image_url IS NULL OR image_url LIKE '%cdn.motor1.com%')
+     ORDER BY published_at DESC LIMIT ?`,
+    max,
+  );
+  let filled = 0;
+  for (const row of rows) {
+    const image = await findNewsImage(row.title_en).catch(() => null);
+    if (!image) continue;
+    await dbRun(
+      'UPDATE car_news SET image_url = ?, image_author = ?, image_license = ?, image_source_url = ? WHERE id = ?',
+      image.url, image.author, image.license, image.sourceUrl, row.id,
+    );
+    filled++;
+  }
+  return filled;
 }
 
 /**
