@@ -349,8 +349,8 @@ export default function VehicleLookupClient({ initialPlate, initialVehicle, init
               <article className="card vl-card" style={{ display: 'flex', flexWrap: 'wrap', overflow: 'hidden', padding: 0, marginBottom: 28 }}>
                 <div className="vl-summary" style={{ flex: '999 1 560px', minWidth: 0, padding: 'clamp(20px,4vw,32px)', display: 'flex', flexDirection: 'column', gap: 18 }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 20, flexWrap: 'wrap' }}>
-                    {/* Plate badge */}
-                    <div style={{ flexShrink: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}>
+                    {/* Plate badge (hidden on phones - the search box right above already shows the number) */}
+                    <div className="vl-plate-badge" style={{ flexShrink: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}>
                       <div style={{
                         background: isVehicleUk ? '#fff' : '#fefce8',
                         border: `2px solid ${isVehicleUk ? '#f59e0b' : '#ca8a04'}`,
@@ -784,6 +784,7 @@ export default function VehicleLookupClient({ initialPlate, initialVehicle, init
           .vl-visual { min-height: 0 !important; padding: 4px 16px 20px !important; background: #0f2c4d !important; }
           .vl-visual > span { color: #9fb3d1 !important; }
           .vl-m-only { display: block; }
+          .vl-plate-badge { display: none !important; }
           .vl-summary-extra { background: #0f2c4d; }
           .vl-o2 { display: none !important; }
           .vl-visual > img, .vl-visual > div { max-width: 240px !important; }
