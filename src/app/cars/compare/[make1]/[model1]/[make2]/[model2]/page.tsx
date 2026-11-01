@@ -6,6 +6,7 @@ import { getReviewsForModel } from '@/lib/reviewsDb';
 import { getExpertReviews } from '@/lib/expertReviews';
 import { findCarModel } from '@/lib/sketchfab';
 import { getTrimSpecs } from '@/lib/trimSpecsDb';
+import { getRecallsFromCache } from '@/lib/recallsDb';
 import type { TrimSpecWithYear } from '@/lib/trimSpecsDb';
 import { normEngine } from '@/lib/specSummary';
 import { getHostLocale, getBaseUrl } from '@/lib/hostLocale';
@@ -116,7 +117,7 @@ export default async function ComparePage({ params }: Props) {
   const [modA, modB] = await Promise.all([getModelBySlug(make1, model1), getModelBySlug(make2, model2)]);
   if (!modA || !modB) notFound();
 
-  const [reviewsA, reviewsB, expertA, expertB, carModelA, carModelB, similarA, similarB, trimsA, trimsB] = await Promise.all([
+  const [reviewsA, reviewsB, expertA, expertB, carModelA, carModelB, similarA, similarB, trimsA, trimsB, recallsA, recallsB] = await Promise.all([
     getReviewsForModel(make1, model1).catch(() => []),
     getReviewsForModel(make2, model2).catch(() => []),
     getExpertReviews(make1, model1).catch(() => []),
@@ -127,6 +128,8 @@ export default async function ComparePage({ params }: Props) {
     getSimilarModels(make2, model2, modB?.category ?? 'sedan', 10).catch(() => []),
     getTrimSpecs(make1, model1).catch(() => [] as TrimSpecWithYear[]),
     getTrimSpecs(make2, model2).catch(() => [] as TrimSpecWithYear[]),
+    getRecallsFromCache(mA.nameEn, modA.nameEn).catch(() => []),
+    getRecallsFromCache(mB.nameEn, modB.nameEn).catch(() => []),
   ]);
 
   const isEn = locale === 'en';
@@ -278,6 +281,120 @@ export default async function ComparePage({ params }: Props) {
   const col: React.CSSProperties = { flex: 1, minWidth: 0, textAlign: 'center' };
   const divider: React.CSSProperties = { width: 1, background: 'var(--border)', alignSelf: 'stretch', flexShrink: 0 };
 
+  // ── Verdict (shared by the short summary under the H1 and the full section below) ──
+  const hasVerdict = scoreA !== null || scoreB !== null || avgA !== null || avgB !== null;
+  const verdictWinner = better(scoreA, scoreB) ?? better(avgA, avgB);
+  const winnerName = verdictWinner === 'a' ? nameA : verdictWinner === 'b' ? nameB : null;
+  const loserName  = verdictWinner === 'a' ? nameB : verdictWinner === 'b' ? nameA : null;
+  const hasOwnerReviews = reviewsA.length > 0 || reviewsB.length > 0;
+  const verdictBasis = hasOwnerReviews
+    ? sp.verdictWinnerPre
+    : (isEn ? 'Based on tests and official data,' : 'על בסיס מבחנים ונתונים רשמיים,');
+
+  // ── Facts used by the short verdict and the FAQ (only real data, never guessed) ──
+  const ils = (v: number) => `₪${Math.round(v).toLocaleString('en-US')}`;
+  const nearlyEqual = (a: number, b: number) => Math.abs(a - b) / Math.max(a, b) < 0.02;
+  const priceA = perfA.price != null && perfA.price > 0 ? perfA.price : null;
+  const priceB = perfB.price != null && perfB.price > 0 ? perfB.price : null;
+  const cargoA = perfA.cargo != null && perfA.cargo > 0 ? perfA.cargo : null;
+  const cargoB = perfB.cargo != null && perfB.cargo > 0 ? perfB.cargo : null;
+  const fuelUnitText = (kind: 'fuel' | 'electric') => kind === 'electric'
+    ? (isEn ? 'kWh/100km' : 'קוט"ש ל-100 ק"מ')
+    : (isEn ? 'km/L' : 'ק"מ לליטר');
+
+  type Fact = { sentence: string; faq: { q: string; a: string } };
+
+  const priceFact: Fact | null = priceA !== null && priceB !== null ? (() => {
+    const q = isEn ? `Which is cheaper, the ${nameA} or the ${nameB}?` : `מה זול יותר, ${nameA} או ${nameB}?`;
+    if (nearlyEqual(priceA, priceB)) {
+      const a = isEn
+        ? `Both start at a similar price: ${ils(priceA)} for the ${nameA} and ${ils(priceB)} for the ${nameB} (starting list price in Israel).`
+        : `שני הדגמים מתחילים במחיר דומה: ${ils(priceA)} ל${nameA} ו-${ils(priceB)} ל${nameB} (מחיר מחירון התחלתי בישראל).`;
+      return { sentence: a, faq: { q, a } };
+    }
+    const cheapA = priceA < priceB;
+    const [cn, cp, en, ep] = cheapA ? [nameA, priceA, nameB, priceB] : [nameB, priceB, nameA, priceA];
+    const diff = ils(ep - cp);
+    const a = isEn
+      ? `The ${cn} is cheaper, starting at ${ils(cp)} compared with ${ils(ep)} for the ${en} - a difference of ${diff} (starting list price in Israel).`
+      : `${cn} זול יותר: מחירו מתחיל ב-${ils(cp)}, לעומת ${ils(ep)} ל${en} - הפרש של ${diff} (מחיר מחירון התחלתי בישראל).`;
+    const sentence = isEn
+      ? `The ${cn} is cheaper, starting at ${ils(cp)} vs ${ils(ep)}.`
+      : `${cn} זול יותר, החל מ-${ils(cp)} לעומת ${ils(ep)}.`;
+    return { sentence, faq: { q, a } };
+  })() : null;
+
+  const fuelFact: Fact | null = fuelComparable && consumptionA && consumptionB ? (() => {
+    const kind = consumptionA.kind;
+    const unit = fuelUnitText(kind);
+    const q = kind === 'electric'
+      ? (isEn ? `Which uses less energy, the ${nameA} or the ${nameB}?` : `מי צורך פחות חשמל, ${nameA} או ${nameB}?`)
+      : (isEn ? `Which is more fuel efficient, the ${nameA} or the ${nameB}?` : `מי חסכוני יותר בדלק, ${nameA} או ${nameB}?`);
+    const figures = isEn
+      ? `${formatConsumption(consumptionA)} ${unit} for the ${nameA} vs ${formatConsumption(consumptionB)} ${unit} for the ${nameB}`
+      : `${formatConsumption(consumptionA)} ${unit} ל${nameA} לעומת ${formatConsumption(consumptionB)} ${unit} ל${nameB}`;
+    if (nearlyEqual(consumptionA.score, consumptionB.score)) {
+      const a = isEn ? `They are about equally efficient: ${figures}.` : `הצריכה של שניהם כמעט זהה: ${figures}.`;
+      return { sentence: a, faq: { q, a } };
+    }
+    // fuel: km/L, higher is better · electric: kWh/100km, lower is better
+    const aWins = kind === 'electric' ? consumptionA.score < consumptionB.score : consumptionA.score > consumptionB.score;
+    const wn = aWins ? nameA : nameB;
+    const a = kind === 'electric'
+      ? (isEn ? `The ${wn} uses less energy: ${figures}.` : `${wn} צורך פחות חשמל: ${figures}.`)
+      : (isEn ? `The ${wn} is more fuel efficient: ${figures}.` : `${wn} חסכוני יותר בדלק: ${figures}.`);
+    return { sentence: a, faq: { q, a } };
+  })() : null;
+
+  const spaceFact: Fact | null = cargoA !== null && cargoB !== null ? (() => {
+    const q = isEn ? `Which is roomier, the ${nameA} or the ${nameB}?` : `מי מרווח יותר, ${nameA} או ${nameB}?`;
+    const l = (v: number) => isEn ? `${Math.round(v)} L` : `${Math.round(v)} ליטר`;
+    if (nearlyEqual(cargoA, cargoB)) {
+      const a = isEn
+        ? `Their trunks are about the same size: ${l(cargoA)} in the ${nameA} and ${l(cargoB)} in the ${nameB}.`
+        : `תא המטען כמעט זהה בגודלו: ${l(cargoA)} ב${nameA} ו-${l(cargoB)} ב${nameB}.`;
+      return { sentence: a, faq: { q, a } };
+    }
+    const aWins = cargoA > cargoB;
+    const [wn, wv, ln, lv] = aWins ? [nameA, cargoA, nameB, cargoB] : [nameB, cargoB, nameA, cargoA];
+    const a = isEn
+      ? `By trunk volume, the ${wn} is roomier: ${l(wv)} compared with ${l(lv)} in the ${ln}.`
+      : `לפי נפח תא המטען, ${wn} מרווח יותר: ${l(wv)} לעומת ${l(lv)} ב${ln}.`;
+    const sentence = isEn
+      ? `The ${wn} has the bigger trunk (${l(wv)} vs ${l(lv)}).`
+      : `ל${wn} תא מטען גדול יותר (${l(wv)} לעומת ${l(lv)}).`;
+    return { sentence, faq: { q, a } };
+  })() : null;
+
+  // Common problems: recall counts (only when both models have NHTSA records - a zero may just
+  // mean the model isn't sold in the US) plus the top expert-review cons for each model.
+  const problemsFaq: { q: string; a: string } | null = (() => {
+    const parts: string[] = [];
+    if (recallsA.length > 0 && recallsB.length > 0) {
+      parts.push(isEn
+        ? `The US recall database (NHTSA) lists ${recallsA.length} recalls for the ${nameA} and ${recallsB.length} for the ${nameB}.`
+        : `במאגר הריקולים האמריקאי (NHTSA) רשומים ${recallsA.length} ריקולים ל${nameA} ו-${recallsB.length} ל${nameB}.`);
+    }
+    const top = (items: string[]) => items.slice(0, 2).map(c => c.replace(/[.\s]+$/, '')).join(isEn ? '; ' : '; ');
+    if (consA.length > 0) parts.push(isEn ? `Common complaints about the ${nameA}: ${top(consA)}.` : `תלונות נפוצות על ${nameA}: ${top(consA)}.`);
+    if (consB.length > 0) parts.push(isEn ? `Common complaints about the ${nameB}: ${top(consB)}.` : `תלונות נפוצות על ${nameB}: ${top(consB)}.`);
+    if (parts.length === 0) return null;
+    return {
+      q: isEn ? `What are the common problems with the ${nameA} and the ${nameB}?` : `מה הבעיות הנפוצות של ${nameA} ושל ${nameB}?`,
+      a: parts.join(' '),
+    };
+  })();
+
+  const faqItems = [priceFact?.faq, problemsFaq, fuelFact?.faq, spaceFact?.faq]
+    .filter((f): f is { q: string; a: string } => !!f);
+
+  // Short verdict under the H1: the verdict line + up to two concrete differences
+  const shortVerdictLead = !hasVerdict ? null
+    : verdictWinner && verdictWinner !== 'tie' ? 'winner'
+    : (isEn ? 'Both models score very similarly overall.' : 'שני הדגמים מקבלים ציון כולל דומה מאוד.');
+  const shortVerdictFacts = [priceFact, fuelFact, spaceFact].filter((f): f is Fact => !!f).slice(0, 2).map(f => f.sentence);
+  const showShortVerdict = shortVerdictLead !== null || shortVerdictFacts.length >= 2;
+
   return (
     <div style={{ padding: '48px 0 80px' }}>
       <style>{`
@@ -313,6 +430,19 @@ export default async function ComparePage({ params }: Props) {
         <p style={{ color: 'var(--text-muted)', marginBottom: 32 }}>
           {mA.nameEn} {modA.nameEn} vs {mB.nameEn} {modB.nameEn} - {sp.subtitleCompare}
         </p>
+
+        {/* Short verdict (full verdict section stays further down) */}
+        {showShortVerdict && (
+          <div className="card" style={{ padding: '16px 20px', marginTop: -16, marginBottom: 28, borderInlineStart: '4px solid var(--accent)' }}>
+            <p style={{ margin: 0, fontSize: '0.9375rem', lineHeight: 1.7, color: 'var(--text)' }}>
+              <strong style={{ marginInlineEnd: 6 }}>{isEn ? 'Quick verdict:' : 'בשורה התחתונה:'}</strong>
+              {shortVerdictLead === 'winner'
+                ? <>{verdictBasis} <strong>{winnerName}</strong> {sp.verdictWinnerMid} {loserName}.</>
+                : shortVerdictLead}
+              {shortVerdictFacts.map((f, i) => <span key={i}> {f}</span>)}
+            </p>
+          </div>
+        )}
 
         {/* Header card */}
         <div className="card cmp-header-card" style={{ padding: '24px 28px', marginBottom: 28, display: 'flex', gap: 16, alignItems: 'center' }}>
@@ -682,16 +812,8 @@ export default async function ComparePage({ params }: Props) {
         )}
 
         {/* Verdict */}
-        {(scoreA !== null || scoreB !== null || avgA !== null || avgB !== null) && (() => {
-          const rw = better(avgA, avgB);
-          const sw = better(scoreA, scoreB);
-          const winner = sw ?? rw;
-          const winnerName = winner === 'a' ? nameA : winner === 'b' ? nameB : null;
-          const loserName  = winner === 'a' ? nameB : winner === 'b' ? nameA : null;
-          const hasOwnerReviews = reviewsA.length > 0 || reviewsB.length > 0;
-          const verdictBasis = hasOwnerReviews
-            ? sp.verdictWinnerPre
-            : (isEn ? 'Based on tests and official data,' : 'על בסיס מבחנים ונתונים רשמיים,');
+        {hasVerdict && (() => {
+          const winner = verdictWinner;
           return (
             <div className="card" style={{ padding: '24px 28px', marginBottom: 28, borderRight: '4px solid var(--accent)' }}>
               <h2 style={{ fontWeight: 800, fontSize: '1rem', marginBottom: 12 }}>{sp.verdictTitle}</h2>
@@ -738,6 +860,21 @@ export default async function ComparePage({ params }: Props) {
           make2={make2} model2={model2} name2={nameB}
           locale={isEn ? 'en' : 'he'}
         />
+
+        {/* FAQ - built only from data shown on this page; mirrored exactly in FAQPage JSON-LD */}
+        {faqItems.length > 0 && (
+          <section className="card" style={{ padding: '24px 28px', marginBottom: 28 }}>
+            <h2 style={{ fontWeight: 800, fontSize: '1rem', marginBottom: 16 }}>{isEn ? 'Frequently asked questions' : 'שאלות נפוצות'}</h2>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+              {faqItems.map((f, i) => (
+                <div key={i}>
+                  <h3 style={{ fontSize: '0.9375rem', fontWeight: 700, margin: '0 0 6px' }}>{f.q}</h3>
+                  <p style={{ margin: 0, fontSize: '0.875rem', lineHeight: 1.7, color: 'var(--text-muted)' }}>{f.a}</p>
+                </div>
+              ))}
+            </div>
+          </section>
+        )}
 
         {/* CTA to interactive compare */}
         <div className="card" style={{ padding: '20px 24px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12, marginBottom: 28 }}>
@@ -803,6 +940,13 @@ export default async function ComparePage({ params }: Props) {
           // Same pattern as the model page: emit Product+AggregateRating only when we have
           // real owner reviews. The AI expert score is NOT marked up as a Review - Google's
           // review-snippet policy disallows self-authored/AI ratings.
+          // Owner reviews submitted on our site only - never site/AI-authored entries.
+          const ownerStats = (list: typeof reviewsA): [number | null, number] => {
+            const owners = list.filter(r => !/carissues/i.test(r.authorName ?? ''));
+            return owners.length
+              ? [owners.reduce((sum, r) => sum + r.rating, 0) / owners.length, owners.length]
+              : [null, 0];
+          };
           const productFor = (
             name: string, makeEn: string, url: string,
             avg: number | null, reviewCount: number,
@@ -816,6 +960,7 @@ export default async function ComparePage({ params }: Props) {
               aggregateRating: {
                 '@type': 'AggregateRating',
                 ratingValue: avg.toFixed(1),
+                ratingCount: reviewCount,
                 reviewCount,
                 bestRating: 5,
                 worstRating: 1,
@@ -826,8 +971,8 @@ export default async function ComparePage({ params }: Props) {
           return {
             '@context': 'https://schema.org',
             '@graph': [
-              ...productFor(nameA, mA.nameEn, `${base}/cars/${make1}/${model1}`, avgA, reviewsA.length),
-              ...productFor(nameB, mB.nameEn, `${base}/cars/${make2}/${model2}`, avgB, reviewsB.length),
+              ...productFor(nameA, mA.nameEn, `${base}/cars/${make1}/${model1}`, ...ownerStats(reviewsA)),
+              ...productFor(nameB, mB.nameEn, `${base}/cars/${make2}/${model2}`, ...ownerStats(reviewsB)),
               {
                 '@type': 'WebPage',
                 name: `${nameA} ${sp.vsWord} ${nameB}`,
@@ -842,6 +987,14 @@ export default async function ComparePage({ params }: Props) {
                   { '@type': 'ListItem', position: 3, name: `${nameA} ${sp.vsWord} ${nameB}`, item: pageUrl },
                 ],
               },
+              ...(faqItems.length > 0 ? [{
+                '@type': 'FAQPage',
+                mainEntity: faqItems.map(f => ({
+                  '@type': 'Question',
+                  name: f.q,
+                  acceptedAnswer: { '@type': 'Answer', text: f.a },
+                })),
+              }] : []),
             ],
           };
         })())}} />

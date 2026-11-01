@@ -481,21 +481,24 @@ export default async function ModelPage({ params, searchParams }: Props) {
               const faqLocalSummary = isEn ? expertReview?.localSummaryEn : expertReview?.localSummaryHe;
               const faqGlobalSummary = isEn ? expertReview?.globalSummaryEn : expertReview?.globalSummaryHe;
               const hasFaq = expertReview && (faqPros.length > 0 || faqCons.length > 0);
+              // aggregateRating only from owner reviews submitted on our site (never site/AI-authored)
+              const schemaOwnerReviews = allReviews.filter(r => !/carissues/i.test(r.authorName ?? ''));
               return {
                 '@context': 'https://schema.org',
                 '@graph': [
                   // Only emit Product schema when real owner reviews give us an aggregateRating.
                   // The AI expert score is not marked up as a Review: Google's review-snippet
                   // policy disallows self-authored/AI ratings.
-                  ...(avgRating !== null && allReviews.length > 0 ? [{
+                  ...(schemaOwnerReviews.length > 0 ? [{
                     '@type': 'Product',
                     name: `${make.nameEn} ${model.nameEn}`,
                     brand: { '@type': 'Brand', name: make.nameEn },
                     url: `${base}/cars/${make.slug}/${model.slug}`,
                     aggregateRating: {
                       '@type': 'AggregateRating',
-                      ratingValue: avgRating.toFixed(1),
-                      reviewCount: allReviews.length,
+                      ratingValue: (schemaOwnerReviews.reduce((sum, r) => sum + r.rating, 0) / schemaOwnerReviews.length).toFixed(1),
+                      ratingCount: schemaOwnerReviews.length,
+                      reviewCount: schemaOwnerReviews.length,
                       bestRating: 5,
                       worstRating: 1,
                     },
