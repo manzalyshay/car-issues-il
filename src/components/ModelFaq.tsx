@@ -1,5 +1,6 @@
 import type { TrimSpecWithYear } from '@/lib/trimSpecsDb';
 import type { ExpertReview } from '@/lib/expertReviews';
+import { currentIsraeliTrims, realItems, within, PLAUSIBLE } from '@/lib/faqData';
 
 interface Props {
   trimSpecs: TrimSpecWithYear[];
@@ -44,8 +45,12 @@ export function buildFaqs(props: Props): FaqItem[] {
 
   const faqs: FaqItem[] = [];
 
+  // Spec answers use only trims currently sold in Israel, with implausible values
+  // (data-entry outliers) dropped. No data -> the question is omitted.
+  const cur = currentIsraeliTrims(trimSpecs);
+
   // ── HP ──────────────────────────────────────────────────────────────────────
-  const hpVals = trimSpecs.map(t => t.engineHp).filter((v): v is number => v != null);
+  const hpVals = cur.map(t => t.engineHp).filter((v): v is number => within(v, PLAUSIBLE.hp));
   if (hpVals.length) {
     const val = range(hpVals);
     faqs.push(isEn
@@ -55,7 +60,7 @@ export function buildFaqs(props: Props): FaqItem[] {
   }
 
   // ── 0–100 ────────────────────────────────────────────────────────────────────
-  const accVals = trimSpecs.map(t => t.acceleration).filter((v): v is number => v != null);
+  const accVals = cur.map(t => t.acceleration).filter((v): v is number => within(v, PLAUSIBLE.accel));
   if (accVals.length) {
     const val = range(accVals, 1);
     faqs.push(isEn
@@ -65,8 +70,9 @@ export function buildFaqs(props: Props): FaqItem[] {
   }
 
   // ── Fuel / Energy ────────────────────────────────────────────────────────────
-  const electricTrims = trimSpecs.filter(t => t.engineType === 'electric' && t.fuelConsumption != null && t.fuelConsumption > 0);
-  const fuelTrims = trimSpecs.filter(t => t.engineType !== 'electric' && t.fuelConsumption != null && t.fuelConsumption! >= 3.0);
+  // Electric: kWh/100km. Fuel: L/100km (plug-in hybrids excluded - their official figure is mostly electric driving).
+  const electricTrims = cur.filter(t => t.engineType === 'electric' && within(t.fuelConsumption, PLAUSIBLE.electricKwh));
+  const fuelTrims = cur.filter(t => t.engineType !== 'electric' && String(t.engineType ?? '') !== 'phev' && within(t.fuelConsumption, PLAUSIBLE.fuelL100));
   if (electricTrims.length) {
     const vals = electricTrims.map(t => t.fuelConsumption!);
     const val = range(vals, 1);
@@ -86,7 +92,7 @@ export function buildFaqs(props: Props): FaqItem[] {
   }
 
   // ── Cargo ────────────────────────────────────────────────────────────────────
-  const cargoVals = trimSpecs.map(t => t.cargoLiters).filter((v): v is number => v != null);
+  const cargoVals = cur.map(t => t.cargoLiters).filter((v): v is number => within(v, PLAUSIBLE.cargoLiters));
   if (cargoVals.length) {
     const val = range(cargoVals);
     faqs.push(isEn
@@ -96,7 +102,7 @@ export function buildFaqs(props: Props): FaqItem[] {
   }
 
   // ── Price (Israeli shekel pricing - Hebrew site only) ─────────────────────────
-  const priceVals = trimSpecs.map(t => t.priceIls).filter((v): v is number => v != null && v >= 50000);
+  const priceVals = cur.map(t => t.priceIls).filter((v): v is number => v != null && v >= 50000);
   if (priceVals.length && !isEn) {
     const mn = Math.min(...priceVals);
     const mx = Math.max(...priceVals);
@@ -126,8 +132,8 @@ export function buildFaqs(props: Props): FaqItem[] {
   }
 
   // ── Common problems ──────────────────────────────────────────────────────────
-  const cons = isEn ? expertReview?.consEn : expertReview?.cons;
-  if (cons && cons.length >= 2) {
+  const cons = realItems(isEn ? expertReview?.consEn : expertReview?.cons); // drop "no data found" filler
+  if (cons.length >= 2) {
     const top = cons.slice(0, 3).join(isEn ? '; ' : '; ');
     const hasOwnerReviews = reviewCount > 0;
     faqs.push(isEn

@@ -7,6 +7,7 @@ import { getExpertReviews } from '@/lib/expertReviews';
 import { findCarModel } from '@/lib/sketchfab';
 import { getTrimSpecs } from '@/lib/trimSpecsDb';
 import { getRecallsFromCache } from '@/lib/recallsDb';
+import { realItems } from '@/lib/faqData';
 import type { TrimSpecWithYear } from '@/lib/trimSpecsDb';
 import { normEngine } from '@/lib/specSummary';
 import { getHostLocale, getBaseUrl } from '@/lib/hostLocale';
@@ -366,19 +367,22 @@ export default async function ComparePage({ params }: Props) {
     return { sentence, faq: { q, a } };
   })() : null;
 
-  // Common problems: recall counts (only when both models have NHTSA records - a zero may just
-  // mean the model isn't sold in the US) plus the top expert-review cons for each model.
+  // Common problems: only real cons (placeholder "no data found" strings dropped). Recall
+  // counts are added as supporting detail only when both models have NHTSA records (a zero
+  // may just mean the model isn't sold in the US). No real cons on either side -> no question.
   const problemsFaq: { q: string; a: string } | null = (() => {
+    const realConsA = realItems(consA);
+    const realConsB = realItems(consB);
+    if (realConsA.length === 0 && realConsB.length === 0) return null;
+    const top = (items: string[]) => items.slice(0, 2).map(c => c.replace(/[.\s]+$/, '')).join('; ');
     const parts: string[] = [];
+    if (realConsA.length > 0) parts.push(isEn ? `Common complaints about the ${nameA}: ${top(realConsA)}.` : `תלונות נפוצות על ${nameA}: ${top(realConsA)}.`);
+    if (realConsB.length > 0) parts.push(isEn ? `Common complaints about the ${nameB}: ${top(realConsB)}.` : `תלונות נפוצות על ${nameB}: ${top(realConsB)}.`);
     if (recallsA.length > 0 && recallsB.length > 0) {
       parts.push(isEn
         ? `The US recall database (NHTSA) lists ${recallsA.length} recalls for the ${nameA} and ${recallsB.length} for the ${nameB}.`
         : `במאגר הריקולים האמריקאי (NHTSA) רשומים ${recallsA.length} ריקולים ל${nameA} ו-${recallsB.length} ל${nameB}.`);
     }
-    const top = (items: string[]) => items.slice(0, 2).map(c => c.replace(/[.\s]+$/, '')).join(isEn ? '; ' : '; ');
-    if (consA.length > 0) parts.push(isEn ? `Common complaints about the ${nameA}: ${top(consA)}.` : `תלונות נפוצות על ${nameA}: ${top(consA)}.`);
-    if (consB.length > 0) parts.push(isEn ? `Common complaints about the ${nameB}: ${top(consB)}.` : `תלונות נפוצות על ${nameB}: ${top(consB)}.`);
-    if (parts.length === 0) return null;
     return {
       q: isEn ? `What are the common problems with the ${nameA} and the ${nameB}?` : `מה הבעיות הנפוצות של ${nameA} ושל ${nameB}?`,
       a: parts.join(' '),
@@ -937,42 +941,11 @@ export default async function ComparePage({ params }: Props) {
           const base = getBaseUrl(locale);
           const pageUrl = `${base}/cars/compare/${make1}/${model1}/${make2}/${model2}`;
 
-          // Same pattern as the model page: emit Product+AggregateRating only when we have
-          // real owner reviews. The AI expert score is NOT marked up as a Review - Google's
-          // review-snippet policy disallows self-authored/AI ratings.
-          // Owner reviews submitted on our site only - never site/AI-authored entries.
-          const ownerStats = (list: typeof reviewsA): [number | null, number] => {
-            const owners = list.filter(r => !/carissues/i.test(r.authorName ?? ''));
-            return owners.length
-              ? [owners.reduce((sum, r) => sum + r.rating, 0) / owners.length, owners.length]
-              : [null, 0];
-          };
-          const productFor = (
-            name: string, makeEn: string, url: string,
-            avg: number | null, reviewCount: number,
-          ) => {
-            if (avg === null || reviewCount === 0) return [];
-            return [{
-              '@type': 'Product',
-              name,
-              brand: { '@type': 'Brand', name: makeEn },
-              url,
-              aggregateRating: {
-                '@type': 'AggregateRating',
-                ratingValue: avg.toFixed(1),
-                ratingCount: reviewCount,
-                reviewCount,
-                bestRating: 5,
-                worstRating: 1,
-              },
-            }];
-          };
-
+          // No Product / aggregateRating here: owner ratings are marked up only on each
+          // model's own page, not repeated on comparison pages.
           return {
             '@context': 'https://schema.org',
             '@graph': [
-              ...productFor(nameA, mA.nameEn, `${base}/cars/${make1}/${model1}`, ...ownerStats(reviewsA)),
-              ...productFor(nameB, mB.nameEn, `${base}/cars/${make2}/${model2}`, ...ownerStats(reviewsB)),
               {
                 '@type': 'WebPage',
                 name: `${nameA} ${sp.vsWord} ${nameB}`,
