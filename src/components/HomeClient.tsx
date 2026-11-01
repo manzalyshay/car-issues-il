@@ -248,8 +248,9 @@ export default function HomeClient({ allMakes, topRanked, recentReviews, tickerI
 
             {/* Search pill */}
             <div ref={searchWrapRef} style={{ position: 'relative', marginTop: 20 }}>
-              <div style={{ display: 'flex', gap: 10, alignItems: 'center', background: '#fff', borderRadius: 16, padding: 8, boxShadow: '0 24px 60px -24px rgba(4,14,32,.7)' }}>
+              <div className="focus-box" style={{ display: 'flex', gap: 10, alignItems: 'center', background: '#fff', borderRadius: 16, padding: 8, boxShadow: '0 24px 60px -24px rgba(4,14,32,.7)' }}>
                 <input
+                  className="input-in-box"
                   type="text"
                   aria-label={isHe ? 'חיפוש לפי מספר רישוי או שם דגם' : 'Search by car model'}
                   value={searchQ}

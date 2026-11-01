@@ -721,3 +721,7 @@ button { font-family: inherit; cursor: pointer; }
   outline-offset: 2px !important;
   border-color: var(--accent, #17408f) !important;
 }
+/* Inputs that sit inside a styled box (home search pill, licence-plate field): the box shows
+   focus instead of a square outline drawn inside it. */
+.input-in-box:focus, .input-in-box:focus-visible { outline: none !important; }
+.focus-box:focus-within { box-shadow: 0 0 0 3px rgba(96,165,250,.55) !important; }

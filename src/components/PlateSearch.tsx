@@ -169,7 +169,7 @@ export default function PlateSearch({ isHe, navigateOnSearch, initialVehicle, in
       `}</style>
       {/* Input */}
       <form onSubmit={search} className="plate-form">
-        <div style={{
+        <div className="focus-box" style={{
           flex: 1, display: 'flex', alignItems: 'center',
           height: 54, borderRadius: 12,
           background: detectedCountry === 'uk' ? '#fff' : '#fefce8',
@@ -209,6 +209,7 @@ export default function PlateSearch({ isHe, navigateOnSearch, initialVehicle, in
           )}
           <input
             ref={inputRef}
+            className="input-in-box"
             value={plate}
             onChange={e => setPlate(e.target.value.toUpperCase())}
             placeholder={t.placeholder}
