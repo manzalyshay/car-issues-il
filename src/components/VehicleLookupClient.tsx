@@ -726,7 +726,7 @@ export default function VehicleLookupClient({ initialPlate, initialVehicle, init
         .vl-col-main, .vl-col-rail { display: flex; flex-direction: column; }
         @media (max-width: 960px) {
           /* !important: the container's inline alignItems:flex-start otherwise shrinks cards to content width */
-          .vl-body-cols { flex-direction: column !important; align-items: stretch !important; gap: 16px !important; }
+          .vl-body-cols { flex-direction: column !important; flex-wrap: nowrap !important; align-items: stretch !important; gap: 16px !important; }
           .vl-col-main, .vl-col-rail { display: contents; }
           /* Buyer facts first: registry, mileage and ownership history; then model context */
           .vl-o4 { order: 1; } .vl-o1 { order: 2; } .vl-o2 { order: 3; }
