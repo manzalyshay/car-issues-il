@@ -13,7 +13,8 @@ interface CarData {
   makeHe: string; modelHe: string; makeEn: string; modelEn: string;
   makeSlug: string; modelSlug: string;
   avgRating: number | null; reviewCount: number;
-  score: number | null; localSummary: string | null; globalSummary: string | null;
+  score: number | null; scoreConfidence: 'high' | 'medium' | 'low' | null;
+  localSummary: string | null; globalSummary: string | null;
   pros: string[]; cons: string[];
   modelUid: string | null;
 }
@@ -81,13 +82,20 @@ function CarSelector({ value, onChange, options, label }: {
   );
 }
 
-function ScoreBar({ label, value, max = 10 }: { label: string; value: number | null; max?: number }) {
+function ScoreBar({ label, value, max = 10, estimatedLabel }: { label: string; value: number | null; max?: number; estimatedLabel?: string }) {
   const pct = value != null ? (value / max) * 100 : 0;
-  const color = value == null ? 'var(--border)' : value >= 7 ? '#16a34a' : value >= 5 ? '#ca8a04' : '#dc2626';
+  const color = value == null ? 'var(--border)' : pct >= 70 ? '#16a34a' : pct >= 50 ? '#ca8a04' : '#dc2626';
   return (
     <div style={{ marginBottom: 8 }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
-        <span style={{ fontSize: '0.8125rem', color: 'var(--text-muted)' }}>{label}</span>
+        <span style={{ fontSize: '0.8125rem', color: 'var(--text-muted)' }}>
+          {label}
+          {estimatedLabel && (
+            <span style={{ fontSize: '0.7rem', fontWeight: 700, color: '#92620a', background: '#fef3cd', padding: '1px 6px', borderRadius: 999, marginInlineStart: 6 }}>
+              {estimatedLabel}
+            </span>
+          )}
+        </span>
         <span style={{ fontSize: '0.8125rem', fontWeight: 700, color }}>{value != null ? value.toFixed(1) : '-'}</span>
       </div>
       <div style={{ height: 6, background: 'var(--bg-muted)', borderRadius: 999 }}>
@@ -121,7 +129,7 @@ function ComparePageInner({ showHeader = true }: { showHeader?: boolean }) {
       return;
     }
 
-    fetch('/api/cars')
+    fetch(`/api/cars?locale=${locale}`)
       .then(r => r.json())
       .then((makes: CarMake[]) => {
         const opts: CarOption[] = makes.flatMap(m =>
@@ -135,23 +143,32 @@ function ComparePageInner({ showHeader = true }: { showHeader?: boolean }) {
           if (opt) setCar1(opt);
         }
       });
-  }, [searchParams, router]);
+  }, [searchParams, router, locale]);
 
   const loadCar = useCallback(async (opt: CarOption, setData: (d: CarData | null) => void, setLoading: (b: boolean) => void) => {
     setLoading(true);
     setData(null);
     try {
-      const [reviewsRes, expertRes, modelRes] = await Promise.all([
+      const [reviewsRes, expertRes, modelRes, aiScoreRes] = await Promise.all([
         fetch(`/api/reviews?makeSlug=${opt.makeSlug}&modelSlug=${opt.modelSlug}`),
         fetch(`/api/expert-reviews?make=${opt.makeSlug}&model=${opt.modelSlug}`),
         fetch(`/api/car-3d?make=${opt.makeSlug}&model=${opt.modelSlug}`),
+        fetch(`/api/ai-score?make=${opt.makeSlug}&model=${opt.modelSlug}`),
       ]);
       const reviews = reviewsRes.ok ? await reviewsRes.json() : { reviews: [] };
       const expert  = expertRes.ok  ? await expertRes.json()  : [];
       const model3d = modelRes.ok   ? await modelRes.json()   : null;
+      const aiScore: { score: number; confidence: 'high' | 'medium' | 'low' } | null = aiScoreRes.ok ? await aiScoreRes.json() : null;
       const rev: any[] = reviews.reviews ?? [];
       const exp: any   = Array.isArray(expert) ? expert[0] ?? null : expert.reviews?.[0] ?? null;
       const avgRating  = rev.length ? rev.reduce((s: number, r: any) => s + r.rating, 0) / rev.length : null;
+      // Blend in the owner rating once there are 3+ reviews (same formula as the model/compare pages).
+      const blendedScore = (() => {
+        if (aiScore == null) return null;
+        if (rev.length < 3 || avgRating == null) return aiScore.score;
+        const w = Math.min(0.4, (rev.length - 2) * 0.1);
+        return aiScore.score * (1 - w) + (avgRating * 2) * w;
+      })();
 
       let localSummary:  string | null = exp?.localSummaryHe  ?? null;
       let globalSummary: string | null = exp?.globalSummaryHe ?? null;
@@ -171,7 +188,8 @@ function ComparePageInner({ showHeader = true }: { showHeader?: boolean }) {
         makeHe: opt.makeHe, modelHe: opt.modelHe, makeEn: opt.makeEn, modelEn: opt.modelEn,
         makeSlug: opt.makeSlug, modelSlug: opt.modelSlug,
         avgRating, reviewCount: rev.length,
-        score: exp?.topScore ?? null,
+        score: blendedScore,
+        scoreConfidence: aiScore?.confidence ?? null,
         localSummary, globalSummary, pros, cons,
         modelUid: model3d?.uid ?? null,
       });
@@ -250,7 +268,7 @@ function ComparePageInner({ showHeader = true }: { showHeader?: boolean }) {
                       {carName(data1)}
                     </Link>
                   </div>
-                  <ScoreBar label={cmp.aiScore} value={data1.score} />
+                  <ScoreBar label={cmp.aiScore} value={data1.score} estimatedLabel={data1.scoreConfidence === 'low' ? (locale === 'en' ? 'Estimated score' : 'ציון משוער') : undefined} />
                   <ScoreBar label={cmp.userRating} value={data1.avgRating ? data1.avgRating * 2 : null} />
                   <div style={{ fontSize: '0.8125rem', color: 'var(--text-muted)', marginTop: 8 }}>{data1.reviewCount} {cmp.reviews}</div>
                 </div>
@@ -265,10 +283,15 @@ function ComparePageInner({ showHeader = true }: { showHeader?: boolean }) {
                       {carName(data2)}
                     </Link>
                   </div>
-                  <ScoreBar label={cmp.aiScore} value={data2.score} />
+                  <ScoreBar label={cmp.aiScore} value={data2.score} estimatedLabel={data2.scoreConfidence === 'low' ? (locale === 'en' ? 'Estimated score' : 'ציון משוער') : undefined} />
                   <ScoreBar label={cmp.userRating} value={data2.avgRating ? data2.avgRating * 2 : null} />
                   <div style={{ fontSize: '0.8125rem', color: 'var(--text-muted)', marginTop: 8 }}>{data2.reviewCount} {cmp.reviews}</div>
                 </div>
+              </div>
+              <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: 16, lineHeight: 1.5 }}>
+                {locale === 'en'
+                  ? "The score reflects the model's reputation: reliability, common issues, recalls and owner reviews"
+                  : 'הציון מבוסס על המוניטין של הדגם: אמינות, בעיות נפוצות, ריקולים וחוות דעת בעלים'}
               </div>
             </div>
 

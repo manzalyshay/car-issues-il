@@ -17,14 +17,15 @@ async function generateComparison(
 כלול:
 - לאיזה קהל מתאים כל רכב
 - בידול מרכזי בין שני הרכבים
-- המלצה כללית — לאיזה נהג כל רכב מתאים יותר
+- המלצה כללית - לאיזה נהג כל רכב מתאים יותר
 
-2-3 פסקאות בלבד. טון מקצועי אך נגיש. אל תשתמש בכותרות.`
+2-3 פסקאות בלבד. טון מקצועי אך נגיש. אל תשתמש בכותרות.
+דקדוק: לפני שם מותג לועזי (כגון BYD, Mitsubishi) אין לכתוב את אות היחס "מ" עם רווח (כמו "מ BYD") - יש לכתוב "מ-" עם מקף (למשל "מ-BYD") או לנסח מחדש עם "לעומת"/"בהשוואה ל-".`
     : `Write a concise comparison in English between the ${nameA_en} and the ${nameB_en}.
 Include:
 - Who each car is best suited for
 - Key differentiators between the two
-- Overall recommendation — which type of driver each suits best
+- Overall recommendation - which type of driver each suits best
 
 2-3 paragraphs only. Professional but accessible tone. No headings.`;
 

@@ -1,6 +1,5 @@
 import { NextResponse } from 'next/server';
 
-
 export interface NHTSAComplaint {
   odiNumber: number;
   crash: boolean;

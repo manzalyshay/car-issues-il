@@ -44,7 +44,7 @@ export async function POST(req: NextRequest) {
       from: 'CarIssues IL <contact@carissues.co.il>',
       to: ['contact@carissues.co.il'],
       replyTo: body.email,
-      subject: `[פנייה חדשה] ${subjectLabel} — ${body.name}`,
+      subject: `[פנייה חדשה] ${subjectLabel} - ${body.name}`,
       html: `
         <div dir="rtl" style="font-family: sans-serif; max-width: 600px; margin: 0 auto;">
           <h2 style="color: #e63946;">פנייה חדשה מ-CarIssues IL</h2>
@@ -62,7 +62,7 @@ export async function POST(req: NextRequest) {
       console.error('[contact] resend error:', JSON.stringify(emailErr));
     }
   } else {
-    console.warn('[contact] RESEND_API_KEY not set — email not sent');
+    console.warn('[contact] RESEND_API_KEY not set - email not sent');
   }
 
   return NextResponse.json({ ok: true });

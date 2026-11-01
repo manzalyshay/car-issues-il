@@ -2,7 +2,7 @@
  * Cloudflare Workers AI helper.
  * Proven pattern (see src/app/api/admin/fill-perf-data/route.ts,
  * src/app/api/price-seller-type/route.ts): getCloudflareContext -> env.AI.run(...).
- * Requires no API key — covered by the Workers Paid plan.
+ * Requires no API key - covered by the Workers Paid plan.
  */
 import { getCloudflareContext } from '@opennextjs/cloudflare';
 

@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { notFound, permanentRedirect } from 'next/navigation';
 import { getHostLocale, getBaseUrl } from '@/lib/hostLocale';
 import { getNewsArticleBySegment } from '@/lib/carNews';
+import { sizedImageUrl } from '@/lib/imageSizing';
 import { newsPath, newsSegment } from '@/lib/newsSlug';
 import NewsAdminActions from '@/components/NewsAdminActions';
 import NewsImage from '@/components/NewsImage';
@@ -37,6 +38,10 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const isHe = locale === 'he';
   const title = (isHe ? (article.title_he ?? article.title_en) : (article.title_en ?? article.title_he))?.replace(/[—–]/g, '-');
   const desc  = isHe ? (article.body_he ?? article.body_en) : (article.body_en ?? article.body_he);
+  // Only licensed (non-outlet-hotlinked) images get used as og:image - never the raw motor1/hearst feed photo.
+  const licensedImage = (article.image_url && !article.image_url.includes('motor1.com') && !article.image_url.includes('hearstapps.com'))
+    ? sizedImageUrl(article.image_url, 1200)
+    : null;
   return {
     title,
     description: desc?.slice(0, 160) ?? '',
@@ -44,7 +49,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     openGraph: {
       title: title ?? '',
       description: desc?.slice(0, 160) ?? '',
-      images: article.image_url ? [{ url: article.image_url, width: 1200, height: 630 }] : [],
+      images: [{ url: licensedImage ?? '/og-default.png', width: 1200, height: 630 }],
       type: 'article',
     },
   };
@@ -63,7 +68,7 @@ export default async function NewsArticlePage({ params }: Props) {
   const rawBody = isHe ? (article.body_he ?? article.body_en) : (article.body_en ?? article.body_he);
   const body = rawBody?.replace(/אחד מה-SUV החשמליים החזקים שהושקו אי פעם/g, 'מבין רכבי ה-SUV החשמליים החזקים שהוצגו השנה').replace(/[—–]/g, '-') ?? null;
   const sourceName = SOURCE_LABELS[article.source] ?? article.source;
-  const imageUrl = isUsableNewsImage(article.image_url) ? article.image_url : null;
+  const imageUrl = isUsableNewsImage(article.image_url) ? sizedImageUrl(article.image_url, 960) : null;
   const isUsCitiesStudy = article.id.startsWith('b70e9563ca');
 
   const base = getBaseUrl(locale);

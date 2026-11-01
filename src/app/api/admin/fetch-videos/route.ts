@@ -9,7 +9,7 @@ export async function POST(req: NextRequest) {
   const body = await req.json().catch(() => ({}));
   const { makeSlug, modelSlug, makeEn, modelEn, makeHe, modelHe, all, year } = body;
 
-  // Fetch for all cars (bulk, slow — runs in background)
+  // Fetch for all cars (bulk, slow - runs in background)
   if (all) {
     const makes = await getAllMakes();
     let totalInserted = 0;

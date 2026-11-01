@@ -3,7 +3,7 @@ import { randomUUID as _uuid } from 'crypto';
  * User Review Aggregator
  *
  * Pulls REAL USER reviews from Reddit and Israeli car forums (not corporate articles).
- * Uses Google Gemini (free tier) to write an original Hebrew summary — never copies text.
+ * Uses Google Gemini (free tier) to write an original Hebrew summary - never copies text.
  * Every summary links back to the original source thread.
  *
  * Sources:
@@ -93,14 +93,14 @@ export interface UserPost {
   title: string;
   url: string;
   sourceName: string;
-  snippet: string;     // First ~300 chars only — never full post
+  snippet: string;     // First ~300 chars only - never full post
   score?: number;      // Upvotes / relevance
   reviewYear?: number; // Year the review/complaint was written
 }
 
 
 
-// ── Tapuz.co.il — XenForo cars forum (node 451, forum "מכוניות") ──────────────
+// ── Tapuz.co.il - XenForo cars forum (node 451, forum "מכוניות") ──────────────
 // Strategy:
 //   1. POST XenForo search with CSRF (requires fresh session token)
 //   2. Fallback: scan RSS feed and filter by title keyword
@@ -183,7 +183,7 @@ async function searchTapuz(makeHe: string, modelHe: string, year?: number): Prom
     }
   } catch { /* fall through to RSS */ }
 
-  // ── Step 2: RSS fallback — scan recent threads, filter by keyword ────────────
+  // ── Step 2: RSS fallback - scan recent threads, filter by keyword ────────────
   if (threadUrls.length === 0) {
     try {
       const rssRes = await fetch('https://www.tapuz.co.il/forums/%D7%9E%D7%9B%D7%95%D7%A0%D7%99%D7%95%D7%AA.451/index.rss', {
@@ -227,7 +227,7 @@ async function searchTapuz(makeHe: string, modelHe: string, year?: number): Prom
   return posts;
 }
 
-// ── drive.co.il (Israeli car magazine — test drives & reviews) ────────────────
+// ── drive.co.il (Israeli car magazine - test drives & reviews) ────────────────
 async function searchDrive(makeHe: string, modelHe: string, year?: number): Promise<UserPost[]> {
   const posts: UserPost[] = [];
   try {
@@ -305,7 +305,7 @@ async function searchFacebook(makeHe: string, modelHe: string, year?: number): P
         });
         if (!res.ok) return null;
         const html = await res.text();
-        // Extract og:description — contains the post body (first ~200 chars)
+        // Extract og:description - contains the post body (first ~200 chars)
         const descM = html.match(/<meta[^>]+property="og:description"[^>]+content="([^"]{30,500})"/i)
           ?? html.match(/<meta[^>]+content="([^"]{30,500})"[^>]+property="og:description"/i);
         const titleM = html.match(/<meta[^>]+property="og:title"[^>]+content="([^"]{5,200})"/i)
@@ -334,7 +334,7 @@ async function searchFacebook(makeHe: string, modelHe: string, year?: number): P
 
 
 
-// ── icar.co.il (Ynet car reviews — has search + real review text) ─────────────
+// ── icar.co.il (Ynet car reviews - has search + real review text) ─────────────
 async function searchIcar(makeHe: string, modelHe: string, year?: number): Promise<UserPost[]> {
   const posts: UserPost[] = [];
   try {
@@ -369,7 +369,7 @@ async function searchIcar(makeHe: string, modelHe: string, year?: number): Promi
   return posts;
 }
 
-// ── carzone.co.il (Israeli car site — real driver reviews) ────────────────────
+// ── carzone.co.il (Israeli car site - real driver reviews) ────────────────────
 // URL format: /Make/Model/ or /Make/Model/Year/ (capital first letter, English)
 async function searchCarzone(makeHe: string, modelHe: string, makeEn: string, modelEn: string, year?: number): Promise<UserPost[]> {
   void makeHe; void modelHe; // Hebrew names not used for URL construction
@@ -424,7 +424,7 @@ async function searchCarzone(makeHe: string, modelHe: string, makeEn: string, mo
   return posts;
 }
 
-// ── CarComplaints.com (US car problems database — great for issues site) ──────
+// ── CarComplaints.com (US car problems database - great for issues site) ──────
 // Overview page has complaint links → fetch individual pages for actual text
 async function searchCarComplaints(makeEn: string, modelEn: string): Promise<UserPost[]> {
   const posts: UserPost[] = [];
@@ -513,7 +513,7 @@ async function fetchEdmundsPage(url: string, makeEn: string, modelEn: string, po
       const body = bodies[i];
       if (body.length < 40) continue;
       const author = authors[i] ?? `Reviewer ${i + 1}`;
-      const title  = titles[i]  ?? `${makeEn} ${modelEn} — ${author}`;
+      const title  = titles[i]  ?? `${makeEn} ${modelEn} - ${author}`;
       const yearMatch = (dates[i] ?? '').match(/\b(20\d{2})\b/);
       const reviewYear = yearMatch ? parseInt(yearMatch[1]) : undefined;
       posts.push({ title, url, sourceName: 'Edmunds Consumer Reviews', snippet: body.slice(0, 500), reviewYear });
@@ -538,12 +538,12 @@ async function searchEdmunds(makeEn: string, modelEn: string, year?: number): Pr
   return posts.filter(p => { const k = p.snippet.slice(0, 80); if (seen.has(k)) return false; seen.add(k); return true; }).slice(0, 15);
 }
 
-// ── NHTSA complaints API (US gov — free, no key, no blocking) ─────────────────
+// ── NHTSA complaints API (US gov - free, no key, no blocking) ─────────────────
 // https://api.nhtsa.gov/complaints/complaintsByVehicle?make=honda&model=hr-v&modelYear=2026
 async function searchNHTSA(makeEn: string, modelEn: string, year?: number): Promise<UserPost[]> {
   const posts: UserPost[] = [];
   const make  = encodeURIComponent(makeEn);
-  // NHTSA uses various model name formats — try with and without hyphens/spaces
+  // NHTSA uses various model name formats - try with and without hyphens/spaces
   const modelVariants = [...new Set([
     modelEn,
     modelEn.replace(/-/g, ' '),
@@ -700,9 +700,9 @@ async function searchWhatCar(makeEn: string, modelEn: string): Promise<UserPost[
   return posts;
 }
 
-// ── KBB.com consumer reviews (__NEXT_DATA__ JSON — no bot block, clean structure) ─
+// ── KBB.com consumer reviews (__NEXT_DATA__ JSON - no bot block, clean structure) ─
 // URL: kbb.com/{make}/{model}/{year}/consumer-reviews/
-// Full review objects are in __NEXT_DATA__ — no JS rendering needed.
+// Full review objects are in __NEXT_DATA__ - no JS rendering needed.
 async function searchKbb(makeEn: string, modelEn: string, year?: number): Promise<UserPost[]> {
   const posts: UserPost[] = [];
   try {
@@ -728,7 +728,7 @@ async function searchKbb(makeEn: string, modelEn: string, year?: number): Promis
         if (!ndMatch) continue;
         const nd = JSON.parse(ndMatch[1]) as any;
 
-        // Reviews live at various nested paths — walk to find the reviews array
+        // Reviews live at various nested paths - walk to find the reviews array
         const findReviews = (obj: any, depth = 0): any[] => {
           if (depth > 8 || !obj || typeof obj !== 'object') return [];
           if (Array.isArray(obj)) {
@@ -767,9 +767,9 @@ async function searchKbb(makeEn: string, modelEn: string, year?: number): Promis
   return posts;
 }
 
-// ── ZigWheels (Asian market owner reviews — JSON-LD, no blocking) ─────────────
+// ── ZigWheels (Asian market owner reviews - JSON-LD, no blocking) ─────────────
 // List page links to individual review pages; each individual page embeds all
-// recent reviews in JSON-LD itemReviewed.review[] — so we only need one fetch.
+// recent reviews in JSON-LD itemReviewed.review[] - so we only need one fetch.
 async function searchZigWheels(makeEn: string, modelEn: string): Promise<UserPost[]> {
   const posts: UserPost[] = [];
   try {
@@ -789,7 +789,7 @@ async function searchZigWheels(makeEn: string, modelEn: string): Promise<UserPos
     while ((m = linkRe.exec(listHtml)) !== null && reviewUrls.length < 1) reviewUrls.push(m[1]);
     if (reviewUrls.length === 0) return posts;
 
-    // Step 2: fetch first review page — its JSON-LD has itemReviewed.review[] with all recent reviews
+    // Step 2: fetch first review page - its JSON-LD has itemReviewed.review[] with all recent reviews
     const revRes = await fetch(reviewUrls[0], { headers, signal: AbortSignal.timeout(10000) });
     if (!revRes.ok) return posts;
     const revHtml = await revRes.text();
@@ -809,7 +809,7 @@ async function searchZigWheels(makeEn: string, modelEn: string): Promise<UserPos
           // Give each review a unique URL using its title slug
           const slug   = title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
           posts.push({
-            title:      `${title} — ${author}${date}`,
+            title:      `${title} - ${author}${date}`,
             url:        `${listUrl}${slug}`,
             sourceName: 'ZigWheels Owner Reviews',
             snippet:    body.slice(0, 500),
@@ -868,14 +868,14 @@ async function searchCarSalesAu(makeEn: string, modelEn: string): Promise<UserPo
 }
 
 // ── "No real data" detection ──────────────────────────────────────────────────
-// Any of these phrases mean the LLM had nothing real to say — discard the output.
+// Any of these phrases mean the LLM had nothing real to say - discard the output.
 const NO_DATA_PHRASES = [
   'אין מספיק', 'לא הביעו דעות', 'לא ניתן להסיק', 'אין מידע',
   'לא נמצא', 'מידע מוגבל', 'מוגבל ולא', 'אין ביקורות',
   'לא נמצאו', 'לא קיים מידע', 'לא ניתן', 'אין תוצאות',
   'לא נאספו', 'לא ידוע', 'לא נסקר', 'אין די',
   'אזכור כללי', 'ללא פרטים ספציפיים', 'אין ביקורות ספציפיות',
-  // Off-topic / irrelevant-post indicators — scraper found unrelated content
+  // Off-topic / irrelevant-post indicators - scraper found unrelated content
   'לא קשורה לרכב', 'לא קשורים לרכב', 'לא מתייחסים לרכב', 'לא מתייחסים לחוויה',
   'סוטים לנושאים', 'נושאים אחרים', 'לא נוגעים לביקורת', 'לא נוגעים לרכב',
   'בצורה הומוריסטית', 'באופן הומוריסטי', 'לא רלוונטי לרכב',
@@ -894,7 +894,7 @@ const META_PHRASES = [
   'תוכן הסרטון', 'מצגת', 'מידע כללי', 'מידע נוסף זמין', 'ראה סרטון',
 ];
 
-// Wrong Hebrew word usage — "קליטה" (reception) used for AC, lights, etc.
+// Wrong Hebrew word usage - "קליטה" (reception) used for AC, lights, etc.
 // "קליטה טובה" means radio/cellular reception, not AC performance.
 const BAD_HEBREW_PHRASES = [
   'קליטה טובה של מזגן', 'קליטה של מזגן', 'קליטה טובה במזגן',
@@ -912,7 +912,7 @@ function filterListItems(items: string[]): string[] {
   });
 }
 
-// ── LLM caller — Mistral primary (60 RPM, free, no daily quota), Gemini fallback ──
+// ── LLM caller - Mistral primary (60 RPM, free, no daily quota), Gemini fallback ──
 interface SummarizeOutput {
   summary_he: string;
   score: number;   // 1–10
@@ -1050,7 +1050,7 @@ async function buildPerfContext(makeSlug: string, modelSlug: string): Promise<st
       let tag = '';
       if (seg?.accel) {
         const delta = (seg.accel - m.accel) / seg.accel;
-        tag = delta > 0.10 ? ' — מהיר מהממוצע בקטגוריה' : delta < -0.10 ? ' — איטי מהממוצע בקטגוריה' : ' — ממוצע לקטגוריה';
+        tag = delta > 0.10 ? ' - מהיר מהממוצע בקטגוריה' : delta < -0.10 ? ' - איטי מהממוצע בקטגוריה' : ' - ממוצע לקטגוריה';
       }
       parts.push(`האצה 0-100: ${m.accel.toFixed(1)}s${seg?.accel ? ` (ממוצע קטגוריה: ${seg.accel.toFixed(1)}s${tag})` : tag}`);
     }
@@ -1061,7 +1061,7 @@ async function buildPerfContext(makeSlug: string, modelSlug: string): Promise<st
       let tag = '';
       if (seg?.fuel) {
         const delta = (m.fuel - seg.fuel) / seg.fuel;
-        tag = delta < -0.10 ? ' — חסכוני מהממוצע' : delta > 0.10 ? ' — גבוה מהממוצע' : ' — ממוצע לקטגוריה';
+        tag = delta < -0.10 ? ' - חסכוני מהממוצע' : delta > 0.10 ? ' - גבוה מהממוצע' : ' - ממוצע לקטגוריה';
       }
       parts.push(`צריכת דלק: ${m.fuel.toFixed(1)} ל/100ק"מ${seg?.fuel ? ` (ממוצע: ${seg.fuel.toFixed(1)}${tag})` : tag}`);
     }
@@ -1090,11 +1090,11 @@ async function summarizeGroup(
     .join('\n\n');
 
   const scopeNote = scope === 'local'
-    ? 'הפוסטים הם מפורומים ישראליים — סכם מנקודת מבט של נהגים ישראלים.'
-    : 'הפוסטים הם מפורומים בינלאומיים (Reddit ואחרים) — סכם מנקודת מבט של בעלים בפועל.';
+    ? 'הפוסטים הם מפורומים ישראליים - סכם מנקודת מבט של נהגים ישראלים.'
+    : 'הפוסטים הם מפורומים בינלאומיים (Reddit ואחרים) - סכם מנקודת מבט של בעלים בפועל.';
 
   const perfNote = perfContext
-    ? `\n${perfContext}\nאם הביצועים רלוונטיים לפוסטים (מהירות, תאוצה, צריכת דלק) — אפשר להזכיר אותם בהקשר.\n`
+    ? `\n${perfContext}\nאם הביצועים רלוונטיים לפוסטים (מהירות, תאוצה, צריכת דלק) - אפשר להזכיר אותם בהקשר.\n`
     : '';
 
   const prompt = `אתה עוזר לאתר ביקורות רכב ישראלי. תפקידך לסכם מה בעלי הרכב אומרים.
@@ -1109,15 +1109,16 @@ ${postList}
 
 כללים:
 - כתוב בגוף שלישי: "בעלי הרכב מדווחים ש...", "נהגים מציינים...", "תלונה נפוצה היא..."
-- כתוב רק על מה שמוזכר בפוסטים — אל תמציא מידע
+- כתוב רק על מה שמוזכר בפוסטים - אל תמציא מידע
 - התמקד בחוויה יומיומית: תקלות, עלויות, נוחות, מה שאוהבים/שונאים
-- אל תכתוב תיאור כללי של הרכב — כתוב מה הנהגים אומרים
+- אל תכתוב תיאור כללי של הרכב - כתוב מה הנהגים אומרים
 - שפה ברורה: במקום "יושבת טוב" כתוב "הרכב יציב בפניות"
-- אל תשתמש ב"סלון" — השתמש בסדאן / האצ'בק / SUV
-- ציון: 1=גרוע מאוד, 5=ממוצע, 10=מעולה — לפי הרושם הכולל
-- יתרונות/חסרונות: רק מה שמוזכר — אם אין, החזר []
-- אם אין מספיק מידע — כתוב "אין מספיק ביקורות משתמשים כרגע" וציון 5
-- יתרונות וחסרונות חייבים להיות על הרכב עצמו — לא על הסרטון, לא על המקור, לא טיפי קנייה כלליים
+- אל תשתמש ב"סלון" - השתמש בסדאן / האצ'בק / SUV
+- דקדוק: לפני שם מותג לועזי יש לכתוב "מ-" עם מקף (למשל "מ-BYD"), לא "מ " עם רווח
+- ציון: 1=גרוע מאוד, 5=ממוצע, 10=מעולה - לפי הרושם הכולל
+- יתרונות/חסרונות: רק מה שמוזכר - אם אין, החזר []
+- אם אין מספיק מידע - כתוב "אין מספיק ביקורות משתמשים כרגע" וציון 5
+- יתרונות וחסרונות חייבים להיות על הרכב עצמו - לא על הסרטון, לא על המקור, לא טיפי קנייה כלליים
 - עברית תקינה בלבד: אסור להשתמש ב"קליטה" לגבי מזגן/תאורה/חלונות (קליטה = אנטנה/קליטת רדיו). למזגן: "מיזוג יעיל" / "קירור מהיר". לחלונות: "חלונות אטומים". לרדיו/ניווט: "קליטה טובה"
 
 החזר JSON בלבד (ללא \`\`\` ולא markdown):
@@ -1132,10 +1133,10 @@ const CURRENT_YEAR = new Date().getFullYear();
 
 /**
  * Returns next_scrape_at timestamp based on row type:
- * - AI-knowledge-only (no real posts): 7 days — replace with real scrape ASAP
- * - Year-specific, recent (≤3 years old): 14 days — active discussions
+ * - AI-knowledge-only (no real posts): 7 days - replace with real scrape ASAP
+ * - Year-specific, recent (≤3 years old): 14 days - active discussions
  * - General model review: 30 days
- * - Year-specific, older (4+ years): 90 days — discussions rarely change
+ * - Year-specific, older (4+ years): 90 days - discussions rarely change
  */
 function computeNextScrapeAt(year: number | null | undefined, isKnowledgeOnly: boolean): string {
   const now = new Date();
@@ -1154,22 +1155,30 @@ function computeNextScrapeAt(year: number | null | undefined, isKnowledgeOnly: b
 
 // ── Public API ────────────────────────────────────────────────────────────────
 
-/** Remove Israel/Israeli references from English-language content (global site). */
+/** Remove Israel/Israeli/shekel references from English-language content (global site). */
 function stripIsraelEn(text: string): string {
   return text
+    // Drop a whole parenthetical aside if it mentions NIS/shekels (e.g. "(starting
+    // price around 150,000 NIS)") - safer than trying to patch the number in place.
+    .replace(/\s*\([^)]*\b(?:NIS|shekels?)\b[^)]*\)/gi, '')
+    .replace(/[,;]?\s*(?:NIS|₪)\s*[\d,.]+/gi, '')
+    .replace(/[,;]?\s*[\d,.]+\s*(?:NIS|shekels?)\b/gi, '')
     .replace(/\bIsrael's\b/gi, 'the local')
     .replace(/\bIsraeli\b/gi, 'local')
     .replace(/\bin Israel\b/gi, 'locally')
     .replace(/\bIsrael\b/gi, '')
     .replace(/\s{2,}/g, ' ')
     .replace(/,\s*\./g, '.')
+    .replace(/\s+([.,!?])/g, '$1')
     .trim();
 }
 
 function normalizeVisiblePunctuation<T>(value: T, key = ''): T {
   if (typeof value === 'string') {
     if (key === 'sourceUrl' || key === 'url' || key === 'sourcesList') return value;
-    return value.replace(/\s*—\s*/g, ', ').replace(/–/g, '-') as T;
+    // Only normalize actual em/en dashes (site rule: no em dashes) - the ASCII
+    // hyphen "-" must survive untouched (plug-in, rear-wheel, four-door, etc.).
+    return value.replace(/\s*[—–]\s*/g, ', ') as T;
   }
   if (Array.isArray(value)) {
     return value.map(item => normalizeVisiblePunctuation(item)) as T;
@@ -1229,7 +1238,7 @@ function mapRow(r: any): ExpertReview {
 
 /**
  * General model summary (year = null). Auto-generates from LLM if DB is empty.
- * Cached per-request — generateMetadata and the page component both call this for
+ * Cached per-request - generateMetadata and the page component both call this for
  * the same model, so this avoids issuing the same D1 query twice per render.
  */
 export const getExpertReviews = cache(async (makeSlug: string, modelSlug: string): Promise<ExpertReview[]> => {
@@ -1240,14 +1249,14 @@ export const getExpertReviews = cache(async (makeSlug: string, modelSlug: string
     );
     if (data.length > 0) return data.map(mapRow);
 
-    // No DB row — return empty (admin scrape populates this)
+    // No DB row - return empty (admin scrape populates this)
     return [];
   } catch {
     return [];
   }
 });
 
-/** Year-specific summary — falls back to general if not found */
+/** Year-specific summary - falls back to general if not found */
 export async function getExpertReviewsForYear(
   makeSlug: string,
   modelSlug: string,
@@ -1264,7 +1273,7 @@ export async function getExpertReviewsForYear(
       return { review: mapRow(yearData[0]), isYearSpecific: true };
     }
 
-    // No DB row — fall back to general model summary
+    // No DB row - fall back to general model summary
     const generalData = await dbAll(
       'SELECT * FROM expert_reviews WHERE make_slug = ? AND model_slug = ? AND year IS NULL ORDER BY scraped_at DESC LIMIT 1',
       makeSlug, modelSlug,
@@ -1290,14 +1299,14 @@ async function generateKnowledgeSummary(
 ): Promise<SummarizeOutput | null> {
   const yearNote = year ? ` ${year}` : '';
   const yearInstr = year
-    ? `\nהתמקד על ${year} ספציפית — מה השתנה, תקלות ידועות לאותה שנה, מה בעלים אומרים על אותה גרסה.`
+    ? `\nהתמקד על ${year} ספציפית - מה השתנה, תקלות ידועות לאותה שנה, מה בעלים אומרים על אותה גרסה.`
     : '';
   const perfNote = perfContext
-    ? `\n${perfContext}\nאפשר להזכיר את הביצועים האלה בסיכום (האצה, מהירות, צריכת דלק) — לפי הרלוונטיות.\n`
+    ? `\n${perfContext}\nאפשר להזכיר את הביצועים האלה בסיכום (האצה, מהירות, צריכת דלק) - לפי הרלוונטיות.\n`
     : '';
   const techRule = perfContext
-    ? '- מותר להזכיר נתוני ביצועים שסופקו למעלה — אסור להמציא מספרים אחרים'
-    : '- אסור לציין גדלי מנוע, מספרים טכניים ספציפיים, או פרטים שאתה לא בטוח לגביהם — שמור על רמה כללית';
+    ? '- מותר להזכיר נתוני ביצועים שסופקו למעלה - אסור להמציא מספרים אחרים'
+    : '- אסור לציין גדלי מנוע, מספרים טכניים ספציפיים, או פרטים שאתה לא בטוח לגביהם - שמור על רמה כללית';
   const prompt = `אתה עוזר לאתר ביקורות רכב ישראלי. הצג את המידע מנקודת מבט של בעלי רכב בפועל.
 ${perfNote}
 כתוב 2-3 משפטים בעברית שמשקפים מה בעלי ${makeNameHe} ${modelNameHe}${yearNote} (${makeNameEn} ${modelNameEn}${year ? ` ${year}` : ''}) בדרך כלל מדווחים.${yearInstr}
@@ -1305,12 +1314,13 @@ ${perfNote}
 חוקים:
 - כתוב בגוף שלישי: "בעלי הרכב מדווחים ש...", "נהגים מציינים...", "תלונה נפוצה היא..."
 - התמקד בחוויית נהיגה יומיומית, תקלות שחוזרות, עלויות תחזוקה, מה אוהבים ומה לא
-- אל תכתוב תיאור כללי של הרכב (מנוע, גודל, עיצוב) — כתוב מה הנהגים אומרים
-- אל תשתמש במילה "סלון" — השתמש בסדאן/SUV/האצ'בק
+- אל תכתוב תיאור כללי של הרכב (מנוע, גודל, עיצוב) - כתוב מה הנהגים אומרים
+- אל תשתמש במילה "סלון" - השתמש בסדאן/SUV/האצ'בק
+- דקדוק: לפני שם מותג לועזי יש לכתוב "מ-" עם מקף (למשל "מ-BYD"), לא "מ " עם רווח
 ${techRule}
 - ציון: 9-10 רכב שבעלים ממליצים בחום, 7-8 שביעות רצון כללית, 5-6 מעורב, 3-4 תלונות רבות
-- יתרונות/חסרונות: רק מה שבעלים בפועל מציינים — תכונות ספציפיות של הרכב, לא כלליות
-- אסור לכתוב יתרון/חיסרון על סרטונים, טיפים לקנייה, מקורות מידע — רק על הרכב עצמו
+- יתרונות/חסרונות: רק מה שבעלים בפועל מציינים - תכונות ספציפיות של הרכב, לא כלליות
+- אסור לכתוב יתרון/חיסרון על סרטונים, טיפים לקנייה, מקורות מידע - רק על הרכב עצמו
 - עברית תקינה: אסור "קליטה טובה" עבור מזגן/תאורה. למזגן: "מיזוג יעיל" / "קירור מהיר". "קליטה" שמורה לאנטנה/GPS/רדיו
 
 החזר JSON בלבד:
@@ -1349,7 +1359,7 @@ async function saveKnowledgeReview(
   } catch { /* non-critical */ }
 }
 
-// ── Local knowledge-based summary (neutral framing — no country/location mentions in output) ──
+// ── Local knowledge-based summary (neutral framing - no country/location mentions in output) ──
 async function generateIsraeliKnowledgeSummary(
   makeNameHe: string,
   modelNameHe: string,
@@ -1360,24 +1370,25 @@ async function generateIsraeliKnowledgeSummary(
 ): Promise<SummarizeOutput | null> {
   const yearNote = year ? ` ${year}` : '';
   const yearInstr = year
-    ? `\nהתמקד על ${year} ספציפית — תקלות ידועות, מה שבעלים מציינים לאותה שנה.`
+    ? `\nהתמקד על ${year} ספציפית - תקלות ידועות, מה שבעלים מציינים לאותה שנה.`
     : '';
   const perfNote = perfContext
     ? `\n${perfContext}\nאפשר להזכיר את הביצועים בסיכום אם רלוונטיים.\n`
     : '';
   const techRule = perfContext
-    ? '- מותר להזכיר נתוני ביצועים שסופקו למעלה — אסור להמציא מספרים אחרים'
-    : '- אסור לציין גדלי מנוע או נתונים טכניים ספציפיים — שמור על רמה כללית';
+    ? '- מותר להזכיר נתוני ביצועים שסופקו למעלה - אסור להמציא מספרים אחרים'
+    : '- אסור לציין גדלי מנוע או נתונים טכניים ספציפיים - שמור על רמה כללית';
   const prompt = `אתה עוזר לאתר ביקורות רכב. כתוב סיכום מנקודת מבט של בעלי רכב בפועל.
 ${perfNote}
-כתוב 2-3 משפטים בעברית שמשקפים מה בעלי ${makeNameHe} ${modelNameHe}${yearNote} (${makeNameEn} ${modelNameEn}) בדרך כלל מדווחים — חוויית נהיגה יומיומית, אמינות, תחזוקה, שירות.${yearInstr}
+כתוב 2-3 משפטים בעברית שמשקפים מה בעלי ${makeNameHe} ${modelNameHe}${yearNote} (${makeNameEn} ${modelNameEn}) בדרך כלל מדווחים - חוויית נהיגה יומיומית, אמינות, תחזוקה, שירות.${yearInstr}
 
 חוקים:
 - כתוב בגוף שלישי: "בעלי הרכב מדווחים ש...", "נהגים מציינים...", "תלונה נפוצה היא..."
-- אסור לציין מדינה, עיר, מקום, או שוק ספציפי — הסיכום כללי לבעלי הרכב
+- אסור לציין מדינה, עיר, מקום, או שוק ספציפי - הסיכום כללי לבעלי הרכב
 - התמקד בחוויית נהיגה יומיומית ועירונית, תקלות שחוזרות, עלויות תחזוקה, מה אוהבים ומה לא
-- אל תכתוב תיאור כללי של הרכב (מנוע, גודל, עיצוב) — כתוב מה הנהגים אומרים
-- אל תשתמש במילה "סלון" — השתמש בסדאן/SUV/האצ'בק
+- אל תכתוב תיאור כללי של הרכב (מנוע, גודל, עיצוב) - כתוב מה הנהגים אומרים
+- אל תשתמש במילה "סלון" - השתמש בסדאן/SUV/האצ'בק
+- דקדוק: לפני שם מותג לועזי יש לכתוב "מ-" עם מקף (למשל "מ-BYD"), לא "מ " עם רווח
 ${techRule}
 - ציון: 9-10 ממליצים בחום, 7-8 שביעות רצון כללית, 5-6 מעורב, 3-4 תלונות רבות
 
@@ -1446,7 +1457,7 @@ async function searchMotor1(makeEn: string, modelEn: string): Promise<UserPost[]
   return posts;
 }
 
-// ── TopGear.com (BBC — expert road tests) ─────────────────────────────────────
+// ── TopGear.com (BBC - expert road tests) ─────────────────────────────────────
 async function searchTopGear(makeEn: string, modelEn: string): Promise<UserPost[]> {
   const posts: UserPost[] = [];
   try {
@@ -1490,7 +1501,7 @@ async function searchTopGear(makeEn: string, modelEn: string): Promise<UserPost[
   return posts;
 }
 
-// ── Autocar.co.uk (UK expert reviews — star ratings & verdicts) ───────────────
+// ── Autocar.co.uk (UK expert reviews - star ratings & verdicts) ───────────────
 async function searchAutocar(makeEn: string, modelEn: string): Promise<UserPost[]> {
   const posts: UserPost[] = [];
   try {
@@ -1534,7 +1545,7 @@ async function searchAutocar(makeEn: string, modelEn: string): Promise<UserPost[
   return posts;
 }
 
-// ── autocar.co.il (Israeli expert reviews — Hebrew) ───────────────────────────
+// ── autocar.co.il (Israeli expert reviews - Hebrew) ───────────────────────────
 async function searchAutocarIL(makeHe: string, modelHe: string, makeEn: string, modelEn: string): Promise<UserPost[]> {
   const posts: UserPost[] = [];
   try {
@@ -1732,7 +1743,7 @@ async function summarizePerSource(
   if (eligible.length === 0) return [];
 
   const snippets = eligible.map(([source, posts]) => {
-    const lines = posts.slice(0, 6).map((p, i) => `  ${i + 1}. "${p.title}"${p.snippet ? ` — ${p.snippet.slice(0, 200)}` : ''}`).join('\n');
+    const lines = posts.slice(0, 6).map((p, i) => `  ${i + 1}. "${p.title}"${p.snippet ? ` - ${p.snippet.slice(0, 200)}` : ''}`).join('\n');
     return `### ${source} (${posts.length} פוסטים)\n${lines}`;
   }).join('\n\n');
 
@@ -1743,11 +1754,11 @@ ${snippets}
 עבור כל מקור, כתוב משפט-שניים קצרים על מה הנהגים אומרים על הרכב עצמו. ציון 1-10.
 
 חוקים חשובים:
-- כתוב רק על תכונות הרכב — נהיגה, תחזוקה, אמינות, נוחות, עלויות
-- אל תזכיר את הסרטון, הביקורת, המקור, טיפי קנייה — רק מה שהנהגים חושבים על הרכב
+- כתוב רק על תכונות הרכב - נהיגה, תחזוקה, אמינות, נוחות, עלויות
+- אל תזכיר את הסרטון, הביקורת, המקור, טיפי קנייה - רק מה שהנהגים חושבים על הרכב
 - אל תמציא מידע שאינו בפוסטים
 
-החזר JSON בלבד — מערך של אובייקטים:
+החזר JSON בלבד - מערך של אובייקטים:
 [{"source":"שם המקור","summary":"...","score":7,"postCount":5}, ...]
 
 רק מקורות שיש להם מספיק מידע. אל תמציא.`;
@@ -1799,7 +1810,7 @@ async function generateKnowledgeSourcesBreakdown(
 - ZigWheels Owner Reviews (בינלאומי)
 
 לכל מקור: סיכום קצר בעברית, ציון 1-10.
-אם אין לך מידע ספציפי על מקור מסוים — דלג עליו.
+אם אין לך מידע ספציפי על מקור מסוים - דלג עליו.
 
 החזר JSON בלבד:
 [{"source":"שם המקור","summary":"...","score":7}, ...]`;

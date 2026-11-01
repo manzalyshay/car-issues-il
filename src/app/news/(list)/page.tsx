@@ -2,45 +2,55 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { getHostLocale, getBaseUrl } from '@/lib/hostLocale';
 import { getLatestNews, ensureNewsTable } from '@/lib/carNews';
-import { newsPath } from '@/lib/newsSlug';
-import NewsImage from '@/components/NewsImage';
+import NewsGrid from './NewsGrid';
 
 export const revalidate = 1800;
 
-export async function generateMetadata(): Promise<Metadata> {
+interface Props { searchParams: Promise<{ page?: string }> }
+
+export async function generateMetadata({ searchParams }: Props): Promise<Metadata> {
+  const { page: pageParam } = await searchParams;
+  const page = Math.max(1, parseInt(pageParam ?? '1', 10) || 1);
   const locale = await getHostLocale();
   const base = getBaseUrl(locale);
+  // Each page now shows a distinct, non-overlapping batch of articles, so it
+  // canonicalizes to itself rather than folding back into the base URL.
+  const canonical = page > 1 ? `${base}/news?page=${page}` : `${base}/news`;
+  const pageSuffix = page > 1 ? (locale === 'he' ? ` - עמוד ${page}` : ` - Page ${page}`) : '';
   return locale === 'he' ? {
-    title: 'חדשות רכב',
+    title: `חדשות רכב${pageSuffix}`,
     description: 'חדשות רכב עדכניות מהעולם - עיבוד ותרגום AI, מתעדכן יומית',
-    alternates: { canonical: `${base}/news` },
+    alternates: { canonical },
   } : {
-    title: 'Car News',
+    title: `Car News${pageSuffix}`,
     description: 'Latest car news from around the world - AI-rewritten daily',
-    alternates: { canonical: `${base}/news` },
+    alternates: { canonical },
   };
 }
 
-const SOURCE_LABELS: Record<string, string> = {
-  motor1: 'Motor1',
-  caranddriver: 'Car and Driver',
-  cartube: 'CarTube',
-};
-
-function timeAgo(iso: string | null, isHe: boolean): string {
-  if (!iso) return '';
-  const h = Math.floor((Date.now() - new Date(iso).getTime()) / 3600000);
-  if (h < 1) return isHe ? 'לפני פחות משעה' : 'less than an hour ago';
-  if (h < 24) return isHe ? `לפני ${h} שעות` : `${h}h ago`;
-  const d = Math.floor(h / 24);
-  return isHe ? `לפני ${d} ימים` : `${d}d ago`;
-}
-
-export default async function NewsPage() {
+export default async function NewsPage({ searchParams }: Props) {
+  const { page: pageParam } = await searchParams;
+  const page = Math.max(1, parseInt(pageParam ?? '1', 10) || 1);
   const locale = await getHostLocale();
   const isHe = locale === 'he';
   await ensureNewsTable().catch(() => {});
-  const news = await getLatestNews(40, 0, locale).catch(() => []);
+  const newsAll = await getLatestNews(300, 0, locale).catch(() => []);
+  // Articles with no usable photo are not shown at all (no text-only cards).
+  const newsRaw = newsAll.filter((n) => n.image_url && !n.image_url.includes('motor1.com') && !n.image_url.includes('hearstapps.com'));
+  // Client component props are serialized into the page HTML - strip the other
+  // locale's title/body so Hebrew text never leaks into the English site's source
+  // (and vice versa), even when it isn't actually rendered. On the English site,
+  // also drop outlet-identifying fields (source, original_url) - that data stays
+  // in the database only.
+  const news = newsRaw.map((n) => (isHe
+    ? { ...n, title_en: null, body_en: null }
+    : { ...n, title_he: null, body_he: null, source: '', original_url: '' }
+  ));
+
+  const PAGE = 40;
+  // page=N shows only that batch (items (N-1)*40+1 .. N*40), not cumulative -
+  // "Load more" then continues forward from there.
+  const newsForPage = news.slice((page - 1) * PAGE);
 
   return (
     <div className="page-section" dir={isHe ? 'rtl' : 'ltr'}>
@@ -71,39 +81,22 @@ export default async function NewsPage() {
             <p style={{ margin: 0, fontWeight: 600 }}>{isHe ? 'החדשות הראשונות בדרך - חזור מחר' : 'First articles on the way - check back tomorrow'}</p>
           </div>
         ) : (
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: 16 }}>
-            {news.map((item) => (
-              <Link
-                key={item.id}
-                href={newsPath(item)}
-                style={{ textDecoration: 'none', color: 'inherit', display: 'block' }}
-              >
-                <div className="card" style={{ height: '100%', overflow: 'hidden', padding: 0, display: 'flex', flexDirection: 'column', transition: 'border-color 0.15s, box-shadow 0.15s' }}>
-                  <NewsImage
-                    src={item.image_url}
-                    alt={item.title_he ?? item.title_en ?? ''}
-                    isHe={isHe}
-                    loading="lazy"
-                    style={{ width: '100%', aspectRatio: '16/9' }}
-                  />
-                  <div style={{ padding: '14px 16px', flex: 1, display: 'flex', flexDirection: 'column', gap: 8 }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                      <span style={{ fontSize: '0.72rem', color: 'var(--text-faint)' }}>{timeAgo(item.published_at, isHe)}</span>
-                    </div>
-                    <div style={{ fontWeight: 700, fontSize: '0.9rem', lineHeight: 1.4, color: 'var(--text)' }}>
-                      {(isHe ? (item.title_he ?? item.title_en) : (item.title_en ?? item.title_he))?.replace(/אחד מה-SUV החשמליים החזקים שהושקו אי פעם/g, 'מבין רכבי ה-SUV החשמליים החזקים שהוצגו השנה').replace(/[—–]/g, '-')}
-                    </div>
-                    {(isHe ? item.body_he : item.body_en) && (
-                      <p style={{ margin: 0, fontSize: '0.82rem', color: 'var(--text-muted)', lineHeight: 1.55, overflow: 'hidden', display: '-webkit-box', WebkitLineClamp: 3, WebkitBoxOrient: 'vertical' }}>
-                        {(isHe ? item.body_he : item.body_en)?.replace(/אחד מה-SUV החשמליים החזקים שהושקו אי פעם/g, 'מבין רכבי ה-SUV החשמליים החזקים שהוצגו השנה').replace(/[—–]/g, '-')}
-                      </p>
-                    )}
-                    {isHe && item.id.startsWith('b70e9563ca') && <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>המחקר נערך בארה״ב, והנתונים אינם מתייחסים לישראל.</span>}
-                    <span style={{ marginTop: 'auto', paddingTop: 6, fontSize: '0.7rem', color: 'var(--text-faint)' }}>{isHe ? `מקור: ${SOURCE_LABELS[item.source] ?? item.source}` : `Source: ${SOURCE_LABELS[item.source] ?? item.source}`}</span>
-                  </div>
-                </div>
+          <NewsGrid key={page} news={newsForPage} isHe={isHe} />
+        )}
+
+        {/* Pagination links - crawlable alternative to "Load more" */}
+        {news.length > 40 && (
+          <div style={{ display: 'flex', gap: 10, justifyContent: 'center', marginTop: 32 }}>
+            {page > 1 && (
+              <Link href={page === 2 ? '/news' : `/news?page=${page - 1}`} style={{ fontSize: '0.875rem', color: 'var(--accent)', textDecoration: 'none' }}>
+                {isHe ? '← הקודם' : '← Previous'}
               </Link>
-            ))}
+            )}
+            {page * 40 < news.length && (
+              <Link href={`/news?page=${page + 1}`} style={{ fontSize: '0.875rem', color: 'var(--accent)', textDecoration: 'none' }}>
+                {isHe ? 'הבא →' : 'Next →'}
+              </Link>
+            )}
           </div>
         )}
       </div>

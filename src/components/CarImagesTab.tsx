@@ -1,21 +1,35 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import type { CarImage } from '@/lib/carImages';
 import { useAuth } from '@/lib/authContext';
 import { supabase } from '@/lib/supabase';
 import { useLocale } from '@/lib/localeContext';
+import { sizedImageUrl } from '@/lib/imageSizing';
+
+const GRID_WIDTH = 460;
+const LIGHTBOX_WIDTH = 1920;
 
 interface Props {
   images: CarImage[];
   makeNameHe: string;
   modelNameHe: string;
+  makeNameEn?: string;
+  modelNameEn?: string;
 }
 
-export default function CarImagesTab({ images: initialImages, makeNameHe, modelNameHe }: Props) {
+export default function CarImagesTab({ images: initialImages, makeNameHe, modelNameHe, makeNameEn, modelNameEn }: Props) {
   const { isAdmin } = useAuth();
   const { locale } = useLocale();
+  const isEn = locale === 'en';
+  const carName = isEn ? `${makeNameEn ?? makeNameHe} ${modelNameEn ?? modelNameHe}` : `${makeNameHe} ${modelNameHe}`;
   const [lightbox, setLightbox] = useState<CarImage | null>(null);
+  const [lightboxLoaded, setLightboxLoaded] = useState(false);
+  const [lightboxError, setLightboxError] = useState(false);
+  useEffect(() => {
+    setLightboxLoaded(false);
+    setLightboxError(false);
+  }, [lightbox?.id]);
   const [hiddenIds, setHiddenIds] = useState<Set<string>>(new Set());
   const [flagTarget, setFlagTarget] = useState<CarImage | null>(null);
   const [flagReason, setFlagReason] = useState('');
@@ -47,7 +61,7 @@ export default function CarImagesTab({ images: initialImages, makeNameHe, modelN
     return (
       <div style={{ textAlign: 'center', padding: '48px 0', color: 'var(--text-muted)' }}>
         <div style={{ fontSize: '2.5rem', marginBottom: 12 }}>📷</div>
-        <p style={{ fontSize: '1rem' }}>אין תמונות עדיין עבור {makeNameHe} {modelNameHe}</p>
+        <p style={{ fontSize: '1rem' }}>{isEn ? `No images yet for ${carName}` : `אין תמונות עדיין עבור ${carName}`}</p>
       </div>
     );
   }
@@ -55,7 +69,7 @@ export default function CarImagesTab({ images: initialImages, makeNameHe, modelN
   return (
     <div>
       <p style={{ color: 'var(--text-muted)', fontSize: '0.875rem', marginBottom: 20 }}>
-        {visibleImages.length} תמונות של {makeNameHe} {modelNameHe}
+        {isEn ? `${visibleImages.length} photos of ${carName}` : `${visibleImages.length} תמונות של ${carName}`}
       </p>
 
       {/* Masonry-style grid */}
@@ -81,8 +95,8 @@ export default function CarImagesTab({ images: initialImages, makeNameHe, modelN
             >
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
-                src={img.thumbnail_url ?? img.url}
-                alt={img.title ?? `${makeNameHe} ${modelNameHe}`}
+                src={sizedImageUrl(img.thumbnail_url ?? img.url, GRID_WIDTH) ?? undefined}
+                alt={(locale === 'he' && img.title_he) ? img.title_he : (img.title ?? carName)}
                 loading="lazy"
                 style={{
                   width: '100%',
@@ -96,7 +110,7 @@ export default function CarImagesTab({ images: initialImages, makeNameHe, modelN
               />
             </button>
 
-            {/* Admin flag button — absolute top-right */}
+            {/* Admin flag button - absolute top-right */}
             {isAdmin && (
               <button
                 onClick={() => { setFlagTarget(img); setFlagReason(''); }}
@@ -229,27 +243,62 @@ export default function CarImagesTab({ images: initialImages, makeNameHe, modelN
               🚩 הסתר תמונה
             </button>
           )}
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src={lightbox.url}
-            alt={lightbox.title ?? `${makeNameHe} ${modelNameHe}`}
-            style={{
-              maxWidth: '90vw',
-              maxHeight: '80vh',
-              borderRadius: 10,
-              boxShadow: '0 20px 60px rgba(0,0,0,0.6)',
-              objectFit: 'contain',
-            }}
-            onClick={e => e.stopPropagation()}
-          />
+          {lightboxError ? (
+            // Existing empty-state style (no-images state above), reused for a failed load.
+            <div style={{ textAlign: 'center', padding: '48px 0', color: 'rgba(255,255,255,0.6)' }} onClick={e => e.stopPropagation()}>
+              <div style={{ fontSize: '2.5rem', marginBottom: 12 }}>📷</div>
+              <p style={{ fontSize: '1rem' }}>{isEn ? 'Image failed to load' : 'טעינת התמונה נכשלה'}</p>
+            </div>
+          ) : (
+            <div style={{ position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                key={lightbox.id}
+                src={sizedImageUrl(lightbox.thumbnail_url ?? lightbox.url, LIGHTBOX_WIDTH) ?? lightbox.url}
+                alt={lightbox.title ?? carName}
+                style={{
+                  maxWidth: '90vw',
+                  maxHeight: '80vh',
+                  borderRadius: 10,
+                  boxShadow: '0 20px 60px rgba(0,0,0,0.6)',
+                  objectFit: 'contain',
+                  opacity: lightboxLoaded ? 1 : 0,
+                  transition: 'opacity 0.15s',
+                }}
+                onClick={e => e.stopPropagation()}
+                onLoad={() => setLightboxLoaded(true)}
+                onError={() => setLightboxError(true)}
+              />
+              {!lightboxLoaded && (
+                <div style={{ position: 'absolute', width: 40, height: 40, borderRadius: '50%', border: '3px solid rgba(255,255,255,0.2)', borderTopColor: '#7ba0e8', animation: 'hero-img-spin 0.9s linear infinite' }} />
+              )}
+            </div>
+          )}
+          <style>{`@keyframes hero-img-spin { to { transform: rotate(360deg); } }`}</style>
           {(lightbox.title || lightbox.author || lightbox.license) && (
             <div
-              style={{ marginTop: 12, textAlign: 'center', color: 'rgba(255,255,255,0.55)', fontSize: '0.75rem' }}
+              style={{ marginTop: 12, textAlign: 'center', color: 'rgba(255,255,255,0.55)', fontSize: '0.75rem', maxWidth: 480, lineHeight: 1.6 }}
               onClick={e => e.stopPropagation()}
             >
-              {lightbox.title && <span>{lightbox.title}</span>}
+              {(() => {
+                const caption = (locale === 'he' && lightbox.title_he) ? lightbox.title_he : lightbox.title;
+                return caption && <span>{caption}</span>;
+              })()}
               {lightbox.author && <span> · {lightbox.author}</span>}
               {lightbox.license && <span> · {lightbox.license}</span>}
+              {lightbox.source_url && (
+                <>
+                  <br />
+                  <a
+                    href={lightbox.source_url}
+                    target="_blank"
+                    rel="noopener nofollow"
+                    style={{ color: '#7fb3ff' }}
+                  >
+                    {isEn ? 'Source: Wikimedia Commons ↗' : 'מקור: Wikimedia Commons ↗'}
+                  </a>
+                </>
+              )}
             </div>
           )}
           <button

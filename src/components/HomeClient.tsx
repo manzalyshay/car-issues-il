@@ -7,15 +7,20 @@ import { useLocale } from '@/lib/localeContext';
 import { searchCars } from '@/lib/carSearch';
 import { newsPath } from '@/lib/newsSlug';
 import NewsImage from '@/components/NewsImage';
+import { sizedImageUrl } from '@/lib/imageSizing';
 
 /* ── Types ──────────────────────────────────────────────── */
 interface Make { slug: string; nameHe: string; nameEn: string; logoUrl: string; country: string; models: { slug: string; nameHe: string; nameEn: string }[]; }
-interface TopCar { makeSlug: string; modelSlug: string; makeHe: string; modelHe: string; makeEn: string; modelEn: string; logoUrl: string; combined: number; avgRating: number | null; reviewCount: number; imageUrl?: string | null; }
+interface TopCar { makeSlug: string; modelSlug: string; makeHe: string; modelHe: string; makeEn: string; modelEn: string; logoUrl: string; aiScore: number; aiConfidence: 'high' | 'medium' | 'low'; avgRating: number | null; reviewCount: number; imageUrl?: string | null; }
 interface Review { id: string; make_slug: string; model_slug: string; year: number | null; rating: number; title: string; body: string; title_en?: string | null; body_en?: string | null; author: string; created_at: string; makeHe: string; modelHe: string; makeEn: string; modelEn: string; logoUrl: string; }
 interface ComparePair { href: string; aHe: string; aEn: string; bHe: string; bEn: string; }
-interface TickerItem { code: string; textHe: string; textEn: string; color: string; }
-interface NewsItem { id: string; title_he: string | null; title_en: string | null; body_he: string | null; body_en: string | null; image_url: string | null; published_at: string | null; original_url: string; source: string; }
-interface Props { popularMakes: Make[]; allMakes: Make[]; topRanked: TopCar[]; recentReviews: Review[]; tickerItems?: TickerItem[]; initialNews?: NewsItem[]; topPairs?: ComparePair[]; reviewTotal: number; recallTotal: number; }
+interface TickerItem { code: string; isRecall: boolean; textHe: string; textEn: string; color: string; }
+interface NewsItem { id: string; title_he: string | null; title_en: string | null; body_he: string | null; body_en: string | null; image_url: string | null; image_author?: string | null; image_license?: string | null; image_source_url?: string | null; published_at: string | null; original_url: string; source: string; }
+
+function isLicensedNewsImage(url: string | null): url is string {
+  return !!url && !url.includes('motor1.com') && !url.includes('hearstapps.com');
+}
+interface Props { allMakes: Make[]; topRanked: TopCar[]; recentReviews: Review[]; tickerItems?: TickerItem[]; initialNews?: NewsItem[]; topPairs?: ComparePair[]; reviewTotal: number; recallTotal: number; }
 
 /* ── Helpers ─────────────────────────────────────────────── */
 function timeAgo(dateStr: string, isHe: boolean) {
@@ -106,28 +111,6 @@ function useCountUp(ref: React.RefObject<HTMLElement | null>, to: number, decima
   }, [ref, to, decimals]);
 }
 
-/* ── Pointer tilt hook ──────────────────────────────────── */
-function useTilt(ref: React.RefObject<HTMLElement | null>, max = 6) {
-  useEffect(() => {
-    const el = ref.current;
-    if (!el || window.matchMedia('(hover: none)').matches) return;
-    const move = (e: PointerEvent) => {
-      const r = el.getBoundingClientRect();
-      const x = (e.clientX - r.left) / r.width - 0.5;
-      const y = (e.clientY - r.top) / r.height - 0.5;
-      el.style.transition = 'transform .08s linear';
-      el.style.transform = `perspective(900px) rotateY(${(x * max).toFixed(2)}deg) rotateX(${(-y * max).toFixed(2)}deg)`;
-    };
-    const leave = () => {
-      el.style.transition = 'transform .5s cubic-bezier(.23,1,.32,1)';
-      el.style.transform = 'perspective(900px) rotateY(0) rotateX(0)';
-    };
-    el.addEventListener('pointermove', move);
-    el.addEventListener('pointerleave', leave);
-    return () => { el.removeEventListener('pointermove', move); el.removeEventListener('pointerleave', leave); };
-  }, [ref, max]);
-}
-
 /* ═══════════════════════════════════════════════════════════
    Main component
    ═══════════════════════════════════════════════════════════ */
@@ -137,7 +120,6 @@ export default function HomeClient({ allMakes, topRanked, recentReviews, tickerI
   const totalModels = allMakes.reduce((s, m) => s + m.models.length, 0);
 
   const tickerItems = tickerProp ?? [];
-  const topCar = topRanked[0] ?? null;
 
   /* Search + autocomplete */
   const router = useRouter();
@@ -177,7 +159,7 @@ export default function HomeClient({ allMakes, topRanked, recentReviews, tickerI
     const q = searchQ.trim();
     if (!q) return;
     const digits = (q.match(/\d/g) || []).length;
-    if (digits >= 5 && /^[\d\-\s]+$/.test(q)) {
+    if (isHe && digits >= 5 && /^[\d\-\s]+$/.test(q)) {
       router.push(`/vehicle-lookup/${q.replace(/\D/g, '')}`);
     } else if (suggestions.length > 0) {
       // Enter / "Search" with a car name goes straight to the best match
@@ -209,15 +191,13 @@ export default function HomeClient({ allMakes, topRanked, recentReviews, tickerI
   const refMakes   = useRef<HTMLSpanElement>(null);
   const refModels  = useRef<HTMLSpanElement>(null);
   const refReviews = useRef<HTMLSpanElement>(null);
-  const tiltRef    = useRef<HTMLDivElement>(null);
 
   useReveal();
   useCountUp(refMakes,   allMakes.length,     0);
   useCountUp(refModels,  totalModels,          0);
   useCountUp(refReviews, reviewTotal,          0);
-  useTilt(tiltRef);
 
-  /* News feed — server-provided, no client fetch needed */
+  /* News feed - server-provided, no client fetch needed */
   const news = initialNews ?? [];
 
   const GUTTER = 'clamp(16px,3vw,32px)';
@@ -232,11 +212,11 @@ export default function HomeClient({ allMakes, topRanked, recentReviews, tickerI
             <div style={{ display: 'flex', gap: 34, flex: 'none', width: 'max-content', alignItems: 'center', padding: '0 17px', whiteSpace: 'nowrap', fontSize: 13 }}>
               {tickerItems.map((item, i) => (
                 <span key={i} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                  {item.code === 'ריקול' && (
+                  {item.isRecall && (
                     <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#ff5b5b', flexShrink: 0, animation: 'ci-pulse 1.6s ease-in-out infinite' }} />
                   )}
                   <span style={{ color: item.color, fontWeight: 700 }}>
-                    {isHe ? item.code : ({ 'ביקורת': 'REVIEW', 'ריקול': 'RECALL', 'מבצע': 'DEAL', 'תיקון': 'REPAIR' }[item.code] ?? item.code)}
+                    {item.code}
                   </span>
                   {' '}{isHe ? item.textHe : item.textEn}
                 </span>
@@ -250,148 +230,127 @@ export default function HomeClient({ allMakes, topRanked, recentReviews, tickerI
         position: 'relative',
         background: 'linear-gradient(180deg,#0d1b2f 0%,#12294a 62%,#12294a 100%)',
         color: '#fff',
-        padding: `clamp(18px,2vw,26px) ${GUTTER} clamp(40px,4vw,52px)`,
+        padding: `clamp(18px,2vw,26px) ${GUTTER} clamp(32px,3.4vw,44px)`,
         overflowX: 'clip',
       }}>
         {/* radial overlays */}
         <div aria-hidden style={{ position: 'absolute', inset: 0, opacity: .5, background: 'radial-gradient(70% 60% at 88% 8%,rgba(23,64,143,.85),transparent 70%),radial-gradient(50% 50% at 10% 90%,rgba(18,161,80,.28),transparent 70%)', pointerEvents: 'none' }} />
-        <div style={{ position: 'relative', maxWidth: MAXW, margin: '0 auto', display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(300px,1fr))', gap: 'clamp(18px,2.4vw,36px)', alignItems: 'end' }}>
+        <div style={{ position: 'relative', maxWidth: MAXW, margin: '0 auto', display: 'flex', flexWrap: 'wrap', gap: 'clamp(24px,3.4vw,40px)', alignItems: 'stretch' }}>
 
-          {/* Left col */}
-          <div data-ci-group="90">
-            {/* Stat pill */}
-            <h1 style={{ fontFamily: 'Heebo,sans-serif', fontWeight: 900, fontSize: 'clamp(26px,3vw,42px)', lineHeight: 1.1, letterSpacing: '-.03em', margin: '0 0 0', color: '#fff' }}>
+          {/* Search column */}
+          <div data-ci-group="90" style={{ flex: '999 1 560px', minWidth: 0, display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+            <span style={{ fontSize: 14, color: '#7a9cc8', letterSpacing: '0.04em', fontWeight: 600 }}>
+              {isHe ? 'בעיות · ריקולים · עלויות תיקון' : 'Problems · Recalls · Repair costs'}
+            </span>
+            <h1 style={{ fontFamily: 'Heebo,sans-serif', fontWeight: 900, fontSize: 'clamp(26px,3vw,42px)', lineHeight: 1.1, letterSpacing: '-.03em', margin: '10px 0 0', color: '#fff' }}>
               {isHe ? 'איזה רכב אתם בודקים?' : 'Which car are you checking?'}
             </h1>
-            <p style={{ fontSize: 14, color: '#7a9cc8', margin: '8px 0 0', letterSpacing: '0.04em', fontWeight: 600 }}>
-              {isHe ? 'בעיות · ריקולים · עלויות תיקון' : 'Problems · Recalls · Repair costs'}
-            </p>
 
-            {/* Search card */}
-            <div style={{ background: '#fff', color: '#0d1b2f', borderRadius: 16, padding: 12, marginTop: 16, boxShadow: '0 24px 60px -24px rgba(4,14,32,.7)' }}>
-              <div ref={searchWrapRef} style={{ position: 'relative' }}>
-                <div style={{ display: 'flex', gap: 10, alignItems: 'center', border: '1px solid #e0e6f1', borderRadius: 12, padding: 6, background: '#fbfcfe' }}>
-                  <input
-                    type="text"
-                    aria-label={isHe ? 'חיפוש לפי מספר רישוי או שם דגם' : 'Search by plate number or car model'}
-                    value={searchQ}
-                    onChange={e => { setSearchQ(e.target.value); setAcOpen(true); setAcIdx(-1); }}
-                    onKeyDown={handleKeyDown}
-                    onFocus={() => setAcOpen(true)}
-                    placeholder={isHe ? 'הכנס מספר רישוי (1234567) או שם דגם' : 'Enter plate (1234567) or car model'}
-                    style={{ flex: 1, minWidth: 0, border: 0, background: 'transparent', padding: '10px', fontSize: 15, outline: 'none', color: '#0d1b2f', direction: isHe ? 'rtl' : 'ltr' }}
-                  />
-                  <button type="button" onClick={() => handleSearch()} style={{ border: 0, background: '#17408f', color: '#fff', fontWeight: 700, fontSize: 15, padding: '10px 22px', borderRadius: 10, cursor: 'pointer', whiteSpace: 'nowrap' }}>
-                    {isHe ? 'חפש' : 'Search'}
-                  </button>
+            {/* Search pill */}
+            <div ref={searchWrapRef} style={{ position: 'relative', marginTop: 20 }}>
+              <div style={{ display: 'flex', gap: 10, alignItems: 'center', background: '#fff', borderRadius: 16, padding: 8, boxShadow: '0 24px 60px -24px rgba(4,14,32,.7)' }}>
+                <input
+                  type="text"
+                  aria-label={isHe ? 'חיפוש לפי מספר רישוי או שם דגם' : 'Search by car model'}
+                  value={searchQ}
+                  onChange={e => { setSearchQ(e.target.value); setAcOpen(true); setAcIdx(-1); }}
+                  onKeyDown={handleKeyDown}
+                  onFocus={() => setAcOpen(true)}
+                  placeholder={isHe ? 'מספר רישוי או שם דגם' : 'Enter a make or model'}
+                  style={{ flex: 1, minWidth: 0, border: 0, background: 'transparent', padding: '10px 14px', fontSize: 16, outline: 'none', color: '#0d1b2f', direction: isHe ? 'rtl' : 'ltr' }}
+                />
+                <button type="button" onClick={() => handleSearch()} style={{ border: 0, background: 'var(--accent)', color: '#fff', fontWeight: 700, fontSize: 16, padding: '0 26px', height: 48, borderRadius: 11, cursor: 'pointer', whiteSpace: 'nowrap' }}>
+                  {isHe ? 'חפש' : 'Search'}
+                </button>
+              </div>
+              {acOpen && suggestions.length > 0 && (
+                <div style={{ position: 'absolute', top: '100%', left: 0, right: 0, marginTop: 4, background: '#fff', border: '1px solid #e0e6f1', borderRadius: 12, boxShadow: '0 12px 40px -8px rgba(13,27,47,.18)', zIndex: 999, overflow: 'hidden', direction: isHe ? 'rtl' : 'ltr' }}>
+                  {suggestions.map((s, i) => (
+                    <div
+                      key={s.href}
+                      onMouseDown={() => handleSearch(s.href)}
+                      onMouseEnter={() => setAcIdx(i)}
+                      style={{ padding: '10px 14px', cursor: 'pointer', background: i === acIdx ? '#f0f4ff' : '#fff', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, borderBottom: i < suggestions.length - 1 ? '1px solid #f2f5fa' : 'none' }}
+                    >
+                      <span style={{ fontWeight: 600, fontSize: 14, color: '#0d1b2f' }}>{s.label}</span>
+                      {s.sub && <span style={{ fontSize: 12, color: '#8a9ab8' }}>{s.sub}</span>}
+                    </div>
+                  ))}
                 </div>
-                {acOpen && suggestions.length > 0 && (
-                  <div style={{ position: 'absolute', top: '100%', left: 0, right: 0, marginTop: 4, background: '#fff', border: '1px solid #e0e6f1', borderRadius: 12, boxShadow: '0 12px 40px -8px rgba(13,27,47,.18)', zIndex: 999, overflow: 'hidden', direction: isHe ? 'rtl' : 'ltr' }}>
-                    {suggestions.map((s, i) => (
-                      <div
-                        key={s.href}
-                        onMouseDown={() => handleSearch(s.href)}
-                        onMouseEnter={() => setAcIdx(i)}
-                        style={{ padding: '10px 14px', cursor: 'pointer', background: i === acIdx ? '#f0f4ff' : '#fff', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, borderBottom: i < suggestions.length - 1 ? '1px solid #f2f5fa' : 'none' }}
-                      >
-                        <span style={{ fontWeight: 600, fontSize: 14, color: '#0d1b2f' }}>{s.label}</span>
-                        {s.sub && <span style={{ fontSize: 12, color: '#8a9ab8' }}>{s.sub}</span>}
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-              <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginTop: 12, alignItems: 'center' }}>
-                <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 12, fontWeight: 700, color: '#0f7a3d', background: '#e6f7ed', border: '1px solid #c6ecd7', padding: '4px 10px', borderRadius: 999 }}>
-                  {searchBadge}
-                </span>
-                <span style={{ fontSize: 12, color: '#8a9ab8' }}>
-                  {isHe ? '· מספר רישוי = בדיקת פרטי רכב מלאה' : '· plate number = full vehicle check'}
-                </span>
-                <span style={{ fontSize: 12, color: '#5b6a86', fontWeight: 600 }}>{isHe ? 'נבדק הרבה:' : 'Trending:'}</span>
-                {(isHe
-                  ? [['סובארו XV', '/cars/subaru/xv'], ['טויוטה RAV4', '/cars/toyota/rav4'], ['יונדאי טוסון', '/cars/hyundai/tucson'], ['קיה ספורטז׳', '/cars/kia/sportage']]
-                  : [['Subaru XV', '/cars/subaru/xv'], ['Toyota RAV4', '/cars/toyota/rav4'], ['Hyundai Tucson', '/cars/hyundai/tucson'], ['Kia Sportage', '/cars/kia/sportage']]
-                ).map(([label, href]) => (
-                  <Link key={href} href={href} style={{ fontSize: 13, fontWeight: 600, background: '#f2f5fa', border: '1px solid #e6ebf4', padding: '5px 11px', borderRadius: 999, color: '#41506c' }}>
-                    {label}
-                  </Link>
-                ))}
-              </div>
+              )}
+            </div>
+
+            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginTop: 14, alignItems: 'center' }}>
+              <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 12, fontWeight: 700, color: '#9fe0b3' }}>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>
+                {searchBadge}
+              </span>
+              {isHe && (
+                <>
+                  <span aria-hidden="true" style={{ color: '#3b4a6b' }}>·</span>
+                  <span style={{ fontSize: 12, color: '#aab6cf' }}>מספר רישוי = בדיקת פרטי רכב מלאה</span>
+                </>
+              )}
+            </div>
+            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginTop: 10, alignItems: 'center' }}>
+              {(isHe
+                ? [['סובארו XV', '/cars/subaru/xv'], ['טויוטה RAV4', '/cars/toyota/rav4'], ['יונדאי טוסון', '/cars/hyundai/tucson'], ['קיה ספורטז׳', '/cars/kia/sportage']]
+                : [['Subaru XV', '/cars/subaru/xv'], ['Toyota RAV4', '/cars/toyota/rav4'], ['Hyundai Tucson', '/cars/hyundai/tucson'], ['Kia Sportage', '/cars/kia/sportage']]
+              ).map(([label, href]) => (
+                <Link key={href} href={href} style={{ fontSize: 13, fontWeight: 600, color: '#dfe6f3', textDecoration: 'none', padding: '5px 12px', borderRadius: 999, border: '1px solid rgba(255,255,255,.18)' }}>
+                  {label}
+                </Link>
+              ))}
             </div>
           </div>
 
-          {/* Right col — lead model card */}
-          {topCar && (
-            <div style={{ justifySelf: 'end', width: '100%', maxWidth: 400 }}>
-              <div ref={tiltRef} style={{ background: '#fff', color: '#0d1b2f', borderRadius: 16, padding: 12, display: 'flex', gap: 12, alignItems: 'center', boxShadow: '0 22px 50px -28px rgba(4,14,32,.8)', transformStyle: 'preserve-3d' }}>
-                {/* Photo placeholder */}
-                <div style={{ position: 'relative', width: 132, flexShrink: 0, aspectRatio: '4/3', borderRadius: 12, overflow: 'hidden', background: 'linear-gradient(140deg,#e8edf6,#d5deee)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  {topCar.imageUrl ? (
-                    /* eslint-disable-next-line @next/next/no-img-element */
-                    <img src={topCar.imageUrl} alt="" fetchPriority="high" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                  ) : (
-                    <span style={{ fontSize: 11, color: '#5f6e88', letterSpacing: '.1em' }}>תמונת רכב</span>
-                  )}
-                </div>
-                <div style={{ minWidth: 0, flex: 1 }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                    <span style={{ fontSize: 10.5, letterSpacing: '.14em', color: '#5b6a86', fontWeight: 700 }}>{isHe ? 'דגם מוביל' : 'TOP MODEL'}</span>
-                    {topCar.combined >= 8.5
-                      ? <span style={{ fontSize: 11, fontWeight: 700, color: '#0f7a3d', background: '#e6f7ed', padding: '2px 8px', borderRadius: 999 }}>{isHe ? 'מומלץ מאוד' : 'HIGHLY RECOMMENDED'}</span>
-                      : topCar.combined >= 7.5
-                        ? <span style={{ fontSize: 11, fontWeight: 700, color: '#0f7a3d', background: '#e6f7ed', padding: '2px 8px', borderRadius: 999 }}>{isHe ? 'מומלץ' : 'RECOMMENDED'}</span>
-                        : null}
-                  </div>
-                  <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 10, marginTop: 4 }}>
-                    <span style={{ fontFamily: 'Heebo,sans-serif', fontWeight: 900, fontSize: 18, letterSpacing: '-.03em' }}>
-                      {isHe ? `${topCar.makeHe} ${topCar.modelHe}` : `${topCar.makeEn} ${topCar.modelEn}`}
-                    </span>
-                    <span style={{ lineHeight: 1, display: 'inline-flex', alignItems: 'baseline', gap: 1, direction: 'ltr' }}>
-                      <span style={{ fontFamily: 'Heebo,sans-serif', fontWeight: 900, fontSize: 26, letterSpacing: '-.04em', color: '#17408f' }}>
-                        {(Math.round(topCar.combined * 10) / 10).toFixed(1)}
-                      </span>
-                      <span style={{ fontSize: 12, color: '#5b6a86', fontWeight: 700 }}>/10</span>
-                    </span>
-                  </div>
-                  <div style={{ display: 'flex', gap: 6, marginTop: 8, flexWrap: 'wrap' }}>
-                    <span style={{ fontSize: 11.5, fontWeight: 700, color: '#17408f', background: '#f1f5fc', border: '1px solid #dde6f6', padding: '3px 8px', borderRadius: 7 }}>
-                      {isHe ? `ציון AI: ${(Math.round(topCar.combined * 10) / 10).toFixed(1)}` : `AI Score: ${(Math.round(topCar.combined * 10) / 10).toFixed(1)}`}
-                    </span>
-                    {topCar.avgRating != null && (
-                      <span style={{ fontSize: 11.5, fontWeight: 700, color: '#0f7a3d', background: '#f1f9f4', border: '1px solid #dbeee3', padding: '3px 8px', borderRadius: 7 }}>
-                        {isHe ? `${topCar.reviewCount} ${topCar.reviewCount === 1 ? 'ביקורת' : 'ביקורות'} · דירוג ${topCar.avgRating.toFixed(1)}/5` : `${topCar.reviewCount} reviews · ${topCar.avgRating.toFixed(1)}/5`}
-                      </span>
-                    )}
-                  </div>
-                  <Link href={`/cars/${topCar.makeSlug}/${topCar.modelSlug}`} style={{ display: 'inline-block', marginTop: 9, fontSize: 13, fontWeight: 700, color: '#17408f' }}>
-                    {isHe ? 'לדוח המלא ←' : 'Full report →'}
-                  </Link>
-                </div>
+          {/* נבדקים השבוע aside */}
+          {topRanked.length > 0 && (
+            <aside aria-label={isHe ? 'דגמים במגמה' : 'Trending models'} style={{ flex: '1 1 380px', minWidth: 0, background: '#1b2b4d', border: '1px solid #2a3c63', borderRadius: 'var(--r)', padding: 24, display: 'flex', flexDirection: 'column', gap: 6 }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
+                <h2 style={{ margin: 0, fontSize: 18, fontWeight: 700 }}>{isHe ? 'נבדקים השבוע' : 'Checked this week'}</h2>
+                <Link href="/rankings" style={{ fontSize: 14, color: '#8fb3ff', textDecoration: 'none' }}>
+                  {isHe ? 'לכל הדירוגים ←' : 'All rankings →'}
+                </Link>
               </div>
-            </div>
+              {topRanked.slice(0, 3).map((car, i) => {
+                const good = car.aiScore >= 7.5;
+                return (
+                  <Link key={`${car.makeSlug}/${car.modelSlug}`} href={`/cars/${car.makeSlug}/${car.modelSlug}`} className="ci-trend-row" style={{ display: 'flex', alignItems: 'center', gap: 14, padding: 12, borderRadius: 14, textDecoration: 'none', color: '#fff' }}>
+                    <span style={{ width: 28, fontSize: 15, fontWeight: 700, color: '#8fb3ff', textAlign: 'center' }}>{i + 1}</span>
+                    <span style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: 6 }}>
+                      <span style={{ fontSize: 16, fontWeight: 700 }}>{isHe ? `${car.makeHe} ${car.modelHe}` : `${car.makeEn} ${car.modelEn}`}</span>
+                      <span style={{ height: 6, background: '#2a3c63', borderRadius: 3, overflow: 'hidden', display: 'block' }}>
+                        <span style={{ display: 'block', height: 6, width: `${Math.min(100, car.aiScore * 10)}%`, background: good ? 'var(--good)' : 'var(--warn)', borderRadius: 3 }} />
+                      </span>
+                    </span>
+                    <span style={{ fontSize: 20, fontWeight: 800 }}>{car.aiScore.toFixed(1)}</span>
+                  </Link>
+                );
+              })}
+              <p style={{ margin: '8px 0 0', fontSize: 13, color: '#aab6cf' }}>
+                {isHe ? 'ציון AI מתוך 10, לפי בעיות מדווחות וריקולים' : 'AI score out of 10, based on reported issues and recalls'}
+              </p>
+            </aside>
           )}
         </div>
-      </section>
 
-      {/* ── Stats strip ──────────────────────────────────── */}
-      <div style={{ maxWidth: MAXW, margin: '-24px auto 0', padding: `0 ${GUTTER}`, position: 'relative', zIndex: 5 }}>
-        <div data-ci-group="70" style={{ background: '#fff', border: '1px solid #e4e9f2', borderRadius: 20, boxShadow: '0 20px 50px -30px rgba(13,27,47,.35)', display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(150px,1fr))', overflow: 'hidden' }}>
+        {/* Stats row - inside the dark band, no overlap */}
+        <div data-ci-group="70" style={{ maxWidth: MAXW, margin: 'clamp(32px,3.4vw,48px) auto 0', borderTop: '1px solid rgba(255,255,255,.12)', display: 'grid', gridTemplateColumns: 'repeat(3,minmax(0,1fr))' }}>
           {[
             { ref: refMakes,   value: allMakes.length, label: isHe ? 'יצרנים' : 'Makes' },
             { ref: refModels,  value: totalModels,     label: isHe ? 'דגמים' : 'Models' },
-            { ref: refReviews, value: reviewTotal,      label: isHe ? 'ביקורות בעלים' : 'Owner reviews' },
             { ref: null,       value: recallTotal,      label: isHe ? 'ריקולים' : 'Recalls' },
           ].map((s, i, arr) => (
-            <div key={i} style={{ padding: '10px 12px', textAlign: 'center', borderInlineEnd: i < arr.length - 1 ? '1px solid #eef2f9' : 'none' }}>
-              <div style={{ fontFamily: 'Heebo,sans-serif', fontWeight: 900, fontSize: 'clamp(20px,2vw,26px)', letterSpacing: '-.04em' }}>
+            <div key={i} style={{ padding: '20px 12px', textAlign: 'center', borderInlineEnd: i < arr.length - 1 ? '1px solid rgba(255,255,255,.12)' : 'none' }}>
+              <div style={{ fontFamily: 'Heebo,sans-serif', fontWeight: 900, fontSize: 'clamp(22px,3vw,30px)', letterSpacing: '-.04em' }}>
                 <span ref={s.ref as React.RefObject<HTMLSpanElement>}>{Number(s.value ?? 0).toLocaleString(isHe ? 'he-IL' : 'en-US')}</span>
               </div>
-              <div style={{ fontSize: 12, color: '#5b6a86', fontWeight: 600, marginTop: 2 }}>{s.label}</div>
+              <div style={{ fontSize: 13, color: '#aab6cf', fontWeight: 600, marginTop: 2 }}>{s.label}</div>
             </div>
           ))}
         </div>
-      </div>
+      </section>
 
       {/* ── Sections wrapper ─────────────────────────────── */}
       <div style={{ maxWidth: MAXW, margin: '0 auto' }}>
@@ -415,13 +374,12 @@ export default function HomeClient({ allMakes, topRanked, recentReviews, tickerI
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(300px,1fr))', gap: 20 }}>
               {/* Lead story */}
               {news[0] && (
+                <div>
                 <Link href={newsPath(news[0])} style={{ textDecoration: 'none', color: 'inherit' }} data-ci-reveal>
                   <article style={{ background: '#fff', border: '1px solid #e4e9f2', borderRadius: 18, overflow: 'hidden' }} className="ci-card-hover">
-                    <NewsImage src={news[0].image_url} isHe={isHe} style={{ width: '100%', aspectRatio: '16/9' }} />
+                    <NewsImage src={sizedImageUrl(news[0].image_url, 960)} isHe={isHe} style={{ width: '100%', aspectRatio: '16/9' }} />
                     <div style={{ padding: 18 }}>
                       <div style={{ display: 'flex', gap: 10, alignItems: 'center', fontSize: 12.5, color: '#5b6a86', fontWeight: 600 }}>
-                        <span style={{ color: '#17408f' }}>{news[0].source}</span>
-                        <span>·</span>
                         <span>{news[0].published_at ? timeAgo(news[0].published_at, isHe) : ''}</span>
                       </div>
                       <h3 style={{ fontFamily: 'Heebo,sans-serif', fontWeight: 900, fontSize: 'clamp(18px,2vw,24px)', lineHeight: 1.25, letterSpacing: '-.03em', margin: '10px 0 10px', direction: isHe ? 'rtl' : 'ltr' }}>
@@ -433,18 +391,30 @@ export default function HomeClient({ allMakes, topRanked, recentReviews, tickerI
                     </div>
                   </article>
                 </Link>
+                {isLicensedNewsImage(news[0].image_url) && (news[0].image_author || news[0].image_license) && (
+                  news[0].image_source_url ? (
+                    <a href={news[0].image_source_url} target="_blank" rel="noopener nofollow" style={{ fontSize: 11, color: '#8a9ab8', textDecoration: 'none', display: 'block', padding: '4px 2px 0' }}>
+                      {[news[0].image_author, news[0].image_license].filter(Boolean).join(' · ')}
+                    </a>
+                  ) : (
+                    <span style={{ fontSize: 11, color: '#8a9ab8', display: 'block', padding: '4px 2px 0' }}>
+                      {[news[0].image_author, news[0].image_license].filter(Boolean).join(' · ')}
+                    </span>
+                  )
+                )}
+                </div>
               )}
               {/* Headline list */}
               <div data-ci-group="80" style={{ display: 'grid', gap: 14, alignContent: 'start' }}>
                 {news.slice(1, 4).map(item => (
                   <Link key={item.id} href={newsPath(item)} style={{ display: 'flex', gap: 14, background: '#fff', border: '1px solid #e4e9f2', borderRadius: 16, padding: 14, alignItems: 'center', textDecoration: 'none', color: 'inherit' }} className="ci-news-row">
-                    <NewsImage src={item.image_url} isHe={isHe} loading="lazy" style={{ width: 96, height: 70, flexShrink: 0, borderRadius: 11, padding: '0 8px' }} />
+                    <NewsImage src={sizedImageUrl(item.image_url, 160)} isHe={isHe} loading="lazy" style={{ width: 96, height: 70, flexShrink: 0, borderRadius: 11, padding: '0 8px' }} />
                     <span>
                       <span style={{ fontFamily: 'Heebo,sans-serif', fontWeight: 700, fontSize: 16, lineHeight: 1.3, color: '#0d1b2f', direction: isHe ? 'rtl' : 'ltr', overflow: 'hidden', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' } as React.CSSProperties}>
                         {isHe ? (item.title_he ?? item.title_en) : (item.title_en ?? item.title_he)}
                       </span>
                       <span style={{ display: 'block', fontSize: 12.5, color: '#5b6a86', marginTop: 6 }}>
-                        {item.source} · {item.published_at ? timeAgo(item.published_at, isHe) : ''}
+                        {item.published_at ? timeAgo(item.published_at, isHe) : ''}
                       </span>
                     </span>
                   </Link>
@@ -468,29 +438,32 @@ export default function HomeClient({ allMakes, topRanked, recentReviews, tickerI
             </div>
             <div data-ci-group="80" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(195px,1fr))', gap: 18 }}>
               {topRanked.slice(0, 4).map(car => {
-                const score = (Math.round(car.combined * 10) / 10).toFixed(1);
+                const score = car.aiScore.toFixed(1);
                 const name  = isHe ? `${car.makeHe} ${car.modelHe}` : `${car.makeEn} ${car.modelEn}`;
                 return (
                   <Link key={`${car.makeSlug}/${car.modelSlug}`} href={`/cars/${car.makeSlug}/${car.modelSlug}`} style={{ background: '#fff', border: '1px solid #e4e9f2', borderRadius: 16, overflow: 'hidden', textDecoration: 'none' }} className="ci-model-card">
                     <span style={{ position: 'relative', display: 'block', aspectRatio: '16/10', background: car.imageUrl ? '#f7f9fd' : 'linear-gradient(140deg,#e8edf6,#d5deee)' }}>
                       {car.imageUrl && (
                         /* eslint-disable-next-line @next/next/no-img-element */
-                        <img src={car.imageUrl} alt={name} style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} loading="lazy" />
+                        <img src={sizedImageUrl(car.imageUrl, 400) ?? undefined} alt={name} style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} loading="lazy" />
                       )}
                       <span style={{ position: 'absolute', top: 12, insetInlineEnd: 12, background: '#17408f', color: '#fff', fontFamily: 'Heebo,sans-serif', fontWeight: 900, fontSize: 15, padding: '5px 11px', borderRadius: 9 }}>{score}</span>
                     </span>
                     <span style={{ display: 'block', padding: '13px 16px 16px' }}>
                       <span style={{ display: 'block', fontFamily: 'Heebo,sans-serif', fontWeight: 700, fontSize: 18, color: '#0d1b2f' }}>{name}</span>
-                      <span style={{ display: 'block', fontSize: 13.5, color: '#5b6a86', marginTop: 4 }}>
-                        {car.reviewCount > 0
-                          ? (isHe ? `${car.reviewCount} ${car.reviewCount === 1 ? 'ביקורת בעלים' : 'ביקורות בעלים'}` : `${car.reviewCount} owner review${car.reviewCount === 1 ? '' : 's'}`)
-                          : (isHe ? `ציון AI ${score}/10, ללא ביקורות בעלים` : `AI score ${score}/10, no owner reviews`)}
-                      </span>
+                      {car.reviewCount > 0 && (
+                        <span style={{ display: 'block', fontSize: 13.5, color: '#5b6a86', marginTop: 4 }}>
+                          {isHe ? `${car.reviewCount} ${car.reviewCount === 1 ? 'ביקורת בעלים' : 'ביקורות בעלים'}` : `${car.reviewCount} owner review${car.reviewCount === 1 ? '' : 's'}`}
+                        </span>
+                      )}
                     </span>
                   </Link>
                 );
               })}
             </div>
+            <p style={{ fontSize: 12, color: '#8b98ab', marginTop: 14 }}>
+              {isHe ? 'הציון מבוסס על המוניטין של הדגם: אמינות, בעיות נפוצות, ריקולים וחוות דעת בעלים' : "The score reflects the model's reputation: reliability, common issues, recalls and owner reviews"}
+            </p>
           </section>
         )}
 
@@ -555,10 +528,10 @@ export default function HomeClient({ allMakes, topRanked, recentReviews, tickerI
             {topPairs.map((vs, i) => {
               return (
                 <Link key={i} href={vs.href} style={{ background: '#fff', border: '1px solid #e4e9f2', borderRadius: 16, padding: 20, display: 'block', textDecoration: 'none' }} className="ci-vs-card">
-                  <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontFamily: 'Heebo,sans-serif', fontWeight: 700, fontSize: 16.5, color: '#0d1b2f' }}>
-                    <span>{isHe ? vs.aHe : vs.aEn}</span>
-                    <span style={{ fontSize: 11, letterSpacing: '.14em', color: '#5f6e88' }}>VS</span>
-                    <span>{isHe ? vs.bHe : vs.bEn}</span>
+                  <span style={{ display: 'grid', gridTemplateColumns: '1fr auto 1fr', alignItems: 'start', gap: 8, fontFamily: 'Heebo,sans-serif', fontWeight: 700, fontSize: 16.5, color: '#0d1b2f' }}>
+                    <span style={{ minWidth: 0, overflow: 'hidden', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', lineHeight: 1.25 }} title={isHe ? vs.aHe : vs.aEn}>{isHe ? vs.aHe : vs.aEn}</span>
+                    <span style={{ fontSize: 11, letterSpacing: '.14em', color: '#5f6e88', paddingTop: 3 }}>VS</span>
+                    <span style={{ minWidth: 0, overflow: 'hidden', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', lineHeight: 1.25, textAlign: 'end' }} title={isHe ? vs.bHe : vs.bEn}>{isHe ? vs.bHe : vs.bEn}</span>
                   </span>
                   <span style={{ display: 'block', fontSize: 12.5, color: '#5b6a86', marginTop: 12 }}>
                     {isHe ? 'להשוואת דגמים' : 'Compare these models'}
@@ -571,20 +544,22 @@ export default function HomeClient({ allMakes, topRanked, recentReviews, tickerI
 
       </div>{/* /maxw wrapper */}
 
-      {/* ── Closing CTA ─────────────────────────────────── */}
-      <section style={{ background: '#0d1b2f', color: '#fff', padding: 'clamp(40px,4.5vw,64px) clamp(16px,3vw,32px)', marginTop: 'clamp(34px,3.6vw,52px)' }}>
-        <div data-ci-group="90" style={{ maxWidth: 820, margin: '0 auto', textAlign: 'center' }}>
-          <h2 style={{ fontFamily: 'Heebo,sans-serif', fontWeight: 900, fontSize: 'clamp(24px,2.8vw,38px)', lineHeight: 1.12, letterSpacing: '-.04em', margin: 0, color: '#fff' }}>
-            {isHe ? 'בדיקת פרטי רכב לפי מספר רישוי' : 'Full vehicle check by plate number'}
-          </h2>
-          <p style={{ color: '#b8c8e4', fontSize: 'clamp(15px,1.2vw,17px)', margin: '12px 0 20px' }}>
-            {isHe ? 'בעלות, ריקולים פתוחים, נסועה, בטיחות וצבע מקורי — הכל במקום אחד.' : 'Ownership history, open recalls, mileage, safety rating and original colour — all in one place.'}
-          </p>
-          <Link href="/vehicle-lookup" style={{ display: 'inline-block', background: '#fff', color: '#0d1b2f', fontWeight: 800, fontSize: 16, padding: '13px 30px', borderRadius: 13 }}>
-            {isHe ? 'בדיקת רכב ←' : 'Check a vehicle →'}
-          </Link>
-        </div>
-      </section>
+      {/* ── Closing CTA - Israeli plate lookup, Hebrew site only ── */}
+      {isHe && (
+        <section style={{ background: '#0d1b2f', color: '#fff', padding: 'clamp(40px,4.5vw,64px) clamp(16px,3vw,32px)', marginTop: 'clamp(34px,3.6vw,52px)' }}>
+          <div data-ci-group="90" style={{ maxWidth: 820, margin: '0 auto', textAlign: 'center' }}>
+            <h2 style={{ fontFamily: 'Heebo,sans-serif', fontWeight: 900, fontSize: 'clamp(24px,2.8vw,38px)', lineHeight: 1.12, letterSpacing: '-.04em', margin: 0, color: '#fff' }}>
+              בדיקת פרטי רכב לפי מספר רישוי
+            </h2>
+            <p style={{ color: '#b8c8e4', fontSize: 'clamp(15px,1.2vw,17px)', margin: '12px 0 20px' }}>
+              בעלות, ריקולים פתוחים, נסועה, בטיחות וצבע מקורי - הכל במקום אחד.
+            </p>
+            <Link href="/vehicle-lookup" style={{ display: 'inline-block', background: '#fff', color: '#0d1b2f', fontWeight: 800, fontSize: 16, padding: '13px 30px', borderRadius: 13 }}>
+              בדיקת רכב ←
+            </Link>
+          </div>
+        </section>
+      )}
 
       <style>{`
         .ci-card-hover { transition: transform .3s cubic-bezier(.23,1,.32,1), box-shadow .3s; }
@@ -594,6 +569,8 @@ export default function HomeClient({ allMakes, topRanked, recentReviews, tickerI
         .ci-vs-card:hover { border-color: #17408f !important; }
         .ci-news-row { transition: transform .25s cubic-bezier(.23,1,.32,1), border-color .2s; }
         .ci-news-row:hover { transform: translateX(-6px); border-color: #c9d6ee !important; }
+        .ci-trend-row { transition: background .15s; }
+        .ci-trend-row:hover { background: rgba(255,255,255,.05); }
         @media (max-width: 680px) {
           .ci-news-row:hover { transform: none; }
         }

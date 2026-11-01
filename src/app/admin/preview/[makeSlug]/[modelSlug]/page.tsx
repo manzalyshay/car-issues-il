@@ -293,7 +293,7 @@ export default function PreviewPage() {
                 return (
                   <div key={scope}>
                     <h2 style={{ fontWeight: 800, fontSize: '1rem', marginBottom: 16, color: scope === 'local' ? '#3b82f6' : '#8b5cf6' }}>
-                      {scope === 'local' ? '🇮🇱 ישראלי' : '🌍 בינלאומי'} — {scopePosts.length} פוסטים
+                      {scope === 'local' ? '🇮🇱 ישראלי' : '🌍 בינלאומי'} - {scopePosts.length} פוסטים
                     </h2>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
                       {scopePosts.map(post => {

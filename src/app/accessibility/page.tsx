@@ -22,7 +22,7 @@ export async function generateMetadata(): Promise<Metadata> {
     alternates: { canonical: `${base}/accessibility`, languages: langs },
   } : {
     title: 'הצהרת נגישות',
-    description: 'הצהרת הנגישות של CarIssues IL — התאמות הנגישות באתר, מגבלות ידועות ופרטי פנייה בנושא נגישות.',
+    description: 'הצהרת הנגישות של CarIssues IL - התאמות הנגישות באתר, מגבלות ידועות ופרטי פנייה בנושא נגישות.',
     alternates: { canonical: `${base}/accessibility`, languages: langs },
   };
 }

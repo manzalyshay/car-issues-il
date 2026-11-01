@@ -152,7 +152,7 @@ function EmptySection({ msg }: { msg: string }) {
 // ── Cloudflare section ────────────────────────────────────────────────────────
 
 function CFSection({ cf, days }: { cf: CFData | null; days: number }) {
-  if (!cf) return <EmptySection msg="נתוני Cloudflare לא זמינים — וודא ש-CLOUDFLARE_API_TOKEN ו-CLOUDFLARE_ZONE_ID מוגדרים" />;
+  if (!cf) return <EmptySection msg="נתוני Cloudflare לא זמינים - וודא ש-CLOUDFLARE_API_TOKEN ו-CLOUDFLARE_ZONE_ID מוגדרים" />;
 
   const totalVisits = cf.totals.visits;
   const totalPageViews = cf.totals.pageViews;
@@ -169,7 +169,7 @@ function CFSection({ cf, days }: { cf: CFData | null; days: number }) {
 
       {/* Daily chart */}
       <div className="card" style={{ padding: '20px 24px', marginBottom: 16 }}>
-        <div style={{ fontWeight: 700, fontSize: '0.875rem', marginBottom: 14 }}>גרף יומי — צפיות דפים</div>
+        <div style={{ fontWeight: 700, fontSize: '0.875rem', marginBottom: 14 }}>גרף יומי - צפיות דפים</div>
         <MiniBarChart
           data={cf.daily}
           getDate={r => (r as { date: string }).date}
@@ -242,7 +242,7 @@ function CFSection({ cf, days }: { cf: CFData | null; days: number }) {
       {/* Top pages */}
       {cf.topPaths.length > 0 && (
         <div className="card" style={{ padding: '20px 24px' }}>
-          <div style={{ fontWeight: 700, fontSize: '0.875rem', marginBottom: 14 }}>עמודים מובילים — Cloudflare</div>
+          <div style={{ fontWeight: 700, fontSize: '0.875rem', marginBottom: 14 }}>עמודים מובילים - Cloudflare</div>
           <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.78rem' }}>
             <thead>
               <tr style={{ borderBottom: '1px solid var(--border)' }}>
@@ -274,7 +274,7 @@ function CFSection({ cf, days }: { cf: CFData | null; days: number }) {
 
 function GA4Section({ ga4, days }: { ga4: AnalyticsData['ga4']; days: number }) {
   const m = ga4.overview?.rows?.[0]?.metricValues;
-  if (!m) return <EmptySection msg="נתוני Google Analytics לא זמינים — GA4_PRIVATE_KEY ו-GA4_CLIENT_EMAIL לא מוגדרים" />;
+  if (!m) return <EmptySection msg="נתוני Google Analytics לא זמינים - GA4_PRIVATE_KEY ו-GA4_CLIENT_EMAIL לא מוגדרים" />;
 
   const users = parseInt(m[0].value);
   const sessions = parseInt(m[1].value);
@@ -336,7 +336,7 @@ function GA4Section({ ga4, days }: { ga4: AnalyticsData['ga4']; days: number }) 
       {/* Top pages */}
       {ga4.pages?.rows && (
         <div className="card" style={{ padding: '20px 24px' }}>
-          <div style={{ fontWeight: 700, fontSize: '0.875rem', marginBottom: 14 }}>עמודים מובילים — Google Analytics</div>
+          <div style={{ fontWeight: 700, fontSize: '0.875rem', marginBottom: 14 }}>עמודים מובילים - Google Analytics</div>
           <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.78rem' }}>
             <thead>
               <tr style={{ borderBottom: '1px solid var(--border)' }}>
@@ -369,7 +369,7 @@ function GA4Section({ ga4, days }: { ga4: AnalyticsData['ga4']; days: number }) 
 
 function GSCSection({ gsc }: { gsc: AnalyticsData['gsc'] }) {
   const tot = gsc.overall?.rows?.[0];
-  if (!tot) return <EmptySection msg="נתוני Google Search Console לא זמינים — GSC_CLIENT_ID, GSC_CLIENT_SECRET ו-GSC_REFRESH_TOKEN לא מוגדרים" />;
+  if (!tot) return <EmptySection msg="נתוני Google Search Console לא זמינים - GSC_CLIENT_ID, GSC_CLIENT_SECRET ו-GSC_REFRESH_TOKEN לא מוגדרים" />;
 
   return (
     <div>
@@ -384,7 +384,7 @@ function GSCSection({ gsc }: { gsc: AnalyticsData['gsc'] }) {
       {/* Pages + Queries */}
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 16 }}>
         <div className="card" style={{ padding: '20px 24px' }}>
-          <div style={{ fontWeight: 700, fontSize: '0.875rem', marginBottom: 14 }}>עמודים מובילים — לפי קליקים</div>
+          <div style={{ fontWeight: 700, fontSize: '0.875rem', marginBottom: 14 }}>עמודים מובילים - לפי קליקים</div>
           <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.75rem' }}>
             <thead>
               <tr style={{ borderBottom: '1px solid var(--border)' }}>
@@ -444,7 +444,7 @@ function GSCSection({ gsc }: { gsc: AnalyticsData['gsc'] }) {
         <div className="card" style={{ padding: '20px 24px' }}>
           <div style={{ fontWeight: 700, fontSize: '0.875rem', marginBottom: 4 }}>הזדמנויות SEO</div>
           <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: 14 }}>
-            חשיפות גבוהות, CTR נמוך — עמודים שיכולים לקבל יותר קליקים עם כותרות/תוכן משופרים
+            חשיפות גבוהות, CTR נמוך - עמודים שיכולים לקבל יותר קליקים עם כותרות/תוכן משופרים
           </div>
           <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.75rem' }}>
             <thead>
@@ -584,7 +584,7 @@ export default function AnalyticsPage() {
             <SectionHeader
               icon="☁️"
               title="Cloudflare Analytics"
-              sub={`תנועה אמיתית לאתר — ${days} ימים אחרונים`}
+              sub={`תנועה אמיתית לאתר - ${days} ימים אחרונים`}
             />
             <CFSection cf={data.cf} days={days} />
 
@@ -592,7 +592,7 @@ export default function AnalyticsPage() {
             <SectionHeader
               icon="📊"
               title="Google Analytics"
-              sub={`נתוני התנהגות משתמשים — ${days} ימים אחרונים`}
+              sub={`נתוני התנהגות משתמשים - ${days} ימים אחרונים`}
             />
             <GA4Section ga4={data.ga4} days={days} />
 
@@ -600,7 +600,7 @@ export default function AnalyticsPage() {
             <SectionHeader
               icon="🔍"
               title="Google Search Console"
-              sub="ביצועי חיפוש אורגני — 28 ימים אחרונים"
+              sub="ביצועי חיפוש אורגני - 28 ימים אחרונים"
             />
             <GSCSection gsc={data.gsc} />
           </>

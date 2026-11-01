@@ -329,6 +329,7 @@ button { font-family: inherit; cursor: pointer; }
    ══════════════════════════════════════════════════════════ */
 
 /* Sticky subnav (replaces sidebar) */
+.car-subnav-wrap { position: relative; }
 .car-subnav {
   position: sticky; top: 72px; z-index: 50;
   background: var(--bg-card);
@@ -339,6 +340,17 @@ button { font-family: inherit; cursor: pointer; }
   scrollbar-width: none;
 }
 .car-subnav::-webkit-scrollbar { display: none; }
+/* Fade hint on the trailing edge - signals there are more tabs to scroll to (mobile only) */
+.car-subnav-fade {
+  display: none;
+  position: absolute; top: 0; bottom: 0; right: 0; width: 28px;
+  background: linear-gradient(to left, var(--bg-card), transparent);
+  pointer-events: none; z-index: 51;
+}
+[dir="rtl"] .car-subnav-fade { right: auto; left: 0; background: linear-gradient(to right, var(--bg-card), transparent); }
+@media (max-width: 680px) {
+  .car-subnav-fade { display: block; }
+}
 .car-subnav-inner {
   display: flex; align-items: stretch;
   height: 48px; gap: 0;

@@ -117,7 +117,7 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ points: cached });
   }
 
-  // 3. Upsert into D1 — merge with existing row to preserve other locale's data
+  // 3. Upsert into D1 - merge with existing row to preserve other locale's data
   for (const p of aiData) {
     const existing = await dbFirst<PriceRow>(
       'SELECT * FROM car_price_history WHERE make_slug=? AND model_slug=? AND year=?',

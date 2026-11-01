@@ -4,9 +4,9 @@ import { useState } from 'react';
 import type { Recall } from '@/app/api/recalls/route';
 import { useLocale } from '@/lib/localeContext';
 
-type ZoneId = 'engine' | 'cabin' | 'rear' | 'brakes' | 'electrical';
+export type ZoneId = 'engine' | 'cabin' | 'rear' | 'brakes' | 'electrical';
 
-const ZONE_LABELS: Record<ZoneId, { he: string; en: string; emoji: string }> = {
+export const ZONE_LABELS: Record<ZoneId, { he: string; en: string; emoji: string }> = {
   engine:     { he: 'מנוע ומערכות הנעה', en: 'Engine & Drivetrain', emoji: '🔧' },
   brakes:     { he: 'בלמים, גלגלים ומתלים', en: 'Brakes, Wheels & Suspension', emoji: '🛑' },
   cabin:      { he: 'בטיחות תא נוסעים', en: 'Interior Safety', emoji: '💺' },
@@ -21,31 +21,37 @@ const ZONE_KEYWORDS: Record<ZoneId, string[]> = {
     'motor', 'gasket', 'pump', 'carburetor', 'cylinder', 'piston', 'alternator belt',
     'serpentine', 'timing', 'valve', 'oil', 'coolant', 'radiator',
     'actuator', 'solenoid',
+    // Israeli recalls (recalls_il) categorize in Hebrew, not English
+    'מנוע ומערכותיו', 'מערכת הדלק', 'מערכת העברת כוח', 'מערכת הפליטה',
   ],
   brakes: [
     'brake', 'abs', 'antilock', 'caliper', 'rotor', 'drum', 'tire', 'wheel',
     'suspension', 'shock', 'strut', 'axle', 'hub', 'lug', 'bearing', 'pad',
     'rim', 'alignment', 'spring', 'control arm',
+    'בלמים', 'היגוי ומתלים',
   ],
   cabin: [
     'air bag', 'airbag', 'seat belt', 'seatbelt', 'seat', 'door', 'window',
     'wiper', 'restraint', 'frontal', 'curtain', 'buckle', 'latch', 'deployment',
     'pretensioner', 'child', 'steering', 'visibility', 'instrument', 'dash',
     'occupant', 'driver', 'passenger',
+    'כריות אוויר', 'חגורות בטיחות', 'מערכת הבטיחות',
   ],
   electrical: [
     'electrical', 'wiring', 'lighting', 'headlight', 'tail light', 'bulb', 'led',
     'battery', 'sensor', 'module', 'control unit', 'ecu', 'computer', 'camera',
     'radar', 'collision', 'back over', 'speed control', 'cruise', 'software',
     'switch', 'relay', 'fuse', 'horn', 'alarm', 'powertrain control', 'warning',
+    'חשמל אליקטרוניקה ומיזוג', 'מערכת יציבות',
   ],
   rear: [
     'structure', 'frame', 'body', 'corrosion', 'weld', 'mount', 'hood', 'trunk',
     'hatch', 'roof', 'bumper', 'glass', 'mirror', 'liftgate', 'tailgate',
+    'מרכב ושילדה',
   ],
 };
 
-function classifyRecall(component: string, componentEn?: string): ZoneId {
+export function classifyRecall(component: string, componentEn?: string): ZoneId {
   const lower = (componentEn || component).toLowerCase();
   const order: ZoneId[] = ['electrical', 'cabin', 'brakes', 'engine', 'rear'];
   for (const zone of order) {
@@ -108,8 +114,9 @@ export default function CarDiagramRecalls({ recalls }: Props) {
     <div style={{ marginBottom: 32 }}>
       {/* Header */}
       <div style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 12 }}>
-        {isEn ? `${recalls.length} recalls across ${totalZonesWithRecalls} system${totalZonesWithRecalls !== 1 ? 's' : ''} — hover to explore`
-               : `${recalls.length} ריקולים ב-${totalZonesWithRecalls} מערכות — רחף לפרטים`}
+        {isEn
+          ? `${recalls.length} recall${recalls.length !== 1 ? 's' : ''} across ${totalZonesWithRecalls} system${totalZonesWithRecalls !== 1 ? 's' : ''} - hover to explore`
+          : `${recalls.length} ${recalls.length === 1 ? 'ריקול' : 'ריקולים'} ב-${totalZonesWithRecalls} ${totalZonesWithRecalls === 1 ? 'מערכת' : 'מערכות'} - רחף לפרטים`}
       </div>
 
       {/* SVG Diagram */}
@@ -160,7 +167,7 @@ export default function CarDiagramRecalls({ recalls }: Props) {
           {...zoneHandlers('electrical')}
         />
 
-        {/* ── CAR OUTLINE (on top — pointer-events none) ── */}
+        {/* ── CAR OUTLINE (on top - pointer-events none) ── */}
 
         {/* Main body silhouette */}
         <path
@@ -201,7 +208,7 @@ export default function CarDiagramRecalls({ recalls }: Props) {
         <rect x={507} y={119} width={5} height={20} rx={2}
           fill="#fca5a5" opacity={0.6} pointerEvents="none" />
 
-        {/* Wheels (pointer-events none — zones handle the interaction) */}
+        {/* Wheels (pointer-events none - zones handle the interaction) */}
         <g pointerEvents="none">
           {[129, 399].map(cx => (
             <g key={cx}>
@@ -282,7 +289,7 @@ export default function CarDiagramRecalls({ recalls }: Props) {
                 background: zoneColors(activeRecalls.length, false).badge ?? 'var(--accent)',
                 color: '#fff', borderRadius: 999, padding: '1px 8px',
               }}>
-                {activeRecalls.length} {isEn ? 'recalls' : 'ריקולים'}
+                {activeRecalls.length} {isEn ? (activeRecalls.length === 1 ? 'recall' : 'recalls') : (activeRecalls.length === 1 ? 'ריקול' : 'ריקולים')}
               </span>
             </div>
             <ul style={{ margin: 0, padding: 0, listStyle: 'none', display: 'flex', flexDirection: 'column', gap: 4 }}>

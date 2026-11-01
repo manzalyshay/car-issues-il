@@ -11,7 +11,7 @@ export async function getAllReviews(): Promise<Review[]> {
   return rows.map(dbToReview);
 }
 
-// Cached per-request — generateMetadata and the page component both call this for
+// Cached per-request - generateMetadata and the page component both call this for
 // the same model, so this avoids issuing the same D1 query twice per render.
 export const getReviewsForModel = cache(async (makeSlug: string, modelSlug: string): Promise<Review[]> => {
   const rows = await dbAll(
@@ -121,7 +121,7 @@ export async function translateAndSaveReview(
       titleEn ?? null, bodyEn ?? null, reviewId,
     );
   } catch {
-    // fire-and-forget — never throw
+    // fire-and-forget - never throw
   }
 }
 

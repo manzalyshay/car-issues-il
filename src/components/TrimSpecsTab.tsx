@@ -41,7 +41,7 @@ const FEATURE_GROUPS: { sectionKey: 'tech' | 'safety' | 'comfort'; icon: string;
 ];
 
 function anyHas(trims: TrimWithYear[], key: string) {
-  return trims.some(t => t.features.includes(key));
+  return trims.some(t => Array.isArray(t.features) && t.features.includes(key));
 }
 
 // ILS → USD fixed rate (approximate)
@@ -89,7 +89,7 @@ export default function TrimSpecsTab({ makeSlug, modelSlug, makeNameHe, modelNam
 
   // In specs mode, show "no data" when there are no trims.
   // In safety mode, only bail out if there's also no safety content.
-  if (noTrims && (mode === 'specs' || (!ncap && !safetyHe && !techComfortHe))) return (
+  if (noTrims && (mode === 'specs' || (!ncap && !(locale !== 'en' && safetyHe) && !(locale !== 'en' && techComfortHe)))) return (
     <div style={{ textAlign: 'center', padding: '56px 24px', color: 'var(--text-muted)' }}>
       <div style={{ fontSize: '2.5rem', marginBottom: 12 }}>🔧</div>
       <p style={{ fontWeight: 600, color: 'var(--text-muted)', marginBottom: 6 }}>
@@ -113,7 +113,7 @@ export default function TrimSpecsTab({ makeSlug, modelSlug, makeNameHe, modelNam
   const featureRow = (labelHe: string, key: string) => {
     const feat = TRIM_FEATURES[key as keyof typeof TRIM_FEATURES];
     const label = locale === 'en' && feat?.labelEn ? feat.labelEn : labelHe;
-    const has = trim?.features.includes(key) ?? false;
+    const has = Array.isArray(trim?.features) ? trim!.features.includes(key) : false;
     return (
     <div key={key} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 0', borderBottom: '1px solid var(--border)' }}>
       <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>{label}</span>
@@ -135,7 +135,7 @@ export default function TrimSpecsTab({ makeSlug, modelSlug, makeNameHe, modelNam
   // Gather checklist items for tech card: features present in at least one trim
   const techChecklist = noTrims ? [] : [...techKeys, ...comfortKeys].filter(k => anyHas(allTrims!, k));
   // For the selected trim, which features it has
-  const trimHasFeat = (k: string) => trim?.features.includes(k) ?? false;
+  const trimHasFeat = (k: string) => Array.isArray(trim?.features) ? trim!.features.includes(k) : false;
 
   // Tech highlight stats (from the selected trim)
   const techStats: { value: string; label: string }[] = [];
@@ -144,8 +144,8 @@ export default function TrimSpecsTab({ makeSlug, modelSlug, makeNameHe, modelNam
   if (trim?.seatCount && trim.seatCount !== 5) techStats.push({ value: `${trim.seatCount}`, label: locale === 'en' ? 'Seats' : 'מושבים' });
   if (trim?.engineHp) techStats.push({ value: `${trim.engineHp}`, label: locale === 'en' ? 'Horsepower' : 'כ"ס' });
 
-  const hasSafetyCard = ncap != null || !!safetyHe;
-  const hasTechCard = techStats.length > 0 || techChecklist.length > 0 || !!techComfortHe;
+  const hasSafetyCard = ncap != null || (locale !== 'en' && !!safetyHe);
+  const hasTechCard = techStats.length > 0 || techChecklist.length > 0 || (locale !== 'en' && !!techComfortHe);
 
   const trimSelector = trim && (
     <div style={{ marginBottom: 20 }}>
@@ -192,7 +192,7 @@ export default function TrimSpecsTab({ makeSlug, modelSlug, makeNameHe, modelNam
   return (
     <div>
       {mode === 'safety' && trimSelector}
-      {/* Safety & Tech Cards — only in safety mode */}
+      {/* Safety & Tech Cards - only in safety mode */}
       {mode === 'safety' && (hasSafetyCard || hasTechCard || !!safetyHe || !!techComfortHe) && (
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 20, marginBottom: 24 }}>
           {/* Safety Card */}
@@ -205,7 +205,7 @@ export default function TrimSpecsTab({ makeSlug, modelSlug, makeNameHe, modelNam
                 <h3 style={{ margin: 0, fontSize: 22, fontWeight: 600 }}>{locale === 'en' ? 'Safety' : 'בטיחות'}</h3>
                 {ncap && (
                   <span style={{ marginInlineStart: 'auto', fontSize: 13, color: '#565D68', border: '1px solid #E3E6EB', borderRadius: 999, padding: '4px 10px' }}>
-                    Euro NCAP · {ncap.test_year}
+                    {locale === 'en' ? `Crash test ${ncap.test_year}` : `מבחן התנגשות ${ncap.test_year}`}
                   </span>
                 )}
               </div>
@@ -254,7 +254,7 @@ export default function TrimSpecsTab({ makeSlug, modelSlug, makeNameHe, modelNam
                   })}
                 </ul>
               )}
-              {safetyHe && (
+              {safetyHe && locale !== 'en' && (
                 <div>
                   <p style={{ margin: '0 0 6px', fontSize: 12, fontWeight: 700, color: '#565D68' }}>{ts.modelLevelNote}</p>
                   <p style={{ margin: 0, fontSize: 15, lineHeight: 1.6, color: '#565D68' }}>{safetyHe}</p>
@@ -299,7 +299,7 @@ export default function TrimSpecsTab({ makeSlug, modelSlug, makeNameHe, modelNam
                   })}
                 </ul>
               )}
-              {techComfortHe && (
+              {techComfortHe && locale !== 'en' && (
                 <div>
                   <p style={{ margin: '0 0 6px', fontSize: 12, fontWeight: 700, color: '#565D68' }}>{ts.modelLevelNote}</p>
                   <p style={{ margin: 0, fontSize: 15, lineHeight: 1.6, color: '#565D68' }}>{techComfortHe}</p>
@@ -359,7 +359,7 @@ export default function TrimSpecsTab({ makeSlug, modelSlug, makeNameHe, modelNam
             </div>
           )}
 
-          {/* Feature groups — only features NOT already shown in the cards above */}
+          {/* Feature groups - only features NOT already shown in the cards above */}
           {FEATURE_GROUPS.map(group => {
             const shownInCards = new Set<string>([...safetyKeys, ...techChecklist]);
             const relevantKeys = group.keys.filter(k => anyHas(allTrims ?? [], k) && !shownInCards.has(k));

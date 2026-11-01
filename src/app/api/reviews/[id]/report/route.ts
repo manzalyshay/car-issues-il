@@ -25,7 +25,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     });
 
     if (error) {
-      // Duplicate report from same IP is fine — silently ignore
+      // Duplicate report from same IP is fine - silently ignore
       if (error.code === '23505') return NextResponse.json({ ok: true });
       console.error('[Report API]', error.message);
       return NextResponse.json({ error: 'DB error' }, { status: 500 });

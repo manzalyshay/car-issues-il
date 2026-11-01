@@ -14,8 +14,8 @@ export async function generateMetadata(): Promise<Metadata> {
   const base = getBaseUrl(locale);
   const langs = { he: 'https://carissues.co.il/cars/compare', en: 'https://carissues.net/cars/compare', 'x-default': 'https://carissues.net/cars/compare' };
   return locale === 'en' ? {
-    title: 'Compare Cars - Price, Reliability & Owner Reviews',
-    description: 'Compare any two cars side by side: trim prices, specs, owner reviews, recalls and common problems - with a clear verdict for each pair.',
+    title: 'Compare Cars - Reliability & Owner Reviews',
+    description: 'Compare any two cars side by side: specs, owner reviews, recalls and common problems - with a clear verdict for each pair.',
     alternates: { canonical: `${base}/cars/compare`, languages: langs },
   } : {
     // Over ~65 chars with the "| CarIssues" suffix, so the suffix is dropped.
@@ -152,7 +152,7 @@ export default async function ComparePage() {
         <section style={{ maxWidth: 820, marginBottom: 36, fontSize: '0.95rem', lineHeight: 1.8, color: 'var(--text-muted)' }}>
           {isEn ? (
             <>
-              <p style={{ margin: '0 0 10px' }}>Compare any two of the {modelCount} models from {makes.length} brands on CarIssues. Each comparison puts side by side the Israeli trim prices, key specs (power, fuel consumption, boot space), owner reviews available on this site, US recall records and an AI summary of the information available for each model.</p>
+              <p style={{ margin: '0 0 10px' }}>Compare any two of the {modelCount} models from {makes.length} brands on CarIssues. Each comparison puts side by side key specs (power, fuel consumption, boot space), owner reviews available on this site, recall records and an AI summary of the information available for each model.</p>
               <p style={{ margin: '0 0 10px' }}>How to use it: pick a make and model in both boxes above to open the full comparison page - with a short verdict on who each car suits, common questions and links to both model pages. You can also start from one of the most-read comparisons below, or browse by body type or price range.</p>
               <p style={{ margin: 0 }}>Data is refreshed regularly. When we don&apos;t have a figure for one of the models, the comparison simply leaves it out.</p>
             </>
@@ -195,7 +195,7 @@ export default async function ComparePage() {
           </section>
         )}
 
-        {budgetBlocks.length > 0 && (
+        {!isEn && budgetBlocks.length > 0 && (
           <section style={{ marginBottom: 40 }}>
             <h2 style={{ fontSize: '1.15rem', fontWeight: 800, marginBottom: 6 }}>{isEn ? 'Compare by starting price' : 'השוואה לפי מחיר התחלתי'}</h2>
             <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', margin: '0 0 16px' }}>

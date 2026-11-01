@@ -11,7 +11,7 @@ async function validateCar(makeSlug: string, modelSlug: string) {
   return make && model ? { make, model } : null;
 }
 
-// GET /api/admin — scrape status for all models
+// GET /api/admin - scrape status for all models
 export async function GET(req: NextRequest) {
   if (!await isAdmin(req)) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
@@ -50,7 +50,7 @@ export async function GET(req: NextRequest) {
   return NextResponse.json(allModels);
 }
 
-// POST /api/admin — actions: scrape, delete, bulk_scrape
+// POST /api/admin - actions: scrape, delete, bulk_scrape
 export async function POST(req: NextRequest) {
   if (!await isAdmin(req)) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 

@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { dbAll } from '@/lib/db';
 import { getAllMakes } from '@/lib/carsDb';
+import { getAllAiScores } from '@/lib/aiScore';
 
 export const dynamic = 'force-dynamic';
 
@@ -18,17 +19,13 @@ async function getTopRanked(limit = 6) {
     for (const model of make.models)
       lookup.set(`${make.slug}/${model.slug}`, { makeHe: make.nameHe, modelHe: model.nameHe, logoUrl: make.logoUrl });
 
-  const [expertData, reviewData] = await Promise.all([
-    dbAll<{ make_slug: string; model_slug: string; top_score: number }>(
-      'SELECT make_slug, model_slug, top_score FROM expert_reviews WHERE year IS NULL AND top_score IS NOT NULL',
-    ).catch(() => []),
+  const [aiScores, reviewData] = await Promise.all([
+    getAllAiScores().catch(() => ({} as Record<string, { score: number; confidence: 'high' | 'medium' | 'low' }>)),
     dbAll<{ make_slug: string; model_slug: string; rating: number }>(
       'SELECT make_slug, model_slug, rating FROM reviews',
     ).catch(() => []),
   ]);
 
-  const scoreMap = new Map<string, number>();
-  for (const row of expertData) scoreMap.set(`${row.make_slug}/${row.model_slug}`, row.top_score);
   const reviewMap = new Map<string, number[]>();
   for (const row of reviewData) {
     const key = `${row.make_slug}/${row.model_slug}`;
@@ -38,14 +35,10 @@ async function getTopRanked(limit = 6) {
 
   const ranked: { key: string; combined: number; reviewCount: number }[] = [];
   for (const [key] of lookup) {
-    const score = scoreMap.get(key) ?? null;
+    const ai = aiScores[key] ?? null;
+    if (!ai) continue;
     const ratings = reviewMap.get(key) ?? [];
-    const avg = ratings.length ? ratings.reduce((a, b) => a + b, 0) / ratings.length : null;
-    const scores: number[] = [];
-    if (score != null) scores.push(score);
-    if (avg != null) scores.push(avg * 2);
-    if (!scores.length) continue;
-    ranked.push({ key, combined: scores.reduce((a, b) => a + b) / scores.length, reviewCount: ratings.length });
+    ranked.push({ key, combined: ai.score, reviewCount: ratings.length });
   }
   ranked.sort((a, b) => b.combined - a.combined);
   return ranked.slice(0, limit).map((r, i) => ({ ...r, ...lookup.get(r.key)!, rank: i + 1 }));

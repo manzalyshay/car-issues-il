@@ -1,5 +1,5 @@
 /**
- * 3D model lookup — data lives in D1 `car_3d_models` table.
+ * 3D model lookup - data lives in D1 `car_3d_models` table.
  * Supports multiple models per car keyed by year range (year_from / year_to).
  * Uses a globalThis cache so the table is only queried once per Worker isolate.
  */
@@ -8,6 +8,7 @@ import { dbAll } from './db';
 export interface SketchfabModel {
   uid: string;
   name: string;
+  nameHe: string | null;
   author: string;
   license: string;
   viewerUrl: string;
@@ -19,6 +20,7 @@ export interface SketchfabModel {
 type ModelEntry = {
   uid: string;
   name: string;
+  nameHe: string | null;
   author: string;
   license: string;
   reelUrl: string | null;
@@ -75,9 +77,9 @@ async function fetch3dModels(): Promise<ModelsMap> {
   try {
     const rows = await dbAll<{
       make_slug: string; model_slug: string; sketchfab_uid: string;
-      sketchfab_name: string; sketchfab_author: string; license: string;
+      sketchfab_name: string; name_he: string | null; sketchfab_author: string; license: string;
       reel_url: string | null; year_from: number | null; year_to: number | null;
-    }>('SELECT make_slug, model_slug, sketchfab_uid, sketchfab_name, sketchfab_author, license, reel_url, year_from, year_to FROM car_3d_models WHERE hidden IS NOT 1');
+    }>('SELECT make_slug, model_slug, sketchfab_uid, sketchfab_name, name_he, sketchfab_author, license, reel_url, year_from, year_to FROM car_3d_models WHERE hidden IS NOT 1');
     const map: ModelsMap = {};
     for (const row of rows) {
       const key = `${row.make_slug}/${row.model_slug}`;
@@ -85,6 +87,7 @@ async function fetch3dModels(): Promise<ModelsMap> {
       map[key].push({
         uid: row.sketchfab_uid,
         name: row.sketchfab_name,
+        nameHe: row.name_he ?? null,
         author: row.sketchfab_author,
         license: row.license,
         reelUrl: row.reel_url ?? null,
@@ -100,36 +103,57 @@ async function fetch3dModels(): Promise<ModelsMap> {
 }
 
 /**
+ * Pick the "most recent" entry: the open-ended one (yearTo == null), else the
+ * entry with the highest yearFrom. Used for the main model page.
+ */
+function pickMostRecent(entries: ModelEntry[]): ModelEntry {
+  const openEnded = entries.find(e => e.yearTo == null);
+  if (openEnded) return openEnded;
+  return entries.reduce((best, e) =>
+    (e.yearFrom ?? -Infinity) > (best.yearFrom ?? -Infinity) ? e : best,
+  );
+}
+
+/**
  * Pick the best entry for the given year (or no year).
- * Priority:
- *  1. Year-specific entry whose range contains `year`
- *  2. Entry with no year range (generic fallback)
- * If multiple year-specific entries match, prefer the one with the narrower range.
+ * Year-page selection order:
+ *  1. Entry whose range contains `year` (yearFrom <= year <= yearTo, yearTo=null = no upper bound)
+ *  2. Entry with the highest yearFrom that is still < year
+ *  3. Entry with the lowest yearFrom
+ * No year requested (main model page): most recent entry (yearTo=null, else highest yearFrom).
  */
 function pickEntry(entries: ModelEntry[], year?: number): ModelEntry | null {
   if (!entries.length) return null;
-  if (!year) {
-    // No year requested: prefer generic (null range), else the newest year range
-    return entries.find(e => e.yearFrom == null && e.yearTo == null)
-      ?? [...entries].sort((a, b) => (b.yearFrom ?? 0) - (a.yearFrom ?? 0))[0];
-  }
-  // Find all year-specific entries that cover this year
-  const yearMatches = entries.filter(e =>
+  if (!year) return pickMostRecent(entries);
+
+  const covering = entries.filter(e =>
+
     e.yearFrom != null &&
     year >= e.yearFrom &&
     (e.yearTo == null || year <= e.yearTo),
   );
-  if (yearMatches.length) {
-    // Narrowest range wins
-    yearMatches.sort((a, b) => {
+  if (covering.length) {
+    // Narrowest range wins among covering entries
+    covering.sort((a, b) => {
       const rangeA = (a.yearTo ?? 9999) - (a.yearFrom ?? 0);
       const rangeB = (b.yearTo ?? 9999) - (b.yearFrom ?? 0);
       return rangeA - rangeB;
     });
-    return yearMatches[0];
+    return covering[0];
   }
-  // Fall back to generic entry
-  return entries.find(e => e.yearFrom == null && e.yearTo == null) ?? entries[0];
+
+  const before = entries.filter(e => e.yearFrom != null && e.yearFrom < year);
+  if (before.length) {
+    return before.reduce((best, e) => (e.yearFrom! > best.yearFrom!) ? e : best);
+  }
+
+  const withYear = entries.filter(e => e.yearFrom != null);
+  if (withYear.length) {
+    return withYear.reduce((best, e) => (e.yearFrom! < best.yearFrom!) ? e : best);
+  }
+
+  // No entries have a yearFrom at all: single generic entry, show for all years
+  return entries[0];
 }
 
 export async function findCarModel(
@@ -147,6 +171,7 @@ export async function findCarModel(
   return {
     uid: entry.uid,
     name: entry.name,
+    nameHe: entry.nameHe,
     author: entry.author,
     license: entry.license,
     viewerUrl: `https://sketchfab.com/models/${entry.uid}`,

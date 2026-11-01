@@ -27,8 +27,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const url = `${base}/cars/${make.slug}/${model.slug}/issues`;
   return {
     title: isEn
-      ? `${make.nameEn} ${model.nameEn} — Common Problems & Issues`
-      : `${make.nameHe} ${model.nameHe} — בעיות נפוצות ותקלות`,
+      ? `${make.nameEn} ${model.nameEn} - Common Problems & Issues`
+      : `${make.nameHe} ${model.nameHe} - בעיות נפוצות ותקלות`,
     description: isEn
       ? `What are the common problems with the ${make.nameEn} ${model.nameEn}? Reported issues, pros & cons, repair costs and real owner reviews.`
       : `אילו בעיות נפוצות יש ל${make.nameHe} ${model.nameHe}? תקלות מדווחות, חסרונות, עלויות תיקון וחוות דעת אמיתיות מבעלים בישראל.`,
@@ -42,11 +42,11 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     },
     openGraph: {
       title: isEn
-        ? `${make.nameEn} ${model.nameEn} — Common Problems`
-        : `${make.nameHe} ${model.nameHe} — בעיות נפוצות`,
+        ? `${make.nameEn} ${model.nameEn} - Common Problems`
+        : `${make.nameHe} ${model.nameHe} - בעיות נפוצות`,
       description: isEn
-        ? `Common issues, pros & cons, repair costs — ${make.nameEn} ${model.nameEn}`
-        : `תקלות, חסרונות ועלויות תיקון — ${make.nameHe} ${model.nameHe}`,
+        ? `Common issues, pros & cons, repair costs - ${make.nameEn} ${model.nameEn}`
+        : `תקלות, חסרונות ועלויות תיקון - ${make.nameHe} ${model.nameHe}`,
       url,
     },
   };
@@ -101,8 +101,8 @@ export default async function IssuesPage({ params }: Props) {
         ? `Have there been recalls for the ${make.nameEn} ${model.nameEn}?`
         : `האם היו ריקולים ל${make.nameHe} ${model.nameHe}?`,
       a: isEn
-        ? `Yes, ${recalls.length} recall(s) have been recorded. Components involved: ${recalls.slice(0, 3).map(r => r.component_en ?? r.component_he ?? '').filter(Boolean).join(', ')}.`
-        : `כן, תועדו ${recalls.length} ריקולים. רכיבים מעורבים: ${recalls.slice(0, 3).map(r => r.component_he ?? r.component_en ?? '').filter(Boolean).join(', ')}.`,
+        ? `Yes, ${recalls.length} recall${recalls.length !== 1 ? 's have' : ' has'} been recorded. Components involved: ${recalls.slice(0, 3).map(r => r.component_en ?? r.component_he ?? '').filter(Boolean).join(', ')}.`
+        : `כן, תועד ${recalls.length === 1 ? 'ריקול אחד' : `${recalls.length} ריקולים`}. רכיבים מעורבים: ${recalls.slice(0, 3).map(r => r.component_he ?? r.component_en ?? '').filter(Boolean).join(', ')}.`,
     },
     repairCosts.length > 0 && {
       q: isEn
@@ -159,7 +159,7 @@ export default async function IssuesPage({ params }: Props) {
           <MakeLogo logoUrl={make.logoUrl} nameEn={make.nameEn} size={44} />
           <div>
             <h1 style={{ fontSize: '1.5rem', fontWeight: 800, margin: 0, lineHeight: 1.2 }}>
-              {makeName} {modelName} — {ip.titleSuffix}
+              {makeName} {modelName} - {ip.titleSuffix}
             </h1>
             <p style={{ margin: '4px 0 0', fontSize: '0.875rem', color: 'var(--text-muted)' }}>
               {isEn ? make.nameEn : make.nameHe} {isEn ? model.nameEn : model.nameHe} · {ip.basedOn} {allReviews.length} {ip.ownerReviews}
@@ -246,7 +246,7 @@ export default async function IssuesPage({ params }: Props) {
         {recalls.length > 0 && (
           <section style={{ marginBottom: 32 }}>
             <h2 style={{ fontSize: '1.1rem', fontWeight: 700, marginBottom: 14, display: 'flex', alignItems: 'center', gap: 8 }}>
-              {isEn ? `⚠️ Recalls (${recalls.length})` : `⚠️ ריקולים (${recalls.length})`}
+              {isEn ? `⚠️ Recall${recalls.length === 1 ? '' : 's'} (${recalls.length})` : `⚠️ ${recalls.length === 1 ? 'ריקול' : 'ריקולים'} (${recalls.length})`}
             </h2>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
               {recalls.slice(0, 8).map(r => {
@@ -276,7 +276,7 @@ export default async function IssuesPage({ params }: Props) {
               })}
             </div>
             <p style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginTop: 8 }}>
-              {isEn ? 'Source: NHTSA (US)' : 'מקור: ריקולים בארה״ב'}
+              {isEn ? 'US recalls' : 'ריקולים בארה״ב'}
             </p>
           </section>
         )}

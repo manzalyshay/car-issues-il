@@ -140,18 +140,18 @@ export default function ScrapePage() {
                         <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{m.makeSlug}/{m.modelSlug}</div>
                       </td>
                       <td style={{ padding: '12px 16px', textAlign: 'center', color: m.localPosts > 0 ? 'var(--text-primary)' : 'var(--text-muted)' }}>
-                        {m.localPosts || '—'}
+                        {m.localPosts || '-'}
                       </td>
                       <td style={{ padding: '12px 16px', textAlign: 'center', color: m.globalPosts > 0 ? 'var(--text-primary)' : 'var(--text-muted)' }}>
-                        {m.globalPosts || '—'}
+                        {m.globalPosts || '-'}
                       </td>
                       <td style={{ padding: '12px 16px', textAlign: 'center' }}>
                         {m.clonedPosts > 0
                           ? <span style={{ color: '#16a34a', fontWeight: 700 }}>{m.clonedPosts} ✓</span>
-                          : <span style={{ color: 'var(--text-muted)' }}>—</span>}
+                          : <span style={{ color: 'var(--text-muted)' }}>-</span>}
                       </td>
                       <td style={{ padding: '12px 16px', textAlign: 'center', fontSize: '0.75rem', color: 'var(--text-muted)' }}>
-                        {m.scrapedAt ? timeAgo(m.scrapedAt) : '—'}
+                        {m.scrapedAt ? timeAgo(m.scrapedAt) : '-'}
                       </td>
                       <td style={{ padding: '12px 16px', textAlign: 'center' }}>
                         <button

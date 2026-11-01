@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
-import { notFound } from 'next/navigation';
+import { notFound, permanentRedirect } from 'next/navigation';
 import { getMakeBySlug, getModelBySlug, getCategoryLabel, getSimilarModels } from '@/lib/carsDb';
 import { getReviewsForModel, getAverageRating } from '@/lib/reviewsDb';
 import ReviewNudge from '@/components/ReviewNudge';
@@ -16,17 +16,22 @@ import ModelReviewsSection from './ModelReviewsSection';
 import SharePopup from '@/components/SharePopup';
 import CarSidebarLayout from './CarSidebarLayout';
 import RepairCostsSection from '@/components/RepairCostsSection';
-import { getImagesForCar } from '@/lib/carImages';
+import { getImagesForCar, getOgImage } from '@/lib/carImages';
+import { sizedImageUrl } from '@/lib/imageSizing';
 import SellerPriceChart from '@/components/SellerPriceChart';
 import RecallsBarChart from '@/components/RecallsBarChart';
 import FuelComparisonChart from '@/components/FuelComparisonChart';
 import VerdictCard from '@/components/VerdictCard';
-import { getExternalScores } from '@/lib/proReviewScores';
 import FollowButton from '@/components/FollowButton';
 import HeroMedia from '@/components/HeroMedia';
-import ModelFaq from '@/components/ModelFaq';
+import ModelFaq, { buildFaqs } from '@/components/ModelFaq';
 import HeroYearPicker from '@/components/HeroYearPicker';
 import { getRecallsFromCache } from '@/lib/recallsDb';
+import { getIsraeliRecalls } from '@/lib/israeliRecallsDb';
+import { getAiScore } from '@/lib/aiScore';
+import { getProReviewScoreSets, filterScoreSetsForYear } from '@/lib/proReviewScores';
+import { getModelSynthesisRows } from '@/lib/modelSynthesis';
+import ModelSynthesis from '@/components/ModelSynthesis';
 
 
 export const revalidate = 900; // cache 15 minutes
@@ -55,21 +60,28 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     ? `${model.years[model.years.length - 1]}-${model.years[0]}`
     : model.years.length === 1 ? `${model.years[0]}` : '';
   const yearSuffix = yearRange ? ` ${yearRange}` : '';
+  // Same photo the page itself shows as its default (getImagesForCar's first
+  // result) - not the separate, independently-set leading_image_url field,
+  // which can drift out of sync with what's actually displayed.
+  const ogImage = await getOgImage(makeSlug, modelSlug).catch(() => null);
+  const ogImages = ogImage
+    ? [{ url: ogImage.url, width: ogImage.width, height: ogImage.height }]
+    : [{ url: '/og-default.png', width: 1200, height: 630 }];
 
   if (locale === 'en') {
     const ratingStr = avgRating ? ` · ${avgRating.toFixed(1)}★` : '';
     const reviewPart = reviews.length > 0
-      ? `${reviews.length} reviews${avgRating ? ` ⭐ ${avgRating.toFixed(1)}` : ''}`
+      ? `${reviews.length} ${reviews.length === 1 ? 'review' : 'reviews'}${avgRating ? ` ⭐ ${avgRating.toFixed(1)}` : ''}`
       : 'Reviews & Common Problems';
     return {
       title: `${make.nameEn} ${model.nameEn}${yearSuffix}: ${reviewPart} | Pros & Cons`,
-      description: `${reviews.length > 0 ? `${reviews.length} real owner reviews` : 'Real owner reviews'} for the ${make.nameEn} ${model.nameEn}${yearRange ? ` (${yearRange})` : ''}${avgRating ? `. Average rating ${avgRating.toFixed(1)}/5` : ''}. Price history 2016-2026, common problems, pros, cons and reliability from real car owners.`,
+      description: `${reviews.length > 0 ? `${reviews.length} real owner ${reviews.length === 1 ? 'review' : 'reviews'}` : 'Real owner reviews'} for the ${make.nameEn} ${model.nameEn}${yearRange ? ` (${yearRange})` : ''}${avgRating ? `. Average rating ${avgRating.toFixed(1)}/5` : ''}. Common problems, pros, cons and reliability from real car owners.`.slice(0, 160),
       alternates: { canonical: url, languages: { he: `https://carissues.co.il/cars/${make.slug}/${model.slug}`, en: url, 'x-default': url } },
       openGraph: {
         title: `${make.nameEn} ${model.nameEn}${ratingStr} | CarIssues`,
         description: `Owner reviews & common problems: ${make.nameEn} ${model.nameEn}${yearSuffix}`,
         url,
-        images: [{ url: '/og-default.png', width: 1200, height: 630 }],
+        images: ogImages,
       },
     };
   }
@@ -84,19 +96,19 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     : minPrice ? ` מחיר מומלץ: ₪${minPrice.toLocaleString('he-IL')}.` : '';
   const trimNames = trims.slice(0, 6).map(t => t.name).join(', ');
   const trimDesc = trimNames ? ` גימורים: ${trimNames}${trims.length > 6 ? ' ועוד' : ''}.` : '';
-  const reviewPart = reviews.length > 0
-    ? `${reviews.length} חוות דעת${avgRating ? ` ⭐ ${avgRating.toFixed(1)}` : ''}`
-    : 'חוות דעת ובעיות נפוצות';
+  const reviewPart = reviews.length >= 20
+    ? `בעיות נפוצות וחוות דעת בעלים (${reviews.length} ביקורות${avgRating ? ` ⭐ ${avgRating.toFixed(1)}` : ''})`
+    : 'בעיות נפוצות, אמינות וחוות דעת בעלים';
   const recentYears = model.years.slice(0, 4).join(', ');
   return {
-    title: `${make.nameHe} ${model.nameHe}${yearSuffix}: ${reviewPart} | יתרונות וחסרונות`,
-    description: `${reviews.length > 0 ? `${reviews.length} ביקורות אמיתיות` : 'ביקורות אמיתיות'} על ${make.nameHe} ${model.nameHe} (${make.nameEn} ${model.nameEn})${yearRange ? ` שנים ${yearRange}` : ''}${avgRating ? `. דירוג ממוצע ${avgRating.toFixed(1)}/5` : ''}.${priceDesc}${recentYears ? ` חוות דעת ${recentYears}.` : ''}${trimDesc} יתרונות, חסרונות ובעיות נפוצות מבעלי רכב בישראל.`,
+    title: `${make.nameHe} ${model.nameHe}${yearSuffix}: ${reviewPart}`,
+    description: `${reviews.length > 0 ? `${reviews.length} ביקורות אמיתיות` : 'ביקורות אמיתיות'} על ${make.nameHe} ${model.nameHe} (${make.nameEn} ${model.nameEn})${yearRange ? ` שנים ${yearRange}` : ''}${avgRating ? `. דירוג ממוצע ${avgRating.toFixed(1)}/5` : ''}.${priceDesc}${recentYears ? ` חוות דעת ${recentYears}.` : ''}${trimDesc} יתרונות, חסרונות ובעיות נפוצות מבעלי רכב בישראל.`.slice(0, 160),
     alternates: { canonical: url, languages: { he: url, en: `https://carissues.net/cars/${make.slug}/${model.slug}`, 'x-default': `https://carissues.net/cars/${make.slug}/${model.slug}` } },
     openGraph: {
       title: `${make.nameHe} ${model.nameHe}${ratingStr}${countStr} | CarIssues IL`,
       description: `ביקורות ובעיות נפוצות: ${make.nameHe} ${model.nameHe}${yearSuffix}`,
       url,
-      images: [{ url: '/og-default.png', width: 1200, height: 630 }],
+      images: ogImages,
     },
   };
 }
@@ -109,9 +121,17 @@ export default async function ModelPage({ params, searchParams }: Props) {
     getModelBySlug(makeSlug, modelSlug),
   ]);
   if (!make) notFound();
-  if (!model) notFound();
+  if (!model) {
+    // Guessed slugs without hyphens (e.g. /cars/tesla/model3) - send a permanent
+    // redirect to the real slug instead of a soft 404.
+    const guessedModel = make.models.find(
+      (m) => m.slug.replace(/-/g, '') === modelSlug.replace(/-/g, ''),
+    );
+    if (guessedModel) permanentRedirect(`/cars/${make.slug}/${guessedModel.slug}`);
+    notFound();
+  }
 
-  const [allReviews, expertReviewsList, sketchfabModel, similarModels, carImages, modelRepairCosts, trimSpecs, recalls, externalScores] = await Promise.all([
+  const [allReviews, expertReviewsList, sketchfabModel, similarModels, carImages, modelRepairCosts, trimSpecs, recalls, israeliRecalls, aiScore, proReviewScoreSets, synthesisRows] = await Promise.all([
     getReviewsForModel(makeSlug, modelSlug).catch(() => []),
     getExpertReviews(makeSlug, modelSlug).catch(() => []),
     findCarModel(makeSlug, modelSlug).catch(() => null),
@@ -120,8 +140,21 @@ export default async function ModelPage({ params, searchParams }: Props) {
     getModelRepairCosts(makeSlug, modelSlug).catch(() => []),
     getTrimSpecs(makeSlug, modelSlug).catch(() => []),
     getRecallsFromCache(make.nameEn, model.nameEn).catch(() => []),
-    getExternalScores(makeSlug, modelSlug, locale === 'en').catch(() => []),
+    locale === 'en' ? Promise.resolve([]) : getIsraeliRecalls(make.nameEn, model.nameEn).catch(() => []),
+    getAiScore(makeSlug, modelSlug).catch(() => null),
+    getProReviewScoreSets(makeSlug, modelSlug).catch(() => null),
+    getModelSynthesisRows(makeSlug, modelSlug).catch(() => []),
   ]);
+  // Same combined source (Israeli + US-cached) the recalls tab uses, so the FAQ
+  // count and the tab count never drift apart.
+  const recallCount = recalls.length + israeliRecalls.length;
+  // A model's professional-review sets can include a leftover score for an
+  // older generation of the same nameplate - restrict to whichever generation
+  // this page's own years actually cover, the same way year pages already do
+  // via filterScoreSetsForYear.
+  const relevantProReviewScoreSets = proReviewScoreSets && model.years.length
+    ? filterScoreSetsForYear(proReviewScoreSets, Math.max(...model.years))
+    : proReviewScoreSets;
   const [similarRatings, similarImages] = await Promise.all([
     Promise.all(similarModels.map(({ makeSlug: ms, model: m }) => getAverageRating(ms, m.slug).catch(() => null))),
     Promise.all(similarModels.map(({ makeSlug: ms, model: m }) => getImagesForCar(ms, m.slug).catch(() => []))),
@@ -136,6 +169,24 @@ export default async function ModelPage({ params, searchParams }: Props) {
   const cp = translations[locale].carPage;
   const makeName = isEn ? make.nameEn : make.nameHe;
   const modelName = isEn ? model.nameEn : model.nameHe;
+  // Client component props are serialized into the page HTML regardless of what's
+  // actually rendered - never ship Hebrew-only fields to the English site.
+  const makeNameHeForClient = isEn ? '' : make.nameHe;
+  const modelNameHeForClient = isEn ? '' : model.nameHe;
+  const safetyHeForClient = isEn ? null : expertReview?.safetyHe;
+  const techComfortHeForClient = isEn ? null : expertReview?.techComfortHe;
+  // ReviewList already hides Hebrew-only reviews on EN (no bodyEn) and shows the
+  // translated text/an anonymized author - but the raw Hebrew title/body/author
+  // still rode along in the client payload regardless. Strip it at the source.
+  const reviewsForClient = isEn
+    ? allReviews.filter(r => r.bodyEn).map(r => ({
+        ...r,
+        title: r.titleEn ?? '',
+        body: r.bodyEn ?? '',
+        authorName: /[֐-׿]/.test(r.authorName) ? 'Anonymous' : r.authorName,
+        subModel: r.subModel && /[֐-׿]/.test(r.subModel) ? undefined : r.subModel,
+      }))
+    : allReviews;
 
   const yearRange = model.years.length > 1
     ? `${model.years[model.years.length - 1]}-${model.years[0]}`
@@ -159,7 +210,7 @@ export default async function ModelPage({ params, searchParams }: Props) {
   return (
     <div style={{ background: 'var(--bg)', minHeight: '100vh' }}>
 
-      {/* ── MODEL HERO — dark navy ─── */}
+      {/* ── MODEL HERO - dark navy ─── */}
       <section style={{
         position: 'relative',
         background: 'linear-gradient(180deg,#0d1b2f,#12294a)',
@@ -191,7 +242,7 @@ export default async function ModelPage({ params, searchParams }: Props) {
               <h1 style={{ fontFamily: 'Heebo,sans-serif', fontWeight: 900, fontSize: 'clamp(21px,2.2vw,30px)', lineHeight: 1.1, letterSpacing: '-.04em', margin: '4px 0 2px', color: '#fff' }}>
                 {isEn ? `${make.nameEn} ${model.nameEn}` : `${make.nameHe} ${model.nameHe}`}
               </h1>
-              {!isEn && <div style={{ fontSize: 13.5, color: '#9db1d4' }}>{make.nameEn} {model.nameEn}</div>}
+              {!isEn && <div style={{ fontSize: 13.5, color: '#9db1d4' }}>{make.nameEn} {model.nameEn} · בעיות נפוצות וחוות דעת בעלים</div>}
 
               <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginTop: 9, flexWrap: 'wrap' }}>
                 {avgRating !== null && (
@@ -214,31 +265,31 @@ export default async function ModelPage({ params, searchParams }: Props) {
                 )}
               </div>
 
-              {model.activeVehiclesIl != null && model.activeVehiclesIl > 0 && (
+              {!isEn && model.activeVehiclesIl != null && model.activeVehiclesIl > 0 && (
                 <div style={{ marginTop: 7, fontSize: 12, color: '#9db1d4' }}>
                   <span style={{ fontWeight: 700, color: '#c8d8f0' }}>
                     {model.activeVehiclesIl.toLocaleString('he-IL')}
                   </span>
-                  {' '}{isEn ? 'active vehicles in Israel' : 'רכבים פעילים בישראל'}
+                  {' '}רכבים פעילים בישראל
                   <span style={{ opacity: 0.65, marginInlineStart: 4 }}>
-                    ({isEn ? 'Oct 2026' : 'אוק׳ 2026'})
+                    (אוק׳ 2026)
                   </span>
                 </div>
               )}
-              {model.activeVehiclesIl === 0 && curatedModelData?.on_sale_il !== false && (
+              {!isEn && model.activeVehiclesIl === 0 && curatedModelData?.on_sale_il !== false && (
                 <div style={{ marginTop: 7, fontSize: 12, color: '#f0a050' }}>
-                  {isEn ? 'Not currently marketed in Israel' : 'לא משווק כיום בישראל'}
+                  לא משווק כיום בישראל
                 </div>
               )}
-              {curatedModelData?.on_sale_il === false && curatedModelData.status_note && (
+              {!isEn && curatedModelData?.on_sale_il === false && curatedModelData.status_note && (
                 <div style={{ marginTop: 7, fontSize: 12.5, color: '#f0a050', fontWeight: 700 }}>
                   {curatedModelData.status_note}
                 </div>
               )}
-              {curatedModelData?.on_sale_il === true && typeof curatedModelData.price_from_ils === 'number' && (
+              {!isEn && curatedModelData?.on_sale_il === true && typeof curatedModelData.price_from_ils === 'number' && (
                 <div style={{ marginTop: 7, fontSize: 12.5, color: '#9db1d4' }}>
                   <span style={{ color: '#c8d8f0', fontWeight: 700 }}>
-                    {isEn ? `From ₪${curatedModelData.price_from_ils.toLocaleString('en-US')}` : `החל מ-${curatedModelData.price_from_ils.toLocaleString('he-IL')} ₪`}
+                    {`החל מ-${curatedModelData.price_from_ils.toLocaleString('he-IL')} ₪`}
                   </span>
                   {curatedModelData.price_note ? ` · ${curatedModelData.price_note}` : ''}
                 </div>
@@ -255,13 +306,13 @@ export default async function ModelPage({ params, searchParams }: Props) {
                 <SharePopup title={`${makeName} ${modelName}: ${cp.shareTitle}`} url={`${getBaseUrl(locale)}/cars/${make.slug}/${model.slug}`} dark />
               </div>
 
-              {/* Year quick-picker — filters images/videos in place */}
+              {/* Year quick-picker - filters images/videos in place */}
               {model.years.length > 1 && (
                 <HeroYearPicker years={model.years} makeSlug={make.slug} modelSlug={model.slug} />
               )}
             </div>
 
-            {/* Hero media — interactive with clickable thumbnails + year/trim badge */}
+            {/* Hero media - interactive with clickable thumbnails + year/trim badge */}
             <HeroMedia
               images={carImages}
               sketchfabModel={relevantSketchfabModel}
@@ -281,8 +332,8 @@ export default async function ModelPage({ params, searchParams }: Props) {
       <CarSidebarLayout
         makeSlug={makeSlug}
         modelSlug={modelSlug}
-        makeNameHe={make.nameHe}
-        modelNameHe={model.nameHe}
+        makeNameHe={makeNameHeForClient}
+        modelNameHe={modelNameHeForClient}
         makeNameEn={make.nameEn}
         modelNameEn={model.nameEn}
         makeEn={make.nameEn}
@@ -295,17 +346,17 @@ export default async function ModelPage({ params, searchParams }: Props) {
         hasRepairCosts={modelRepairCosts.length > 0}
         sketchfabModel={relevantSketchfabModel}
         initialTab={initialTab}
-        safetyHe={expertReview?.safetyHe}
-        techComfortHe={expertReview?.techComfortHe}
+        safetyHe={safetyHeForClient}
+        techComfortHe={techComfortHeForClient}
       >
-        {/* ── Owner reviews — write review at top ── */}
+        {/* ── Owner reviews - write review at top ── */}
         <div id="reviews" style={{ paddingTop: 0 }}>
           <ModelReviewsSection
             makeSlug={makeSlug}
             modelSlug={modelSlug}
             years={model.years}
             trims={isEn ? undefined : model.trims}
-            initialReviews={allReviews}
+            initialReviews={reviewsForClient}
           />
         </div>
 
@@ -324,9 +375,17 @@ export default async function ModelPage({ params, searchParams }: Props) {
             isEn={isEn}
             avgRating={avgRating}
             reviewCount={allReviews.length}
-            externalScores={externalScores}
+            aiScore={aiScore}
+            proReviewScoreSets={relevantProReviewScoreSets}
           />
         </div>
+
+        {/* ── Test-score synthesis / insufficient-data state ── */}
+        <ModelSynthesis
+          sets={relevantProReviewScoreSets}
+          synthesisRows={synthesisRows}
+          isHe={!isEn}
+        />
 
         {/* ── FAQ ── */}
         <ModelFaq
@@ -334,24 +393,27 @@ export default async function ModelPage({ params, searchParams }: Props) {
           expertReview={expertReview}
           avgRating={avgRating}
           reviewCount={allReviews.length}
-          recallCount={recalls.length}
+          recallCount={recallCount}
           makeNameHe={make.nameHe}
           modelNameHe={model.nameHe}
           makeNameEn={make.nameEn}
           modelNameEn={model.nameEn}
           category={model.category}
           isEn={isEn}
+          includeJsonLd={false}
         />
 
         {/* ── Market value + Recalls bar charts ── */}
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: 16, marginTop: 40, marginBottom: 28 }}>
-          <SellerPriceChart
-            makeSlug={makeSlug}
-            modelSlug={modelSlug}
-            makeEn={make.nameEn}
-            modelEn={model.nameEn}
-            isEn={isEn}
-          />
+          {!isEn && (
+            <SellerPriceChart
+              makeSlug={makeSlug}
+              modelSlug={modelSlug}
+              makeEn={make.nameEn}
+              modelEn={model.nameEn}
+              isEn={isEn}
+            />
+          )}
           <RecallsBarChart
             makeEn={make.nameEn}
             modelEn={model.nameEn}
@@ -406,7 +468,7 @@ export default async function ModelPage({ params, searchParams }: Props) {
                       }}>
                         {simImg ? (
                           // eslint-disable-next-line @next/next/no-img-element
-                          <img src={simImg.thumbnail_url ?? simImg.url} alt={carName} loading="lazy" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
+                          <img src={sizedImageUrl(simImg.thumbnail_url ?? simImg.url, 250) ?? undefined} alt={carName} loading="lazy" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
                         ) : (
                           <MakeLogo logoUrl={logoUrl} nameEn={makeNameEn} size={52} />
                         )}
@@ -476,13 +538,23 @@ export default async function ModelPage({ params, searchParams }: Props) {
           dangerouslySetInnerHTML={{
             __html: JSON.stringify((() => {
               const base = getBaseUrl(locale);
-              const faqPros = isEn ? (expertReview?.prosEn ?? []) : (expertReview?.pros ?? []);
-              const faqCons = isEn ? (expertReview?.consEn ?? []) : (expertReview?.cons ?? []);
-              const faqLocalSummary = isEn ? expertReview?.localSummaryEn : expertReview?.localSummaryHe;
-              const faqGlobalSummary = isEn ? expertReview?.globalSummaryEn : expertReview?.globalSummaryHe;
-              const hasFaq = expertReview && (faqPros.length > 0 || faqCons.length > 0);
               // aggregateRating only from owner reviews submitted on our site (never site/AI-authored)
               const schemaOwnerReviews = allReviews.filter(r => !/carissues/i.test(r.authorName ?? ''));
+              // Same FAQ list the visible ModelFaq accordion renders - keeps the
+              // FAQPage schema in sync with on-page content (Google requires a match).
+              const faqs = buildFaqs({
+                trimSpecs,
+                expertReview,
+                avgRating,
+                reviewCount: allReviews.length,
+                recallCount,
+                makeNameHe: make.nameHe,
+                modelNameHe: model.nameHe,
+                makeNameEn: make.nameEn,
+                modelNameEn: model.nameEn,
+                category: model.category,
+                isEn,
+              });
               return {
                 '@context': 'https://schema.org',
                 '@graph': [
@@ -512,50 +584,13 @@ export default async function ModelPage({ params, searchParams }: Props) {
                       { '@type': 'ListItem', position: 4, name: modelName, item: `${base}/cars/${make.slug}/${model.slug}` },
                     ],
                   },
-                  ...(hasFaq ? [{
+                  ...(faqs.length > 0 ? [{
                     '@type': 'FAQPage',
-                    mainEntity: [
-                      faqPros.length > 0 && {
-                        '@type': 'Question',
-                        name: isEn
-                          ? `What are the pros of the ${make.nameEn} ${model.nameEn}?`
-                          : `מה היתרונות של ${make.nameHe} ${model.nameHe}?`,
-                        acceptedAnswer: { '@type': 'Answer', text: faqPros.join('. ') },
-                      },
-                      faqCons.length > 0 && {
-                        '@type': 'Question',
-                        name: isEn
-                          ? `What are the cons of the ${make.nameEn} ${model.nameEn}?`
-                          : `מה החסרונות של ${make.nameHe} ${model.nameHe}?`,
-                        acceptedAnswer: { '@type': 'Answer', text: faqCons.join('. ') },
-                      },
-                      faqLocalSummary && {
-                        '@type': 'Question',
-                        name: isEn
-                          ? `What do ${make.nameEn} ${model.nameEn} owners say?`
-                          : `מה אומרים בעלי ${make.nameHe} ${model.nameHe} בישראל?`,
-                        acceptedAnswer: { '@type': 'Answer', text: faqLocalSummary },
-                      },
-                      faqGlobalSummary && {
-                        '@type': 'Question',
-                        name: isEn
-                          ? `What is the global expert opinion on the ${make.nameEn} ${model.nameEn}?`
-                          : `מה חוות הדעת הבינלאומית על ${make.nameHe} ${model.nameHe}?`,
-                        acceptedAnswer: { '@type': 'Answer', text: faqGlobalSummary },
-                      },
-                      expertReview?.topScore !== null && {
-                        '@type': 'Question',
-                        name: isEn
-                          ? `What is the AI score of the ${make.nameEn} ${model.nameEn}?`
-                          : `מה הציון של ${make.nameHe} ${model.nameHe}?`,
-                        acceptedAnswer: {
-                          '@type': 'Answer',
-                          text: isEn
-                            ? `The ${make.nameEn} ${model.nameEn} received an AI score of ${expertReview?.topScore?.toFixed(1)} out of 10, based on owner reviews from Israel and worldwide.`
-                            : `${make.nameHe} ${model.nameHe} קיבל ציון ${expertReview?.topScore?.toFixed(1)} מתוך 10 בסיכום AI המבוסס על חוות דעת בעלי רכב בישראל ובעולם.`,
-                        },
-                      },
-                    ].filter(Boolean),
+                    mainEntity: faqs.map(({ q, a }) => ({
+                      '@type': 'Question',
+                      name: q,
+                      acceptedAnswer: { '@type': 'Answer', text: a },
+                    })),
                   }] : []),
                 ],
               };
@@ -567,8 +602,8 @@ export default async function ModelPage({ params, searchParams }: Props) {
       <ReviewNudge
         makeSlug={makeSlug}
         modelSlug={modelSlug}
-        makeNameHe={make.nameHe}
-        modelNameHe={model.nameHe}
+        makeNameHe={makeNameHeForClient}
+        modelNameHe={modelNameHeForClient}
         makeNameEn={make.nameEn}
         modelNameEn={model.nameEn}
       />

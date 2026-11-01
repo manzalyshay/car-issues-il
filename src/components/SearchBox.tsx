@@ -36,7 +36,7 @@ export default function SearchBox({ fullWidth = false, compact = false }: { full
       if (matches(make.nameHe) || matches(make.nameEn) || matches(make.slug)) {
         const makeName = isEn ? make.nameEn : make.nameHe;
         const allModels = isEn ? 'All Models' : 'כל הדגמים';
-        found.push({ label: `${makeName} — ${allModels}`, href: `/cars/${make.slug}`, type: 'make' });
+        found.push({ label: `${makeName} - ${allModels}`, href: `/cars/${make.slug}`, type: 'make' });
       }
       for (const model of make.models) {
         const combined = `${make.nameHe} ${model.nameHe}`;

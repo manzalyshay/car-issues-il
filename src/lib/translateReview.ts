@@ -1,6 +1,6 @@
 /**
  * Hebrew → English review translation using Cloudflare Workers AI
- * (no API key needed — covered by the Workers Paid plan).
+ * (no API key needed - covered by the Workers Paid plan).
  */
 import { runWorkersAI } from '@/lib/workersAi';
 

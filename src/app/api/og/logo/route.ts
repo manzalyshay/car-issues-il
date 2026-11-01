@@ -8,7 +8,7 @@ const TEXT = '#f0f2f5';
 const MUTED = '#9ca3af';
 
 export async function GET() {
-  // 320x320 — correct upload size for FB & IG profile pictures.
+  // 320x320 - correct upload size for FB & IG profile pictures.
   // All content is kept within the central ~240px safe zone so the
   // circular crop on both platforms doesn't cut off anything important.
   const html = `<!DOCTYPE html>
@@ -49,7 +49,7 @@ export async function GET() {
   <!-- Subtle center fill so text stays readable -->
   <div style="position:absolute;inset:0;background:radial-gradient(circle at 50% 50%,rgba(230,57,70,0.06) 0%,transparent 60%);pointer-events:none;"></div>
 
-  <!-- Centered content — safe within circle crop -->
+  <!-- Centered content - safe within circle crop -->
   <div style="position:relative;display:flex;flex-direction:column;align-items:center;gap:12px;text-align:center;padding:0 40px;">
 
     <!-- Red pill badge -->

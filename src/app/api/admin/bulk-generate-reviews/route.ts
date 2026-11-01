@@ -7,7 +7,7 @@ import { scrapeExpertReviews } from '@/lib/expertReviews';
 export const dynamic = 'force-dynamic';
 export const maxDuration = 120;
 
-// GET — list all missing make/model/year combos
+// GET - list all missing make/model/year combos
 export async function GET(req: NextRequest) {
   if (!await isAdmin(req)) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
@@ -35,7 +35,7 @@ export async function GET(req: NextRequest) {
   return NextResponse.json({ total: missing.length, missing });
 }
 
-// POST — generate ONE missing review (call repeatedly until done)
+// POST - generate ONE missing review (call repeatedly until done)
 export async function POST(req: NextRequest) {
   if (!await isAdmin(req)) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 

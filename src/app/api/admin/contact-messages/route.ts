@@ -51,7 +51,7 @@ export async function POST(req: NextRequest) {
       from: 'CarIssues IL <contact@carissues.co.il>',
       to: [msg.email],
       replyTo: 'contact@carissues.co.il',
-      subject: `Re: ${subjectLabel} — CarIssues IL`,
+      subject: `Re: ${subjectLabel} - CarIssues IL`,
       html: `
         <div dir="rtl" style="font-family: sans-serif; max-width: 600px; margin: 0 auto;">
           <p>שלום ${msg.name},</p>

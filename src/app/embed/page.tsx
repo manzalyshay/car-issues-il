@@ -1,8 +1,8 @@
 import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
-  title: 'Free NHTSA Recall Widget — Embed on Your Website',
-  description: 'Embed a free NHTSA recall lookup widget on your car blog or website. Shows live recall data for any make, model and year. Powered by CarIssues.net.',
+  title: 'Free Recall Widget - Embed on Your Website',
+  description: 'Embed a free vehicle recall lookup widget on your car blog or website. Shows live recall data for any make, model and year. Powered by CarIssues.net.',
   robots: { index: true, follow: true },
   alternates: {
     canonical: 'https://carissues.net/embed',
@@ -25,7 +25,7 @@ function iframeUrl(make: string, model: string, year?: number, lang = 'en') {
 
 function snippetCode(make: string, model: string, year?: number) {
   const src = iframeUrl(make, model, year);
-  return `<iframe\n  src="${src}"\n  width="100%"\n  height="360"\n  frameborder="0"\n  loading="lazy"\n  style="border-radius:8px;border:1px solid #e5e7eb"\n  title="NHTSA Recalls — ${make} ${model}${year ? ` ${year}` : ''}"\n></iframe>`;
+  return `<iframe\n  src="${src}"\n  width="100%"\n  height="360"\n  frameborder="0"\n  loading="lazy"\n  style="border-radius:8px;border:1px solid #e5e7eb"\n  title="Vehicle Recalls - ${make} ${model}${year ? ` ${year}` : ''}"\n></iframe>`;
 }
 
 export default function EmbedDocsPage() {
@@ -39,10 +39,10 @@ export default function EmbedDocsPage() {
           Free Embed Widget
         </div>
         <h1 style={{ fontSize: 32, fontWeight: 800, margin: '0 0 12px' }}>
-          NHTSA Recall Widget
+          Recall Widget
         </h1>
         <p style={{ fontSize: 16, color: '#4b5563', lineHeight: 1.7, maxWidth: 600 }}>
-          Add live NHTSA recall data to any car blog or website — no API key, no sign-up, always free.
+          Add live vehicle recall data to any car blog or website - no API key, no sign-up, always free.
           Just paste one line of HTML.
         </p>
       </div>
@@ -57,7 +57,7 @@ export default function EmbedDocsPage() {
           frameBorder="0"
           loading="lazy"
           style={{ borderRadius: 8, border: '1px solid #e5e7eb', display: 'block' }}
-          title={`NHTSA Recalls — ${ex.make} ${ex.model} ${ex.year}`}
+          title={`Vehicle Recalls - ${ex.make} ${ex.model} ${ex.year}`}
         />
       </section>
 
@@ -133,17 +133,14 @@ export default function EmbedDocsPage() {
           frameBorder="0"
           loading="lazy"
           style={{ borderRadius: 8, border: '1px solid #e5e7eb', display: 'block' }}
-          title={`NHTSA Recalls HE — ${ex.make} ${ex.model} ${ex.year}`}
+          title={`Vehicle Recalls HE - ${ex.make} ${ex.model} ${ex.year}`}
         />
       </section>
 
       {/* Footer */}
       <div style={{ borderTop: '1px solid #f3f4f6', paddingTop: 24, fontSize: 13, color: '#9ca3af' }}>
-        Recall data sourced from the{' '}
-        <a href="https://api.nhtsa.gov" target="_blank" rel="noopener noreferrer" style={{ color: '#2563eb' }}>
-          NHTSA public API
-        </a>
-        . Full car reviews and reliability data at{' '}
+        Recall data sourced from official government records.
+        Full car reviews and reliability data at{' '}
         <a href="https://carissues.net" style={{ color: '#2563eb' }}>carissues.net</a>.
       </div>
     </div>

@@ -8,10 +8,12 @@ import { getReviewsForModel } from '@/lib/reviewsDb';
 import { getExpertReviews } from '@/lib/expertReviews';
 import { getTrimSpecs } from '@/lib/trimSpecsDb';
 import { findCarModel } from '@/lib/sketchfab';
-import { getImagesForYear } from '@/lib/carImages';
+import { getImagesForYear, getOgImage } from '@/lib/carImages';
 import { getModelRepairCosts } from '@/lib/repairCostsDb';
 import { getRecallsFromCache } from '@/lib/recallsDb';
 import { isModelYearIndexable } from '@/lib/seoIndexing';
+import { getAiScore } from '@/lib/aiScore';
+import { getProReviewScoreSets, filterScoreSetsForYear } from '@/lib/proReviewScores';
 import SharePopup from '@/components/SharePopup';
 import RecallsBadge from '@/components/RecallsBadge';
 import HeroMedia from '@/components/HeroMedia';
@@ -75,21 +77,28 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const trimDesc = trimNames ? ` גימורים: ${trimNames}${trims.length > 4 ? ' ועוד' : ''}.` : '';
   const indexable = await isModelYearIndexable(makeSlug, modelSlug, yearNum, model.years ?? []);
 
+  // Same photo YearHero itself shows as this year's default (getImagesForYear's
+  // first result) - not the separate leading_image_url field, which is model-wide
+  // and can be a different photo (even a different angle) than this year's pick.
+  const ogImage = await getOgImage(makeSlug, modelSlug, yearNum).catch(() => null);
+  const ogImages = ogImage
+    ? [{ url: ogImage.url, width: ogImage.width, height: ogImage.height }]
+    : [{ url: '/og-default.png', width: 1200, height: 630 }];
+
   if (locale === 'en') {
     const ratingStr = avgRating ? ` ⭐ ${avgRating.toFixed(1)}` : '';
     const reviewPart = yearReviews.length > 0
-      ? `${yearReviews.length} owner reviews${ratingStr}`
+      ? `${yearReviews.length} owner ${yearReviews.length === 1 ? 'review' : 'reviews'}${ratingStr}`
       : 'Reviews & Reliability';
-    const expertPart = metaExpertReview?.topScore != null ? ` Expert score: ${metaExpertReview.topScore.toFixed(1)}/10.` : '';
     const prosPart = metaExpertReview?.prosEn?.[0] ? ` Pros: ${metaExpertReview.prosEn[0]}.` : '';
     const consPart = metaExpertReview?.consEn?.[0] ? ` Cons: ${metaExpertReview.consEn[0]}.` : '';
     const recallPart = metaRecalls.length > 0 ? ` ${metaRecalls.length} recall${metaRecalls.length > 1 ? 's' : ''}.` : '';
     return {
-      title: `${make.nameEn} ${model.nameEn} ${year} — ${reviewPart} | Specs & Price`,
-      description: `${yearReviews.length > 0 ? `${yearReviews.length} real owner reviews` : 'Real owner reviews'} for the ${make.nameEn} ${model.nameEn} ${year}${avgRating ? `. Average rating ${avgRating.toFixed(1)}/5` : ''}.${expertPart}${prosPart}${consPart}${recallPart} Common problems and reliability.`,
+      title: `${make.nameEn} ${model.nameEn} ${year} - ${reviewPart} | Specs & Price`,
+      description: `${yearReviews.length > 0 ? `${yearReviews.length} real owner ${yearReviews.length === 1 ? 'review' : 'reviews'}` : 'Real owner reviews'} for the ${make.nameEn} ${model.nameEn} ${year}${avgRating ? `. Average rating ${avgRating.toFixed(1)}/5` : ''}.${prosPart}${consPart}${recallPart} Common problems and reliability.`.slice(0, 160),
       robots: indexable ? { index: true, follow: true } : { index: false, follow: true },
       alternates: { canonical: url, languages: { he: `https://carissues.co.il/cars/${make.slug}/${model.slug}/${year}`, en: url, 'x-default': url } },
-      openGraph: { title: `${make.nameEn} ${model.nameEn} ${year} | CarIssues`, description: `Owner reviews & reliability — ${make.nameEn} ${model.nameEn} ${year}`, url, images: [{ url: '/og-default.png', width: 1200, height: 630 }] },
+      openGraph: { title: `${make.nameEn} ${model.nameEn} ${year} | CarIssues`, description: `Owner reviews & reliability - ${make.nameEn} ${model.nameEn} ${year}`, url, images: ogImages },
     };
   }
 
@@ -97,13 +106,13 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const reviewPart = yearReviews.length > 0
     ? `${yearReviews.length} ביקורות בעלים${ratingStr}`
     : 'חוות דעת ואמינות';
-  const recallPartHe = metaRecalls.length > 0 ? ` ${metaRecalls.length} ריקולים.` : '';
+  const recallPartHe = metaRecalls.length > 0 ? ` ${metaRecalls.length === 1 ? 'ריקול אחד' : `${metaRecalls.length} ריקולים`}.` : '';
   return {
-    title: `${make.nameHe} ${model.nameHe} ${year}${priceHook} — ${reviewPart} | מחיר, מפרט ואמינות`,
-    description: `${yearReviews.length > 0 ? `${yearReviews.length} ביקורות אמיתיות על` : 'כל מה שצריך לדעת על'} ${make.nameHe} ${model.nameHe} ${year} (${make.nameEn} ${model.nameEn})${avgRating ? ` — דירוג ממוצע ${avgRating.toFixed(1)}/5` : ''}.${priceDesc}${trimDesc}${recallPartHe} יתרונות, חסרונות ובעיות נפוצות מבעלי רכב בישראל.`,
+    title: `${make.nameHe} ${model.nameHe} ${year}${priceHook} - ${reviewPart} | מחיר, מפרט ואמינות`,
+    description: `${yearReviews.length > 0 ? `${yearReviews.length} ביקורות אמיתיות על` : 'כל מה שצריך לדעת על'} ${make.nameHe} ${model.nameHe} ${year} (${make.nameEn} ${model.nameEn})${avgRating ? ` - דירוג ממוצע ${avgRating.toFixed(1)}/5` : ''}.${priceDesc}${trimDesc}${recallPartHe} יתרונות, חסרונות ובעיות נפוצות מבעלי רכב בישראל.`.slice(0, 160),
     robots: indexable ? { index: true, follow: true } : { index: false, follow: true },
     alternates: { canonical: url, languages: { he: url, en: `https://carissues.net/cars/${make.slug}/${model.slug}/${year}`, 'x-default': `https://carissues.net/cars/${make.slug}/${model.slug}/${year}` } },
-    openGraph: { title: `${make.nameHe} ${model.nameHe} ${year}${ratingStr} | CarIssues IL`, description: `ביקורות ואמינות — ${make.nameHe} ${model.nameHe} ${year}`, url, images: [{ url: '/og-default.png', width: 1200, height: 630 }] },
+    openGraph: { title: `${make.nameHe} ${model.nameHe} ${year}${ratingStr} | CarIssues IL`, description: `ביקורות ואמינות - ${make.nameHe} ${model.nameHe} ${year}`, url, images: ogImages },
   };
 }
 
@@ -118,7 +127,7 @@ export default async function CarYearPage({ params }: Props) {
   const yearNum = parseInt(year);
   if (!model.years.includes(yearNum)) notFound();
 
-  const [allReviews, expertReviewsList, sketchfabModel, similarModels, carImages, modelRepairCosts, trimSpecs] = await Promise.all([
+  const [allReviews, expertReviewsList, sketchfabModel, similarModels, carImages, modelRepairCosts, trimSpecs, aiScore, allProReviewScoreSets] = await Promise.all([
     getReviewsForModel(makeSlug, modelSlug).catch(() => []),
     getExpertReviews(makeSlug, modelSlug).catch(() => []),
     findCarModel(makeSlug, modelSlug, yearNum).catch(() => null),
@@ -126,12 +135,15 @@ export default async function CarYearPage({ params }: Props) {
     getImagesForYear(makeSlug, modelSlug, yearNum).catch(() => []),
     getModelRepairCosts(makeSlug, modelSlug).catch(() => []),
     getTrimSpecs(makeSlug, modelSlug, yearNum).catch(() => []),
+    getAiScore(makeSlug, modelSlug).catch(() => null),
+    getProReviewScoreSets(makeSlug, modelSlug).catch(() => null),
   ]);
+  const proReviewScoreSets = allProReviewScoreSets ? filterScoreSetsForYear(allProReviewScoreSets, yearNum) : null;
   const { minPrice: schemaMinPrice, maxPrice: schemaMaxPrice } = getPriceRange(trimSpecs);
 
   const expertReview = Array.isArray(expertReviewsList) ? (expertReviewsList[0] ?? null) : null;
 
-  // Year-specific stats for the hero — model page shows all-time avg
+  // Year-specific stats for the hero - model page shows all-time avg
   const yearReviews = allReviews.filter(r => r.year === yearNum);
   const avgRating = yearReviews.length
     ? yearReviews.reduce((s, r) => s + r.rating, 0) / yearReviews.length
@@ -146,6 +158,24 @@ export default async function CarYearPage({ params }: Props) {
   const cp = translations[locale].carPage;
   const makeName = isEn ? make.nameEn : make.nameHe;
   const modelName = isEn ? model.nameEn : model.nameHe;
+  // Client component props are serialized into the page HTML regardless of what's
+  // actually rendered - never ship Hebrew-only fields to the English site.
+  const makeNameHeForClient = isEn ? '' : make.nameHe;
+  const modelNameHeForClient = isEn ? '' : model.nameHe;
+  const safetyHeForClient = isEn ? null : expertReview?.safetyHe;
+  const techComfortHeForClient = isEn ? null : expertReview?.techComfortHe;
+  // ReviewList already hides Hebrew-only reviews on EN (no bodyEn) and shows the
+  // translated text/an anonymized author - but the raw Hebrew title/body/author
+  // still rode along in the client payload regardless. Strip it at the source.
+  const reviewsForClient = isEn
+    ? allReviews.filter(r => r.bodyEn).map(r => ({
+        ...r,
+        title: r.titleEn ?? '',
+        body: r.bodyEn ?? '',
+        authorName: /[֐-׿]/.test(r.authorName) ? 'Anonymous' : r.authorName,
+        subModel: r.subModel && /[֐-׿]/.test(r.subModel) ? undefined : r.subModel,
+      }))
+    : allReviews;
 
   // 3D relevance: if year_from/year_to set, the lookup already returned the right model;
   // fall back to name-based year check for legacy entries without year range
@@ -162,7 +192,7 @@ export default async function CarYearPage({ params }: Props) {
   return (
     <div style={{ background: 'var(--bg)', minHeight: '100vh' }}>
 
-      {/* ── MODEL HERO — same dark navy as model page ── */}
+      {/* ── MODEL HERO - same dark navy as model page ── */}
       <section style={{
         position: 'relative',
         background: 'linear-gradient(180deg,#0d1b2f,#12294a)',
@@ -214,7 +244,7 @@ export default async function CarYearPage({ params }: Props) {
                 )}
                 {yearReviews.length > 0 && (
                   <span style={{ fontSize: 12.5, color: '#9db1d4' }}>
-                    {yearReviews.length} {isEn ? `owner reviews (${year})` : `ביקורות בעלים (${year})`}
+                    {yearReviews.length} {isEn ? `owner ${yearReviews.length === 1 ? 'review' : 'reviews'} (${year})` : `ביקורות בעלים (${year})`}
                   </span>
                 )}
                 <RecallsBadge makeEn={make.nameEn} modelEn={model.nameEn} year={yearNum} />
@@ -240,7 +270,7 @@ export default async function CarYearPage({ params }: Props) {
                 >
                   {isEn ? 'Compare' : 'השוואה'}
                 </Link>
-                <SharePopup title={`${makeName} ${modelName} ${year} — ${cp.shareTitle}`} url={`${base}/cars/${make.slug}/${model.slug}/${year}`} dark />
+                <SharePopup title={`${makeName} ${modelName} ${year} - ${cp.shareTitle}`} url={`${base}/cars/${make.slug}/${model.slug}/${year}`} dark />
               </div>
             </div>
 
@@ -263,8 +293,8 @@ export default async function CarYearPage({ params }: Props) {
       <CarSidebarLayout
         makeSlug={makeSlug}
         modelSlug={modelSlug}
-        makeNameHe={make.nameHe}
-        modelNameHe={model.nameHe}
+        makeNameHe={makeNameHeForClient}
+        modelNameHe={modelNameHeForClient}
         makeNameEn={make.nameEn}
         modelNameEn={model.nameEn}
         makeEn={make.nameEn}
@@ -277,17 +307,17 @@ export default async function CarYearPage({ params }: Props) {
         hasRepairCosts={modelRepairCosts.length > 0}
         sketchfabModel={relevantSketchfabModel}
         year={yearNum}
-        safetyHe={expertReview?.safetyHe}
-        techComfortHe={expertReview?.techComfortHe}
+        safetyHe={safetyHeForClient}
+        techComfortHe={techComfortHeForClient}
       >
-        {/* ── Owner reviews — pre-filtered to this year ── */}
+        {/* ── Owner reviews - pre-filtered to this year ── */}
         <div id="reviews" style={{ paddingTop: 0 }}>
           <ModelReviewsSection
             makeSlug={makeSlug}
             modelSlug={modelSlug}
             years={model.years}
             trims={isEn ? undefined : model.trims}
-            initialReviews={allReviews}
+            initialReviews={reviewsForClient}
             initialYear={yearNum}
           />
         </div>
@@ -311,18 +341,22 @@ export default async function CarYearPage({ params }: Props) {
             isEn={isEn}
             avgRating={allAvgRating}
             reviewCount={allReviews.length}
+            aiScore={aiScore}
+            proReviewScoreSets={proReviewScoreSets}
           />
         </div>
 
         {/* ── Market value + Recalls bar charts ── */}
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 480px))', gap: 16, marginTop: 40, marginBottom: 28 }}>
-          <SellerPriceChart
-            makeSlug={makeSlug}
-            modelSlug={modelSlug}
-            makeEn={make.nameEn}
-            modelEn={model.nameEn}
-            isEn={isEn}
-          />
+          {!isEn && (
+            <SellerPriceChart
+              makeSlug={makeSlug}
+              modelSlug={modelSlug}
+              makeEn={make.nameEn}
+              modelEn={model.nameEn}
+              isEn={isEn}
+            />
+          )}
           <RecallsBarChart
             makeEn={make.nameEn}
             modelEn={model.nameEn}
@@ -388,12 +422,12 @@ export default async function CarYearPage({ params }: Props) {
               '@context': 'https://schema.org',
               '@graph': [
                 // Google rejects Product without offers, review or aggregateRating
-                ...((schemaMinPrice !== null || yearReviews.length > 0) ? [{
+                ...((!isEn && schemaMinPrice !== null || yearReviews.length > 0) ? [{
                   '@type': 'Product',
                   name: `${make.nameEn} ${model.nameEn} ${year}`,
                   brand: { '@type': 'Brand', name: make.nameEn },
                   url: `${base}/cars/${make.slug}/${model.slug}/${year}`,
-                  ...(schemaMinPrice !== null && schemaMaxPrice !== null && {
+                  ...(!isEn && schemaMinPrice !== null && schemaMaxPrice !== null && {
                     offers: {
                       '@type': 'AggregateOffer',
                       priceCurrency: 'ILS',

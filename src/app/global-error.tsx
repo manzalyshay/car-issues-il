@@ -5,8 +5,8 @@ import { useEffect } from 'react';
 const isEn = typeof window !== 'undefined' && window.location.hostname.includes('.net');
 
 const CONTENT = {
-  en: { lang: 'en', dir: 'ltr', title: 'Site Under Maintenance', body: "The database is currently unavailable. We're working on it — we'll be back soon.", retry: 'Please try again in a few minutes.', tryAgain: 'Try Again', home: 'Home' },
-  he: { lang: 'he', dir: 'rtl', title: 'האתר בתחזוקה זמנית', body: 'מסד הנתונים אינו זמין כרגע. אנחנו עובדים על זה — נחזור בקרוב.', retry: 'ניתן לנסות שוב בעוד מספר דקות.', tryAgain: 'נסה שוב', home: 'עמוד הבית' },
+  en: { lang: 'en', dir: 'ltr', title: 'Site Under Maintenance', body: "The database is currently unavailable. We're working on it - we'll be back soon.", retry: 'Please try again in a few minutes.', tryAgain: 'Try Again', home: 'Home' },
+  he: { lang: 'he', dir: 'rtl', title: 'האתר בתחזוקה זמנית', body: 'מסד הנתונים אינו זמין כרגע. אנחנו עובדים על זה - נחזור בקרוב.', retry: 'ניתן לנסות שוב בעוד מספר דקות.', tryAgain: 'נסה שוב', home: 'עמוד הבית' },
 };
 
 export default function GlobalError({ error, reset }: { error: Error & { digest?: string }; reset: () => void }) {

@@ -13,6 +13,8 @@ interface Props {
   modelNameEn: string;
   category: string;
   isEn: boolean;
+  /** Set false when the FAQPage JSON-LD is emitted elsewhere (e.g. inside a page-level @graph). */
+  includeJsonLd?: boolean;
 }
 
 interface FaqItem {
@@ -27,7 +29,7 @@ function range(vals: number[], toFixed = 0): string {
   return `${toFixed > 0 ? mn.toFixed(toFixed) : mn}-${toFixed > 0 ? mx.toFixed(toFixed) : mx}`;
 }
 
-function buildFaqs(props: Props): FaqItem[] {
+export function buildFaqs(props: Props): FaqItem[] {
   const {
     trimSpecs, expertReview, avgRating, reviewCount, recallCount,
     makeNameHe, modelNameHe, makeNameEn, modelNameEn, category, isEn,
@@ -93,20 +95,14 @@ function buildFaqs(props: Props): FaqItem[] {
     );
   }
 
-  // ── Price ────────────────────────────────────────────────────────────────────
+  // ── Price (Israeli shekel pricing - Hebrew site only) ─────────────────────────
   const priceVals = trimSpecs.map(t => t.priceIls).filter((v): v is number => v != null && v >= 50000);
-  if (priceVals.length) {
+  if (priceVals.length && !isEn) {
     const mn = Math.min(...priceVals);
     const mx = Math.max(...priceVals);
     const fmtHe = (v: number) => `₪${v.toLocaleString('he-IL')}`;
-    const fmtEn = (v: number) => `₪${Math.round(v / 1000)}K`;
-    const priceStr = mn === mx
-      ? (isEn ? fmtEn(mn) : fmtHe(mn))
-      : (isEn ? `${fmtEn(mn)}-${fmtEn(mx)}` : `${fmtHe(mn)} עד ${fmtHe(mx)}`);
-    faqs.push(isEn
-      ? { q: `What is the price of the ${carEn} in Israel?`, a: `The ${carEn} is priced between ${priceStr} in Israel.` }
-      : { q: `מה המחיר של ה${carHe} בישראל?`, a: `מחיר ה${carHe} בישראל נע בין ${priceStr}.` }
-    );
+    const priceStr = mn === mx ? fmtHe(mn) : `${fmtHe(mn)} עד ${fmtHe(mx)}`;
+    faqs.push({ q: `מה המחיר של ה${carHe} בישראל?`, a: `מחיר ה${carHe} בישראל נע בין ${priceStr}.` });
   }
 
   // ── Recommended ──────────────────────────────────────────────────────────────
@@ -173,13 +169,13 @@ function buildFaqs(props: Props): FaqItem[] {
     ? {
         q: `Have there been any recalls for the ${carEn}?`,
         a: recallCount > 0
-          ? `Yes, there are ${recallCount} recorded recall(s) for the ${carEn}. See the Recalls section on this page for details.`
+          ? `Yes, there ${recallCount === 1 ? 'is' : 'are'} ${recallCount} recorded ${recallCount === 1 ? 'recall' : 'recalls'} for the ${carEn}. See the Recalls section on this page for details.`
           : `No recalls have been recorded for the ${carEn} in our database. Always check the manufacturer's official recall portal for the latest information.`,
       }
     : {
         q: `האם היו קריאות חזרה ל${carHe}?`,
         a: recallCount > 0
-          ? `כן, נמצאו ${recallCount} קריאות חזרה ל${carHe}. ראו את סעיף הקריאות חזרה בדף זה לפרטים.`
+          ? `כן, נמצאו ${recallCount === 1 ? 'קריאת חזרה אחת' : `${recallCount} קריאות חזרה`} ל${carHe}. ראו את סעיף הקריאות חזרה בדף זה לפרטים.`
           : `לא נמצאו קריאות חזרה ל${carHe} במסד הנתונים שלנו. מומלץ לבדוק בפורטל הרשמי של היצרן.`,
       }
   );
@@ -188,7 +184,7 @@ function buildFaqs(props: Props): FaqItem[] {
 }
 
 export default function ModelFaq(props: Props) {
-  const { isEn } = props;
+  const { isEn, includeJsonLd = true } = props;
   const faqs = buildFaqs(props);
   if (faqs.length === 0) return null;
 
@@ -204,10 +200,12 @@ export default function ModelFaq(props: Props) {
 
   return (
     <section style={{ marginTop: 28, marginBottom: 8 }} dir={isEn ? 'ltr' : 'rtl'}>
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
-      />
+      {includeJsonLd && (
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+        />
+      )}
 
       <div style={{
         background: '#fff', border: '1px solid #e3e8ee', borderRadius: 18,

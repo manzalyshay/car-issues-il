@@ -64,7 +64,7 @@ let _db: D1Database | null = null;
 
 export async function getDB(): Promise<D1Database> {
   if (_db) return _db;
-  // Skip during next build — pages handle the error via try/catch
+  // Skip during next build - pages handle the error via try/catch
   if (process.env.NEXT_PHASE === 'phase-production-build') {
     throw new Error('D1 not available at build time');
   }
@@ -73,7 +73,11 @@ export async function getDB(): Promise<D1Database> {
   if (process.env.NODE_ENV === 'development') {
     try {
       const ctx = await getCloudflareContext({ async: true });
-      _db = (ctx.env as D1Env).DB;
+      const db = (ctx.env as D1Env).DB;
+      // getCloudflareContext() can resolve without throwing but with no DB binding
+      // under plain `next dev` (no local Cloudflare runtime) - fall back the same
+      // as when it throws, instead of returning an unusable undefined.
+      _db = db ?? makeRemoteDB();
       return _db;
     } catch {
       _db = makeRemoteDB();

@@ -64,7 +64,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   if (isEn) {
     const hpStr = trim.engineHp ? ` · ${trim.engineHp} hp` : '';
     return {
-      title: `${make.nameEn} ${model.nameEn} ${trim.name} ${year} — Specs & Features`,
+      title: `${make.nameEn} ${model.nameEn} ${trim.name} ${year} - Specs & Features`,
       description: `Full specs for ${make.nameEn} ${model.nameEn} ${trim.name} ${year}.${hpStr} Technology, safety, and comfort features.`,
       alternates: { canonical: url, languages: trimLangs },
       openGraph: {
@@ -123,9 +123,9 @@ export default async function TrimPage({ params }: Props) {
     brand: { '@type': 'Brand', name: make.nameEn },
     url: pageUrl,
     description: isEn
-      ? `${make.nameEn} ${model.nameEn} ${trim.name} ${year} — specs, features and equipment`
-      : `${make.nameHe} ${model.nameHe} גימור ${trim.name} ${year} — מפרט ציוד ומחיר`,
-    ...(trim.priceIls && {
+      ? `${make.nameEn} ${model.nameEn} ${trim.name} ${year} - specs, features and equipment`
+      : `${make.nameHe} ${model.nameHe} גימור ${trim.name} ${year} - מפרט ציוד ומחיר`,
+    ...(!isEn && trim.priceIls && {
       offers: {
         '@type': 'Offer',
         priceCurrency: 'ILS',
@@ -181,14 +181,14 @@ export default async function TrimPage({ params }: Props) {
 
         {/* Title */}
         <h1 style={{ fontSize: '1.75rem', fontWeight: 700, marginBottom: 8 }}>
-          {makeName} {modelName} — {isEn ? 'Trim' : 'גימור'} {trim.name}
+          {makeName} {modelName} - {isEn ? 'Trim' : 'גימור'} {trim.name}
         </h1>
         <p style={{ color: 'var(--text-muted)', marginBottom: 32 }}>
           {make.nameEn} {model.nameEn} {trim.name} · {isEn ? 'Model year' : 'דגם'} {year}
         </p>
 
-        {/* Price */}
-        {trim.priceIls && (
+        {/* Price - Israeli shekel list price, Hebrew site only */}
+        {!isEn && trim.priceIls && (
           <div style={{
             background: 'var(--surface-2)',
             border: '2px solid var(--accent)',
@@ -300,7 +300,7 @@ export default async function TrimPage({ params }: Props) {
                   }}
                 >
                   {t.name}
-                  {t.priceIls && (
+                  {!isEn && t.priceIls && (
                     <span style={{ fontSize: '0.75rem', opacity: 0.8, marginRight: 6 }}>
                       ₪{Math.round(t.priceIls / 1000)}K
                     </span>

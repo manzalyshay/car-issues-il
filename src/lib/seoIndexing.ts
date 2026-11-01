@@ -2,7 +2,7 @@
  * Single source of truth for which programmatic pages are indexable.
  *
  * The sitemap and the pages' robots meta both call into this module, so a URL is
- * either in the sitemap and indexable, or out of the sitemap and noindex — never a
+ * either in the sitemap and indexable, or out of the sitemap and noindex - never a
  * mix. Errors are thrown, not swallowed: callers decide how to fail (pages fail
  * open to `index`, so a transient D1 error can never cache a stray noindex).
  */

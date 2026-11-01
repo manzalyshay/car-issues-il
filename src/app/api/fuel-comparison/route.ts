@@ -15,6 +15,7 @@ export async function GET(req: NextRequest) {
   const { searchParams } = req.nextUrl;
   const make = searchParams.get('make');
   const model = searchParams.get('model');
+  const isEn = searchParams.get('locale') === 'en';
   if (!make || !model) return NextResponse.json({ error: 'Missing params' }, { status: 400 });
 
   // Get the category of the requested model
@@ -47,7 +48,7 @@ export async function GET(req: NextRequest) {
   const data: FuelEntry[] = rows.map(r => ({
     makeSlug: r.make_slug,
     modelSlug: r.model_slug,
-    nameHe: r.name_he,
+    nameHe: isEn ? '' : r.name_he,
     nameEn: r.name_en,
     fuel: r.fuel,
   }));

@@ -1,9 +1,10 @@
 /**
  * Data-built intro for make pages: every sentence is filled from the catalogue, trim prices,
- * owner reviews, AI scores (labelled), NHTSA recalls and CarComplaints — and dropped when
+ * owner reviews, AI scores (labelled), NHTSA recalls and CarComplaints - and dropped when
  * the data behind it is missing.
  */
 import { dbAll } from './db';
+import { getAllAiScores, blendWithOwnerRating } from './aiScore';
 import { getModelPriceMins } from './trimSpecsDb';
 import { getCategoryLabel, type CarMake } from '@/data/cars';
 import { fmtIls, kmPerL, summarizeTrims, type TrimLike } from './specSummary';
@@ -31,9 +32,7 @@ export async function getMakeStats(make: CarMake): Promise<MakeStats> {
     dbAll<{ model_slug: string; n: number; avg: number }>(
       'SELECT model_slug, COUNT(*) AS n, AVG(rating) AS avg FROM reviews WHERE make_slug = ? GROUP BY model_slug', make.slug,
     ).catch(() => []),
-    dbAll<{ model_slug: string; top_score: number }>(
-      'SELECT model_slug, top_score FROM expert_reviews WHERE make_slug = ? AND year IS NULL AND top_score IS NOT NULL', make.slug,
-    ).catch(() => []),
+    getAllAiScores().catch(() => ({} as Record<string, { score: number; confidence: 'high' | 'medium' | 'low' }>)),
     dbAll<{ model: string; component_he: string | null }>(
       'SELECT model, component_he FROM recalls_cache WHERE make = ?', make.nameEn.toLowerCase(),
     ).catch(() => []),
@@ -99,7 +98,14 @@ export async function getMakeStats(make: CarMake): Promise<MakeStats> {
     rated: reviews.filter((r) => slugs.has(r.model_slug)).map((r) => ({ slug: r.model_slug, avg: r.avg, count: r.n }))
       .sort((a, b) => b.avg - a.avg || b.count - a.count),
     reviewTotal: reviews.filter((r) => slugs.has(r.model_slug)).reduce((s, r) => s + r.n, 0),
-    aiScores: scores.filter((s) => slugs.has(s.model_slug)).map((s) => ({ slug: s.model_slug, score: s.top_score }))
+    aiScores: make.models
+      .filter((m) => slugs.has(m.slug) && scores[`${make.slug}/${m.slug}`] != null)
+      .map((m) => {
+        const r = reviews.find((rr) => rr.model_slug === m.slug);
+        const base = scores[`${make.slug}/${m.slug}`]!.score;
+        const score = r ? blendWithOwnerRating(base, r.avg, r.n) : base;
+        return { slug: m.slug, score };
+      })
       .sort((a, b) => b.score - a.score),
     recallTotal,
     recallTopModels: [...recallByModel.entries()].map(([slug, count]) => ({ slug, count })).sort((a, b) => b.count - a.count).slice(0, 3),
@@ -108,7 +114,7 @@ export async function getMakeStats(make: CarMake): Promise<MakeStats> {
   };
 }
 
-/** Plain-text paragraphs (no markup) — rendered by the make page. */
+/** Plain-text paragraphs (no markup) - rendered by the make page. */
 export function buildMakeIntro(make: CarMake, st: MakeStats, locale: 'he' | 'en'): string[] {
   const en = locale === 'en';
   const name = (slug: string) => {
@@ -128,14 +134,14 @@ export function buildMakeIntro(make: CarMake, st: MakeStats, locale: 'he' | 'en'
   const years = st.yearMin && st.yearMax ? (en ? `, model years ${st.yearMin}–${st.yearMax}` : `, משנתון ${st.yearMin} ועד ${st.yearMax}`) : '';
   out.push(en
     ? `CarIssues covers ${make.models.length} ${make.nameEn} models (${list(cats)})${years}. Each model page brings together owner reviews, common problems, safety recalls, trim prices and specs.`
-    : `ב-CarIssues יש מידע על ${make.models.length} דגמים של ${make.nameHe} (${make.nameEn}) — ${list(cats)}${years}. בכל דף דגם מרוכזים ביקורות בעלים, בעיות נפוצות, ריקולים, מחירון גרסאות ומפרט.`);
+    : `ב-CarIssues יש מידע על ${make.models.length} דגמים של ${make.nameHe} (${make.nameEn}) - ${list(cats)}${years}. בכל דף דגם מרוכזים ביקורות בעלים, בעיות נפוצות, ריקולים, מחירון גרסאות ומפרט.`);
 
   // 1b. Models by body type
   const byCat = st.categories.map((c) => {
     const names = make.models.filter((m) => m.category === c.cat).map((m) => (en ? m.nameEn : m.nameHe));
     return `${getCategoryLabel(c.cat as never, locale)}: ${names.join(', ')}`;
   });
-  if (byCat.length) out.push(en ? `Models by body type — ${byCat.join('; ')}.` : `הדגמים לפי סוג מרכב — ${byCat.join('; ')}.`);
+  if (byCat.length) out.push(en ? `Models by body type - ${byCat.join('; ')}.` : `הדגמים לפי סוג מרכב - ${byCat.join('; ')}.`);
 
   // 2. Prices in Israel
   if (st.prices.length >= 2) {
@@ -156,7 +162,7 @@ export function buildMakeIntro(make: CarMake, st: MakeStats, locale: 'he' | 'en'
   if (st.biggestCargo) specParts.push(en ? `the biggest boot is in the ${name(st.biggestCargo.slug)} (${st.biggestCargo.liters} L)` : `תא המטען הגדול ביותר הוא של ${name(st.biggestCargo.slug)} (${st.biggestCargo.liters} ליטר)`);
   if (specParts.length) out.push(en ? `In the trim specs on file, ${list(specParts)}.` : `לפי נתוני המפרט באתר, ${list(specParts)}.`);
 
-  // 3. Owner reviews (best / worst) — only real reviews
+  // 3. Owner reviews (best / worst) - only real reviews
   if (st.rated.length >= 2) {
     const best = st.rated[0], worst = st.rated[st.rated.length - 1];
     out.push(en
@@ -169,8 +175,8 @@ export function buildMakeIntro(make: CarMake, st: MakeStats, locale: 'he' | 'en'
       : `בינתיים יש באתר ביקורות בעלים רק על ${name(r.slug)} (${r.avg.toFixed(1)} מתוך 5). יש לכם ${make.nameHe}? ביקורת שלכם תעזור לקונים אחרים.`);
   } else {
     out.push(en
-      ? `There are no owner reviews for ${make.nameEn} models on CarIssues yet — own one? Be the first to review it.`
-      : `עדיין אין באתר ביקורות בעלים על דגמי ${make.nameHe} — יש לכם אחד? היו הראשונים לכתוב ביקורת.`);
+      ? `There are no owner reviews for ${make.nameEn} models on CarIssues yet - own one? Be the first to review it.`
+      : `עדיין אין באתר ביקורות בעלים על דגמי ${make.nameHe} - יש לכם אחד? היו הראשונים לכתוב ביקורת.`);
   }
 
   // 4. AI scores (clearly labelled as AI)
@@ -186,8 +192,8 @@ export function buildMakeIntro(make: CarMake, st: MakeStats, locale: 'he' | 'en'
     const top = st.recallTopModels.map((m) => (en ? `${name(m.slug)} (${m.count})` : `${name(m.slug)} (${m.count})`));
     const comps = st.recallComponents.length ? (en ? ` The components recalled most often: ${list(st.recallComponents)}.` : ` הרכיבים שחוזרים הכי הרבה בקריאות: ${list(st.recallComponents)}.`) : '';
     out.push(en
-      ? `NHTSA (US) records ${st.recallTotal} recalls for the ${make.nameEn} models covered here; the most recalled are ${list(top)}.${comps}`
-      : `במאגר הריקולים של NHTSA (ארה"ב) מתועדות ${st.recallTotal} קריאות ריקול לדגמי ${make.nameHe} שבאתר; הכי הרבה קריאות היו ${hp('ל', list(top))}.${comps}`);
+      ? `US recall records show ${st.recallTotal} recalls for the ${make.nameEn} models covered here; the most recalled are ${list(top)}.${comps}`
+      : `במאגר הריקולים בארה"ב מתועדות ${st.recallTotal} קריאות ריקול לדגמי ${make.nameHe} שבאתר; הכי הרבה קריאות היו ${hp('ל', list(top))}.${comps}`);
   }
   if (st.knownIssues.length > 0) {
     const items = st.knownIssues.map((k) => `${name(k.slug)}: ${k.title}`);

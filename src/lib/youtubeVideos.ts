@@ -49,7 +49,7 @@ function isLikelyReview(title: string): boolean {
   // Reject if contains spam keywords
   if (SPAM_TITLE_KEYWORDS.some(kw => lower.includes(kw.toLowerCase()))) return false;
 
-  // Boost if title contains review keywords (but don't require — some reviews have plain titles)
+  // Boost if title contains review keywords (but don't require - some reviews have plain titles)
   const hasReviewSignal = REVIEW_TITLE_KEYWORDS.some(kw => lower.includes(kw.toLowerCase()));
 
   // Reject very short titles (likely clickbait) or extremely long ones
@@ -80,7 +80,7 @@ export async function getVideosForYear(makeSlug: string, modelSlug: string, year
   return titled.length > 0 ? titled : all;
 }
 
-/** Search YouTube via the public InnerTube API — no API key required. */
+/** Search YouTube via the public InnerTube API - no API key required. */
 async function youtubeSearch(query: string): Promise<Array<{
   ytId: string; title: string; channel: string;
   publishedAt: string; thumbnail: string;

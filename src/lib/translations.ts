@@ -191,13 +191,18 @@ export const translations = {
     rankingsPage: {
       title: 'דירוג אמינות רכבים',
       breadcrumb: 'דירוג אמינות',
-      subtitle: 'ציון AI משולב עם ביקורות בעלים כשקיימות',
+      subtitle: 'דירוג דגמי הרכב לפי ציון AI קבוע',
       noData: 'אין נתונים זמינים לקטגוריה זו',
-      scoreNote: 'הציון המשולב הוא ממוצע של ציון AI ודירוגי בעלי רכב, כשיש ביקורות.',
+      scoreNote: 'הציון מבוסס על המוניטין של הדגם: אמינות, בעיות נפוצות, ריקולים וחוות דעת בעלים',
       showing: 'מוצגים',
       outOf: 'מתוך',
       models: 'דגמים',
       home: 'בית',
+      singleTest: 'מבחן אחד',
+      notEnoughTests: 'אין מספיק מבחנים',
+      listOnlyNote: 'לקטגוריה זו אין מספיק דגמים עם מבחן יחיד מאומת לדירוג - רשימה בלבד, לא דירוג.',
+      rankedHeading: 'מדורגים',
+      notRankedHeading: 'דגמים נוספים בקטגוריה (לא מדורגים)',
       categories: { all: 'הכל', sedan: 'סדאן', suv: 'SUV', hatchback: "האצ'בק", electric: 'חשמלי', pickup: 'פיקאפ', van: 'ואן', minivan: 'מיניוואן', sports: 'ספורט', coupe: 'קופה' },
     },
     carsPage: {
@@ -207,7 +212,7 @@ export const translations = {
       makes: 'יצרנים',
       models: 'דגמים',
       other: 'אחר',
-      countryNames: { 'יפן': 'יפן', 'קוריאה': 'קוריאה', 'גרמניה': 'גרמניה', 'צרפת': 'צרפת', 'שוודיה': 'שוודיה', 'ארה"ב': 'ארה"ב', "צ'כיה": "צ'כיה", 'איטליה': 'איטליה' } as Record<string,string>,
+      countryNames: { 'יפן': 'יפן', 'קוריאה': 'קוריאה', 'גרמניה': 'גרמניה', 'צרפת': 'צרפת', 'שוודיה': 'שוודיה', 'ארה"ב': 'ארה"ב', 'ארה״ב': 'ארה"ב', "צ'כיה": "צ'כיה", 'איטליה': 'איטליה', 'ספרד': 'ספרד', 'רומניה': 'רומניה', 'סין': 'סין', 'סין / בריטניה': 'סין / בריטניה', 'בריטניה': 'בריטניה' } as Record<string,string>,
     },
     makePage: {
       selectModel: 'בחר דגם',
@@ -260,7 +265,7 @@ export const translations = {
     },
     recalls: {
       title: 'ריקולים וקריאות חזרה',
-      source: 'מקור: ריקולים בארה״ב (NHTSA)',
+      source: 'ריקולים בארה״ב',
       allYears: 'כל השנים',
       loading: 'טוען ריקולים...',
       noneFound: 'לא נמצאו ריקולים',
@@ -269,16 +274,16 @@ export const translations = {
       descLabel: 'תיאור הבעיה',
       riskLabel: 'סכנה אפשרית',
       fixLabel: 'פתרון / תיקון',
-      moreDetails: 'פרטים נוספים באתר NHTSA ←',
+      moreDetails: 'פרטים נוספים ←',
     },
     complaints: {
       title: 'תלונות בעלים',
       loading: 'טוען תלונות...',
       noneFound: 'לא נמצאו תלונות עבור רכב זה',
-      source: 'מקור: NHTSA (ארה"ב)',
+      source: 'תלונות בארה"ב',
       total: 'תלונות',
       byComponent: 'לפי רכיב',
-      moreDetails: 'צפה בתלונה המלאה באתר NHTSA ←',
+      moreDetails: 'צפה בתלונה המלאה ←',
       crash: 'תאונה',
       fire: 'שריפה',
       injury: 'פציעה',
@@ -422,6 +427,9 @@ export const translations = {
       scoresTitle: 'ציונים ודירוגים',
       userRating: 'דירוג משתמשים',
       aiScore: 'ציון AI',
+      testScoreNote: 'ציון מבחנים: ציון כללי לעומת רכבים אחרים בקטגוריה, מתוך מבחנים מאומתים - לא ציון אמינות.',
+      noMatchingScore: 'אין ציון מבחנים מאומת',
+      seeModelPage: 'ראו בעמוד הדגם',
       reviews: 'ביקורות',
       prosAndConsTitle: 'יתרונות וחסרונות',
       verdictTitle: 'מי עדיף?',
@@ -735,13 +743,18 @@ export const translations = {
     rankingsPage: {
       title: 'Car Reliability Rankings',
       breadcrumb: 'Reliability Rankings',
-      subtitle: 'Combined AI score with owner reviews when available',
+      subtitle: 'Car model rankings by fixed AI score',
       noData: 'No data available for this category',
-      scoreNote: 'The combined score averages the AI score and owner ratings when reviews are available.',
+      scoreNote: "The score reflects the model's reputation: reliability, common issues, recalls and owner reviews",
       showing: 'Showing',
       outOf: 'of',
       models: 'models',
       home: 'Home',
+      singleTest: 'Single test',
+      notEnoughTests: 'Not enough tests',
+      listOnlyNote: 'Not enough models with a single verified test to rank in this category - list only, not ranked.',
+      rankedHeading: 'Ranked',
+      notRankedHeading: 'More models in this category (not ranked)',
       categories: { all: 'All', sedan: 'Sedan', suv: 'SUV', hatchback: 'Hatchback', electric: 'Electric', pickup: 'Pickup', van: 'Van', minivan: 'Minivan', sports: 'Sports', coupe: 'Coupe' },
     },
     carsPage: {
@@ -751,7 +764,7 @@ export const translations = {
       makes: 'Makes',
       models: 'Models',
       other: 'Other',
-      countryNames: { 'יפן': 'Japan', 'קוריאה': 'Korea', 'גרמניה': 'Germany', 'צרפת': 'France', 'שוודיה': 'Sweden', 'סין': 'China', 'ארה"ב': 'USA', "צ'כיה": 'Czechia', 'איטליה': 'Italy' } as Record<string,string>,
+      countryNames: { 'יפן': 'Japan', 'קוריאה': 'Korea', 'גרמניה': 'Germany', 'צרפת': 'France', 'שוודיה': 'Sweden', 'סין': 'China', 'ארה"ב': 'USA', 'ארה״ב': 'USA', "צ'כיה": 'Czechia', 'איטליה': 'Italy', 'ספרד': 'Spain', 'רומניה': 'Romania', 'סין / בריטניה': 'China / UK', 'בריטניה': 'UK' } as Record<string,string>,
     },
     makePage: {
       selectModel: 'Select a Model',
@@ -804,7 +817,7 @@ export const translations = {
     },
     recalls: {
       title: 'Recalls',
-      source: 'Source: NHTSA',
+      source: 'US recalls',
       allYears: 'All Years',
       loading: 'Loading recalls...',
       noneFound: 'No recalls found',
@@ -813,16 +826,16 @@ export const translations = {
       descLabel: 'Problem Description',
       riskLabel: 'Possible Risk',
       fixLabel: 'Solution / Fix',
-      moreDetails: 'More details on NHTSA ←',
+      moreDetails: 'More details ←',
     },
     complaints: {
       title: 'Owner Complaints',
       loading: 'Loading complaints...',
       noneFound: 'No complaints found for this vehicle',
-      source: 'Source: NHTSA (US)',
+      source: 'US complaints',
       total: 'complaints',
       byComponent: 'By component',
-      moreDetails: 'View full complaint on NHTSA ←',
+      moreDetails: 'View full complaint ←',
       crash: 'Crash',
       fire: 'Fire',
       injury: 'Injury',
@@ -970,6 +983,9 @@ export const translations = {
       scoresTitle: 'Scores & Ratings',
       userRating: 'User Rating',
       aiScore: 'AI Score',
+      testScoreNote: "Test score: a general score vs other cars in the category, from verified tests - not a reliability score.",
+      noMatchingScore: 'No verified test score',
+      seeModelPage: 'See model page',
       reviews: 'reviews',
       prosAndConsTitle: 'Pros & Cons',
       verdictTitle: 'Which is better?',
@@ -1107,7 +1123,7 @@ export type Translations = {
   reviewList: { all: string; mechanical: string; electrical: string; comfort: string; safety: string; general: string; sortNewest: string; sortHelpful: string; sortRating: string; noReviews: string; noReviewsCategory: string; km: string; replies: string; reply: string; namePlaceholder: string; replyPlaceholder: string; send: string; cancel: string; addReply: string; reportTitle: string; reportButton: string; reportSent: string; reportReason: string; reportReasons: Record<string, string>; share: string };
   expertReview: { defaultLabel: string; israeli: string; global: string; pros: string; cons: string; footer: string; overallScore: string; reviews: string; discussions: string; sources: string; aiKnowledge: string; generalSummary: string; moreSources: string };
   repairCostSubmit: { ownersOf: string; question: string; questionSuffix: string; helpOthers: string; cancel: string; addReport: string; submitted: string; selectRepair: string; other: string; repairName: string; cost: string; carYear: string; garageType: string; notes: string; submit: string; submitting: string; garagePlaceholder: string; dealer: string; chain: string; independent: string };
-  rankingsPage: { title: string; breadcrumb: string; subtitle: string; noData: string; scoreNote: string; showing: string; outOf: string; models: string; home: string; categories: Record<string, string> };
+  rankingsPage: { title: string; breadcrumb: string; subtitle: string; noData: string; scoreNote: string; showing: string; outOf: string; models: string; home: string; singleTest: string; notEnoughTests: string; listOnlyNote: string; rankedHeading: string; notRankedHeading: string; categories: Record<string, string> };
   carsPage: { title: string; subtitle: string; home: string; makes: string; models: string; other: string; countryNames: Record<string, string> };
   auth: { loginTitle: string; signupTitle: string; displayName: string; displayNamePlaceholder: string; email: string; password: string; passwordPlaceholder: string; submit: string; submitSignup: string; continueGoogle: string; or: string; noAccount: string; hasAccount: string; register: string; loginLink: string; errorInvalid: string; errorName: string };
   errorPage: { title: string; body: string; retry: string; tryAgain: string; home: string; brand: string };
@@ -1121,7 +1137,7 @@ export type Translations = {
   carTabs: { reviews: string; specs: string; videos: string; images: string; loading: string };
   viewer3d: { loading: string; clickToLoad: string; ariaLoad: string; hideModel: string; hideTitle: string; hideReasonLabel: string; hideReasonPlaceholder: string; hideConfirm: string; hideCancel: string };
   notFound: { title: string; body: string; home: string };
-  compareStaticPage: { breadcrumbHome: string; breadcrumbCompare: string; vsWord: string; subtitleCompare: string; scoresTitle: string; userRating: string; aiScore: string; reviews: string; prosAndConsTitle: string; verdictTitle: string; verdictWinnerPre: string; verdictWinnerMid: string; verdictHasPros: string; verdictTie: string; ctaTitle: string; ctaSubtitle: string; ctaButton: string; relatedTitle: string; modelPageLink: string; no3dModel: string; models3dTitle: string; vsGroup: string; performanceTitle: string; perfNoData: string; perfLowerBetter: string; perfHigherBetter: string };
+  compareStaticPage: { breadcrumbHome: string; breadcrumbCompare: string; vsWord: string; subtitleCompare: string; scoresTitle: string; userRating: string; aiScore: string; testScoreNote: string; noMatchingScore: string; seeModelPage: string; reviews: string; prosAndConsTitle: string; verdictTitle: string; verdictWinnerPre: string; verdictWinnerMid: string; verdictHasPros: string; verdictTie: string; ctaTitle: string; ctaSubtitle: string; ctaButton: string; relatedTitle: string; modelPageLink: string; no3dModel: string; models3dTitle: string; vsGroup: string; performanceTitle: string; perfNoData: string; perfLowerBetter: string; perfHigherBetter: string };
   writeReview: { success: string; successBody: string; addAnother: string; cta: string; cancel: string };
   contactPage: { home: string; breadcrumb: string; title: string; subtitle: string; sentTitle: string; sentBody: string; sendAnother: string; labelName: string; labelEmail: string; labelSubject: string; labelMessage: string; placeholderName: string; placeholderMessage: string; subjects: Record<string, string>; errorMsg: string; submitting: string; submit: string; infoItems: readonly { icon: string; title: string; desc: string }[]; terms: string; backHome: string };
   profilePage: { loginRequired: string; loginBody: string; backHome: string; home: string; breadcrumb: string; save: string; cancel: string; editNameTitle: string; reviewsLabel: string; avgLabel: string; myReviews: string; loadingReviews: string; noReviews: string; findCar: string; km: string; foundHelpful: string };

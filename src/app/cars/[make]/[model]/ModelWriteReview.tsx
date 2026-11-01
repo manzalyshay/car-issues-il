@@ -52,7 +52,7 @@ export default function ModelWriteReview({ makeSlug, modelSlug, years }: Props) 
 
   return (
     <div style={{ marginBottom: 32 }} id="write-review">
-      {/* Stars first — always visible */}
+      {/* Stars first - always visible */}
       <div style={{ textAlign: 'center', marginBottom: open ? 20 : 0 }}>
         <div style={{ display: 'flex', justifyContent: 'center', gap: 6, marginBottom: 8 }}>
           {[1, 2, 3, 4, 5].map(star => (

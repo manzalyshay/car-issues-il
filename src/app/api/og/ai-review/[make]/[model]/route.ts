@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getMakeBySlug, getModelBySlug } from '@/lib/carsDb';
 import { getExpertReviews } from '@/lib/expertReviews';
+import { getAiScore } from '@/lib/aiScore';
 
 export const dynamic = 'force-dynamic';
 
@@ -20,7 +21,8 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ mak
   const reviews = await getExpertReviews(makeSlug, modelSlug);
   const review = reviews[0] ?? null;
 
-  const score = review?.topScore ?? null;
+  const aiScore = await getAiScore(makeSlug, modelSlug).catch(() => null);
+  const score = aiScore?.score ?? null;
   const scoreColor = score == null ? MUTED : score >= 7.5 ? GREEN : score >= 5.5 ? '#f59e0b' : R;
   const pros = review?.pros?.slice(0, 2) ?? [];
   const cons = review?.cons?.slice(0, 2) ?? [];
@@ -67,7 +69,7 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ mak
   <!-- RIGHT: Pros & Cons -->
   <div style="flex:1;display:flex;flex-direction:column;justify-content:center;padding:44px 52px 44px 40px;gap:16px;">
 
-    <div style="font-size:18px;font-weight:700;color:${MUTED};letter-spacing:1.5px;text-transform:uppercase;margin-bottom:8px;">ביקורת AI — נהגים ישראלים</div>
+    <div style="font-size:18px;font-weight:700;color:${MUTED};letter-spacing:1.5px;text-transform:uppercase;margin-bottom:8px;">ביקורת AI - נהגים ישראלים</div>
 
     ${pros.map(p => `
     <div style="display:flex;align-items:flex-start;gap:16px;background:${CARD};border:1px solid ${GREEN}30;border-radius:14px;padding:18px 22px;">

@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { dbAll } from '@/lib/db';
 import { getAllMakes } from '@/lib/carsDb';
+import { getAllAiScores, blendWithOwnerRating } from '@/lib/aiScore';
 import { getHostLocale, getBaseUrl } from '@/lib/hostLocale';
 import { translations } from '@/lib/translations';
 import StarRating from '@/components/StarRating';
@@ -15,7 +16,7 @@ export async function generateMetadata(): Promise<Metadata> {
   const base = getBaseUrl(locale);
   return {
     title: locale === 'en'
-      ? 'Car Reliability Rankings Israel 2026 - Best & Worst Cars'
+      ? 'Car Reliability Rankings 2026 - Best & Worst Cars'
       : 'דירוג רכבים בישראל 2026 - אמינות, חוות דעת ובעיות נפוצות',
     description: rp.subtitle,
     alternates: { canonical: `${base}/rankings`, languages: { he: 'https://carissues.co.il/rankings', en: 'https://carissues.net/rankings', 'x-default': 'https://carissues.net/rankings' } },
@@ -31,10 +32,10 @@ interface RankedModel {
   modelEn: string;
   logoUrl: string;
   category: string;
-  topScore: number | null;
+  aiScore: number | null;
+  aiConfidence: 'high' | 'medium' | 'low' | null;
   avgRating: number | null;
   reviewCount: number;
-  combined: number;
 }
 
 export default async function RankingsPage({ searchParams }: { searchParams: Promise<{ cat?: string }> }) {
@@ -59,15 +60,8 @@ export default async function RankingsPage({ searchParams }: { searchParams: Pro
     }
   }
 
-  // Fetch expert scores (general, year=null)
-  const expertData = await dbAll<{ make_slug: string; model_slug: string; top_score: number }>(
-    'SELECT make_slug, model_slug, top_score FROM expert_reviews WHERE year IS NULL AND top_score IS NOT NULL',
-  ).catch(() => []);
-
-  const scoreMap = new Map<string, number>();
-  for (const row of expertData) {
-    scoreMap.set(`${row.make_slug}/${row.model_slug}`, row.top_score);
-  }
+  // Fetch the fixed AI reputation score for every model
+  const aiScores = await getAllAiScores().catch(() => ({} as Record<string, { score: number; confidence: 'high' | 'medium' | 'low' }>));
 
   // Fetch user review averages
   const reviewData = await dbAll<{ make_slug: string; model_slug: string; rating: number }>(
@@ -81,25 +75,39 @@ export default async function RankingsPage({ searchParams }: { searchParams: Pro
     reviewMap.get(key)!.push(row.rating);
   }
 
+  // Also factor in verified external test scores (icar, Autocar, carwow, etc.)
+  // as one more input into the displayed score, same treatment as model pages.
+  const testScoreData = await dbAll<{ make_slug: string; model_slug: string; score: number }>(
+    'SELECT make_slug, model_slug, score FROM pro_review_scores',
+  ).catch(() => []);
+  const testScoreMap = new Map<string, number[]>();
+  for (const row of testScoreData) {
+    const key = `${row.make_slug}/${row.model_slug}`;
+    if (!testScoreMap.has(key)) testScoreMap.set(key, []);
+    testScoreMap.get(key)!.push(row.score);
+  }
+  const TEST_SCORE_WEIGHT = 0.3;
+
   // Build ranked list
   const ranked: RankedModel[] = [];
   for (const [key, info] of lookup.entries()) {
-    const topScore  = scoreMap.get(key) ?? null;
+    const ai = aiScores[key] ?? null;
+    if (ai == null) continue;
     const ratings   = reviewMap.get(key) ?? [];
     const avgRating = ratings.length ? ratings.reduce((a, b) => a + b, 0) / ratings.length : null;
     const reviewCount = ratings.length;
-
-    const scores = [];
-    if (topScore != null) scores.push(topScore);
-    if (avgRating != null) scores.push(avgRating * 2);
-    if (scores.length === 0) continue;
-    const combined = scores.reduce((a, b) => a + b, 0) / scores.length;
+    let displayScore = blendWithOwnerRating(ai.score, avgRating, reviewCount);
+    const testScores = testScoreMap.get(key);
+    if (testScores && testScores.length > 0) {
+      const testAvg = testScores.reduce((a, b) => a + b, 0) / testScores.length;
+      displayScore = displayScore * (1 - TEST_SCORE_WEIGHT) + testAvg * TEST_SCORE_WEIGHT;
+    }
 
     const [makeSlug, modelSlug] = key.split('/');
-    ranked.push({ makeSlug, modelSlug, ...info, topScore, avgRating, reviewCount, combined });
+    ranked.push({ makeSlug, modelSlug, ...info, aiScore: displayScore, aiConfidence: ai.confidence, avgRating, reviewCount });
   }
 
-  ranked.sort((a, b) => b.combined - a.combined);
+  ranked.sort((a, b) => (b.aiScore ?? 0) - (a.aiScore ?? 0));
 
   const filtered = cat === 'all' ? ranked : ranked.filter(r => r.category === cat);
   const categories = ['all', ...Object.keys(rp.categories).filter(k => k !== 'all' && ranked.some(r => r.category === k))];
@@ -177,10 +185,17 @@ export default async function RankingsPage({ searchParams }: { searchParams: Pro
                   </div>
                 )}
 
-                {/* Combined score */}
-                <div className={`score-badge ranking-score ${car.combined >= 8.5 ? 'score-tier-hi' : car.combined >= 7 ? 'score-tier-mid' : 'score-tier-lo'}`}>
-                  <span className="n">{car.combined.toFixed(1)}</span>
-                  <span className="of">{isEn ? '/10' : 'מתוך 10'}</span>
+                {/* AI score */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <div className={`score-badge ranking-score ${(car.aiScore ?? 0) >= 8.5 ? 'score-tier-hi' : (car.aiScore ?? 0) >= 7 ? 'score-tier-mid' : 'score-tier-lo'}`}>
+                    <span className="n">{(car.aiScore ?? 0).toFixed(1)}</span>
+                    <span className="of">{isEn ? '/10' : 'מתוך 10'}</span>
+                  </div>
+                  {car.aiConfidence === 'low' && (
+                    <span style={{ fontSize: '0.65rem', fontWeight: 700, color: '#92620a', background: '#fef3cd', padding: '2px 7px', borderRadius: 999, whiteSpace: 'nowrap' }}>
+                      {isEn ? 'Estimated' : 'משוער'}
+                    </span>
+                  )}
                 </div>
               </div>
                 );

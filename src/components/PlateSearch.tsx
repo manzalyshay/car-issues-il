@@ -4,11 +4,12 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import type { Vehicle } from '@/lib/vehicleLookup';
 import { detectCountry } from '@/lib/vehicleLookup';
+import { COLOR_EN, FUEL_EN, ORIGIN_EN, translateValue, normalizeOwnership } from '@/lib/vehicleLookupLabels';
 
 interface Props { isHe: boolean; navigateOnSearch?: boolean; initialVehicle?: Vehicle | null; initialPlate?: string; }
 
 function fmtDate(raw: string, locale?: string) {
-  if (!raw) return '—';
+  if (!raw) return '-';
   // Handle YYYY-MM format (UK monthOfFirstRegistration)
   if (/^\d{4}-\d{2}$/.test(raw)) {
     const [y, m] = raw.split('-');
@@ -22,6 +23,11 @@ function fmtDate(raw: string, locale?: string) {
 function isExpired(raw: string) {
   if (!raw) return false;
   return new Date(raw) < new Date();
+}
+
+/** Format a slug like "corolla-cross" -> "Corolla Cross" */
+function slugToDisplay(slug: string): string {
+  return slug.split('-').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
 }
 
 export default function PlateSearch({ isHe, navigateOnSearch, initialVehicle, initialPlate }: Props) {
@@ -41,6 +47,7 @@ export default function PlateSearch({ isHe, navigateOnSearch, initialVehicle, in
     loading: 'מחפש...',
     notFound: 'לא נמצא רכב עם מספר זה',
     apiError: 'שגיאה בבדיקת הרכב, נסה שוב',
+    invalidInput: 'הזן מספר רישוי של 7 או 8 ספרות',
     testValid: 'טסט בתוקף עד',
     testExpired: 'טסט פג תוקף',
     validUntil: 'רישיון בתוקף עד',
@@ -54,8 +61,8 @@ export default function PlateSearch({ isHe, navigateOnSearch, initialVehicle, in
     viewModel: 'לביקורות ובעיות נפוצות →',
     viewMake: 'לכל דגמי',
     yearPage: 'לשנת',
-    source: 'מקור: משרד התחבורה (data.gov.il)',
-    sourceUk: 'Source: DVLA (UK Government)',
+    source: 'הנתונים מתעדכנים אחת ליום',
+    sourceUk: 'הנתונים מתעדכנים אחת ליום',
     odometer: 'ק"מ בטסט אחרון',
     accident: 'היסטוריית נזק',
     accidentYes: '⚠ נרשם נזק',
@@ -75,6 +82,7 @@ export default function PlateSearch({ isHe, navigateOnSearch, initialVehicle, in
     loading: 'Searching...',
     notFound: 'No vehicle found with this plate number',
     apiError: 'Error checking vehicle, please try again',
+    invalidInput: 'Enter a license plate with 7 or 8 digits',
     testValid: 'Last test',
     testExpired: 'Test expired',
     validUntil: 'License valid until',
@@ -88,8 +96,8 @@ export default function PlateSearch({ isHe, navigateOnSearch, initialVehicle, in
     viewModel: 'View reviews & common issues →',
     viewMake: 'View all',
     yearPage: 'Year',
-    source: 'Source: Ministry of Transport (data.gov.il)',
-    sourceUk: 'Source: DVLA (UK Government)',
+    source: 'Data updates once a day',
+    sourceUk: 'Data updates once a day',
     odometer: 'Odometer (last test)',
     accident: 'Damage history',
     accidentYes: '⚠ Damage recorded',
@@ -112,6 +120,10 @@ export default function PlateSearch({ isHe, navigateOnSearch, initialVehicle, in
       ? plate.replace(/[\s\-]/g, '').toUpperCase()
       : plate.replace(/\D/g, '');
     if (cleaned.length < 2) return;
+    if (country !== 'uk' && (cleaned.length < 7 || cleaned.length > 8)) {
+      setError(t.invalidInput);
+      return;
+    }
     setLoading(true);
     setVehicle(null);
     setError(null);
@@ -119,7 +131,7 @@ export default function PlateSearch({ isHe, navigateOnSearch, initialVehicle, in
       const res = await fetch(`/api/vehicle-lookup?plate=${encodeURIComponent(cleaned)}`);
       const d = await res.json() as { vehicle?: Vehicle; error?: string };
       if (!res.ok || d.error) {
-        setError(res.status === 404 ? t.notFound : t.apiError);
+        setError(res.status === 404 ? t.notFound : res.status === 400 ? t.invalidInput : t.apiError);
       } else if (d.vehicle) {
         if (navigateOnSearch) {
           router.push(`/vehicle-lookup/${encodeURIComponent(cleaned)}`);
@@ -236,7 +248,12 @@ export default function PlateSearch({ isHe, navigateOnSearch, initialVehicle, in
           }}>
             <div>
               <div style={{ color: '#f1f5f9', fontWeight: 800, fontSize: '1.05rem', lineHeight: 1.2 }}>
-                {[vehicle.makeHe, vehicle.name].filter(Boolean).join(' ') || vehicle.makeHe}
+                {isHe || isUk
+                  ? ([vehicle.makeHe, vehicle.name].filter(Boolean).join(' ') || vehicle.makeHe)
+                  : [
+                      vehicle.dbMatch?.makeSlug ? slugToDisplay(vehicle.dbMatch.makeSlug) : null,
+                      vehicle.dbMatch?.modelSlug ? slugToDisplay(vehicle.dbMatch.modelSlug) : null,
+                    ].filter(Boolean).join(' ') || vehicle.makeHe}
               </div>
               {vehicle.year && (
                 <div style={{ color: '#94a3b8', fontSize: '0.8rem', marginTop: 2 }}>{vehicle.year}</div>
@@ -268,7 +285,7 @@ export default function PlateSearch({ isHe, navigateOnSearch, initialVehicle, in
                     {motExpired ? '⚠ ' + t.motExpired : '✓ ' + t.motValid}
                   </div>
                   <div style={{ fontSize: '0.82rem', fontWeight: 600, color: 'var(--text)' }}>
-                    {vehicle.motExpiryDate ? fmtDate(vehicle.motExpiryDate, isHe ? 'he' : 'en') : '—'}
+                    {vehicle.motExpiryDate ? fmtDate(vehicle.motExpiryDate, isHe ? 'he' : 'en') : '-'}
                   </div>
                 </div>
                 <div style={{
@@ -280,7 +297,7 @@ export default function PlateSearch({ isHe, navigateOnSearch, initialVehicle, in
                     {taxOk ? '✓ ' + t.taxValid : '⚠ ' + t.taxExpired}
                   </div>
                   <div style={{ fontSize: '0.82rem', fontWeight: 600, color: 'var(--text)' }}>
-                    {vehicle.taxDueDate ? fmtDate(vehicle.taxDueDate, isHe ? 'he' : 'en') : (vehicle.taxStatus ?? '—')}
+                    {vehicle.taxDueDate ? fmtDate(vehicle.taxDueDate, isHe ? 'he' : 'en') : (vehicle.taxStatus ?? '-')}
                   </div>
                 </div>
               </div>
@@ -322,9 +339,9 @@ export default function PlateSearch({ isHe, navigateOnSearch, initialVehicle, in
                 { label: t.firstRoad, value: vehicle.firstRoad },
                 { label: t.engine,    value: vehicle.engineCapacity ? `${vehicle.engineCapacity}cc` : '' },
               ] : [
-                { label: t.color,     value: vehicle.color },
-                { label: t.fuel,      value: vehicle.fuel },
-                { label: t.ownership, value: vehicle.ownership },
+                { label: t.color,     value: isHe ? vehicle.color : translateValue(vehicle.color, COLOR_EN) },
+                { label: t.fuel,      value: isHe ? vehicle.fuel : translateValue(vehicle.fuel, FUEL_EN) },
+                { label: t.ownership, value: normalizeOwnership(vehicle.ownership, isHe) },
                 { label: t.firstRoad, value: vehicle.firstRoad },
                 { label: t.tires,     value: vehicle.frontTire && vehicle.rearTire && vehicle.frontTire !== vehicle.rearTire ? `${vehicle.frontTire} / ${vehicle.rearTire}` : vehicle.frontTire },
                 { label: t.vin,       value: vehicle.vin ? vehicle.vin.slice(-8) : '' },
@@ -367,7 +384,7 @@ export default function PlateSearch({ isHe, navigateOnSearch, initialVehicle, in
                 {vehicle.origin && (
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '6px 10px', borderRadius: 8, background: 'var(--bg-muted)' }}>
                     <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 700 }}>{t.origin}</span>
-                    <span style={{ fontSize: '0.85rem', fontWeight: 600 }}>{vehicle.origin}</span>
+                    <span style={{ fontSize: '0.85rem', fontWeight: 600 }}>{isHe ? vehicle.origin : translateValue(vehicle.origin, ORIGIN_EN)}</span>
                   </div>
                 )}
               </div>
@@ -400,7 +417,7 @@ export default function PlateSearch({ isHe, navigateOnSearch, initialVehicle, in
                       flex: 1, justifyContent: 'center',
                     }}
                   >
-                    {t.viewMake} {vehicle.name} →
+                    {t.viewMake} {isHe ? vehicle.name : slugToDisplay(match.makeSlug)} →
                   </Link>
                 )}
                 {match.modelSlug && match.year && (

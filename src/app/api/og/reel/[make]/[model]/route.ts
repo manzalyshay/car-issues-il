@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getMakeBySlug, getModelBySlug } from '@/lib/carsDb';
 import { getExpertReviews } from '@/lib/expertReviews';
+import { getAiScore } from '@/lib/aiScore';
 import { findCarModel } from '@/lib/sketchfab';
 
 export const dynamic = 'force-dynamic';
@@ -18,20 +19,21 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ mak
   const model = make ? await getModelBySlug(makeSlug, modelSlug) : null;
   if (!make || !model) return new NextResponse('Not found', { status: 404 });
 
-  const [reviews, carModel] = await Promise.all([
+  const [reviews, carModel, aiScore] = await Promise.all([
     getExpertReviews(makeSlug, modelSlug),
     findCarModel(makeSlug, modelSlug),
+    getAiScore(makeSlug, modelSlug).catch(() => null),
   ]);
 
   const review = reviews[0] ?? null;
-  const score = review?.topScore ?? null;
+  const score = aiScore?.score ?? null;
   const scoreColor = score == null ? MUTED : score >= 7.5 ? GREEN : score >= 5.5 ? '#f59e0b' : R;
   const pros = review?.pros?.slice(0, 2) ?? [];
   const cons = review?.cons?.slice(0, 1) ?? [];
 
   const sketchfabUid = carModel?.uid ?? null;
   // transparent=1 removes Sketchfab's own background → the page bg (#0a0b0f) shows through.
-  // autospin=0.07 ≈ 1 full rotation per 14s — slow, cinematic.
+  // autospin=0.07 ≈ 1 full rotation per 14s - slow, cinematic.
   // CSS scale(0.72) on the iframe visually zooms out the car so the whole vehicle is visible,
   // with dark bg showing on sides (blends with the dark reel theme).
   const embedUrl = sketchfabUid
@@ -53,7 +55,7 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ mak
       inset: 0;
     }
 
-    /* Sketchfab embed — scaled down so the whole car is visible.
+    /* Sketchfab embed - scaled down so the whole car is visible.
        transparent=1 makes Sketchfab bg transparent, so the dark page
        background shows in the space around the scaled iframe. */
     iframe {
@@ -68,7 +70,7 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ mak
       transform-origin: center 28%;
     }
 
-    /* Dark gradient — transparent top, solid black bottom */
+    /* Dark gradient - transparent top, solid black bottom */
     .gradient-overlay {
       position: absolute;
       inset: 0;
@@ -99,7 +101,7 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ mak
     .badge-dot { width: 10px; height: 10px; border-radius: 50%; background: #fff; flex-shrink: 0; }
     .badge-text { font-size: 26px; font-weight: 700; color: #fff; letter-spacing: 1px; }
 
-    /* Car name — bottom of the 3D area */
+    /* Car name - bottom of the 3D area */
     .car-name {
       position: absolute;
       bottom: 780px;

@@ -20,7 +20,13 @@ function rowToTrimSpec(row: Record<string, unknown>): TrimSpecWithYear {
     seatCount: (row.seat_count as number) ?? undefined,
     screenSize: row.screen_size != null ? Number(row.screen_size) : undefined,
     features: (() => {
-      try { return JSON.parse(String(row.features || '[]')); } catch { return []; }
+      // auto.co.il-sourced rows sometimes store a raw Hebrew equipment-description
+      // object here instead of the expected string[] of TRIM_FEATURES keys - guard
+      // against that shape so the UI never calls .includes() on a non-array.
+      try {
+        const parsed = JSON.parse(String(row.features || '[]'));
+        return Array.isArray(parsed) ? parsed : [];
+      } catch { return []; }
     })(),
     priceIls: (row.price_ils as number) ?? undefined,
     acceleration: (row.acceleration_0_100 as number) ?? undefined,
@@ -49,6 +55,38 @@ export async function getModelPriceMins(): Promise<Map<string, number>> {
   }
 }
 
+/**
+ * The scraper stores one row per (trim name, model year), so the same named trim
+ * (e.g. "RS quattro") often repeats across several years with identical or
+ * near-identical specs. That produces two selector buttons that are visually and
+ * functionally indistinguishable (same name → same `selected` state either way).
+ * Collapse same-named trims down to the single most complete / most recent row.
+ */
+function dedupeTrimsByName(trims: TrimSpecWithYear[]): TrimSpecWithYear[] {
+  const fieldCount = (t: TrimSpecWithYear) =>
+    [t.engineType, t.engineCc, t.engineHp, t.transmission, t.drive, t.seats, t.seatCount,
+      t.screenSize, t.priceIls, t.acceleration, t.topSpeedKmh, t.torqueNm, t.fuelConsumption,
+      t.cargoLiters, t.curbWeightKg].filter((v) => v != null).length + t.features.length;
+
+  const byName = new Map<string, TrimSpecWithYear>();
+  const order: string[] = [];
+  for (const t of trims) {
+    const existing = byName.get(t.name);
+    if (!existing) {
+      byName.set(t.name, t);
+      order.push(t.name);
+      continue;
+    }
+    const existingScore = fieldCount(existing);
+    const score = fieldCount(t);
+    const better = score !== existingScore
+      ? score > existingScore
+      : (t.modelYear ?? 0) > (existing.modelYear ?? 0);
+    if (better) byName.set(t.name, t);
+  }
+  return order.map((name) => byName.get(name)!);
+}
+
 export async function getTrimSpecs(makeSlug: string, modelSlug: string, year?: number): Promise<TrimSpecWithYear[]> {
   try {
     if (year) {
@@ -62,14 +100,14 @@ export async function getTrimSpecs(makeSlug: string, modelSlug: string, year?: n
           'SELECT * FROM car_trims WHERE make_slug = ? AND model_slug = ? AND model_year = ? AND is_israel = 1 ORDER BY sort_order',
           makeSlug, modelSlug, year,
         );
-        return rows.map(rowToTrimSpec);
+        return dedupeTrimsByName(rows.map(rowToTrimSpec));
       }
     }
     const rows = await dbAll(
       'SELECT * FROM car_trims WHERE make_slug = ? AND model_slug = ? AND is_israel = 1 ORDER BY sort_order',
       makeSlug, modelSlug,
     );
-    return rows.map(rowToTrimSpec);
+    return dedupeTrimsByName(rows.map(rowToTrimSpec));
   } catch {
     return [];
   }

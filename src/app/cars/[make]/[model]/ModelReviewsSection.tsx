@@ -31,8 +31,8 @@ export default function ModelReviewsSection({ makeSlug, modelSlug, years, trims,
 
   const filtered = selectedYear ? reviews.filter((r) => r.year === selectedYear) : reviews;
   const collapsedCount = INITIAL_VISIBLE;
-  const visible = expanded ? filtered.slice(0, page * PAGE_SIZE) : filtered.slice(0, collapsedCount);
-  const hasMore = expanded && visible.length < filtered.length;
+  const visibleCount = expanded ? page * PAGE_SIZE : collapsedCount;
+  const hasMore = expanded && visibleCount < filtered.length;
   const canExpand = !expanded && filtered.length > collapsedCount;
   const canCollapse = expanded && filtered.length > collapsedCount;
 
@@ -79,7 +79,7 @@ export default function ModelReviewsSection({ makeSlug, modelSlug, years, trims,
         })()}
       </div>
 
-      {/* Stars — always visible */}
+      {/* Stars - always visible */}
       <div style={{ textAlign: 'center', marginBottom: 20 }}>
         <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: 6, fontWeight: 600 }}>
           {locale === 'en' ? 'Rate this car' : 'דרגו את הרכב'}
@@ -104,7 +104,7 @@ export default function ModelReviewsSection({ makeSlug, modelSlug, years, trims,
         </div>
       </div>
 
-      {/* Inline compact form — appears after star click */}
+      {/* Inline compact form - appears after star click */}
       {showForm && (
         <div style={{ border: '1px solid var(--border)', borderRadius: 10, background: 'var(--surface)', marginBottom: 16, overflow: 'hidden' }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 14px', borderBottom: '1px solid var(--border)', background: 'var(--bg)' }}>
@@ -159,7 +159,7 @@ export default function ModelReviewsSection({ makeSlug, modelSlug, years, trims,
         ) : null
       ) : (
         <>
-          <ReviewList reviews={visible} onHelpful={handleHelpful} onDislike={handleDislike} />
+          <ReviewList reviews={filtered} onHelpful={handleHelpful} onDislike={handleDislike} visibleCount={visibleCount} />
           {canExpand && (
             <div style={{ textAlign: 'center', marginTop: 20 }}>
               <button
@@ -167,7 +167,7 @@ export default function ModelReviewsSection({ makeSlug, modelSlug, years, trims,
                 onClick={() => setExpanded(true)}
                 style={{ height: 40, padding: '0 28px' }}
               >
-                {locale === 'en' ? `Show all ${filtered.length} reviews` : `הצג עוד ביקורות (${filtered.length - visible.length})`}
+                {locale === 'en' ? `Show all ${filtered.length} reviews` : `הצג עוד ביקורות (${filtered.length - visibleCount})`}
               </button>
             </div>
           )}
@@ -178,7 +178,7 @@ export default function ModelReviewsSection({ makeSlug, modelSlug, years, trims,
                 onClick={() => setPage((p) => p + 1)}
                 style={{ height: 40, padding: '0 28px' }}
               >
-                {cp.loadMore} ({filtered.length - visible.length})
+                {cp.loadMore} ({filtered.length - visibleCount})
               </button>
             </div>
           )}

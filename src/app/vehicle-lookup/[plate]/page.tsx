@@ -1,7 +1,9 @@
 import type { Metadata } from 'next';
+import { redirect } from 'next/navigation';
 import { getHostLocale, getBaseUrl } from '@/lib/hostLocale';
 import { lookupVehicle, detectCountry } from '@/lib/vehicleLookup';
 import { lookupUkVehicle } from '@/lib/vehicleLookupUk';
+import { getModelInfo } from '@/lib/modelInfo';
 import VehicleLookupClient from '@/components/VehicleLookupClient';
 
 interface Props { params: Promise<{ plate: string }> }
@@ -10,8 +12,8 @@ function fmtPlate(raw: string): string {
   const p = raw.replace(/\D/g, '');
   if (!p) return raw.toUpperCase();
   return p.length === 7
-    ? `${p.slice(0, 3)}-${p.slice(3, 5)}-${p.slice(5)}`
-    : `${p.slice(0, 2)}-${p.slice(2, 5)}-${p.slice(5)}`;
+    ? `${p.slice(0, 2)}-${p.slice(2, 5)}-${p.slice(5)}`
+    : `${p.slice(0, 3)}-${p.slice(3, 5)}-${p.slice(5)}`;
 }
 
 async function lookupByPlate(plate: string) {
@@ -55,8 +57,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       ? `${name}${yearStr} - בדיקת רכב ${displayPlate} | CarIssues`
       : `${name}${yearStr} - Vehicle Check ${displayPlate} | CarIssues`,
     description: isHe
-      ? `פרטי הרכב ${displayPlate}: ${name}${yearStr}. דלק: ${v.fuel}. צבע: ${v.color}.${kmStr}${damageStr} תוקף טסט ועוד ממשרד התחבורה.`
-      : `Vehicle ${displayPlate}: ${name}${yearStr}. Fuel: ${v.fuel}. Color: ${v.color}.${kmStr}${damageStr} MOT status and more from Israel's Ministry of Transport.`,
+      ? `פרטי הרכב ${displayPlate}: ${name}${yearStr}. דלק: ${v.fuel}. צבע: ${v.color}.${kmStr}${damageStr} תוקף טסט ועוד.`
+      : `Vehicle ${displayPlate}: ${name}${yearStr}. Fuel: ${v.fuel}. Color: ${v.color}.${kmStr}${damageStr} MOT status and more.`,
     alternates: { canonical: `${base}/vehicle-lookup/${plate}`, languages: langs },
     openGraph: {
       title: `${name}${yearStr} - ${displayPlate}`,
@@ -69,9 +71,15 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 export default async function VehiclePlatePage({ params }: Props) {
   const { plate } = await params;
   const locale = await getHostLocale();
+  // Israeli license-plate lookup is Hebrew-site-only - hidden on carissues.net.
+  if (locale === 'en') redirect('/');
   const isHe = locale === 'he';
   const base = getBaseUrl(locale);
   const result = await lookupByPlate(plate);
+  const dbMatch = result.status === 'found' ? result.vehicle.dbMatch : null;
+  const modelInfo = dbMatch
+    ? await getModelInfo(dbMatch.makeSlug, dbMatch.modelSlug, locale, dbMatch.year, result.status === 'found' ? result.vehicle.fuel : null).catch(() => null)
+    : null;
 
   const jsonLd = {
     '@context': 'https://schema.org',
@@ -106,6 +114,7 @@ export default async function VehiclePlatePage({ params }: Props) {
         initialStatus={result.status === 'found' ? 'found' : result.status === 'not_found' ? 'not_found' : 'error'}
         isHe={isHe}
         base={base}
+        initialModelInfo={modelInfo}
       />
     </div>
   );

@@ -64,7 +64,7 @@ export default function YearHero({ makeSlug, modelSlug, year, makeNameHe, modelN
     }
   };
 
-  // No images at all (none fetched or all flagged) — render nothing
+  // No images at all (none fetched or all flagged) - render nothing
   if (images.length > 0 && !current) return null;
 
   return (
@@ -106,7 +106,7 @@ export default function YearHero({ makeSlug, modelSlug, year, makeNameHe, modelN
         />
       )}
 
-      {/* Gradient overlay — only when image loaded */}
+      {/* Gradient overlay - only when image loaded */}
       {imgUrl && loaded && (
         <div style={{
           position: 'absolute', inset: 0,
@@ -114,7 +114,7 @@ export default function YearHero({ makeSlug, modelSlug, year, makeNameHe, modelN
         }} />
       )}
 
-      {/* Admin flag button — top-left corner */}
+      {/* Admin flag button - top-left corner */}
       {isAdmin && current && loaded && (
         <div style={{ position: 'absolute', top: 10, left: 10, zIndex: 20 }}>
           {!showFlagMenu ? (

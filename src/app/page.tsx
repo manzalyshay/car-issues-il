@@ -1,5 +1,6 @@
-import { getAllMakes, getPopularMakes } from '@/lib/carsDb';
+import { getAllMakes } from '@/lib/carsDb';
 import { dbAll, dbFirst } from '@/lib/db';
+import { getAllAiScores, blendWithOwnerRating } from '@/lib/aiScore';
 import { getLatestNews } from '@/lib/carNews';
 import { getHostLocale } from '@/lib/hostLocale';
 import HomeClient from '@/components/HomeClient';
@@ -10,50 +11,73 @@ import { getValidatedRepairReports } from '@/lib/repairReports';
 
 export const revalidate = 300; // cache home page for 5 minutes
 
-async function getTopRanked(limit = 3) {
+// Models sold only under an Israel-specific badge (not a globally-marketed car) -
+// excluded from the English homepage's "Top Model" spotlight.
+const ISRAEL_ONLY_MODELS = new Set(['hyundai/i25']);
+
+async function getTopRanked(limit = 3, isEn = false) {
   const makes = await getAllMakes();
   const lookup = new Map<string, { makeHe: string; modelHe: string; makeEn: string; modelEn: string; logoUrl: string; leadingImageUrl: string | null }>();
   for (const make of makes)
     for (const model of make.models)
       lookup.set(`${make.slug}/${model.slug}`, { makeHe: make.nameHe, modelHe: model.nameHe, makeEn: make.nameEn, modelEn: model.nameEn, logoUrl: make.logoUrl, leadingImageUrl: model.leadingImageUrl ?? null });
 
-  const [expertData, reviewData, modelData] = await Promise.all([
-    dbAll<{ make_slug: string; model_slug: string; top_score: number }>(
-      'SELECT make_slug, model_slug, top_score FROM expert_reviews WHERE year IS NULL AND top_score IS NOT NULL',
-    ),
+  const [aiScores, reviewData, modelData, testScoreData] = await Promise.all([
+    getAllAiScores(),
     dbAll<{ make_slug: string; model_slug: string; rating: number }>(
       'SELECT make_slug, model_slug, rating FROM reviews',
     ),
-    dbAll<{ make_slug: string; model_slug: string; sketchfab_uid: string }>(
-      'SELECT make_slug, model_slug, sketchfab_uid FROM car_3d_models WHERE hidden IS NOT 1',
+    dbAll<{ make_slug: string; model_slug: string; sketchfab_uid: string; year_from: number | null; year_to: number | null }>(
+      'SELECT make_slug, model_slug, sketchfab_uid, year_from, year_to FROM car_3d_models WHERE hidden IS NOT 1',
+    ).catch(() => []),
+    dbAll<{ make_slug: string; model_slug: string; score: number }>(
+      'SELECT make_slug, model_slug, score FROM pro_review_scores',
     ).catch(() => []),
   ]);
 
-  const scoreMap = new Map<string, number>();
-  for (const row of expertData) scoreMap.set(`${row.make_slug}/${row.model_slug}`, row.top_score);
   const reviewMap = new Map<string, number[]>();
   for (const row of reviewData) {
     const key = `${row.make_slug}/${row.model_slug}`;
     if (!reviewMap.has(key)) reviewMap.set(key, []);
     reviewMap.get(key)!.push(row.rating);
   }
-  const fabMap = new Map<string, string>();
-  for (const row of modelData) {
-    fabMap.set(`${row.make_slug}/${row.model_slug}`, row.sketchfab_uid);
+  // Verified external test scores (icar, Autocar, carwow, etc.) - averaged per
+  // model and blended into the displayed score below as one more real input.
+  const testScoreMap = new Map<string, number[]>();
+  for (const row of testScoreData) {
+    const key = `${row.make_slug}/${row.model_slug}`;
+    if (!testScoreMap.has(key)) testScoreMap.set(key, []);
+    testScoreMap.get(key)!.push(row.score);
   }
+  const TEST_SCORE_WEIGHT = 0.3;
+  // Keep only the most recent 3D model per car (open-ended yearTo wins, else highest yearFrom)
+  const fabBest = new Map<string, { uid: string; yearFrom: number | null; yearTo: number | null }>();
+  for (const row of modelData) {
+    const key = `${row.make_slug}/${row.model_slug}`;
+    const existing = fabBest.get(key);
+    const isBetter = !existing
+      || (row.year_to == null && existing.yearTo != null)
+      || ((row.year_to == null) === (existing.yearTo == null) && (row.year_from ?? -Infinity) > (existing.yearFrom ?? -Infinity));
+    if (isBetter) fabBest.set(key, { uid: row.sketchfab_uid, yearFrom: row.year_from, yearTo: row.year_to });
+  }
+  const fabMap = new Map<string, string>();
+  for (const [key, v] of fabBest) fabMap.set(key, v.uid);
 
-  const ranked: { makeSlug: string; modelSlug: string; makeHe: string; modelHe: string; makeEn: string; modelEn: string; logoUrl: string; combined: number; avgRating: number | null; reviewCount: number; imageUrl: string | null; sketchfabUid: string | null }[] = [];
+  const ranked: { makeSlug: string; modelSlug: string; makeHe: string; modelHe: string; makeEn: string; modelEn: string; logoUrl: string; aiScore: number; aiConfidence: 'high' | 'medium' | 'low'; avgRating: number | null; reviewCount: number; imageUrl: string | null; sketchfabUid: string | null }[] = [];
   for (const [key, info] of lookup.entries()) {
-    const topScore = scoreMap.get(key) ?? null;
+    if (isEn && ISRAEL_ONLY_MODELS.has(key)) continue;
+    const ai = aiScores[key] ?? null;
+    if (!ai) continue;
     const ratings = reviewMap.get(key) ?? [];
     const avgRating = ratings.length ? ratings.reduce((a, b) => a + b, 0) / ratings.length : null;
-    const scores: number[] = [];
-    if (topScore != null) scores.push(topScore);
-    if (avgRating != null) scores.push(avgRating * 2);
-    if (!scores.length) continue;
-    const combined = scores.reduce((a, b) => a + b, 0) / scores.length;
+    let displayScore = blendWithOwnerRating(ai.score, avgRating, ratings.length);
+    const testScores = testScoreMap.get(key);
+    if (testScores && testScores.length > 0) {
+      const testAvg = testScores.reduce((a, b) => a + b, 0) / testScores.length;
+      displayScore = displayScore * (1 - TEST_SCORE_WEIGHT) + testAvg * TEST_SCORE_WEIGHT;
+    }
     const [makeSlug, modelSlug] = key.split('/');
-    ranked.push({ makeSlug, modelSlug, ...info, combined, avgRating, reviewCount: ratings.length, imageUrl: info.leadingImageUrl, sketchfabUid: fabMap.get(key) ?? null });
+    ranked.push({ makeSlug, modelSlug, ...info, aiScore: displayScore, aiConfidence: ai.confidence, avgRating, reviewCount: ratings.length, imageUrl: info.leadingImageUrl, sketchfabUid: fabMap.get(key) ?? null });
   }
   // Shuffle the ranked pool and pick randomly so the homepage shows different cars each visit
   for (let i = ranked.length - 1; i > 0; i--) {
@@ -85,7 +109,7 @@ async function getRecentReviews(limit = 3, locale?: string) {
   }));
 }
 
-export interface TickerItem { code: string; textHe: string; textEn: string; color: string; }
+export interface TickerItem { code: string; codeEn: string; isRecall: boolean; textHe: string; textEn: string; color: string; }
 
 const REPAIR_KEY_EN: Record<string, string> = {
   battery: 'Battery replacement',
@@ -130,7 +154,7 @@ async function getTickerItems(): Promise<TickerItem[]> {
     if (!info) continue;
     const suffix = `${r.year ? ` ${r.year}` : ''} · ${r.rating}/5 ★`;
     items.push({
-      code: 'ביקורת',
+      code: 'ביקורת', codeEn: 'REVIEW', isRecall: false,
       textHe: `${info.makeHe} ${info.modelHe}${suffix}`,
       textEn: `${info.makeEn} ${info.modelEn}${suffix}`,
       color: '#9dc4e8',
@@ -140,11 +164,12 @@ async function getTickerItems(): Promise<TickerItem[]> {
   for (const r of repairs) {
     const info = lookup.get(`${r.make_slug}/${r.model_slug}`);
     if (!info) continue;
-    const cost = `₪${r.cost_ils.toLocaleString()}`;
+    const costHe = `₪${r.cost_ils.toLocaleString()}`;
+    const costEn = `$${Math.round(r.cost_ils / 3.65).toLocaleString()}`;
     items.push({
-      code: 'תיקון',
-      textHe: `${info.makeHe} ${info.modelHe} · ${r.repair_name_he} ${cost}`,
-      textEn: `${info.makeEn} ${info.modelEn} · ${REPAIR_KEY_EN[r.repair_key] ?? 'Repair'} ${cost}`,
+      code: 'תיקון', codeEn: 'REPAIR', isRecall: false,
+      textHe: `${info.makeHe} ${info.modelHe} · ${r.repair_name_he} ${costHe}`,
+      textEn: `${info.makeEn} ${info.modelEn} · ${REPAIR_KEY_EN[r.repair_key] ?? 'Repair'} ${costEn}`,
       color: '#6fd9a0',
     });
   }
@@ -157,7 +182,7 @@ async function getTickerItems(): Promise<TickerItem[]> {
     const modelEn = info?.modelEn ?? r.model;
     const component = r.component_he.replace(/[\u0591-\u05C7]/g, '').trim();
     items.push({
-      code: 'ריקול',
+      code: 'ריקול', codeEn: 'RECALL', isRecall: true,
       textHe: `ריקול · ${makeHe} ${modelHe} · ${component}`,
       textEn: `Recall · ${makeEn} ${modelEn} · ${component}`,
       color: '#ff9b8d',
@@ -176,33 +201,62 @@ async function getTickerItems(): Promise<TickerItem[]> {
 
 export default async function HomePage() {
   const locale = await getHostLocale().catch(() => 'he');
-  const [popularMakes, allMakes, topRanked, recentReviews, tickerItems, news, reviewTotal, recallTotal] = await Promise.all([
-    getPopularMakes().catch(() => []),
+  const [allMakes, topRanked, recentReviews, tickerItems, news, reviewTotal, recallTotal] = await Promise.all([
     getAllMakes().catch(() => []),
-    getTopRanked(3).catch(() => []),
+    getTopRanked(3, locale === 'en').catch(() => []),
     getRecentReviews(3, locale).catch(() => []),
     getTickerItems().catch(() => []),
-    getLatestNews(4, 0, locale).catch(() => []),
+    getLatestNews(12, 0, locale).catch(() => []),
     dbFirst<{ count: number }>('SELECT COUNT(*) AS count FROM reviews').then(r => r?.count ?? 0).catch(() => 0),
     dbFirst<{ count: number }>('SELECT COUNT(*) AS count FROM recalls_cache').then(r => r?.count ?? 0).catch(() => 0),
   ]);
 
+  // Client component props get serialized into the page HTML - strip the other
+  // locale's title/body so it never leaks into the page source. On the English
+  // site also drop outlet-identifying fields (source, original_url) - DB-only.
+  // Articles with no usable photo are not shown at all (no text-only cards).
+  const newsWithImages = news
+    .filter((n) => n.image_url && !n.image_url.includes('motor1.com') && !n.image_url.includes('hearstapps.com'))
+    .slice(0, 4);
+  const newsForClient = newsWithImages.map((n) => (locale === 'he'
+    ? { ...n, title_en: null, body_en: null }
+    : { ...n, title_he: null, body_he: null, source: '', original_url: '' }
+  ));
+
+  // allMakes/models carry Hebrew names + other Hebrew-only fields (country, trims)
+  // that HomeClient never renders on the English site but that still get
+  // serialized into the page HTML as client component props - strip them for EN.
+  const makesForClient = locale === 'en'
+    ? allMakes.map((m) => ({ ...m, nameHe: '', country: '', models: m.models.map((mm) => ({ ...mm, nameHe: '', trims: undefined, activeVehiclesIl: undefined })) }))
+    : allMakes;
+
   const topPairs = resolvePairs(allMakes, TOP_COMPARE_PAIRS).slice(0, 6).map((p) => ({
     href: p.path,
-    aHe: `${p.a.make.nameHe} ${p.a.model.nameHe}`, aEn: `${p.a.make.nameEn} ${p.a.model.nameEn}`,
-    bHe: `${p.b.make.nameHe} ${p.b.model.nameHe}`, bEn: `${p.b.make.nameEn} ${p.b.model.nameEn}`,
+    aHe: locale === 'en' ? '' : `${p.a.make.nameHe} ${p.a.model.nameHe}`, aEn: `${p.a.make.nameEn} ${p.a.model.nameEn}`,
+    bHe: locale === 'en' ? '' : `${p.b.make.nameHe} ${p.b.model.nameHe}`, bEn: `${p.b.make.nameEn} ${p.b.model.nameEn}`,
   }));
+
+  // Same RSC-payload-leak concern as news/makes above - these all carry raw
+  // Hebrew fields (makeHe/modelHe/textHe/title/body) regardless of locale.
+  const topRankedForClient = locale === 'en'
+    ? topRanked.map((c) => ({ ...c, makeHe: '', modelHe: '' }))
+    : topRanked;
+  const recentReviewsForClient = locale === 'en'
+    ? recentReviews.map((r) => ({ ...r, makeHe: '', modelHe: '', title: r.title_en ?? '', body: r.body_en ?? '', author: 'Anonymous', sub_model: undefined }))
+    : recentReviews;
+  const tickerItemsForClient = locale === 'en'
+    ? tickerItems.map((t) => ({ ...t, code: t.codeEn, textHe: '' }))
+    : tickerItems;
 
   return (
     <>
       {locale === 'he' && <EnglishVersionBanner />}
       <HomeClient
-        popularMakes={popularMakes}
-        allMakes={allMakes}
-        topRanked={topRanked}
-        recentReviews={recentReviews}
-        tickerItems={tickerItems}
-        initialNews={news}
+        allMakes={makesForClient}
+        topRanked={topRankedForClient}
+        recentReviews={recentReviewsForClient}
+        tickerItems={tickerItemsForClient}
+        initialNews={newsForClient}
         topPairs={topPairs}
         reviewTotal={reviewTotal}
         recallTotal={recallTotal}

@@ -15,7 +15,7 @@ export async function POST(req: NextRequest) {
   const yearNum = parseInt(year);
 
   // Skip if ANY year-specific row exists in the DB (even 0-post LLM-fallback rows)
-  // — we only generate once per car/year, regardless of whether real posts were found.
+  // - we only generate once per car/year, regardless of whether real posts were found.
   const existing = await dbFirst(
     'SELECT id FROM expert_reviews WHERE make_slug = ? AND model_slug = ? AND year = ? LIMIT 1',
     makeSlug, modelSlug, yearNum,

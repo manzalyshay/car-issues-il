@@ -176,7 +176,7 @@ export default function SellerPriceChart({ makeSlug, modelSlug, makeEn, modelEn,
               vectorEffect="non-scaling-stroke"
             />
 
-            {/* Dots — private */}
+            {/* Dots - private */}
             {rows.map(r => (
               <circle key={`p-${r.year}`}
                 cx={xOf(r.year)} cy={yOf(r.private_avg!)}
@@ -186,7 +186,7 @@ export default function SellerPriceChart({ makeSlug, modelSlug, makeEn, modelEn,
               />
             ))}
 
-            {/* Dots — dealer */}
+            {/* Dots - dealer */}
             {rows.map(r => (
               <circle key={`d-${r.year}`}
                 cx={xOf(r.year)} cy={yOf(r.dealer_avg!)}

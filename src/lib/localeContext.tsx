@@ -4,7 +4,7 @@ import { createContext, useContext, useState, useEffect, useCallback } from 'rea
 import { translations } from './translations';
 import type { Locale, Translations } from './translations';
 
-// Domains that force a specific locale — users switch by navigating to the other domain
+// Domains that force a specific locale - users switch by navigating to the other domain
 const EN_DOMAINS = ['carissues.net', 'en.carissues.co.il'];
 const HE_DOMAINS = ['carissues.co.il', 'www.carissues.co.il'];
 
@@ -40,14 +40,14 @@ export function LocaleProvider({ children, initialLocale }: { children: React.Re
   const [isDomainLocked, setIsDomainLocked] = useState(!!initialLocale);
 
   useEffect(() => {
-    if (initialLocale) return; // server already determined locale — skip client detection
+    if (initialLocale) return; // server already determined locale - skip client detection
     const domainLocale = detectDomainLocale();
     if (domainLocale) {
       setLocaleState(domainLocale);
       setIsDomainLocked(true);
       return;
     }
-    // Unknown host (localhost/dev) — read from localStorage and sync to cookie
+    // Unknown host (localhost/dev) - read from localStorage and sync to cookie
     try {
       const stored = localStorage.getItem('locale') as Locale | null;
       if (stored === 'en' || stored === 'he') {

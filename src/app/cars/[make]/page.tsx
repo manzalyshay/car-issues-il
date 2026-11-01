@@ -19,8 +19,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const isEn = locale === 'en';
   return {
     title: isEn
-      ? `${make.nameEn} — Models & Common Issues`
-      : `${make.nameHe} — בעיות ודגמים`,
+      ? `${make.nameEn} - Models & Common Issues`
+      : `${make.nameHe} - בעיות ודגמים`,
     description: isEn
       ? `All ${make.nameEn} models with owner reviews and common problems reported by real car owners.`
       : `כל דגמי ${make.nameHe} (${make.nameEn}) עם ביקורות בעברית ובעיות נפוצות שדיווחו בעלי רכב בישראל.`,
@@ -53,7 +53,7 @@ export default async function MakePage({ params }: Props) {
   return (
     <div style={{ background: 'var(--bg)', minHeight: '100vh' }}>
 
-      {/* ── MAKE HERO — light, clean ── */}
+      {/* ── MAKE HERO - light, clean ── */}
       <div style={{
         background: 'var(--surface)',
         borderBottom: '1px solid var(--border)',

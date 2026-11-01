@@ -12,6 +12,10 @@ export interface Recall {
   consequence: string;
   remedy: string;
   manufacturer: string;
+  /** Set when merged with Israeli recall data (recalls_il) elsewhere; absent for NHTSA rows. */
+  source?: 'il' | 'us';
+  importer?: string | null;
+  website?: string | null;
 }
 
 // ── Date formatting ───────────────────────────────────────────────────────────

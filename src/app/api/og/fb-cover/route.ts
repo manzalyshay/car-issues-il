@@ -45,7 +45,7 @@ function _disabled_GET() {
     <rect width="100%" height="100%" fill="url(#grid)"/>
   </svg>
 
-  <!-- Red gradient accent — left edge -->
+  <!-- Red gradient accent - left edge -->
   <div style="position:absolute;top:0;right:0;width:6px;height:100%;background:linear-gradient(to bottom,${R},#7c1520);z-index:10;"></div>
 
   <!-- Diagonal red glow -->

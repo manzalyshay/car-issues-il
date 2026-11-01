@@ -3,7 +3,7 @@
 import { useEffect } from 'react';
 import { usePathname } from 'next/navigation';
 
-// Module-level set — survives component remounts (auth re-renders, error boundaries, StrictMode).
+// Module-level set - survives component remounts (auth re-renders, error boundaries, StrictMode).
 // Tracks every path already recorded in this browser session so we never double-insert.
 const tracked = new Set<string>();
 
@@ -23,7 +23,7 @@ function getSessionId(): string {
 export default function PageViewTracker() {
   const pathname = usePathname();
 
-  // Strip ?clang=1 from URL after middleware has set the cookie —
+  // Strip ?clang=1 from URL after middleware has set the cookie -
   // we serve the page normally (no redirect) so the param needs client-side cleanup.
   useEffect(() => {
     if (typeof window === 'undefined') return;

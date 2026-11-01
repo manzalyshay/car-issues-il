@@ -10,7 +10,7 @@ interface Props {
   years?: number[];
 }
 
-// Component name mapping — NHTSA uses ALL CAPS strings
+// Component name mapping - NHTSA uses ALL CAPS strings
 const COMPONENT_MAP: Record<string, { he: string; en: string; emoji: string }> = {
   'ELECTRICAL SYSTEM':           { he: 'מערכת חשמל',       en: 'Electrical',        emoji: '⚡' },
   'POWER TRAIN':                 { he: 'מערכת הנעה',       en: 'Powertrain',        emoji: '⚙️' },

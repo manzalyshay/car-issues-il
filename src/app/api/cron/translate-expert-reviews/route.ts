@@ -1,7 +1,7 @@
 /**
  * GET /api/cron/translate-expert-reviews
  * Translates Hebrew pros/cons/summaries to English using Cloudflare Workers AI
- * (no API key needed — covered by the Workers Paid plan). Processes 5 rows
+ * (no API key needed - covered by the Workers Paid plan). Processes 5 rows
  * per call. Protected by CRON_SECRET.
  */
 import { NextRequest, NextResponse } from 'next/server';

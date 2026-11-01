@@ -1,5 +1,5 @@
 /**
- * Car repair loading animation — used on page loading states.
+ * Car repair loading animation - used on page loading states.
  * Pure CSS/SVG, no JS required.
  */
 export default function CarRepairLoader({ text = 'טוען נתונים...' }: { text?: string }) {

@@ -1,94 +1,100 @@
 import type { Metadata } from 'next';
-import { getHostLocale } from '@/lib/hostLocale';
+import { getHostLocale, getBaseUrl } from '@/lib/hostLocale';
 
 export const revalidate = 3600; // cache 1 hour
 
 export async function generateMetadata(): Promise<Metadata> {
   const locale = await getHostLocale();
   const isEn = locale === 'en';
+  const base = getBaseUrl(locale);
+  const url = `${base}/checklist`;
   return {
-    title: isEn ? 'Used Car Buying Checklist — 40 Critical Checks | CarIssues' : 'רשימת בדיקה לקניית יד שניה — 40 נקודות קריטיות | CarIssues',
+    title: isEn ? 'Used Car Buying Checklist - 40 Critical Checks' : 'רשימת בדיקה לקניית יד שניה - 40 נקודות קריטיות',
     description: isEn
-      ? '40 critical checks before buying a used car. Inspect the exterior, interior, engine, documents, and test drive — don\'t sign without this checklist.'
-      : '40 נקודות בדיקה לפני קניית רכב יד שניה. בדיקת חוץ, פנים, מנוע, מסמכים ונסיעת מבחן — אל תגיעו לרכב בלי זה.',
+      ? '40 critical checks before buying a used car. Inspect the exterior, interior, engine, documents, and test drive - don\'t sign without this checklist.'
+      : '40 נקודות בדיקה לפני קניית רכב יד שניה. בדיקת חוץ, פנים, מנוע, מסמכים ונסיעת מבחן - אל תגיעו לרכב בלי זה.',
+    alternates: {
+      canonical: url,
+      languages: { he: 'https://carissues.co.il/checklist', en: 'https://carissues.net/checklist', 'x-default': 'https://carissues.net/checklist' },
+    },
   };
 }
 
 const GROUPS_HE = [
   {
-    title: 'מבחוץ — הליכה מסביב לרכב',
+    title: 'מבחוץ - הליכה מסביב לרכב',
     icon: '🚶',
     items: [
       'תסתכל אם יש שריטות, שקעים או נזקים ברחבי הרכב',
-      'בדוק שצבע הרכב אחיד מכל צד — צבע שונה מצביע על תיקון תאונה',
-      'פתח וסגור כל דלת — צריך ללכת בקלות ולנעול בלי כוח',
-      'בדוק את הצמיגים — שאין בלאי חד-צדדי ושהגומי לא חרוש יותר מדי',
-      'הסתכל מתחת לרכב — שאין כתמי שמן או נוזלים על הקרקע',
-      'בדוק את השמשה הקדמית — אפילו סדק קטן בשדה הראייה פוסל',
-      'בדוק שכל האורות עובדים — קדמיים, אחוריים ועצירה',
+      'בדוק שצבע הרכב אחיד מכל צד - צבע שונה מצביע על תיקון תאונה',
+      'פתח וסגור כל דלת - צריכה להיסגר בקלות ולהינעל בלי כוח',
+      'בדוק את הצמיגים - שאין בלאי חד-צדדי ושהגומי לא שחוק יותר מדי',
+      'הסתכל מתחת לרכב - שאין כתמי שמן או נוזלים על הקרקע',
+      'בדוק את השמשה הקדמית - אפילו סדק קטן בשדה הראייה פוסל',
+      'בדוק שכל האורות עובדים - קדמיים, אחוריים ועצירה',
     ],
   },
   {
-    title: 'מבפנים — ישיבה ובדיקה',
+    title: 'מבפנים - ישיבה ובדיקה',
     icon: '🪑',
     items: [
       'הדלק את הרכב ובדוק שלא נשארת נורה דולקת בלוח המחוונים',
-      'הפעל את המזגן — צריך לקרר תוך דקה, בלי ריח עובש',
+      'הפעל את המזגן - צריך לקרר תוך דקה, בלי ריח עובש',
       'בדוק שמערכת השמע, Bluetooth, מצלמת גיבוי וחניה אוטומטית עובדים',
-      'משוך כל חגורת בטיחות — צריכה לחזור לאחור ולהינעל בקליק',
-      'בדוק את הכיסאות — קרעים, כפתורים שבורים, ריח רטיבות',
-      'הסתכל על התקרה ורצפת הרכב — כתמי מים = בעיית איטום',
-      'אם יש גג שמש — פתח וסגור אותו, בדוק שלא מטפטף',
+      'משוך כל חגורת בטיחות - צריכה לחזור לאחור ולהינעל בקליק',
+      'בדוק את הכיסאות - קרעים, כפתורים שבורים, ריח רטיבות',
+      'הסתכל על התקרה ורצפת הרכב - כתמי מים = בעיית איטום',
+      'אם יש גג שמש - פתח וסגור אותו, בדוק שלא מטפטף',
     ],
   },
   {
-    title: 'מנוע — בדיקה בסיסית לכל אחד',
+    title: 'מנוע - בדיקה בסיסית לכל אחד',
     icon: '🔧',
     items: [
       'פתח את מכסה המנוע לאחר נסיעה ובדוק שאין ריח שרוף',
-      'הסתכל על מד השמן — צריך להיות בין ה-MIN ל-MAX (לא שחור סמיך)',
+      'הסתכל על מד השמן - צריך להיות בין ה-MIN ל-MAX (לא שחור סמיך)',
       'בדוק שאין נוזלים שנוטפים או מתייבשים מתחת למנוע',
-      'הכנס את האצבע לצינור נוזל הקירור (כשהמנוע קר!) — הצבע צריך להיות ירוק/כתום, לא חלודה',
-      'הקשב למנוע בסרלנטי — בלי קישקושים, רעשים חריגים או רעד חזק',
-      'אם המנוע "נוקש" או "שורק" — זה סימן אדום',
+      'בדוק את מפלס נוזל הקירור במכל השקוף (כשהמנוע קר) - צריך להיות בין הסימונים MIN ל-MAX, בלי לפתוח את המכסה ובלי להכניס יד',
+      'הקשב למנוע בסרק - בלי קישקושים, רעשים חריגים או רעד חזק',
+      'אם המנוע "נוקש" או "שורק" - זה סימן אדום',
     ],
   },
   {
     title: 'נסיעת מבחן',
     icon: '🛣️',
     items: [
-      'תנסע לפחות 20 דקות — חצי בעיר, חצי בכביש מהיר',
+      'תנסע לפחות 20 דקות - חצי בעיר, חצי בכביש מהיר',
       'בדוק שהרכב לא מושך לצד בנסיעה ישרה',
-      'בלום בחדות — הרכב לא צריך לסטות לצד',
+      'בלום בחדות - הרכב לא צריך לסטות לצד',
       'האזן לקישקושים או רעשים בזמן פניות',
       'בדוק שהגיר עולה ויורד בצורה חלקה, בלי "לחיצות"',
       'בדוק שמד הטמפרטורה לא עולה לאזור האדום',
-      'בסוף הנסיעה — בדוק שאין עשן יוצא מהפליט',
+      'בסוף הנסיעה - בדוק שאין עשן יוצא מהאגזוז',
     ],
   },
   {
-    title: 'מסמכים — מה לבקש מהמוכר',
+    title: 'מסמכים - מה לבקש מהמוכר',
     icon: '📋',
     items: [
-      'בקש את ספר השירות — תבדוק שיש חותמות קבועות ממוסך',
+      'בקש את ספר השירות - תבדוק שיש חותמות קבועות ממוסך',
       'ודא שהשם ברישיון הרכב זהה לשם המוכר שלפניך',
       'בדוק שהרישיון בתוקף ושהטסט הבא לא בקרוב מדי',
       'הכנס את מספר הרכב לאתר "בדיקת רכב" של משרד התחבורה',
       'בקש לבדוק אם יש עיקול על הרכב (דרך כונס הנכסים או עורך דין)',
       'אל תשלם מקדמה לפני שסגרת הסכם בכתב עם פרטי הרכב המלאים',
-      'קבל קבלה / חשבונית על כל תשלום — גם קדמה',
+      'קבל קבלה / חשבונית על כל תשלום - גם מקדמה',
     ],
   },
   {
-    title: 'מומלץ — לפני שמגיעים',
+    title: 'מומלץ - לפני שמגיעים',
     icon: '💡',
     items: [
-      'חפש את הדגם כאן באתר — קרא ביקורות בעלים ובעיות נפוצות',
+      'חפש את הדגם כאן באתר - קרא ביקורות בעלים ובעיות נפוצות',
       'גוגל את הדגם + שנה + "בעיות" כדי לדעת מה לצפות',
-      'תנסה להגיע לרכב כשהוא קר — מנוע חמם מסתיר רעשים',
-      'קח מישהו נוסף אתך — עיניים נוספות שמות לב לדברים שונים',
-      'אם משהו נראה מוזר — אל תמהר, תשאל ותבדוק',
-      'לפני סגירה — שלח לבדיקה במוסך מורשה (200–400 ₪ שיכולים לחסוך אלפים)',
+      'תנסה להגיע לרכב כשהוא קר - מנוע חם מסתיר רעשים',
+      'קח מישהו נוסף אתך - עיניים נוספות שמות לב לדברים שונים',
+      'אם משהו נראה מוזר - אל תמהר, תשאל ותבדוק',
+      'לפני סגירה - מומלץ לבדוק במוסך לפני הקנייה',
     ],
   },
 ];
@@ -102,22 +108,22 @@ const GROUPS_EN = [
       'Inspect bumpers for dents, cracks, or uneven paint',
       'Check all doors: smooth opening/closing, hinges OK',
       'Look for rust on fenders, roof, and undercarriage',
-      'Check panel alignment — uneven gaps suggest past body work',
+      'Check panel alignment - uneven gaps suggest past body work',
       'Inspect paint from all angles for inconsistency (partial respray)',
       'Check tires: even wear, tread depth at least 1.6 mm',
-      'Check windshield — no cracks in the driver\'s sightline',
+      'Check windshield - no cracks in the driver\'s sightline',
     ],
   },
   {
     title: 'Under the Hood',
     icon: '🔧',
     items: [
-      'Check oil level and color — amber/brown, not black sludge',
-      'Check coolant level — not murky or rusty',
+      'Check oil level and color - amber/brown, not black sludge',
+      'Check coolant level - not murky or rusty',
       'Check brake fluid, power steering, and washer fluid',
       'Look for leaks: oil, coolant, or fluid under the car',
-      'Inspect belts and hoses — no cracks or unusual wear',
-      'Check battery terminals — clean, no corrosion',
+      'Inspect belts and hoses - no cracks or unusual wear',
+      'Check battery terminals - clean, no corrosion',
       'Smell for burning odors (oil, rubber, electrical)',
       'Check if engine bay is suspiciously clean (pre-sale spray)',
     ],
@@ -127,10 +133,10 @@ const GROUPS_EN = [
     icon: '🪑',
     items: [
       'Check seats for tears, excessive wear, and height adjustment',
-      'Check dashboard — no warning lights (especially engine light)',
-      'Test A/C — adequate cooling, no unusual smell',
-      'Test seatbelts — smooth retraction and firm latch',
-      'Check sunroof/panoramic roof — no water stains, smooth operation',
+      'Check dashboard - no warning lights (especially engine light)',
+      'Test A/C - adequate cooling, no unusual smell',
+      'Test seatbelts - smooth retraction and firm latch',
+      'Check sunroof/panoramic roof - no water stains, smooth operation',
       'Check for OBD errors if possible (trip reset shows zero)',
       'Listen for unusual noises while driving (rattles, knocks)',
       'Inspect headliner and carpet for moisture/mold stains',
@@ -140,12 +146,12 @@ const GROUPS_EN = [
     title: 'Brakes, Wheels & Steering',
     icon: '⚙️',
     items: [
-      'Check brake pads and rotors — adequate thickness, no cracks',
-      'Test hard braking — no pulling to one side',
-      'Check CV joints — clicking noise on turns under acceleration',
-      'Check shocks/struts — push down car, should not bounce more than once',
-      'Check steering — no free play, smooth full lock both ways',
-      'Check spare tire — proper pressure, no visible wear',
+      'Check brake pads and rotors - adequate thickness, no cracks',
+      'Test hard braking - no pulling to one side',
+      'Check CV joints - clicking noise on turns under acceleration',
+      'Check shocks/struts - push down car, should not bounce more than once',
+      'Check steering - no free play, smooth full lock both ways',
+      'Check spare tire - proper pressure, no visible wear',
     ],
   },
   {
@@ -158,17 +164,17 @@ const GROUPS_EN = [
       'Check for any outstanding liens, loans, or penalties',
       'Verify registration is valid and next inspection is upcoming',
       'Confirm seller is the registered owner on title',
-      'Get a signed invoice/contract — never close without paperwork',
+      'Get a signed invoice/contract - never close without paperwork',
     ],
   },
   {
     title: 'Test Drive',
     icon: '🛣️',
     items: [
-      'Drive at least 20 minutes — including highway and city',
-      'Test gearbox — smooth shifts through all gears',
-      'Watch engine temperature — must not approach red zone',
-      'Check exhaust — no white, black, or blue smoke',
+      'Drive at least 20 minutes - including highway and city',
+      'Test gearbox - smooth shifts through all gears',
+      'Watch engine temperature - must not approach red zone',
+      'Check exhaust - no white, black, or blue smoke',
       'Test radio, Bluetooth, backup camera, parking sensors',
       'Check for steering wheel vibration at highway speeds',
       'Test A/C cooldown speed and check for musty smell',
@@ -182,8 +188,8 @@ export default async function ChecklistPage() {
   const GROUPS = isEn ? GROUPS_EN : GROUPS_HE;
   const title = isEn ? 'Used Car Buying Checklist' : 'רשימת בדיקה לקניית רכב יד שניה';
   const subtitle = isEn
-    ? '40 critical checks before you sign — print or use on your phone'
-    : '40 נקודות בדיקה לפני הרכישה — הדפיסו או פתחו בסמארטפון';
+    ? '40 critical checks before you sign - print or use on your phone'
+    : '40 נקודות בדיקה לפני הרכישה - הדפיסו או פתחו בסמארטפון';
   const printLabel = isEn ? 'Print Checklist' : 'הדפסה';
   const totalItems = GROUPS.reduce((s, g) => s + g.items.length, 0);
 

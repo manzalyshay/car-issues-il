@@ -1,7 +1,7 @@
 import { ImageResponse } from 'next/og';
 import { getMakeBySlug, getModelBySlug } from '@/lib/carsDb';
 import { getReviewsForCar } from '@/lib/reviewsDb';
-import { getExpertReviewsForYear } from '@/lib/expertReviews';
+import { getAiScore, blendWithOwnerRating } from '@/lib/aiScore';
 
 export const runtime = 'nodejs';
 export const size = { width: 1200, height: 630 };
@@ -22,15 +22,15 @@ export default async function OGImage({ params }: Props) {
   );
 
   const yearNum = parseInt(year);
-  const [reviews, { review: expertReview }] = await Promise.all([
+  const [reviews, aiScore] = await Promise.all([
     getReviewsForCar(makeSlug, modelSlug, yearNum).catch(() => []),
-    getExpertReviewsForYear(makeSlug, modelSlug, yearNum).catch(() => ({ review: null, isYearSpecific: false })),
+    getAiScore(makeSlug, modelSlug).catch(() => null),
   ]);
 
   const avgRating = reviews.length
     ? reviews.reduce((s, r) => s + r.rating, 0) / reviews.length
     : null;
-  const score = expertReview?.topScore ?? null;
+  const score = aiScore != null ? blendWithOwnerRating(aiScore.score, avgRating, reviews.length) : null;
 
   return new ImageResponse(
     (
@@ -49,7 +49,7 @@ export default async function OGImage({ params }: Props) {
           display: 'flex',
         }} />
 
-        {/* Year badge — top right */}
+        {/* Year badge - top right */}
         <div style={{
           position: 'absolute', top: 48, right: 64,
           background: 'linear-gradient(135deg, #e63946, #e76f51)',

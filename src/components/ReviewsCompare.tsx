@@ -28,7 +28,7 @@ function Stars({ rating }: { rating: number }) {
 
 function ReviewCard({ review, locale }: { review: Review; locale: 'he' | 'en' }) {
   const isEn = locale === 'en';
-  // Never show Hebrew text on English site — only show review if translated
+  // Never show Hebrew text on English site - only show review if translated
   const title = isEn ? (review.title_en || null) : review.title;
   const body  = isEn ? (review.body_en  || null) : review.body;
   if (!body) return null;

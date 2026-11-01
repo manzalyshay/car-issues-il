@@ -21,7 +21,7 @@ export async function POST(req: NextRequest) {
   if (path) {
     revalidatePath(path);
   } else {
-    // Full purge — bust both Vercel ISR and Cloudflare
+    // Full purge - bust both Vercel ISR and Cloudflare
     revalidatePath('/', 'layout');
     await purgeCloudflareAll();
   }

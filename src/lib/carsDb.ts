@@ -1,7 +1,7 @@
 /**
  * Car data backed by Cloudflare D1.
  * Uses a globalThis cache so data survives across requests within the same
- * Worker instance — avoids re-querying D1 on every page load.
+ * Worker instance - avoids re-querying D1 on every page load.
  */
 import { dbAll } from './db';
 import type { CarMake, CarModel } from '@/data/cars';
@@ -11,7 +11,7 @@ export { getCategoryLabel } from '@/data/cars';
 
 // In-memory cache per isolate
 const CACHE_TTL_MS = 60 * 60 * 1000; // 1 hour
-const EDGE_CACHE_URL = 'https://cache.internal/allMakes-v9';
+const EDGE_CACHE_URL = 'https://cache.internal/allMakes-v15';
 const g = globalThis as typeof globalThis & {
   _carsCache?: { data: CarMake[]; ts: number };
 };
@@ -19,14 +19,14 @@ const g = globalThis as typeof globalThis & {
 async function fetchAllMakes(): Promise<CarMake[]> {
   const now = Date.now();
 
-  // 1. In-memory cache (fastest — zero DB reads within same isolate)
+  // 1. In-memory cache (fastest - zero DB reads within same isolate)
   if (g._carsCache && now - g._carsCache.ts < CACHE_TTL_MS) {
     return g._carsCache.data;
   }
 
-  // 2. Cloudflare edge Cache API (survives isolate resets — reduces D1 reads by ~95%)
+  // 2. Cloudflare edge Cache API (survives isolate resets - reduces D1 reads by ~95%)
   try {
-    const edgeCache = await caches.open('cars-v5');
+    const edgeCache = await caches.open('cars-v10');
     const hit = await edgeCache.match(EDGE_CACHE_URL);
     if (hit) {
       const data = await hit.json() as CarMake[];
@@ -77,7 +77,7 @@ async function fetchAllMakes(): Promise<CarMake[]> {
 
   // Store in edge Cache API (1 hour TTL, fire-and-forget)
   try {
-    const edgeCache = await caches.open('cars-v5');
+    const edgeCache = await caches.open('cars-v10');
     await edgeCache.put(
       EDGE_CACHE_URL,
       new Response(JSON.stringify(data), {
@@ -96,7 +96,7 @@ export async function getAllMakes(): Promise<CarMake[]> {
 export async function invalidateMakesCache(): Promise<void> {
   g._carsCache = undefined;
   try {
-    const edgeCache = await caches.open('cars-v4');
+    const edgeCache = await caches.open('cars-v10');
     await edgeCache.delete(EDGE_CACHE_URL);
   } catch { /* ignore */ }
 }

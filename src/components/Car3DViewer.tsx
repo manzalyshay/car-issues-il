@@ -17,7 +17,7 @@ interface Props {
 }
 
 
-export default function Car3DViewer({ uid, modelName, author, makeSlug, modelSlug, carImageUrl, onHidden }: Props) {
+export default function Car3DViewer({ uid, modelName, makeSlug, modelSlug, carImageUrl, onHidden }: Props) {
   const { isAdmin } = useAuth();
   const { t, dir } = useLocale();
   const iframeRef = useRef<HTMLIFrameElement>(null); // kept for potential future API use
@@ -55,8 +55,10 @@ export default function Car3DViewer({ uid, modelName, author, makeSlug, modelSlu
     return () => { cancelled = true; io?.disconnect(); window.removeEventListener('load', onLoad); };
   }, [shouldMount]);
 
-  const thumbnailUrl = `https://media.sketchfab.com/models/${uid}/thumbnails/result.jpg`;
-  const previewImage = carImageUrl || thumbnailUrl;
+  // media.sketchfab.com's thumbnail endpoint returns 403 for these models - never use it.
+  // The embed auto-loads itself (see shouldMount above); while it's loading, fall back to
+  // the model's own gallery photo if we have one, otherwise show no preview image at all.
+  const previewImage = carImageUrl || null;
 
   // Build embed URL with all UI suppressed
   const embedUrl = `https://sketchfab.com/models/${uid}/embed?autostart=1&preload=1&ui_infos=0&ui_watermark=0&ui_watermark_link=0&ui_hint=0&ui_stop=0&ui_inspector=0&ui_vr=0&ui_ar=0&ui_help=0&ui_settings=0&ui_annotations=0&ui_controls=0&ui_fadeout=0&dnt=1&transparent=0&camera=0`;
@@ -105,14 +107,16 @@ export default function Car3DViewer({ uid, modelName, author, makeSlug, modelSlu
       {/* Loading overlay shown while 3D model is being fetched */}
       {!iframeReady && (
         <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
-          {/* Car image background */}
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src={previewImage}
-            alt=""
-            onError={e => { (e.target as HTMLImageElement).style.display = 'none'; }}
-            style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', opacity: 0.8 }}
-          />
+          {/* Car image background - only when we have the model's own gallery photo */}
+          {previewImage && (
+            /* eslint-disable-next-line @next/next/no-img-element */
+            <img
+              src={previewImage}
+              alt=""
+              onError={e => { (e.target as HTMLImageElement).style.display = 'none'; }}
+              style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', opacity: 0.8 }}
+            />
+          )}
           <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to top, rgba(0,0,0,0.6) 0%, rgba(0,0,0,0.15) 100%)' }} />
           {/* Spinner + label */}
           <div style={{ position: 'relative', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12 }}>
@@ -128,13 +132,12 @@ export default function Car3DViewer({ uid, modelName, author, makeSlug, modelSlu
             <div style={{ color: '#fff', fontWeight: 700, fontSize: '0.875rem', letterSpacing: '0.02em' }}>
               {modelName}
             </div>
-            {author && <div style={{ color: 'rgba(255,255,255,0.35)', fontSize: '0.7rem' }}>by {author}</div>}
           </div>
         </div>
       )}
       <style>{`@keyframes car3d-spin { to { transform: rotate(360deg); } }`}</style>
 
-      {/* Admin flag button — top-left */}
+      {/* Admin flag button - top-left */}
       {isAdmin && makeSlug && modelSlug && (
         <div style={{ position: 'absolute', top: 8, left: 8, zIndex: 20 }}>
           {!showFlagMenu ? (

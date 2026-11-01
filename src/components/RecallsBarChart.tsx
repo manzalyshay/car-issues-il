@@ -154,7 +154,7 @@ export default function RecallsBarChart({ makeEn, modelEn, years, isEn }: Props)
               );
             })}
 
-            {/* X labels — every year, rotated to avoid overlap */}
+            {/* X labels - every year, rotated to avoid overlap */}
             {allYears.map((year, i) => (
               <text key={year}
                 x={xOf(i) + barW / 2} y={cH + 8}
@@ -235,7 +235,7 @@ export default function RecallsBarChart({ makeEn, modelEn, years, isEn }: Props)
         }}>
           {isEn
             ? `${totalRecalls} total recall${totalRecalls !== 1 ? 's' : ''} · most in ${worstYear} (${countByYear.get(worstYear)})`
-            : `סה"כ ${totalRecalls} ריקולים · שנה עם הכי הרבה: ${worstYear} (${countByYear.get(worstYear)})`}
+            : `סה"כ ${totalRecalls === 1 ? 'ריקול אחד' : `${totalRecalls} ריקולים`} · שנה עם הכי הרבה: ${worstYear} (${countByYear.get(worstYear)})`}
         </div>
       </div>
     </div>
@@ -252,7 +252,7 @@ function header(isEn: boolean) {
       <span style={{ fontSize: 15, fontWeight: 700, color: '#0d1b2f' }}>
         {isEn ? 'Recalls by Model Year' : 'ריקולים לפי שנת דגם'}
       </span>
-      <span style={{ fontSize: 12, color: '#5b6a86' }}>{isEn ? 'NHTSA' : 'ארה״ב'}</span>
+      <span style={{ fontSize: 12, color: '#5b6a86' }}>{isEn ? 'US' : 'ארה״ב'}</span>
     </div>
   );
 }

@@ -3,7 +3,7 @@
  * as of 2026-10-16). Drives the /cars/compare hub grid, llms.txt and the sitemaps.
  *
  * Order = click rank. Each entry is [makeSlug/modelSlug, makeSlug/modelSlug]; order inside
- * a pair doesn't matter — URLs are always built via canonicalComparePath().
+ * a pair doesn't matter - URLs are always built via canonicalComparePath().
  * Update from Search Console every few months (pages containing /cars/compare/, by clicks).
  */
 export const TOP_COMPARE_PAIRS: ReadonlyArray<readonly [string, string]> = [

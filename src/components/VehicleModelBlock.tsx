@@ -3,14 +3,14 @@ import type { ModelInfo } from '@/lib/modelInfo';
 
 /** "About this model" block shown after a successful plate lookup (server- or client-rendered). */
 export default function VehicleModelBlock({ info, isHe }: { info: ModelInfo; isHe: boolean }) {
-  const hasAnything = info.reviewCount > 0 || info.priceMin || info.problems.length > 0 || info.compares.length > 0;
+  const hasAnything = info.reviewCount > 0 || (isHe && info.priceMin) || info.problems.length > 0 || info.compares.length > 0;
   return (
     <section className="card" aria-labelledby="vl-model-title" style={{ padding: '16px 18px', marginBottom: 16, display: 'grid', gap: 12 }}>
       <h2 id="vl-model-title" style={{ fontSize: '1rem', fontWeight: 800, margin: 0 }}>
-        {isHe ? `על הדגם הזה — ${info.name}` : `About this model — ${info.name}`}
+        {isHe ? `על הדגם הזה - ${info.name}` : `About this model - ${info.name}`}
       </h2>
 
-      {(info.reviewCount > 0 || info.priceMin) && (
+      {(info.reviewCount > 0 || (isHe && info.priceMin)) && (
         <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap', fontSize: '0.9rem' }}>
           {info.reviewCount > 0 && info.avgRating != null && (
             <span>
@@ -20,11 +20,11 @@ export default function VehicleModelBlock({ info, isHe }: { info: ModelInfo; isH
               </span>
             </span>
           )}
-          {info.priceMin && (
+          {isHe && info.priceMin && (
             <span>
-              {isHe ? 'מחיר חדש בישראל החל מ-' : 'New in Israel from '}
-              <strong>₪{info.priceMin.toLocaleString('en-US')}</strong>
-              <span style={{ color: 'var(--text-muted)' }}>{isHe ? ' (מחירון הגרסאות באתר)' : ' (trim price list)'}</span>
+              מחיר חדש בישראל החל מ-
+              <strong>₪{info.priceMin.toLocaleString('he-IL')}</strong>
+              <span style={{ color: 'var(--text-muted)' }}> (מחירון הגרסאות באתר)</span>
             </span>
           )}
         </div>
@@ -38,7 +38,7 @@ export default function VehicleModelBlock({ info, isHe }: { info: ModelInfo; isH
           </ul>
           <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginTop: 2 }}>
             {p.sourceUrl
-              ? <>{isHe ? 'מקור: ' : 'Source: '}<a href={p.sourceUrl} target="_blank" rel="noopener nofollow" style={{ color: 'var(--accent)' }}>{p.source}</a></>
+              ? <a href={p.sourceUrl} target="_blank" rel="noopener nofollow" style={{ color: 'var(--accent)' }}>{isHe ? 'מידע נוסף ←' : 'More info →'}</a>
               : p.source}
           </div>
         </div>

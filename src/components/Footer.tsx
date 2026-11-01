@@ -19,15 +19,15 @@ function LangSwitch({ isEn }: { isEn: boolean }) {
         try { localStorage.setItem('locale', next); } catch {}
         window.location.reload();
       }
-      // On production domains — let the href navigate normally
+      // On production domains - let the href navigate normally
     }
   }
 
-  // Preserve the current page — not just the other domain's homepage — so
+  // Preserve the current page - not just the other domain's homepage - so
   // the switcher works as a real internal link into every deep page on the
   // other domain (crawl/discovery signal, not just a UX nicety).
   const targetOrigin = isEn ? 'https://carissues.co.il' : 'https://carissues.net';
-  // ?clang=1 tells the middleware this is an explicit user choice — sets the preference
+  // ?clang=1 tells the middleware this is an explicit user choice - sets the preference
   // cookie so the geo-redirect doesn't immediately bounce them back to the other domain
   const href = `${targetOrigin}${pathname && pathname !== '/' ? pathname : ''}?clang=1`;
 
@@ -84,7 +84,7 @@ export default function Footer() {
     <footer style={{ background: '#08131f', color: '#93a5c0', padding: 'clamp(24px,3vw,40px) clamp(16px,3vw,32px)' }}>
       <div style={{ maxWidth: 1280, margin: '0 auto' }}>
 
-        {/* Brand row — compact on mobile */}
+        {/* Brand row - compact on mobile */}
         <div className="footer-brand" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16, flexWrap: 'wrap', marginBottom: 28, paddingBottom: 24, borderBottom: '1px solid rgba(255,255,255,.08)' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
             <span style={{ display: 'inline-flex', alignItems: 'center', background: '#fff', borderRadius: 10, padding: '6px 10px', flexShrink: 0 }}>
@@ -100,7 +100,7 @@ export default function Footer() {
           <LangSwitch isEn={isEn} />
         </div>
 
-        {/* Link columns — 3-col desktop, 2-col mobile */}
+        {/* Link columns - 3-col desktop, 2-col mobile */}
         <div className="footer-links">
           {cols.map(col => (
             <div key={col.head}>

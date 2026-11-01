@@ -187,7 +187,7 @@ export default function ReviewForm({ makeSlug, modelSlug, year: yearProp, years,
     <form onSubmit={handleSubmit} className="card" style={{ padding: '18px 20px' }}>
       <h3 style={{ fontWeight: 700, fontSize: '1rem', marginBottom: 16 }}>{rf.title}</h3>
 
-      {/* Year selector — only when year not fixed by page */}
+      {/* Year selector - only when year not fixed by page */}
       {!yearProp && years && years.length > 0 && (
         <div style={{ marginBottom: 16 }}>
           <label style={labelStyle}>{rf.yearLabel} <span style={{ color: 'var(--accent)' }}>{rf.required}</span></label>
@@ -219,7 +219,7 @@ export default function ReviewForm({ makeSlug, modelSlug, year: yearProp, years,
       )}
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: 12, marginBottom: 14 }}>
-        {/* Author — shown only for guests */}
+        {/* Author - shown only for guests */}
         {!user && (
           <div>
             <label style={labelStyle}>{rf.nameLabel} <span style={{ color: 'var(--accent)' }}>{rf.required}</span></label>
@@ -257,7 +257,7 @@ export default function ReviewForm({ makeSlug, modelSlug, year: yearProp, years,
         </div>
       </div>
 
-      {/* Rating — compact, since star was already picked before opening the form */}
+      {/* Rating - compact, since star was already picked before opening the form */}
       <div style={{ marginBottom: 14 }}>
         <label style={labelStyle}>{rf.ratingLabel}</label>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
@@ -346,7 +346,7 @@ export default function ReviewForm({ makeSlug, modelSlug, year: yearProp, years,
         />
       </div>
 
-      {/* Turnstile CAPTCHA — only for guests when site key is configured */}
+      {/* Turnstile CAPTCHA - only for guests when site key is configured */}
       {!user && TURNSTILE_SITE_KEY && (
         <div style={{ marginBottom: 16 }}>
           <div ref={captchaRef} />

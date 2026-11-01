@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import type { CarVideo } from '@/lib/youtubeVideos';
+import { useLocale } from '@/lib/localeContext';
 
 interface Props {
   initialVideos: CarVideo[];
@@ -9,17 +10,22 @@ interface Props {
   modelSlug: string;
   makeNameHe: string;
   modelNameHe: string;
+  makeNameEn?: string;
+  modelNameEn?: string;
 }
 
-export default function CarVideosTab({ initialVideos, makeSlug, modelSlug, makeNameHe, modelNameHe }: Props) {
+export default function CarVideosTab({ initialVideos, makeSlug, modelSlug, makeNameHe, modelNameHe, makeNameEn, modelNameEn }: Props) {
   const [videos] = useState<CarVideo[]>(initialVideos);
   const [activeVideo, setActiveVideo] = useState<string | null>(null);
+  const { locale } = useLocale();
+  const isEn = locale === 'en';
+  const carName = isEn ? `${makeNameEn ?? makeNameHe} ${modelNameEn ?? modelNameHe}` : `${makeNameHe} ${modelNameHe}`;
 
   if (videos.length === 0) {
     return (
       <div style={{ textAlign: 'center', padding: '48px 0', color: 'var(--text-muted)' }}>
         <div style={{ fontSize: '2.5rem', marginBottom: 12 }}>🎬</div>
-        <p style={{ fontSize: '1rem' }}>אין סרטוני ביקורת עדיין עבור {makeNameHe} {modelNameHe}</p>
+        <p style={{ fontSize: '1rem' }}>{isEn ? `No review videos yet for ${carName}` : `אין סרטוני ביקורת עדיין עבור ${carName}`}</p>
       </div>
     );
   }
@@ -27,7 +33,7 @@ export default function CarVideosTab({ initialVideos, makeSlug, modelSlug, makeN
   return (
     <div>
       <p style={{ color: 'var(--text-muted)', fontSize: '0.875rem', marginBottom: 24 }}>
-        {videos.length} סרטוני ביקורת עבור {makeNameHe} {modelNameHe}
+        {isEn ? `${videos.length} review videos for ${carName}` : `${videos.length} סרטוני ביקורת עבור ${carName}`}
       </p>
 
       {/* Active embed */}
@@ -120,13 +126,13 @@ export default function CarVideosTab({ initialVideos, makeSlug, modelSlug, makeN
 
       {/* YouTube attribution */}
       <p style={{ fontSize: '0.7rem', color: 'var(--text-muted)', marginTop: 20, textAlign: 'center' }}>
-        הסרטונים מסופקים על ידי YouTube. לצפייה ישירה:{' '}
+        {isEn ? 'Videos provided by YouTube. Watch directly: ' : 'הסרטונים מסופקים על ידי YouTube. לצפייה ישירה: '}
         <a
           href={`https://www.youtube.com/results?search_query=${encodeURIComponent(`${makeSlug} ${modelSlug} review`)}`}
           target="_blank" rel="noopener noreferrer"
           style={{ color: 'var(--accent)' }}
         >
-          חיפוש ב-YouTube
+          {isEn ? 'Search on YouTube' : 'חיפוש ב-YouTube'}
         </a>
       </p>
     </div>

@@ -1,13 +1,13 @@
 /**
  * Generate Hebrew summaries enriched with real Israeli trim/spec data from auto.co.il.
- * Uses Cloudflare Workers AI (LLaMA) — no external API quota needed.
+ * Uses Cloudflare Workers AI (LLaMA) - no external API quota needed.
  *
  * POST body:
- *   limit?:     number  — max per run (default 5, max 15)
- *   force?:     boolean — regenerate even if summary exists
- *   generic?:   boolean — only regenerate the "generic" template summaries
- *   makeSlug?:  string  — target single model
- *   modelSlug?: string  — target single model
+ *   limit?:     number  - max per run (default 5, max 15)
+ *   force?:     boolean - regenerate even if summary exists
+ *   generic?:   boolean - only regenerate the "generic" template summaries
+ *   makeSlug?:  string  - target single model
+ *   modelSlug?: string  - target single model
  */
 import { NextRequest, NextResponse } from 'next/server';
 import { isAdmin } from '@/lib/adminAuth';
@@ -224,7 +224,7 @@ export async function POST(req: NextRequest) {
     const specsBlock = buildSpecBlock(trims, row.make_name_en, row.model_name_en, modelYears);
     const hasSpecs = specsBlock.length > 0;
 
-    const systemPrompt = `You are a Hebrew car journalist. Write factual, specific car summaries for an Israeli audience. Always respond with valid JSON only — no markdown, no code fences, no extra text.`;
+    const systemPrompt = `You are a Hebrew car journalist. Write factual, specific car summaries for an Israeli audience. Always respond with valid JSON only - no markdown, no code fences, no extra text.`;
 
     const userPrompt = `Write a Hebrew summary for the ${row.make_name_en} ${row.model_name_en} (${row.make_name_he} ${row.model_name_he}).
 
@@ -234,8 +234,8 @@ Score: ${score}/10
 ${hasSpecs ? `\n## Israeli market data (auto.co.il):\n${specsBlock}` : ''}
 
 ## Output requirements:
-- summary_he: 3–5 Hebrew sentences. Be SPECIFIC — mention actual numbers (HP, 0–100, L/100km, price range, trim names). Cover: what kind of car it is, ${hasSpecs ? 'trim levels, engine power, fuel economy, ' : ''}key pros, key cons. Do NOT start with "מומחים מציינים ש" — use natural phrasing like "ה${row.make_name_he} ${row.model_name_he} הוא..." or "ה${row.model_name_he} של ${row.make_name_he} מגיע...". If hybrid/electric variants exist, mention them. Do NOT mention Israel, Israeli cities, Israeli roads, Israeli weather, or any Israel-specific context — this is a general automotive summary.
-- pros: array of 3 short Hebrew strings — use REAL specs where available (e.g. "230 כ\\"ס", "0–100 ב-9.1 שנ'", "AEB וכל מערכות הבטיחות")
+- summary_he: 3–5 Hebrew sentences. Be SPECIFIC - mention actual numbers (HP, 0–100, L/100km, price range, trim names). Cover: what kind of car it is, ${hasSpecs ? 'trim levels, engine power, fuel economy, ' : ''}key pros, key cons. Do NOT start with "מומחים מציינים ש" - use natural phrasing like "ה${row.make_name_he} ${row.model_name_he} הוא..." or "ה${row.model_name_he} של ${row.make_name_he} מגיע...". If hybrid/electric variants exist, mention them. Do NOT mention Israel, Israeli cities, Israeli roads, Israeli weather, or any Israel-specific context - this is a general automotive summary.
+- pros: array of 3 short Hebrew strings - use REAL specs where available (e.g. "230 כ\\"ס", "0–100 ב-9.1 שנ'", "AEB וכל מערכות הבטיחות")
 - cons: array of 3 short Hebrew strings
 - score: ${score}
 
@@ -264,7 +264,7 @@ Respond with ONLY this JSON (no markdown):
     }
 
     if (!parsed || typeof parsed.summary_he !== 'string' || !parsed.summary_he.trim()) {
-      errors.push(`${row.make_slug}/${row.model_slug}: parse failed — ${clean.slice(-80)}`);
+      errors.push(`${row.make_slug}/${row.model_slug}: parse failed - ${clean.slice(-80)}`);
       failed++;
       continue;
     }
@@ -284,7 +284,7 @@ Respond with ONLY this JSON (no markdown):
       );
       generated++;
     } catch (e: unknown) {
-      errors.push(`${row.make_slug}/${row.model_slug}: db error — ${String(e).slice(0, 50)}`);
+      errors.push(`${row.make_slug}/${row.model_slug}: db error - ${String(e).slice(0, 50)}`);
       failed++;
     }
   }

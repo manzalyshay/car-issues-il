@@ -10,7 +10,7 @@
 export function wikiThumb(url: string | null | undefined, widthPx: number): string | null {
   if (!url) return null;
 
-  // Already a wikimedia thumbnail — just replace the width segment
+  // Already a wikimedia thumbnail - just replace the width segment
   const thumbMatch = url.match(
     /^(https:\/\/upload\.wikimedia\.org\/wikipedia\/[^/]+\/thumb\/[^/]+\/[^/]+\/(.+))\/\d+px-(.+)$/
   );
@@ -19,7 +19,7 @@ export function wikiThumb(url: string | null | undefined, widthPx: number): stri
     return `${base}/${widthPx}px-${file}`;
   }
 
-  // Full-res wikimedia URL — convert to thumb
+  // Full-res wikimedia URL - convert to thumb
   const fullMatch = url.match(
     /^(https:\/\/upload\.wikimedia\.org\/wikipedia\/([^/]+))\/([^/]+)\/([^/]+)\/(.+)$/
   );

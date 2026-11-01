@@ -6,7 +6,7 @@ export async function getHostLocale(): Promise<'en' | 'he'> {
   // Known production domains override everything
   if (host === 'carissues.net' || host === 'www.carissues.net' || host.startsWith('en.')) return 'en';
   if (host === 'carissues.co.il' || host === 'www.carissues.co.il') return 'he';
-  // Unknown host (localhost/dev) — respect the clang preference cookie
+  // Unknown host (localhost/dev) - respect the clang preference cookie
   const pref = (await cookies()).get('clang')?.value;
   if (pref === 'en') return 'en';
   if (pref === 'he') return 'he';

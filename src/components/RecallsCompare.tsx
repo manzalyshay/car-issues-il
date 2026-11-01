@@ -252,7 +252,7 @@ export default function RecallsCompare({ make1, model1, name1, make2, model2, na
         />
 
         <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)', marginTop: 16, borderTop: '1px solid var(--border)', paddingTop: 8 }}>
-          {isHe ? 'מקור: ריקולים בארה״ב · מוצגים ריקולים מ-6 שנים אחרונות' : 'Source: NHTSA (US) · Showing recalls from the last 6 years'}
+          {isHe ? 'ריקולים בארה״ב · מוצגים ריקולים מ-6 שנים אחרונות' : 'US recalls · Showing recalls from the last 6 years'}
         </div>
       </div>
     </div>

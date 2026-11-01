@@ -28,7 +28,7 @@ export async function GET(req: NextRequest) {
 const TURNSTILE_SECRET = process.env.TURNSTILE_SECRET_KEY ?? '';
 
 async function verifyTurnstile(token: string, ip: string): Promise<boolean> {
-  if (!TURNSTILE_SECRET) return true; // not configured — skip
+  if (!TURNSTILE_SECRET) return true; // not configured - skip
   const res = await fetch('https://challenges.cloudflare.com/turnstile/v0/siteverify', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -117,10 +117,10 @@ export async function POST(req: NextRequest) {
       images: Array.isArray(images) ? images.slice(0, 4) : [],
     } as Omit<Review, 'id' | 'createdAt' | 'helpful'>);
 
-    // Translate inline — after() loses the CF async context so getCloudflareContext fails inside it
+    // Translate inline - after() loses the CF async context so getCloudflareContext fails inside it
     await translateAndSaveReview(review.id, review.title, review.body).catch(() => {});
 
-    // Notify followers — fire-and-forget
+    // Notify followers - fire-and-forget
     notifyFollowers({ makeSlug, modelSlug, authorName, rating, title, body: reviewBody }).catch(() => {});
 
     revalidatePath(`/cars/${makeSlug}/${modelSlug}`);

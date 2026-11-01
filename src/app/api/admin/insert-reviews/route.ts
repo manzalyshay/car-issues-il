@@ -5,7 +5,7 @@ import { randomUUID } from 'crypto';
 
 export const dynamic = 'force-dynamic';
 
-/** POST — insert a pre-generated review directly (no LLM call) */
+/** POST - insert a pre-generated review directly (no LLM call) */
 export async function POST(req: NextRequest) {
   if (!await isAdmin(req)) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 

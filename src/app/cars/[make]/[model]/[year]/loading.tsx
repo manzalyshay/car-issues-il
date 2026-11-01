@@ -13,7 +13,7 @@ export default async function Loading() {
           ))}
         </div>
 
-        {/* Car repair animation — main focus for year pages */}
+        {/* Car repair animation - main focus for year pages */}
         <CarRepairLoader text={locale === 'en' ? 'Loading reviews and data' : 'טוען ביקורות ונתונים'} />
 
         {/* Score skeleton */}

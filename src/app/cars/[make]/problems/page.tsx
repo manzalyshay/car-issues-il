@@ -23,8 +23,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       ? `${make.nameEn} Common Problems & Recalls | CarIssues`
       : `בעיות נפוצות וריקולים ב${make.nameHe} | CarIssues`,
     description: isEn
-      ? `All known ${make.nameEn} problems, recalls, and reported issues across every model — based on NHTSA data and real owner reviews.`
-      : `כל הבעיות הנפוצות, הריקולים והתקלות המדווחות בדגמי ${make.nameHe} — מבוסס על נתוני NHTSA וביקורות בעלים.`,
+      ? `All known ${make.nameEn} problems, recalls, and reported issues across every model - based on official recall data and real owner reviews.`
+      : `כל הבעיות הנפוצות, הריקולים והתקלות המדווחות בדגמי ${make.nameHe} - מבוסס על נתוני ריקולים רשמיים וביקורות בעלים.`,
     alternates: {
       canonical: url,
       languages: {
@@ -119,7 +119,7 @@ export default async function MakeProblemsPage({ params }: Props) {
             items.push({
               '@type': 'Question',
               name: isEn ? `Were there recalls for the ${name}?` : `האם היו ריקולים ל${name}?`,
-              acceptedAnswer: { '@type': 'Answer', text: isEn ? `Yes, ${m.recallCount} recall(s) were recorded for the ${name}.` : `כן, תועדו ${m.recallCount} ריקולים ל${name}.` },
+              acceptedAnswer: { '@type': 'Answer', text: isEn ? `Yes, ${m.recallCount} recall${m.recallCount !== 1 ? 's were' : ' was'} recorded for the ${name}.` : `כן, תועד ${m.recallCount === 1 ? 'ריקול אחד' : `${m.recallCount} ריקולים`} ל${name}.` },
             });
           }
           return items;
@@ -147,12 +147,12 @@ export default async function MakeProblemsPage({ params }: Props) {
           <MakeLogo logoUrl={make.logoUrl} nameEn={make.nameEn} size={44} />
           <div>
             <h1 style={{ fontSize: '1.5rem', fontWeight: 800, margin: 0, lineHeight: 1.2 }}>
-              {isEn ? `${make.nameEn} — Common Problems & Recalls` : `${make.nameHe} — בעיות נפוצות וריקולים`}
+              {isEn ? `${make.nameEn} - Common Problems & Recalls` : `${make.nameHe} - בעיות נפוצות וריקולים`}
             </h1>
             <p style={{ margin: '4px 0 0', fontSize: '0.875rem', color: 'var(--text-muted)' }}>
               {isEn
-                ? `${make.models.length} models · ${totalRecalls} total recalls · Based on NHTSA data & owner reviews`
-                : `${make.models.length} דגמים · ${totalRecalls} ריקולים סה"כ · מבוסס על NHTSA וביקורות בעלים`}
+                ? `${make.models.length} models · ${totalRecalls} total recall${totalRecalls !== 1 ? 's' : ''} · Based on official recall data & owner reviews`
+                : `${make.models.length} דגמים · ${totalRecalls === 1 ? 'ריקול אחד' : `${totalRecalls} ריקולים`} סה"כ · מבוסס על נתוני ריקולים רשמיים וביקורות בעלים`}
             </p>
           </div>
         </div>
@@ -194,7 +194,7 @@ export default async function MakeProblemsPage({ params }: Props) {
                         <div style={{ display: 'flex', gap: 8, marginTop: 6, flexWrap: 'wrap' }}>
                           {m.recallCount > 0 && (
                             <span style={{ fontSize: '0.72rem', fontWeight: 700, padding: '2px 10px', borderRadius: 99, background: 'rgba(230,57,70,0.08)', border: '1px solid rgba(230,57,70,0.25)', color: '#e63946' }}>
-                              {m.recallCount} {isEn ? 'recalls' : 'ריקולים'}
+                              {m.recallCount} {isEn ? (m.recallCount === 1 ? 'recall' : 'recalls') : (m.recallCount === 1 ? 'ריקול' : 'ריקולים')}
                             </span>
                           )}
                           {m.cons.length > 0 && (

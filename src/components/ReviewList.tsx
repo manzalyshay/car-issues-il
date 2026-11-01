@@ -11,6 +11,8 @@ interface Props {
   reviews: Review[];
   onHelpful?: (id: string, delta: number) => void;
   onDislike?: (id: string, delta: number) => void;
+  /** Reviews beyond this index stay in the DOM (crawlable) but are visually hidden until expanded. */
+  visibleCount?: number;
 }
 
 const FILTER_VALUES = ['all', 'mechanical', 'electrical', 'comfort', 'safety', 'general'] as const;
@@ -305,7 +307,7 @@ function ReportButton({ reviewId }: { reviewId: string }) {
   );
 }
 
-export default function ReviewList({ reviews, onHelpful, onDislike }: Props) {
+export default function ReviewList({ reviews, onHelpful, onDislike, visibleCount }: Props) {
   const { user } = useAuth();
   const { locale, t } = useLocale();
   const rl = t.reviewList;
@@ -344,7 +346,7 @@ export default function ReviewList({ reviews, onHelpful, onDislike }: Props) {
     const alreadyLiked = liked.has(review.id);
     const hadDislike = disliked.has(review.id);
 
-    // Optimistic update — apply immediately
+    // Optimistic update - apply immediately
     if (hadDislike) {
       setDisliked((prev) => { const s = new Set(prev); s.delete(review.id); return s; });
       onDislike?.(review.id, -1);
@@ -385,7 +387,7 @@ export default function ReviewList({ reviews, onHelpful, onDislike }: Props) {
     const alreadyDisliked = disliked.has(review.id);
     const hadLike = liked.has(review.id);
 
-    // Optimistic update — apply immediately
+    // Optimistic update - apply immediately
     if (hadLike) {
       setLiked((prev) => { const s = new Set(prev); s.delete(review.id); return s; });
       onHelpful?.(review.id, -1);
@@ -499,7 +501,7 @@ export default function ReviewList({ reviews, onHelpful, onDislike }: Props) {
           </div>
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-            {sorted.map((review) => {
+            {sorted.map((review, index) => {
               const isLiked = liked.has(review.id);
               // On EN site: skip reviews with no English translation
               if (locale === 'en' && !review.bodyEn) return null;
@@ -510,8 +512,12 @@ export default function ReviewList({ reviews, onHelpful, onDislike }: Props) {
               const starsStr = '★'.repeat(starsFull) + '☆'.repeat(5 - starsFull);
               const initial = safeDisplayName(review.authorName, locale).charAt(0).toUpperCase() || '?';
               const dateStr = new Date(review.createdAt).toLocaleDateString(locale === 'en' ? 'en-US' : 'he-IL', { year: 'numeric', month: 'short', day: 'numeric' });
+              // Hidden (not omitted) past the fold - keeps full review text in the
+              // initial server-rendered HTML so crawlers see it, while the UI still
+              // only shows the first page until "show more" is clicked.
+              const hiddenPastFold = visibleCount != null && index >= visibleCount;
               return (
-                <article key={review.id} id={`review-${review.id}`} style={{ background: '#ffffff', border: '1px solid #e3e8ee', borderRadius: 13, padding: '15px 17px' }}>
+                <article key={review.id} id={`review-${review.id}`} style={{ background: '#ffffff', border: '1px solid #e3e8ee', borderRadius: 13, padding: '15px 17px', display: hiddenPastFold ? 'none' : undefined }}>
                   {/* Header row: avatar + author/meta + stars */}
                   <div style={{ display: 'flex', alignItems: 'center', gap: 11, marginBottom: 9, flexWrap: 'wrap' }}>
                     <span style={{ width: 32, height: 32, borderRadius: '50%', background: '#eef3f9', display: 'grid', placeItems: 'center', fontSize: 13, fontWeight: 800, color: '#1b4f8a', flexShrink: 0 }}>
@@ -594,7 +600,7 @@ export default function ReviewList({ reviews, onHelpful, onDislike }: Props) {
                     <SharePopup
                       compact
                       label={rl.share}
-                      title={`${review.title || `${review.makeSlug} ${review.modelSlug}`} — CarIssues`}
+                      title={`${review.title || `${review.makeSlug} ${review.modelSlug}`} - CarIssues`}
                       url={`https://${locale === 'en' ? 'carissues.net' : 'carissues.co.il'}/cars/${review.makeSlug}/${review.modelSlug}#review-${review.id}`}
                     />
                   </div>

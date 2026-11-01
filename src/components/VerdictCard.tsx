@@ -2,9 +2,10 @@ import type { ExpertReview } from '@/lib/expertReviews';
 import type { ModelRepairCost } from '@/lib/repairCostsDb';
 import type { TrimSpecWithYear } from '@/lib/trimSpecsDb';
 import VerdictCardClient from './VerdictCardClient';
+import ScoreSourcesInfo from './ScoreSourcesInfo';
 import { aiSourceLabel } from '@/lib/aiSource';
-import type { ExternalScoreSet } from '@/lib/proReviewScores';
-import ExternalScoresInfo from './ExternalScoresInfo';
+import { type AiScore, AI_SCORE_CAPTION_HE, AI_SCORE_CAPTION_EN, AI_SCORE_ESTIMATED_HE, AI_SCORE_ESTIMATED_EN, blendWithOwnerRating, formatOwnerScoreHe, formatOwnerScoreEn } from '@/lib/aiScore';
+import type { ProReviewScoreSet } from '@/lib/proReviewScoreLabels';
 
 interface Props {
   expertReview: ExpertReview | null;
@@ -19,11 +20,31 @@ interface Props {
   isEn: boolean;
   avgRating: number | null;
   reviewCount: number;
-  externalScores?: ExternalScoreSet[];
+  aiScore: AiScore | null;
+  /** Verified test scores from other review sites (icar, Autocar, carwow, Top
+   * Gear, Car and Driver, etc.) - blended into the displayed score as one of
+   * its inputs, with the sources/dates/links shown via the small ⓘ next to it. */
+  proReviewScoreSets?: ProReviewScoreSet[] | null;
+}
+
+/** Average of a model's applicable verified test-score sets (null if none). */
+function computeTestScoreAvg(sets: ProReviewScoreSet[] | null | undefined): number | null {
+  if (!sets || sets.length === 0) return null;
+  const sum = sets.reduce((s, set) => s + set.score, 0);
+  return sum / sets.length;
+}
+
+/** Blends the verified external test-score average into a base score once one
+ * exists - a fixed 30% weight, the same "one input among several" treatment
+ * owner ratings already get via blendWithOwnerRating. */
+function blendWithTestScore(baseScore: number, testScoreAvg: number | null): number {
+  if (testScoreAvg == null) return baseScore;
+  const TEST_WEIGHT = 0.3;
+  return baseScore * (1 - TEST_WEIGHT) + testScoreAvg * TEST_WEIGHT;
 }
 
 function hasHebrew(s: string | null | undefined): boolean {
-  return !!(s && /[\u0590-\u05FF]/.test(s));
+  return !!(s && /[֐-׿]/.test(s));
 }
 
 const NO_DATA_PHRASES = [
@@ -33,18 +54,12 @@ const NO_DATA_PHRASES = [
 const noData = (s: string | null | undefined) =>
   !s || s.trim().length < 40 || NO_DATA_PHRASES.some(p => s.includes(p));
 
-function scoreColor(score: number) {
-  if (score >= 8) return '#1b9e5f';
-  if (score >= 6) return '#d97706';
-  return '#dc2626';
-}
-
 export default function VerdictCard({
   expertReview, repairCosts, trimSpecs, makeSlug, modelSlug,
   makeNameHe, modelNameHe, makeNameEn, modelNameEn,
-  isEn, avgRating, reviewCount, externalScores = [],
+  isEn, avgRating, reviewCount, aiScore, proReviewScoreSets,
 }: Props) {
-  if (!expertReview && avgRating === null) return null;
+  if (!expertReview && avgRating === null && aiScore === null) return null;
 
   // Minimal card when no expert review
   if (!expertReview) {
@@ -75,18 +90,32 @@ export default function VerdictCard({
             </div>
           </div>
         </div>
-        <div style={{ padding: '20px 24px', display: 'flex', alignItems: 'center', gap: 16 }}>
-          <div>
-            <span style={{ fontSize: 34, fontWeight: 800, letterSpacing: '-0.02em', color: '#1c2733' }}>
-              {avgRating!.toFixed(1)}
-            </span>
-            <span style={{ fontSize: 15, color: '#8595a6' }}>/5</span>
-          </div>
-          <ExternalScoresInfo sets={externalScores} isEn={isEn} />
-          <div style={{ fontSize: 13, color: '#66788c' }}>
-            {reviewCount} {isEn ? 'owner reviews' : 'ביקורות בעלים'}
-          </div>
+        <div style={{ padding: '20px 24px', display: 'flex', alignItems: 'center', gap: 16, flexWrap: 'wrap' }}>
+          {aiScore != null && (
+            <div style={{ display: 'flex', alignItems: 'baseline', gap: 6 }}>
+              <span style={{ fontSize: 34, fontWeight: 800, letterSpacing: '-0.02em', color: '#1c2733' }}>
+                {blendWithTestScore(blendWithOwnerRating(aiScore.score, avgRating, reviewCount), computeTestScoreAvg(proReviewScoreSets)).toFixed(1)}
+              </span>
+              <span style={{ fontSize: 15, color: '#8595a6' }}>/10</span>
+              {aiScore.confidence === 'low' && (
+                <span style={{ fontSize: 11.5, fontWeight: 700, color: '#92620a', background: '#fef3cd', padding: '2px 8px', borderRadius: 999 }}>
+                  {isEn ? AI_SCORE_ESTIMATED_EN : AI_SCORE_ESTIMATED_HE}
+                </span>
+              )}
+              <ScoreSourcesInfo sets={proReviewScoreSets} isHe={!isEn} />
+            </div>
+          )}
+          {avgRating != null && reviewCount > 0 && (
+            <div style={{ fontSize: 13, fontWeight: 700, color: '#1c2733' }}>
+              {isEn ? formatOwnerScoreEn(avgRating, reviewCount) : formatOwnerScoreHe(avgRating, reviewCount)}
+            </div>
+          )}
         </div>
+        {aiScore != null && (
+          <div style={{ padding: '0 24px 16px', fontSize: 12, color: '#8595a6', lineHeight: 1.5 }}>
+            {isEn ? AI_SCORE_CAPTION_EN : AI_SCORE_CAPTION_HE}
+          </div>
+        )}
       </section>
     );
   }
@@ -108,24 +137,24 @@ export default function VerdictCard({
     ? (expertReview.consEn?.length && !expertReview.consEn.some(hasHebrew) ? expertReview.consEn : [])
     : expertReview.cons;
 
-  const overallScore = expertReview.topScore;
-  const localScore = expertReview.localScore;
-  const globalScore = expertReview.globalScore;
-  const ownerScore = avgRating != null ? Math.min(10, avgRating * 2) : null;
+  const overallScore = aiScore != null
+    ? blendWithTestScore(blendWithOwnerRating(aiScore.score, avgRating, reviewCount), computeTestScoreAvg(proReviewScoreSets))
+    : null;
+  const ownerScoreLine = (avgRating != null && reviewCount > 0)
+    ? (isEn ? formatOwnerScoreEn(avgRating, reviewCount) : formatOwnerScoreHe(avgRating, reviewCount))
+    : null;
 
-  // Sub-scores grid (only what we have)
-  const subScores: { label: string; score: number }[] = [];
-  if (localScore != null) subScores.push({ label: isEn ? 'IL Score' : 'ציון ישראל', score: localScore });
-  if (globalScore != null) subScores.push({ label: isEn ? 'Global' : 'עולמי', score: globalScore });
-  if (ownerScore != null) subScores.push({ label: isEn ? 'Owners' : 'בעלים', score: ownerScore });
-
-  // Issues from repair costs
+  // Issues from repair costs - model-specific repair reports only store a Hebrew
+  // name (no English translation source), so on EN there is nothing accurate to
+  // show here; skip the accordion rather than leak Hebrew or show a blank label.
   const grouped = new Map<string, { nameHe: string; nameEn: string; costs: number[]; notes: string[] }>();
-  for (const c of repairCosts) {
-    if (!grouped.has(c.repair_key)) grouped.set(c.repair_key, { nameHe: c.repair_name_he, nameEn: '', costs: [], notes: [] });
-    const g = grouped.get(c.repair_key)!;
-    g.costs.push(c.cost_ils);
-    if (c.notes) g.notes.push(c.notes);
+  if (!isEn) {
+    for (const c of repairCosts) {
+      if (!grouped.has(c.repair_key)) grouped.set(c.repair_key, { nameHe: c.repair_name_he, nameEn: '', costs: [], notes: [] });
+      const g = grouped.get(c.repair_key)!;
+      g.costs.push(c.cost_ils);
+      if (c.notes) g.notes.push(c.notes);
+    }
   }
   const issues = Array.from(grouped.entries()).map(([key, g]) => {
     const sorted = [...g.costs].sort((a, b) => a - b);
@@ -148,10 +177,17 @@ export default function VerdictCard({
       ? (isEn ? 'Recommended' : 'מומלץ')
       : (isEn ? 'Mixed Reviews' : 'ביקורות מעורבות');
 
-  const leadSummary = curatedData?.summary_integrated ?? localSummary ?? globalSummary ?? null;
+  // curatedData is Hebrew-only Israeli-market curation (no English translation exists) -
+  // never fall back to it on the English site, even when the English summary is empty.
+  // On EN, show ONLY the approved global_summary_en text - never fall back to
+  // localSummaryEn (older, unreviewed AI-generated text with stale Israel pricing).
+  const leadSummary = isEn
+    ? globalSummary
+    : (curatedData?.summary_integrated ?? localSummary ?? globalSummary ?? null);
 
-  // Chips from batch data
-  const chips = expertReview.chipsJson;
+  // Chips from batch data - Hebrew only (no English translation pipeline yet),
+  // so skip them entirely on the English site rather than show untranslated text.
+  const chips = isEn ? null : expertReview.chipsJson;
   const chipItems: { label: string; color: string }[] = [];
   if (chips?.who_for_chip) chipItems.push({ label: chips.who_for_chip, color: '#1b4f8a' });
   if (chips?.safety_chip) chipItems.push({ label: chips.safety_chip, color: '#1b7a4b' });
@@ -174,11 +210,11 @@ export default function VerdictCard({
   }
   if (accVals.length) {
     const best = Math.min(...accVals);
-    perfStats.push({ labelHe: '0–100', labelEn: '0–100 km/h', value: `${best.toFixed(1)}`, unit: 'שנ׳' });
+    perfStats.push({ labelHe: '0–100', labelEn: '0–100 km/h', value: `${best.toFixed(1)}`, unit: isEn ? 'sec' : 'שנ׳' });
   }
   if (topVals.length) {
     const best = Math.max(...topVals);
-    perfStats.push({ labelHe: 'מהירות מקס׳', labelEn: 'Top Speed', value: `${best}`, unit: 'קמ"ש' });
+    perfStats.push({ labelHe: 'מהירות מקס׳', labelEn: 'Top Speed', value: `${best}`, unit: isEn ? 'km/h' : 'קמ"ש' });
   }
   const suppliedConsumption = curatedData?.consumption?.figures ?? [];
   for (const figure of suppliedConsumption) {
@@ -206,9 +242,10 @@ export default function VerdictCard({
     const kmL = (100 / avgL100).toFixed(1);
     perfStats.push({ labelHe: 'צריכת דלק', labelEn: 'Fuel Avg', value: kmL, unit: isEn ? 'km/L' : 'ק"מ/ל׳' });
   }
-  if (curatedData?.on_sale_il === true && typeof curatedData.price_from_ils === 'number') {
-    perfStats.push({ labelHe: 'מחיר התחלתי', labelEn: 'Starting Price', value: `₪${curatedData.price_from_ils.toLocaleString(isEn ? 'en-US' : 'he-IL')}`, unit: '' });
-  } else if (priceVals.length) {
+  // Israeli shekel pricing - Hebrew site only.
+  if (!isEn && curatedData?.on_sale_il === true && typeof curatedData.price_from_ils === 'number') {
+    perfStats.push({ labelHe: 'מחיר התחלתי', labelEn: 'Starting Price', value: `₪${curatedData.price_from_ils.toLocaleString('he-IL')}`, unit: '' });
+  } else if (!isEn && priceVals.length) {
     const mn = Math.min(...priceVals), mx = Math.max(...priceVals);
     const fmt = (v: number) => `₪${Math.round(v / 1000)}K`;
     perfStats.push({ labelHe: 'מחיר', labelEn: 'Price', value: mn === mx ? fmt(mn) : `${fmt(mn)}–${fmt(mx)}`, unit: '' });
@@ -221,7 +258,6 @@ export default function VerdictCard({
       boxShadow: '0 1px 6px rgba(0,0,0,0.06)',
     }}>
       <style>{`
-        .vc-sub-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 14px; }
         .vc-pc-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 24px; }
       `}</style>
 
@@ -261,7 +297,7 @@ export default function VerdictCard({
       <div style={{
         padding: '20px clamp(16px,3vw,28px) 6px',
         display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 20,
-        borderBottom: subScores.length > 0 || pros.length > 0 || cons.length > 0 ? '1px solid #eef1f5' : 'none',
+        borderBottom: ownerScoreLine || pros.length > 0 || cons.length > 0 ? '1px solid #eef1f5' : 'none',
       }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
           {/* Recommendation badge */}
@@ -281,9 +317,14 @@ export default function VerdictCard({
                 {overallScore.toFixed(1)}
               </span>
               <span style={{ fontSize: 15, color: '#8595a6' }}>/10</span>
+              {aiScore?.confidence === 'low' && (
+                <span style={{ fontSize: 11.5, fontWeight: 700, color: '#92620a', background: '#fef3cd', padding: '2px 8px', borderRadius: 999, marginInlineStart: 4 }}>
+                  {isEn ? AI_SCORE_ESTIMATED_EN : AI_SCORE_ESTIMATED_HE}
+                </span>
+              )}
+              <ScoreSourcesInfo sets={proReviewScoreSets} isHe={!isEn} />
             </div>
           )}
-          <ExternalScoresInfo sets={externalScores} isEn={isEn} />
         </div>
         {/* Summary */}
         {leadSummary && (
@@ -305,38 +346,30 @@ export default function VerdictCard({
         )}
       </div>
 
-      {/* ── Sub-scores grid ── */}
-      {subScores.length > 0 && (
-        <div style={{ padding: '14px clamp(16px,3vw,28px)', borderBottom: '1px solid #eef1f5' }}>
-          <div className="vc-sub-grid">
-            {subScores.map(({ label, score }) => {
-              const pct = Math.min(100, (score / 10) * 100);
-              const color = scoreColor(score);
-              return (
-                <div key={label} style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-                  <span style={{ fontSize: 12.5, color: '#66788c', fontWeight: 600 }}>{label}</span>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                    <div style={{ flex: 1, height: 6, borderRadius: 999, background: '#eef1f5', overflow: 'hidden' }}>
-                      <div style={{ width: `${pct}%`, height: '100%', background: color }} />
-                    </div>
-                    <span style={{ fontSize: 13, fontWeight: 800, color }}>{score.toFixed(1)}</span>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
+      {/* ── AI score caption ── */}
+      {overallScore != null && (
+        <div style={{ padding: '0 clamp(16px,3vw,28px) 10px', fontSize: 12, color: '#8595a6', lineHeight: 1.5 }}>
+          {isEn ? AI_SCORE_CAPTION_EN : AI_SCORE_CAPTION_HE}
+        </div>
+      )}
+
+      {/* ── Owner score line ── */}
+      {ownerScoreLine && (
+        <div style={{ padding: '0 clamp(16px,3vw,28px) 14px', fontSize: 13, fontWeight: 700, color: '#1c2733' }}>
+          {ownerScoreLine}
         </div>
       )}
 
       {/* ── Performance strip ── */}
-      {(perfStats.length > 0 || curatedData?.consumption?.text) && (
+      {/* curatedData.consumption.text is Hebrew-only Israeli-market curation - never show on EN. */}
+      {(perfStats.length > 0 || (!isEn && curatedData?.consumption?.text)) && (
         <div style={{ padding: '12px clamp(16px,3vw,28px)', borderBottom: '1px solid #eef1f5', background: '#fafbfc' }}>
           <div style={{ fontSize: 11.5, fontWeight: 700, color: '#8595a6', letterSpacing: '.06em', textTransform: 'uppercase', marginBottom: 10 }}>
             {isEn ? 'Performance' : 'נתוני ביצועים'}
           </div>
           {perfStats.length > 0 && <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
             {perfStats.map(({ labelHe, labelEn, value, unit }) => (
-              <div key={labelHe} style={{
+              <div key={isEn ? labelEn : labelHe} style={{
                 display: 'flex', flexDirection: 'column', alignItems: 'center',
                 background: '#fff', border: '1px solid #e3e8ee', borderRadius: 10,
                 padding: '8px 14px', minWidth: 72,
@@ -351,7 +384,7 @@ export default function VerdictCard({
               </div>
             ))}
           </div>}
-          {curatedData?.consumption?.text && (
+          {!isEn && curatedData?.consumption?.text && (
             <p style={{ margin: perfStats.length ? '10px 0 0' : 0, fontSize: 12.5, color: '#66788c', lineHeight: 1.5 }}>
               {curatedData.consumption.text}
             </p>
@@ -360,16 +393,19 @@ export default function VerdictCard({
       )}
 
       {/* ── Pros / Cons (or note) ── */}
-      {prosConsNote ? (
+      {/* prosConsNote is Hebrew-only editorial data with no English translation - on EN,
+          prefer the real pros/cons list when we have one, and fall back to a generic
+          English placeholder (never the Hebrew text) only when both are empty. */}
+      {!isEn && prosConsNote ? (
         <div style={{ padding: '12px clamp(16px,3vw,28px)', borderBottom: '1px solid #eef1f5' }}>
           <div style={{ fontSize: 12, fontWeight: 700, color: '#8595a6', marginBottom: 6 }}>
-            {isEn ? 'Pros & Cons' : 'יתרונות וחסרונות'}
+            יתרונות וחסרונות
           </div>
           <p style={{ margin: 0, fontSize: 13.5, color: '#4a5b6d', lineHeight: 1.6 }}>
             {prosConsNote}
           </p>
         </div>
-      ) : (pros.length > 0 || cons.length > 0) && (
+      ) : (pros.length > 0 || cons.length > 0) ? (
         <div style={{ padding: '8px clamp(16px,3vw,28px) 4px', borderBottom: '1px solid #eef1f5' }}>
           <div className="vc-pc-grid">
             {pros.length > 0 && (
@@ -400,7 +436,16 @@ export default function VerdictCard({
             )}
           </div>
         </div>
-      )}
+      ) : isEn && prosConsNote ? (
+        <div style={{ padding: '12px clamp(16px,3vw,28px)', borderBottom: '1px solid #eef1f5' }}>
+          <div style={{ fontSize: 12, fontWeight: 700, color: '#8595a6', marginBottom: 6 }}>
+            Pros & Cons
+          </div>
+          <p style={{ margin: 0, fontSize: 13.5, color: '#4a5b6d', lineHeight: 1.6 }}>
+            Not enough verified data to summarize pros and cons for this model.
+          </p>
+        </div>
+      ) : null}
 
       {/* ── Client: issues accordion + verdict text + feedback ── */}
       <VerdictCardClient
@@ -409,10 +454,6 @@ export default function VerdictCard({
         modelSlug={modelSlug}
         isEn={isEn}
         verdictText={null}
-        makeNameHe={makeNameHe}
-        modelNameHe={modelNameHe}
-        makeNameEn={makeNameEn}
-        modelNameEn={modelNameEn}
       />
     </section>
   );

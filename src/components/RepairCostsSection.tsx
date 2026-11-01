@@ -52,11 +52,17 @@ export default async function RepairCostsSection({ makeSlug, modelSlug, makeName
 
   if (!hasModelData) return null;
 
+  // Client component props are serialized into the page HTML regardless of what's
+  // actually rendered - never ship Hebrew-only fields to the English site.
+  const repairOptionsForClient = isEn
+    ? repairOptions.filter(r => r.repair_name_en).map(r => ({ ...r, repair_name_he: r.repair_name_en! }))
+    : repairOptions;
+
   return (
     <section style={{ marginTop: 40, paddingTop: 28, borderTop: '1px solid var(--border)' }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 8, marginBottom: 16 }}>
         <h2 style={{ fontSize: '1.05rem', fontWeight: 700, margin: 0 }}>
-          🔧 {rp.title} — {carName}
+          🔧 {rp.title}: {carName}
         </h2>
         {hasModelData && (
           <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>
@@ -107,11 +113,11 @@ export default async function RepairCostsSection({ makeSlug, modelSlug, makeName
       <RepairCostSubmit
         makeSlug={makeSlug}
         modelSlug={modelSlug}
-        makeNameHe={makeNameHe}
-        modelNameHe={modelNameHe}
+        makeNameHe={isEn ? '' : makeNameHe}
+        modelNameHe={isEn ? '' : modelNameHe}
         makeNameEn={makeNameEn}
         modelNameEn={modelNameEn}
-        repairOptions={repairOptions}
+        repairOptions={repairOptionsForClient}
       />
     </section>
   );

@@ -18,7 +18,7 @@ export async function GET(req: NextRequest) {
       if (result.status === 'not_found') return NextResponse.json({ error: 'Vehicle not found' }, { status: 404 });
       if (result.status === 'error')     return NextResponse.json({ error: 'Government API unavailable' }, { status: 502 });
       const m = result.vehicle.dbMatch;
-      const modelInfo = m ? await getModelInfo(m.makeSlug, m.modelSlug, await getHostLocale()).catch(() => null) : null;
+      const modelInfo = m ? await getModelInfo(m.makeSlug, m.modelSlug, await getHostLocale(), m.year, result.vehicle.fuel).catch(() => null) : null;
       return NextResponse.json({ vehicle: result.vehicle, modelInfo }, { headers: { 'Cache-Control': 'public, s-maxage=86400' } });
     } catch (err) {
       console.error('[vehicle-lookup/il]', err);

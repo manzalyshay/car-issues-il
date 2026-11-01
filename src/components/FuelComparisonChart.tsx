@@ -23,11 +23,11 @@ export default function FuelComparisonChart({ makeSlug, modelSlug, isEn }: Props
   const [offset, setOffset] = useState(0); // how many to shift the window
 
   useEffect(() => {
-    fetch(`/api/fuel-comparison?make=${makeSlug}&model=${modelSlug}`)
+    fetch(`/api/fuel-comparison?make=${makeSlug}&model=${modelSlug}&locale=${isEn ? 'en' : 'he'}`)
       .then(r => r.json())
       .then(d => { setData(d.data ?? []); setLoading(false); })
       .catch(() => setLoading(false));
-  }, [makeSlug, modelSlug]);
+  }, [makeSlug, modelSlug, isEn]);
 
   if (loading) return (
     <div style={{ background: '#fff', border: '1px solid #e3e8ee', borderRadius: 14, padding: '20px', minHeight: 120, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>

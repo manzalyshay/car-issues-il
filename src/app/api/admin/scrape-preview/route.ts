@@ -28,7 +28,7 @@ function extractYearFromUrl(url: string | null | undefined): number | null {
   return match ? parseInt(match[1]) : null;
 }
 
-// GET — load cached posts from DB
+// GET - load cached posts from DB
 export async function GET(req: NextRequest) {
   if (!await isAdmin(req)) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
@@ -53,7 +53,7 @@ export async function GET(req: NextRequest) {
   });
 }
 
-// POST — live scrape; upsert new posts (preserve existing cloned status), return new post IDs
+// POST - live scrape; upsert new posts (preserve existing cloned status), return new post IDs
 export async function POST(req: NextRequest) {
   if (!await isAdmin(req)) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
@@ -145,7 +145,7 @@ export async function POST(req: NextRequest) {
   });
 }
 
-// DELETE — mark invalid: remove from DB + update source stats + save delete reason
+// DELETE - mark invalid: remove from DB + update source stats + save delete reason
 export async function DELETE(req: NextRequest) {
   if (!await isAdmin(req)) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
@@ -187,7 +187,7 @@ export async function DELETE(req: NextRequest) {
   return NextResponse.json({ ok: true });
 }
 
-// PATCH — mark a post as cloned
+// PATCH - mark a post as cloned
 export async function PATCH(req: NextRequest) {
   if (!await isAdmin(req)) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 

@@ -17,10 +17,6 @@ interface Props {
   modelSlug: string;
   isEn: boolean;
   verdictText: string | null;
-  makeNameHe: string;
-  modelNameHe: string;
-  makeNameEn: string;
-  modelNameEn: string;
 }
 
 export default function VerdictCardClient({
@@ -56,9 +52,11 @@ export default function VerdictCardClient({
                   🔧 {isEn ? (issue.nameEn || '') : issue.nameHe}
                 </span>
                 <span style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
-                  <span style={{ fontSize: 12.5, fontWeight: 600, color: '#d97706', background: '#fef3cd', padding: '2px 8px', borderRadius: 99 }}>
-                    ₪{issue.costRange}
-                  </span>
+                  {!isEn && (
+                    <span style={{ fontSize: 12.5, fontWeight: 600, color: '#d97706', background: '#fef3cd', padding: '2px 8px', borderRadius: 99 }}>
+                      ₪{issue.costRange}
+                    </span>
+                  )}
                   <span style={{
                     fontSize: 14, color: '#8595a6', display: 'inline-block',
                     transform: openIssue === issue.key ? 'rotate(180deg)' : 'none',

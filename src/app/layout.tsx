@@ -51,7 +51,7 @@ export async function generateMetadata(): Promise<Metadata> {
 
   return {
     title: {
-      default: isEn ? 'CarIssues — Car Reviews, Problems & Reliability' : 'CarIssues IL — בעיות רכב וביקורות',
+      default: isEn ? 'CarIssues - Car Reviews, Problems & Reliability' : 'CarIssues IL - בעיות רכב וביקורות',
       template: '%s | CarIssues',
     },
     metadataBase: new URL(baseUrl),
@@ -65,7 +65,7 @@ export async function generateMetadata(): Promise<Metadata> {
     },
     manifest: '/manifest.webmanifest',
     description: isEn
-      ? 'Real car owner reviews, common problems, recalls and reliability data — by make, model and year.'
+      ? 'Real car owner reviews, common problems, recalls and reliability data - by make, model and year.'
       : 'מידע על דגמי רכב בישראל, כולל ביקורות בעלים, בעיות נפוצות, ריקולים ועלויות תיקון.',
     keywords: isEn
       ? ['car reviews', 'car problems', 'car reliability', 'car recalls', 'car issues', 'owner reviews']
@@ -105,7 +105,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   }
   const baseUrl = isEn ? EN_URL : HE_URL;
   const isEmbed = (await headers()).get('x-is-embed') === '1';
-  // Only fire GA4 on real production hosts — keeps localhost/dev traffic out of Analytics
+  // Only fire GA4 on real production hosts - keeps localhost/dev traffic out of Analytics
   const isProdHost = isEnHost || isHeHost;
 
   const orgJsonLd = {
@@ -118,7 +118,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         url: baseUrl,
         logo: { '@type': 'ImageObject', url: `${baseUrl}/favicon.svg` },
         description: isEn
-          ? 'Real car owner reviews, common problems, recalls and reliability data — by make, model and year.'
+          ? 'Real car owner reviews, common problems, recalls and reliability data - by make, model and year.'
           : 'מידע על דגמי רכב, ביקורות בעלים, בעיות נפוצות וריקולים בישראל',
       },
       {

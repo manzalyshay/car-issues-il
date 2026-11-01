@@ -4,6 +4,7 @@ import { getAllMakes } from '@/lib/carsDb';
 import { getHostLocale, getBaseUrl } from '@/lib/hostLocale';
 import { translations } from '@/lib/translations';
 import { dbAll } from '@/lib/db';
+import { getAllAiScores, blendWithOwnerRating } from '@/lib/aiScore';
 import { notFound } from 'next/navigation';
 import CategoryGrid, { type GridModel } from './CategoryGrid';
 
@@ -26,14 +27,14 @@ const CAT_DB_CATEGORIES: Record<string, string[]> = {
 const VALID_CATS = Object.keys(CAT_DB_CATEGORIES);
 
 const CAT_LABELS: Record<string, { he: string; en: string; icon: string; desc_he: string; desc_en: string }> = {
-  suv:      { icon: '🚐', he: 'רכבי SUV וקרוסאובר', en: 'SUV & Crossover', desc_he: 'דירוג כל דגמי ה-SUV והקרוסאובר הנמכרים בישראל — ביקורות בעלי רכב, ציוני מומחים, מודל תלת-ממד ועלויות תחזוקה.', desc_en: 'Ranked SUV & crossover models sold in Israel — owner reviews, expert scores, 3D models and maintenance costs.' },
-  electric: { icon: '⚡', he: 'רכבים חשמליים', en: 'Electric Vehicles', desc_he: 'דירוג רכבי החשמל הנמכרים בישראל — ביקורות בעלי רכב, ציוני מומחים, מודל תלת-ממד והשוואת מחירים.', desc_en: 'Ranked electric car models sold in Israel — owner reviews, expert scores, 3D models and price comparison.' },
-  sedan:    { icon: '🚗', he: 'סדאן', en: 'Sedan', desc_he: 'דירוג דגמי הסדאן הנמכרים בישראל — ביקורות בעלי רכב, ציוני מומחים, מודל תלת-ממד ועלויות תחזוקה.', desc_en: 'Ranked sedan models sold in Israel — owner reviews, expert scores, 3D models and maintenance costs.' },
-  hatchback:{ icon: '🚗', he: "האצ'בק", en: 'Hatchback', desc_he: "דירוג דגמי האצ'בק הנמכרים בישראל — ביקורות בעלי רכב, ציוני מומחים, מודל תלת-ממד ועלויות תחזוקה.", desc_en: 'Ranked hatchback models sold in Israel — owner reviews, expert scores, 3D models and maintenance costs.' },
-  sports:   { icon: '🏎', he: 'רכבי ספורט', en: 'Sports Cars', desc_he: 'דירוג רכבי הספורט והקופה הנמכרים בישראל — ביצועים, ביקורות בעלי רכב, מודל תלת-ממד ועלויות תחזוקה.', desc_en: 'Ranked sports and coupe models sold in Israel — performance, owner reviews, 3D models and running costs.' },
-  minivan:  { icon: '👨‍👩‍👧', he: 'רכבי משפחה', en: 'Family / MPV', desc_he: 'דירוג מיניוואנים ורכבי המשפחה הנמכרים בישראל — מקום, נוחות, ביקורות בעלי רכב ומודל תלת-ממד.', desc_en: 'Ranked minivan and family car models sold in Israel — space, comfort, owner reviews and 3D models.' },
-  pickup:   { icon: '🚐', he: 'רכבי מסחרי ואוף-רוד', en: 'Commercial & Off-Road', desc_he: 'דירוג טנדרים ורכבי המסחרי הנמכרים בישראל — ביקורות, ביצועים ומודל תלת-ממד.', desc_en: 'Ranked pickup trucks and commercial vehicles sold in Israel — reviews, performance and 3D models.' },
-  hybrid:   { icon: '🍃', he: 'היברידי', en: 'Hybrid', desc_he: 'דירוג הרכבים ההיברידיים הנמכרים בישראל — חיסכון בדלק, ביקורות בעלי רכב ומודל תלת-ממד.', desc_en: 'Ranked hybrid car models sold in Israel — fuel savings, owner reviews and 3D models.' },
+  suv:      { icon: '🚐', he: 'רכבי SUV וקרוסאובר', en: 'SUV & Crossover', desc_he: 'דירוג כל דגמי ה-SUV והקרוסאובר הנמכרים בישראל - ביקורות בעלי רכב, ציוני מומחים, מודל תלת-ממד ועלויות תחזוקה.', desc_en: 'Ranked SUV & crossover models sold in Israel - owner reviews, expert scores, 3D models and maintenance costs.' },
+  electric: { icon: '⚡', he: 'רכבים חשמליים', en: 'Electric Vehicles', desc_he: 'דירוג רכבי החשמל הנמכרים בישראל - ביקורות בעלי רכב, ציוני מומחים, מודל תלת-ממד והשוואת מחירים.', desc_en: 'Ranked electric car models sold in Israel - owner reviews, expert scores, 3D models and price comparison.' },
+  sedan:    { icon: '🚗', he: 'סדאן', en: 'Sedan', desc_he: 'דירוג דגמי הסדאן הנמכרים בישראל - ביקורות בעלי רכב, ציוני מומחים, מודל תלת-ממד ועלויות תחזוקה.', desc_en: 'Ranked sedan models sold in Israel - owner reviews, expert scores, 3D models and maintenance costs.' },
+  hatchback:{ icon: '🚗', he: "האצ'בק", en: 'Hatchback', desc_he: "דירוג דגמי האצ'בק הנמכרים בישראל - ביקורות בעלי רכב, ציוני מומחים, מודל תלת-ממד ועלויות תחזוקה.", desc_en: 'Ranked hatchback models sold in Israel - owner reviews, expert scores, 3D models and maintenance costs.' },
+  sports:   { icon: '🏎', he: 'רכבי ספורט', en: 'Sports Cars', desc_he: 'דירוג רכבי הספורט והקופה הנמכרים בישראל - ביצועים, ביקורות בעלי רכב, מודל תלת-ממד ועלויות תחזוקה.', desc_en: 'Ranked sports and coupe models sold in Israel - performance, owner reviews, 3D models and running costs.' },
+  minivan:  { icon: '👨‍👩‍👧', he: 'רכבי משפחה', en: 'Family / MPV', desc_he: 'דירוג מיניוואנים ורכבי המשפחה הנמכרים בישראל - מקום, נוחות, ביקורות בעלי רכב ומודל תלת-ממד.', desc_en: 'Ranked minivan and family car models sold in Israel - space, comfort, owner reviews and 3D models.' },
+  pickup:   { icon: '🚐', he: 'רכבי מסחרי ואוף-רוד', en: 'Commercial & Off-Road', desc_he: 'דירוג טנדרים ורכבי המסחרי הנמכרים בישראל - ביקורות, ביצועים ומודל תלת-ממד.', desc_en: 'Ranked pickup trucks and commercial vehicles sold in Israel - reviews, performance and 3D models.' },
+  hybrid:   { icon: '🍃', he: 'היברידי', en: 'Hybrid', desc_he: 'דירוג הרכבים ההיברידיים הנמכרים בישראל - חיסכון בדלק, ביקורות בעלי רכב ומודל תלת-ממד.', desc_en: 'Ranked hybrid car models sold in Israel - fuel savings, owner reviews and 3D models.' },
 };
 
 // Nav chips shown on category pages
@@ -64,18 +65,27 @@ export default async function CategoryPage({ params }: Props) {
   const dbCategories = CAT_DB_CATEGORIES[cat]!;
   const cp = translations[locale].carsPage;
 
-  // Fetch review counts, expert scores and 3D models in parallel
-  const [reviewCounts, expertScores, models3d] = await Promise.all([
+  // Fetch review counts, AI scores, verified test scores and 3D models in parallel
+  const [reviewCounts, aiScores, testScoreRows, models3d] = await Promise.all([
     dbAll<{ make_slug: string; model_slug: string; cnt: number; avg_rating: number }>(
       'SELECT make_slug, model_slug, COUNT(*) as cnt, AVG(rating) as avg_rating FROM reviews GROUP BY make_slug, model_slug',
     ).catch(() => [] as { make_slug: string; model_slug: string; cnt: number; avg_rating: number }[]),
-    dbAll<{ make_slug: string; model_slug: string; top_score: number }>(
-      'SELECT make_slug, model_slug, top_score FROM expert_reviews WHERE year IS NULL AND top_score IS NOT NULL',
-    ).catch(() => [] as { make_slug: string; model_slug: string; top_score: number }[]),
-    dbAll<{ make_slug: string; model_slug: string; sketchfab_uid: string; sketchfab_name: string; sketchfab_author: string }>(
-      'SELECT make_slug, model_slug, sketchfab_uid, sketchfab_name, sketchfab_author FROM car_3d_models WHERE hidden IS NOT 1',
-    ).catch(() => [] as { make_slug: string; model_slug: string; sketchfab_uid: string; sketchfab_name: string; sketchfab_author: string }[]),
+    getAllAiScores().catch(() => ({} as Record<string, { score: number; confidence: 'high' | 'medium' | 'low' }>)),
+    dbAll<{ make_slug: string; model_slug: string; score: number }>(
+      'SELECT make_slug, model_slug, score FROM pro_review_scores',
+    ).catch(() => [] as { make_slug: string; model_slug: string; score: number }[]),
+    dbAll<{ make_slug: string; model_slug: string; sketchfab_uid: string; sketchfab_name: string; sketchfab_author: string; year_from: number | null; year_to: number | null }>(
+      'SELECT make_slug, model_slug, sketchfab_uid, sketchfab_name, sketchfab_author, year_from, year_to FROM car_3d_models WHERE hidden IS NOT 1',
+    ).catch(() => [] as { make_slug: string; model_slug: string; sketchfab_uid: string; sketchfab_name: string; sketchfab_author: string; year_from: number | null; year_to: number | null }[]),
   ]);
+  // Verified external test scores blended in as one more input, same as model pages.
+  const testScoreMap = new Map<string, number[]>();
+  for (const row of testScoreRows) {
+    const key = `${row.make_slug}/${row.model_slug}`;
+    if (!testScoreMap.has(key)) testScoreMap.set(key, []);
+    testScoreMap.get(key)!.push(row.score);
+  }
+  const TEST_SCORE_WEIGHT = 0.3;
 
   const countMap: Record<string, number> = {};
   const ratingMap: Record<string, number> = {};
@@ -83,10 +93,20 @@ export default async function CategoryPage({ params }: Props) {
     countMap[`${r.make_slug}/${r.model_slug}`] = r.cnt;
     ratingMap[`${r.make_slug}/${r.model_slug}`] = r.avg_rating;
   }
-  const scoreMap: Record<string, number> = {};
-  for (const r of expertScores) scoreMap[`${r.make_slug}/${r.model_slug}`] = r.top_score;
+  // Keep only the most recent 3D model entry per car (open-ended yearTo wins, else highest yearFrom)
+  const model3dBest: Record<string, { uid: string; name: string; author: string; yearFrom: number | null; yearTo: number | null }> = {};
+  for (const r of models3d) {
+    const key = `${r.make_slug}/${r.model_slug}`;
+    const existing = model3dBest[key];
+    const isBetter = !existing
+      || (r.year_to == null && existing.yearTo != null)
+      || ((r.year_to == null) === (existing.yearTo == null) && (r.year_from ?? -Infinity) > (existing.yearFrom ?? -Infinity));
+    if (isBetter) {
+      model3dBest[key] = { uid: r.sketchfab_uid, name: r.sketchfab_name, author: r.sketchfab_author, yearFrom: r.year_from, yearTo: r.year_to };
+    }
+  }
   const model3dMap: Record<string, { uid: string; name: string; author: string }> = {};
-  for (const r of models3d) model3dMap[`${r.make_slug}/${r.model_slug}`] = { uid: r.sketchfab_uid, name: r.sketchfab_name, author: r.sketchfab_author };
+  for (const [key, v] of Object.entries(model3dBest)) model3dMap[key] = { uid: v.uid, name: v.name, author: v.author };
 
   // Build models list
   const models: GridModel[] = [];
@@ -94,6 +114,15 @@ export default async function CategoryPage({ params }: Props) {
     for (const model of make.models) {
       if (!dbCategories.includes(model.category)) continue;
       const key = `${make.slug}/${model.slug}`;
+      const ai = aiScores[key] ?? null;
+      const avgRating = ratingMap[key] ?? null;
+      const reviewCount = countMap[key] ?? 0;
+      let expertScore = ai != null ? blendWithOwnerRating(ai.score, avgRating, reviewCount) : null;
+      const testScores = testScoreMap.get(key);
+      if (expertScore != null && testScores && testScores.length > 0) {
+        const testAvg = testScores.reduce((a, b) => a + b, 0) / testScores.length;
+        expertScore = expertScore * (1 - TEST_SCORE_WEIGHT) + testAvg * TEST_SCORE_WEIGHT;
+      }
       models.push({
         makeSlug: make.slug,
         modelSlug: model.slug,
@@ -104,14 +133,16 @@ export default async function CategoryPage({ params }: Props) {
         logoUrl: make.logoUrl,
         imageUrl: model.leadingImageUrl ?? null,
         sketchfab: model3dMap[key] ?? null,
-        expertScore: scoreMap[key] ?? null,
-        avgRating: ratingMap[key] ?? null,
-        reviewCount: countMap[key] ?? 0,
+        expertScore,
+        expertScoreConfidence: ai?.confidence ?? null,
+        avgRating,
+        reviewCount,
       });
     }
   }
 
-  // Sort: expert score first, then review count, then alphabetically
+  // Sort by owner rating/review activity, not by test score - a single test
+  // number isn't a ranking signal for a mixed list spanning many models.
   models.sort((a, b) => {
     const sa = a.expertScore ?? (a.reviewCount > 0 ? a.avgRating ?? 0 : -1);
     const sb = b.expertScore ?? (b.reviewCount > 0 ? b.avgRating ?? 0 : -1);
@@ -161,7 +192,7 @@ export default async function CategoryPage({ params }: Props) {
         {models.length === 0 ? (
           <p style={{ color: 'var(--text-muted)' }}>{isEn ? 'No models found.' : 'לא נמצאו דגמים.'}</p>
         ) : (
-          <CategoryGrid models={models} isEn={isEn} />
+          <CategoryGrid models={isEn ? models.map((m) => ({ ...m, makeNameHe: '', modelNameHe: '' })) : models} isEn={isEn} />
         )}
       </div>
     </div>

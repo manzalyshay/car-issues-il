@@ -1,4 +1,5 @@
 import { dbAll } from './db';
+import { sizedImageUrl, scaledHeight, snapToThumbnailStep } from './imageSizing';
 
 export interface CarImage {
   id: string;
@@ -15,6 +16,10 @@ export interface CarImage {
   height: number | null;
   hidden: boolean | null;
   hidden_reason: string | null;
+  is_main: number | null;
+  // Hebrew caption; falls back to `title` when absent.
+  title_he?: string | null;
+  source_url: string | null;
 }
 
 // Exclude clearly misassigned lead/gallery images found during the catalog audit.
@@ -46,12 +51,45 @@ const MISASSIGNED_IMAGE_TITLES: Record<string, RegExp[]> = {
   'skoda/karoq': [/\bKodiaq\b/i],
   'tesla/model-s': [/\bModel\s*3\b/i],
   'tesla/model-x': [/\bModel\s*3\b/i],
+  // Corolla Cross is a separate SUV model, not a sedan trim - confirmed by
+  // visually opening the flagged files (raised ride height, black cladding).
+  'toyota/corolla': [/\bCorolla\s+Cross\b/i],
   'volkswagen/id4': [/\bID[ .-]?[35]\b/i],
   'volkswagen/id5': [/\bID[ .-]?[34]\b/i],
   'hyundai/ioniq-6': [/\bIONIQ\s*5\b/i],
   'hyundai/ioniq-9': [/\bIONIQ\s*5\b/i],
   'omoda/omoda9': [/\bOmoda\s+C7\b/i],
 };
+
+// Title-text signals for interior/part/detail shots - never disqualifying (they
+// stay in the gallery for the Photos tab), only demoted from the main/hero/OG
+// position, which must be a same-model, same-generation exterior. Kept as a
+// title-pattern check, the same established idiom as isUnsuitableImage below,
+// rather than inventing a second classification mechanism.
+// "seats" (not the singular "seat", which collides with the SEAT brand name).
+const INTERIOR_OR_PART_TITLE = /\b(interior|dashboard|cockpit|console|engine|seats|headlight|taillight|wheel\s*rim|badge|logo|emblem|trunk|boot|steering\s*wheel)\b/i;
+
+function isMainEligible(title: string | null): boolean {
+  if (!title) return true;
+  return !INTERIOR_OR_PART_TITLE.test(title);
+}
+
+/**
+ * Puts eligible (exterior) images first so index 0 - the hero/OG/card pick -
+ * is always one of them, then caps the result WITHOUT letting that cap push
+ * demoted interior/part photos out of the array entirely: eligible images get
+ * up to mainCap slots, demoted ones get their own separate demotedBudget on
+ * top, so they stay visible in the Photos tab even when a model has 20+
+ * exteriors already filling the main cap. If nothing is eligible, order and
+ * cap are left as a plain slice (fail closed to the existing neutral fallback
+ * rather than guessing).
+ */
+function withMainEligibleFirst(images: CarImage[], mainCap = 20, demotedBudget = 10): CarImage[] {
+  const eligible = images.filter(img => isMainEligible(img.title));
+  const demoted = images.filter(img => !isMainEligible(img.title));
+  if (eligible.length === 0) return images.slice(0, mainCap);
+  return [...eligible.slice(0, mainCap), ...demoted.slice(0, demotedBudget)];
+}
 
 function isUnsuitableImage(makeSlug: string, modelSlug: string, title: string | null): boolean {
   if (!title) return false;
@@ -79,24 +117,26 @@ function extractTitleYear(title: string | null): number | null {
 export async function getImagesForCar(makeSlug: string, modelSlug: string): Promise<CarImage[]> {
   // Only show images from the last 10 years (year column) + null-year images.
   // For null-year images, extract year from title and reject if > 10 years old.
+  // Exception: if NONE of a model's images are within that window (the whole
+  // model is discontinued/historic), the cutoff would empty the gallery for no
+  // benefit, so it's skipped entirely in that case.
   const cutoff = new Date().getFullYear() - 10;
   const rows = await dbAll<CarImage>(
     `SELECT * FROM car_images
      WHERE make_slug = ? AND model_slug = ?
-       AND (year IS NULL OR year >= ?)
        AND (hidden IS NULL OR hidden != 1)
-     ORDER BY year DESC NULLS LAST, created_at ASC
-     LIMIT 40`,
-    makeSlug, modelSlug, cutoff,
+     ORDER BY is_main DESC, year DESC NULLS LAST, created_at ASC
+     LIMIT 60`,
+    makeSlug, modelSlug,
   );
-  // Filter null-year rows whose title reveals an old year
-  const images = rows
-    .filter(img => {
-      if (isUnsuitableImage(makeSlug, modelSlug, img.title)) return false;
-      if (img.year !== null) return true;
-      const titleYear = extractTitleYear(img.title);
-      return titleYear === null || titleYear >= cutoff;
-    });
+  const suitable = rows.filter(img => !isUnsuitableImage(makeSlug, modelSlug, img.title));
+  const isRecent = (img: CarImage) => {
+    if (img.year !== null) return img.year >= cutoff;
+    const titleYear = extractTitleYear(img.title);
+    return titleYear === null || titleYear >= cutoff;
+  };
+  const hasRecentImage = suitable.some(isRecent);
+  const images = hasRecentImage ? suitable.filter(isRecent) : suitable;
 
   if (makeSlug === 'mini' && modelSlug === 'mini-electric') {
     // The D1 image set for this model accidentally includes Honda e,
@@ -114,23 +154,49 @@ export async function getImagesForCar(makeSlug: string, modelSlug: string): Prom
       return 4;
     };
     miniElectricImages.sort((a, b) => leadImageRank(a) - leadImageRank(b));
-    return miniElectricImages.slice(0, 20);
+    return withMainEligibleFirst(miniElectricImages);
   }
 
-  return images.slice(0, 20);
+  return withMainEligibleFirst(images);
 }
 
 export async function getImagesForYear(makeSlug: string, modelSlug: string, year: number): Promise<CarImage[]> {
   const nearby = await dbAll<CarImage>(
-    `SELECT * FROM car_images WHERE make_slug = ? AND model_slug = ? AND year >= ? AND year <= ? AND (hidden IS NULL OR hidden != 1) ORDER BY year DESC LIMIT 20`,
+    `SELECT * FROM car_images WHERE make_slug = ? AND model_slug = ? AND year >= ? AND year <= ? AND (hidden IS NULL OR hidden != 1) ORDER BY is_main DESC, year DESC LIMIT 20`,
     makeSlug, modelSlug, year - 3, year + 1,
   );
   const filtered = nearby.filter(img =>
     !isUnsuitableImage(makeSlug, modelSlug, img.title) && titleYearOk(img.title, year),
   );
-  if (filtered.length > 0) return filtered;
+  if (filtered.length > 0) return withMainEligibleFirst(filtered);
 
-  // Fall back to general model images (year=null)
+  // Fall back to general model images (year=null) - already main-eligible-first
+  // from getImagesForCar, re-applied here since the year filter can change which
+  // images remain.
   const general = await getImagesForCar(makeSlug, modelSlug);
-  return general.filter(img => titleYearOk(img.title, year));
+  return withMainEligibleFirst(general.filter(img => titleYearOk(img.title, year)));
+}
+
+export interface OgImage { url: string; width: number; height: number }
+
+/**
+ * Resolves the og:image for a model (or year) page from the exact same photo
+ * the page itself shows as its default (getImagesForCar/getImagesForYear's
+ * first result) - never car_models.leading_image_url, which is a separate,
+ * independently-set field that can drift out of sync with the real default.
+ * Sized to OG_WIDTH with accurate width/height declared (Commons preserves
+ * aspect ratio), instead of a fixed 1200x630 that doesn't match what's served.
+ */
+const OG_WIDTH = 1200;
+
+export async function getOgImage(makeSlug: string, modelSlug: string, year?: number): Promise<OgImage | null> {
+  const images = year
+    ? await getImagesForYear(makeSlug, modelSlug, year).catch(() => [])
+    : await getImagesForCar(makeSlug, modelSlug).catch(() => []);
+  const img = images[0];
+  if (!img) return null;
+  const actualWidth = snapToThumbnailStep(OG_WIDTH);
+  const url = sizedImageUrl(img.thumbnail_url ?? img.url, OG_WIDTH) ?? img.url;
+  const height = (img.width && img.height) ? scaledHeight(img.width, img.height, actualWidth) : 630;
+  return { url, width: actualWidth, height };
 }

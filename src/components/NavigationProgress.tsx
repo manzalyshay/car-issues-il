@@ -14,7 +14,7 @@ export default function NavigationProgress() {
     if (pathname === prevPathRef.current) return;
     prevPathRef.current = pathname;
 
-    // Page arrived — complete the bar
+    // Page arrived - complete the bar
     setWidth(100);
     const done = setTimeout(() => {
       setVisible(false);

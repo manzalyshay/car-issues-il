@@ -9,7 +9,7 @@ export async function adminLog(
   message: string,
   details?: unknown,
 ): Promise<void> {
-  // Never throw — logging must never break the calling request
+  // Never throw - logging must never break the calling request
   try {
     await dbRun(
       'INSERT INTO admin_logs (id, level, source, message, details, created_at) VALUES (?, ?, ?, ?, ?, ?)',

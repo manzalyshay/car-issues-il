@@ -14,6 +14,7 @@ interface Props {
   isYearSpecific?: boolean;
   userAvgRating?: number | null;
   userReviewCount?: number;
+  aiScore?: { score: number; confidence: 'high' | 'medium' | 'low' } | null;
   inline?: boolean;
   label?: string;
   hideTitle?: boolean;
@@ -84,7 +85,7 @@ function hasHebrew(s: string | null | undefined): boolean {
   return !!(s && /[\u0590-\u05FF]/.test(s));
 }
 
-// Compact source card — score always visible, summary collapsible
+// Compact source card - score always visible, summary collapsible
 function SourceCard({ item, accent, translatedSummary }: { item: SourceBreakdown; accent: string; translatedSummary?: string }) {
   const [open, setOpen] = useState(false);
   const { t, locale } = useLocale();
@@ -107,7 +108,7 @@ function SourceCard({ item, accent, translatedSummary }: { item: SourceBreakdown
       borderRight: `3px solid ${accent}`,
       overflow: 'hidden',
     }}>
-      {/* Score row — always visible */}
+      {/* Score row - always visible */}
       <button
         onClick={() => hasSummary && setOpen(o => !o)}
         style={{
@@ -230,7 +231,7 @@ function SourceGroup({
           <SourceCard key={i} item={item} accent={accent} translatedSummary={translatedSummaries?.[i]} />
         ))}
 
-        {/* Extra cards — hidden on mobile until expanded; always visible on desktop via CSS */}
+        {/* Extra cards - hidden on mobile until expanded; always visible on desktop via CSS */}
         {sources.length > MOBILE_SHOW && (
           <div className={expanded ? 'ers-extra-expanded' : 'ers-extra-collapsed'}>
             {sources.slice(MOBILE_SHOW).map((item, i) => (
@@ -239,7 +240,7 @@ function SourceGroup({
           </div>
         )}
 
-        {/* Show-more button — mobile only, disappears on desktop via CSS */}
+        {/* Show-more button - mobile only, disappears on desktop via CSS */}
         {hiddenCount > 0 && !expanded && (
           <button
             className="ers-show-more"
@@ -275,7 +276,7 @@ function SourceGroup({
 }
 
 export default function ExpertReviewsSection({
-  review, makeNameHe, modelNameHe, makeNameEn, modelNameEn, year, isYearSpecific, userAvgRating, userReviewCount, inline, label, hideTitle,
+  review, makeNameHe, modelNameHe, makeNameEn, modelNameEn, year, isYearSpecific, userAvgRating, userReviewCount, aiScore, inline, label, hideTitle,
 }: Props) {
   const { t, locale } = useLocale();
   const er = t.expertReview;
@@ -310,16 +311,8 @@ export default function ExpertReviewsSection({
   const globalScore = review.globalScore != null && globalSummary ? review.globalScore : null;
   const userScore   = userAvgRating != null && userAvgRating > 0 ? userAvgRating * 2 : null;
 
-  const scoreInputs = hasPerSource
-    ? [
-        ...review.sourcesBreakdown.map(s => s.score).filter((s): s is number => s != null),
-        ...(userScore != null ? [userScore] : []),
-      ]
-    : [localScore, globalScore, userScore].filter((s): s is number => s != null);
-
-  const combined = scoreInputs.length > 0
-    ? scoreInputs.reduce((a, b) => a + b, 0) / scoreInputs.length
-    : (fallback ? review.topScore : null);
+  // Headline score always comes from the fixed AI score field, not a per-source blend.
+  const combined = aiScore?.score ?? null;
 
   const totalPosts = (review.localPostCount ?? 0) + (review.globalPostCount ?? 0);
   const isKnowledge = totalPosts === 0 && !hasPerSource;
@@ -415,6 +408,11 @@ export default function ExpertReviewsSection({
             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2, flexShrink: 0 }}>
               <ScoreRing score={combined} size={50} />
               <span style={{ fontSize: '0.55rem', fontWeight: 700, color: 'var(--text-muted)', letterSpacing: '0.05em', textTransform: 'uppercase' }}>{er.overallScore}</span>
+              {aiScore?.confidence === 'low' && (
+                <span style={{ fontSize: '0.55rem', fontWeight: 700, color: '#92620a', background: '#fef3cd', padding: '1px 6px', borderRadius: 99 }}>
+                  {locale === 'en' ? 'Estimated' : 'משוער'}
+                </span>
+              )}
             </div>
           )}
         </div>
@@ -490,7 +488,7 @@ export default function ExpertReviewsSection({
         ) : (
           /* Normal mode: AI summaries then Pros/Cons below */
           <>
-            {/* AI Summaries — always full width */}
+            {/* AI Summaries - always full width */}
             <div style={{ borderTop: '1px solid var(--border)' }}>
               {hasPerSource ? (
                 locale === 'en' ? (
@@ -535,7 +533,7 @@ export default function ExpertReviewsSection({
               )}
             </div>
 
-            {/* Pros/Cons — always below summaries, side-by-side */}
+            {/* Pros/Cons - always below summaries, side-by-side */}
             {(review.pros.length > 0 || review.cons.length > 0) && (
               <div style={{
                 display: 'grid',

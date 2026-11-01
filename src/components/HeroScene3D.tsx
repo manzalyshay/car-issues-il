@@ -21,7 +21,7 @@ function CarModel() {
 
   return (
     <group ref={group} position={[0, -0.2, 0]}>
-      {/* Main body — lower */}
+      {/* Main body - lower */}
       <mesh position={[0, 0.22, 0]} castShadow>
         <boxGeometry args={[2.2, 0.44, 1.0]} />
         <meshStandardMaterial color={bodyColor} roughness={0.2} metalness={0.7} />
@@ -74,7 +74,7 @@ function CarModel() {
         <meshStandardMaterial color={accentColor} emissive={accentColor} emissiveIntensity={1.5} />
       </mesh>
 
-      {/* Wheels — four corners */}
+      {/* Wheels - four corners */}
       {[
         [0.75, -0.08, 0.52],
         [-0.75, -0.08, 0.52],
@@ -106,7 +106,7 @@ function CarModel() {
         <meshStandardMaterial color="#0d0d12" roughness={0.8} />
       </mesh>
 
-      {/* Ground glow — red disc underneath */}
+      {/* Ground glow - red disc underneath */}
       <mesh position={[0, -0.36, 0]} rotation={[-Math.PI / 2, 0, 0]}>
         <circleGeometry args={[1.2, 32]} />
         <meshStandardMaterial

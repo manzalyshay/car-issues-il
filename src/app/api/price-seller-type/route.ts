@@ -114,7 +114,7 @@ export async function GET(req: NextRequest) {
     });
   }
 
-  // Not cached — generate via Workers AI
+  // Not cached - generate via Workers AI
   if (!makeEn || !modelEn) {
     return NextResponse.json({ points: cached });
   }

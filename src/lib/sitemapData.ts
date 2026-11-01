@@ -8,13 +8,14 @@
  *    and compare pairs that are curated or got organic UK/AU visits.
  *
  * lastmod values come from the data (expert review scraped_at, owner review created_at,
- * known-issue scraped_at, news published_at) — never "now". Where no date exists the
+ * known-issue scraped_at, news published_at) - never "now". Where no date exists the
  * field is omitted.
  */
 import type { MetadataRoute } from 'next';
 import { getAllMakes } from './carsDb';
 import { dbAll } from './db';
 import { getLatestNews } from './carNews';
+import { newsPath } from './newsSlug';
 import { curatedPairs, resolvePairs } from './comparePairs';
 import { NET_ORGANIC_COMPARE_PAIRS } from '@/data/net-organic-compare-pairs';
 import type { CarMake } from '@/data/cars';
@@ -43,6 +44,7 @@ const STATIC_PAGES: { path: string; changeFrequency: 'daily' | 'weekly' | 'month
   { path: '/cars/compare', changeFrequency: 'weekly', priority: 0.7 },
   { path: '/rankings', changeFrequency: 'daily', priority: 0.7 },
   { path: '/repairs', changeFrequency: 'weekly', priority: 0.8 },
+  { path: '/checklist', changeFrequency: 'monthly', priority: 0.7 },
   { path: '/tco', changeFrequency: 'monthly', priority: 0.75 },
   { path: '/vehicle-lookup', changeFrequency: 'monthly', priority: 0.8 },
   { path: '/contact', changeFrequency: 'monthly', priority: 0.3 },
@@ -104,7 +106,7 @@ export async function heSitemapEntries(): Promise<MetadataRoute.Sitemap> {
   const issuesUrls = makes.flatMap((make) => make.models.map((model) => ({
     url: `${BASE}/cars/${make.slug}/${model.slug}/issues`, changeFrequency: 'weekly' as const, priority: 0.8,
   })));
-  // Every year in car_models.years — new model years (e.g. 2027) appear automatically.
+  // Every year in car_models.years - new model years (e.g. 2027) appear automatically.
   const yearUrls = makes.flatMap((make) => make.models.flatMap((model) => (model.years ?? []).map((year) => ({
     url: `${BASE}/cars/${make.slug}/${model.slug}/${year}`, changeFrequency: 'weekly' as const, priority: 0.7,
   }))));
@@ -112,9 +114,19 @@ export async function heSitemapEntries(): Promise<MetadataRoute.Sitemap> {
   const trims = await dbAll<{ make_slug: string; model_slug: string; name: string }>(
     'SELECT make_slug, model_slug, name FROM car_trims',
   ).catch(() => []);
-  const trimUrls: MetadataRoute.Sitemap = trims.map((t) => ({
-    url: `${BASE}/cars/${t.make_slug}/${t.model_slug}/trim/${toTrimSlug(t.name)}`, changeFrequency: 'weekly' as const, priority: 0.75,
-  }));
+  // The same trim name repeats across many model years, so many rows slugify to the
+  // same URL - dedupe. Also drop names that slugify to an empty string (e.g. a name
+  // with no a-z0-9 characters), which would otherwise produce a bare "/trim/" URL.
+  const seenTrimUrls = new Set<string>();
+  const trimUrls: MetadataRoute.Sitemap = [];
+  for (const t of trims) {
+    const slug = toTrimSlug(t.name);
+    if (!slug) continue;
+    const url = `${BASE}/cars/${t.make_slug}/${t.model_slug}/trim/${slug}`;
+    if (seenTrimUrls.has(url)) continue;
+    seenTrimUrls.add(url);
+    trimUrls.push({ url, changeFrequency: 'weekly', priority: 0.75 });
+  }
 
   // All same-category pairs, plus curated pairs (top-clicked + searched) even across categories.
   const compareUrls: MetadataRoute.Sitemap = [];
@@ -135,7 +147,7 @@ export async function heSitemapEntries(): Promise<MetadataRoute.Sitemap> {
   }
 
   const newsUrls: MetadataRoute.Sitemap = news.map((n) => ({
-    url: `${BASE}/news/${n.id}`,
+    url: `${BASE}${newsPath(n)}`,
     lastModified: n.published_at ? new Date(n.published_at) : undefined,
     changeFrequency: 'monthly' as const,
     priority: 0.6,
@@ -212,7 +224,8 @@ function enEntries(d: EnData): Record<EnChildSitemap, MetadataRoute.Sitemap> {
   const datedStatic: Record<string, string | undefined> = {
     '': catalogueLatest, '/cars': catalogueLatest, '/cars/compare': catalogueLatest, '/rankings': catalogueLatest, '/news': d.newsLatest,
   };
-  const statics: MetadataRoute.Sitemap = [...STATIC_PAGES, { path: '/embed', changeFrequency: 'monthly' as const, priority: 0.6 }].map((s) => ({
+  // /vehicle-lookup is Israeli-license-plate-only and hidden on the English site.
+  const statics: MetadataRoute.Sitemap = [...STATIC_PAGES.filter((s) => s.path !== '/vehicle-lookup'), { path: '/embed', changeFrequency: 'monthly' as const, priority: 0.6 }].map((s) => ({
     url: `${BASE}${s.path}`, lastModified: datedStatic[s.path], changeFrequency: s.changeFrequency, priority: s.priority,
   }));
 

@@ -96,9 +96,9 @@ function EmbedShell({
           <div style={{ fontSize: 12, fontWeight: 600, color: '#6b7280', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
             {count != null
               ? isHe
-                ? `${count} ריקול${count !== 1 ? 'ים' : ''} NHTSA`
-                : `${count} NHTSA Recall${count !== 1 ? 's' : ''}`
-              : isHe ? 'ריקולים NHTSA' : 'NHTSA Recalls'}
+                ? `${count} ריקול${count !== 1 ? 'ים' : ''}`
+                : `${count} Recall${count !== 1 ? 's' : ''}`
+              : isHe ? 'ריקולים' : 'Recalls'}
           </div>
         </div>
         <span style={{ fontSize: 11, color: '#d97706', fontWeight: 700 }}>⚠</span>

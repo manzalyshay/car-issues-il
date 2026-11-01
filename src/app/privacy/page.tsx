@@ -10,11 +10,11 @@ export async function generateMetadata(): Promise<Metadata> {
   const langs = { he: 'https://carissues.co.il/privacy', en: 'https://carissues.net/privacy', 'x-default': 'https://carissues.net/privacy' };
   return locale === 'en' ? {
     title: 'Privacy Policy',
-    description: 'Privacy policy for CarIssues — how we collect, use, and protect your information.',
+    description: 'Privacy policy for CarIssues - how we collect, use, and protect your information.',
     alternates: { canonical: `${base}/privacy`, languages: langs },
   } : {
     title: 'מדיניות פרטיות',
-    description: 'מדיניות הפרטיות של CarIssues IL — כיצד אנו אוספים, משתמשים ומגנים על המידע שלך.',
+    description: 'מדיניות הפרטיות של CarIssues IL - כיצד אנו אוספים, משתמשים ומגנים על המידע שלך.',
     alternates: { canonical: `${base}/privacy`, languages: langs },
   };
 }
@@ -55,8 +55,8 @@ export default async function PrivacyPage() {
               <ul style={UL_STYLE}>
                 <li><strong>Account details:</strong> email address and display name upon registration.</li>
                 <li><strong>Content you create:</strong> reviews, ratings, and opinions you publish on the Site.</li>
-                <li><strong>Usage data:</strong> pages visited, anonymous session IDs, and visit dates — for statistical analysis only.</li>
-                <li><strong>Technical info:</strong> browser type, device type, and IP address — collected automatically.</li>
+                <li><strong>Usage data:</strong> pages visited, anonymous session IDs, and visit dates - for statistical analysis only.</li>
+                <li><strong>Technical info:</strong> browser type, device type, and IP address - collected automatically.</li>
               </ul>
             </div>
 
@@ -166,7 +166,7 @@ export default async function PrivacyPage() {
           <p style={{ ...P_STYLE, marginBottom: 32 }}>
             ברוכים הבאים ל-CarIssues IL ("האתר", "השירות"). מדיניות פרטיות זו מסבירה כיצד אנו אוספים,
             משתמשים ומגנים על המידע שלך. השימוש באתר מהווה הסכמה מלאה למדיניות זו.
-            אם אינך מסכים לאי אלו מהתנאים — אנא הפסק את השימוש באתר לאלתר.
+            אם אינך מסכים לאי אלו מהתנאים - אנא הפסק את השימוש באתר לאלתר.
           </p>
 
           <div style={SECTION_STYLE}>
@@ -175,8 +175,8 @@ export default async function PrivacyPage() {
             <ul style={UL_STYLE_HE}>
               <li><strong>פרטי חשבון:</strong> כתובת דואר אלקטרוני ושם תצוגה בעת הרשמה.</li>
               <li><strong>תוכן שיצרת:</strong> ביקורות, דירוגים וחוות דעת שפרסמת באתר.</li>
-              <li><strong>נתוני שימוש:</strong> עמודים שביקרת, מזהי סשן אנונימיים ותאריכי ביקורים — לצורך ניתוח סטטיסטי בלבד.</li>
-              <li><strong>מידע טכני:</strong> סוג הדפדפן, סוג המכשיר וכתובת IP — נאספים באופן אוטומטי.</li>
+              <li><strong>נתוני שימוש:</strong> עמודים שביקרת, מזהי סשן אנונימיים ותאריכי ביקורים - לצורך ניתוח סטטיסטי בלבד.</li>
+              <li><strong>מידע טכני:</strong> סוג הדפדפן, סוג המכשיר וכתובת IP - נאספים באופן אוטומטי.</li>
             </ul>
           </div>
 

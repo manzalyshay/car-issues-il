@@ -119,7 +119,7 @@ export default function CarSidebarLayout({ makeSlug, modelSlug, makeNameHe, mode
 
   const handleTabClick = async (next: Tab) => {
     setTab(next);
-    // Sync tab to URL (shallow replace — no navigation)
+    // Sync tab to URL (shallow replace - no navigation)
     if (typeof window !== 'undefined') {
       const params = new URLSearchParams(window.location.search);
       if (next === 'reviews') params.delete('tab');
@@ -143,7 +143,7 @@ export default function CarSidebarLayout({ makeSlug, modelSlug, makeNameHe, mode
     </div>
   );
 
-  /* ── Subnav items — sections that scroll + media tabs ── */
+  /* ── Subnav items - sections that scroll + media tabs ── */
   const subnavItems: { id: string; label: string; icon: string; isTab?: Tab; isAnchor?: boolean }[] = [
     { id: 'reviews', label: s.reviews, icon: '⭐', isAnchor: true },
     ...(hasSpecs ? [{ id: 'specs', label: s.specs, icon: '📋', isTab: 'specs' as Tab }] : []),
@@ -167,6 +167,7 @@ export default function CarSidebarLayout({ makeSlug, modelSlug, makeNameHe, mode
     <div style={{ minHeight: 600 }}>
 
       {/* ── Sticky horizontal subnav ── */}
+      <div className="car-subnav-wrap">
       <div className="car-subnav">
         <div className="car-subnav-inner container" ref={navRef}>
           {subnavItems.map(item => {
@@ -206,6 +207,9 @@ export default function CarSidebarLayout({ makeSlug, modelSlug, makeNameHe, mode
           </Link>
         </div>
       </div>
+      {/* Fade hint that there are more tabs to scroll to, on narrow screens */}
+      <div className="car-subnav-fade" aria-hidden="true" />
+      </div>
 
       {/* ── Main content area ── */}
       <div style={{ padding: '28px 0 64px' }}>
@@ -225,7 +229,7 @@ export default function CarSidebarLayout({ makeSlug, modelSlug, makeNameHe, mode
             </div>
           )}
 
-          {/* Safety & Equipment tab — uses TrimSpecsTab in safety mode */}
+          {/* Safety & Equipment tab - uses TrimSpecsTab in safety mode */}
           {tab === 'safety' && (
             <div>
               <TrimSpecsTab makeSlug={makeSlug} modelSlug={modelSlug} makeNameHe={makeNameHe} modelNameHe={modelNameHe} makeNameEn={makeNameEn} modelNameEn={modelNameEn} defaultYear={defaultYear} safetyHe={safetyHe} techComfortHe={techComfortHe} mode="safety" />
@@ -235,7 +239,7 @@ export default function CarSidebarLayout({ makeSlug, modelSlug, makeNameHe, mode
           {/* Videos tab */}
           {tab === 'videos' && (
             <div>
-              {videosLoading ? loadingPlaceholder : <CarVideosTab initialVideos={videos || []} makeSlug={makeSlug} modelSlug={modelSlug} makeNameHe={makeNameHe} modelNameHe={modelNameHe} />}
+              {videosLoading ? loadingPlaceholder : <CarVideosTab initialVideos={videos || []} makeSlug={makeSlug} modelSlug={modelSlug} makeNameHe={makeNameHe} modelNameHe={modelNameHe} makeNameEn={makeNameEn} modelNameEn={modelNameEn} />}
             </div>
           )}
 
@@ -247,11 +251,11 @@ export default function CarSidebarLayout({ makeSlug, modelSlug, makeNameHe, mode
                   <Car3DViewer uid={sketchfabModel.uid} modelName={sketchfabModel.name} author={sketchfabModel.author} makeSlug={makeSlug} modelSlug={modelSlug} />
                 </div>
               )}
-              {imagesLoading ? loadingPlaceholder : <CarImagesTab images={images || []} makeNameHe={makeNameHe} modelNameHe={modelNameHe} />}
+              {imagesLoading ? loadingPlaceholder : <CarImagesTab images={images || []} makeNameHe={makeNameHe} modelNameHe={modelNameHe} makeNameEn={makeNameEn} modelNameEn={modelNameEn} />}
             </div>
           )}
 
-          {/* Issues tab — recalls */}
+          {/* Issues tab - recalls */}
           {tab === 'recalls' && makeEn && modelEn && (
             <div>
               <RecallsSection makeEn={makeEn} modelEn={modelEn} years={modelYears} />

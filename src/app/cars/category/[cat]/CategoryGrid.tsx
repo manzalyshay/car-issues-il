@@ -4,6 +4,7 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import Link from 'next/link';
 import MakeLogo from '@/components/MakeLogo';
 import StarRating from '@/components/StarRating';
+import { sizedImageUrl } from '@/lib/imageSizing';
 
 export interface GridModel {
   makeSlug: string;
@@ -16,6 +17,7 @@ export interface GridModel {
   imageUrl: string | null;
   sketchfab: { uid: string; name: string; author: string } | null;
   expertScore: number | null;
+  expertScoreConfidence?: 'high' | 'medium' | 'low' | null;
   avgRating: number | null;
   reviewCount: number;
 }
@@ -34,8 +36,8 @@ function ModelRow({ m, idx, isEn }: { m: GridModel; idx: number; isEn: boolean }
   const name = isEn ? `${m.makeNameEn} ${m.modelNameEn}` : `${m.makeNameHe} ${m.modelNameHe}`;
   const score = m.expertScore != null ? Math.round(m.expertScore * 10) / 10 : null;
   const tier = score != null ? scoreTier(score) : null;
-  const thumbUrl = m.imageUrl
-    ?? (m.sketchfab ? `https://media.sketchfab.com/models/${m.sketchfab.uid}/thumbnails/result.jpg` : null);
+  // media.sketchfab.com's thumbnail endpoint returns 403 for these models - never use it.
+  const thumbUrl = m.imageUrl;
   const embedUrl = m.sketchfab
     ? `https://sketchfab.com/models/${m.sketchfab.uid}/embed?autostart=1&preload=1&ui_infos=0&ui_watermark=0&ui_watermark_link=0&ui_hint=0&ui_stop=0&ui_inspector=0&ui_vr=0&ui_ar=0&ui_help=0&ui_settings=0&ui_annotations=0&ui_controls=0&ui_fadeout=0&dnt=1&transparent=0&camera=0`
     : null;
@@ -55,7 +57,7 @@ function ModelRow({ m, idx, isEn }: { m: GridModel; idx: number; isEn: boolean }
           {thumbUrl ? (
             /* eslint-disable-next-line @next/next/no-img-element */
             <img
-              src={thumbUrl}
+              src={sizedImageUrl(thumbUrl, 160) ?? undefined}
               alt={name}
               loading="lazy"
               style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
@@ -92,9 +94,16 @@ function ModelRow({ m, idx, isEn }: { m: GridModel; idx: number; isEn: boolean }
         {/* Right side: score + 3D button */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexShrink: 0 }}>
           {score != null && tier != null && (
-            <span className={`score-badge sm score-tier-${tier}`}>
-              <span className="n">{score.toFixed(1)}</span>
-              <span className="of">{isEn ? '/10' : '/10'}</span>
+            <span style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+              <span className={`score-badge sm score-tier-${tier}`}>
+                <span className="n">{score.toFixed(1)}</span>
+                <span className="of">{isEn ? '/10' : '/10'}</span>
+              </span>
+              {m.expertScoreConfidence === 'low' && (
+                <span style={{ fontSize: '0.6rem', fontWeight: 700, color: '#92620a', background: '#fef3cd', padding: '1px 6px', borderRadius: 999, whiteSpace: 'nowrap' }}>
+                  {isEn ? 'Est.' : 'משוער'}
+                </span>
+              )}
             </span>
           )}
           {m.sketchfab && (
@@ -115,7 +124,7 @@ function ModelRow({ m, idx, isEn }: { m: GridModel; idx: number; isEn: boolean }
         </div>
       </div>
 
-      {/* Sketchfab viewer — shown on demand */}
+      {/* Sketchfab viewer - shown on demand */}
       {show3d && embedUrl && (
         <div style={{ width: '100%', aspectRatio: '16/9', background: '#111' }}>
           <iframe
@@ -162,6 +171,10 @@ export default function CategoryGrid({ models, isEn }: Props) {
       {shown < models.length && (
         <div ref={sentinelRef} style={{ height: 1, marginTop: 40 }} />
       )}
+
+      <p style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 20 }}>
+        {isEn ? "The score reflects the model's reputation: reliability, common issues, recalls and owner reviews" : 'הציון מבוסס על המוניטין של הדגם: אמינות, בעיות נפוצות, ריקולים וחוות דעת בעלים'}
+      </p>
 
       <style>{`.cat-row { transition: box-shadow 0.18s, border-color 0.18s; } .cat-row:hover { box-shadow: var(--shadow) !important; border-color: var(--border-strong) !important; }`}</style>
     </div>

@@ -3,7 +3,7 @@
  *
  * Article ids are SHA-1 hashes of the source URL. The short id suffix is what we look
  * the article up by, so the slug part can change (e.g. a corrected title) without
- * breaking links — the page 308-redirects any non-canonical form, including the old
+ * breaking links - the page 308-redirects any non-canonical form, including the old
  * bare 40-char hash URLs, to the current one. Pure module: safe for client components.
  */
 

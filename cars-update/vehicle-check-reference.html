@@ -1,0 +1,259 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>carissues — Vehicle check (reference)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;500;600;700;800&amp;family=IBM+Plex+Mono:wght@600&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#f4f5f8}
+a{color:#1f3a75}a:hover{color:#13203a}
+*{box-sizing:border-box}
+@media (max-width: 760px){
+.nav-links{order:3;width:100%;flex-wrap:nowrap !important;overflow-x:auto;scrollbar-width:none}
+.nav-links a{white-space:nowrap;flex-shrink:0}
+}
+@media (max-width: 960px){
+.body-cols{flex-direction:column !important;align-items:stretch !important}
+.col-main,.col-rail{display:contents !important}
+.o1{order:1}.o2{order:2}.o3{order:3}.o4{order:4}.o5{order:5}.o6{order:6}
+}
+</style>
+</head>
+<body>
+<div dir="rtl" style="font-family: Heebo, system-ui, sans-serif; color: #0f172a; background: #f4f5f8; padding-bottom: 80px">
+
+  <!-- NAV -->
+  <header style="background: #ffffff; border-bottom: 1px solid #e3e6ee">
+    <div style="max-width: 1240px; margin: 0 auto; padding: 10px clamp(16px, 3vw, 24px); min-height: 72px; display: flex; align-items: center; justify-content: space-between; gap: 24px; flex-wrap: wrap">
+      <a href="#" style="display: flex; align-items: center; gap: 8px; text-decoration: none; color: #0f172a; font-weight: 800; font-size: 22px; letter-spacing: -0.5px" dir="ltr">
+        <svg width="34" height="22" viewBox="0 0 34 22" fill="none" aria-hidden="true"><path d="M3 15h28v-3l-5-1-4-5H12L8 11l-5 1z" fill="#13203a"/><circle cx="10" cy="16" r="3" fill="#fff" stroke="#13203a" stroke-width="2"/><circle cx="25" cy="16" r="3" fill="#fff" stroke="#13203a" stroke-width="2"/><rect x="0" y="2" width="3" height="20" rx="1" fill="#2f6fdb"/></svg>
+        <span>car<span style="color: #2f6fdb">issues</span>.co.il</span>
+      </a>
+      <nav class="nav-links" aria-label="ניווט ראשי" style="display: flex; gap: 4px; flex-wrap: wrap">
+        <a href="#" aria-current="page" style="padding: 8px 14px; border-radius: 10px; text-decoration: none; color: #1f3a75; background: #eef1f8; font-size: 16px; font-weight: 700">בדיקת רכב</a>
+        <a href="#" style="padding: 8px 14px; text-decoration: none; color: #0f172a; font-size: 16px; font-weight: 500">השוואה</a>
+        <a href="#" style="padding: 8px 14px; text-decoration: none; color: #0f172a; font-size: 16px; font-weight: 500">ביקורות</a>
+        <a href="#" style="padding: 8px 14px; text-decoration: none; color: #0f172a; font-size: 16px; font-weight: 500">דירוגים</a>
+        <a href="#" style="padding: 8px 14px; text-decoration: none; color: #0f172a; font-size: 16px; font-weight: 500">עלויות תיקון</a>
+        <a href="#" style="padding: 8px 14px; text-decoration: none; color: #0f172a; font-size: 16px; font-weight: 500">חדשות</a>
+      </nav>
+      <a href="#" style="background: #1f3a75; color: #ffffff; text-decoration: none; padding: 11px 20px; border-radius: 12px; font-weight: 700; font-size: 15px">בדקו דגם</a>
+    </div>
+  </header>
+
+  <!-- compact search band (results first, search second) -->
+  <section style="background: #13203a; padding: 28px clamp(16px, 3vw, 24px) 120px">
+    <div style="max-width: 1240px; margin: 0 auto; display: flex; align-items: center; justify-content: space-between; gap: 24px; flex-wrap: wrap">
+      <div>
+        <div style="font-size: 13px; font-weight: 600; color: #8fb3ff">ישראל · בדיקה חינמית</div>
+        <h1 style="margin: 4px 0 0; font-size: clamp(24px, 5vw, 30px); font-weight: 800; color: #ffffff">בדיקת רכב לפי מספר רישוי</h1>
+      </div>
+      <form style="display: flex; gap: 8px; flex: 0 1 460px; min-width: 280px">
+        <label style="flex: 1; display: flex; align-items: stretch; border: 2px solid #c8961e; background: #fff8dc; border-radius: 10px; overflow: hidden; height: 48px">
+          <span style="width: 30px; display: flex; flex-direction: column; flex-shrink: 0" aria-hidden="true">
+            <span style="flex: 1; background: #1d3a9a"></span><span style="flex: 1; background: #ffffff"></span>
+            <span style="flex: 1; background: #c0281e; color: #fff; font-size: 9px; font-weight: 700; display: flex; align-items: center; justify-content: center">IL</span>
+          </span>
+          <span style="position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0)">מספר רישוי</span>
+          <input value="1180537" dir="ltr" style="flex: 1; border: 0; background: transparent; font-family: 'IBM Plex Mono', monospace; font-size: 20px; font-weight: 600; letter-spacing: 2px; text-align: center; outline: none; min-width: 0; color: #0f172a">
+        </label>
+        <button type="submit" style="background: #2f6fdb; color: #fff; border: 0; border-radius: 10px; padding: 0 22px; font-family: inherit; font-size: 16px; font-weight: 700; min-height: 48px; cursor: pointer">בדיקה</button>
+      </form>
+    </div>
+  </section>
+
+  <div style="max-width: 1240px; margin: -96px auto 0; padding: 0 clamp(16px, 3vw, 24px)">
+
+    <!-- RESULT HERO -->
+    <article style="background: #ffffff; border-radius: 24px; box-shadow: 0 16px 48px rgba(15,23,42,0.12); display: flex; flex-wrap: wrap; overflow: hidden">
+      <div style="flex: 999 1 560px; min-width: 0; padding: clamp(20px, 4vw, 40px); display: flex; flex-direction: column; gap: 22px">
+        <div style="display: flex; align-items: center; gap: 24px; flex-wrap: wrap">
+          <div style="border: 3px solid #c8961e; background: #fff8dc; border-radius: 10px; padding: 8px 18px; font-family: 'IBM Plex Mono', monospace; font-size: clamp(22px, 6vw, 30px); font-weight: 600; letter-spacing: 2px" dir="ltr">11-805-37</div>
+          <div>
+            <div style="font-size: 15px; color: #5b6475; font-weight: 500">טויוטה אנגליה · 2016</div>
+            <div style="font-size: clamp(28px, 7vw, 38px); font-weight: 800; letter-spacing: -0.5px; line-height: 1.1" dir="ltr">Auris Hybrid</div>
+          </div>
+        </div>
+
+        <div style="display: flex; gap: 10px; flex-wrap: wrap">
+          <span style="display: inline-flex; align-items: center; gap: 6px; background: #e7f4ea; color: #1b6b36; font-size: 15px; font-weight: 600; padding: 8px 14px; border-radius: 999px">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>
+            טסט אחרון: 19/01/2026
+          </span>
+          <span style="display: inline-flex; align-items: center; gap: 6px; background: #e7f4ea; color: #1b6b36; font-size: 15px; font-weight: 600; padding: 8px 14px; border-radius: 999px">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>
+            רישיון בתוקף עד 07/02/2027
+          </span>
+          <a href="#recalls" style="display: inline-flex; align-items: center; gap: 6px; background: #fdecea; color: #a11d14; font-size: 15px; font-weight: 600; padding: 8px 14px; border-radius: 999px; text-decoration: none">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true"><path d="M12 9v4M12 17h.01M10.3 3.9 2.4 18a2 2 0 0 0 1.7 3h15.8a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/></svg>
+            בדקו ריקולים פתוחים לדגם
+          </a>
+        </div>
+
+        <dl style="margin: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 16px 20px; border-top: 1px solid #e3e6ee; padding-top: 20px">
+          <div><dt style="font-size: 13px; color: #5b6475">צבע</dt><dd style="margin: 4px 0 0; font-size: 17px; font-weight: 600">כסף מטלי</dd></div>
+          <div><dt style="font-size: 13px; color: #5b6475">דלק</dt><dd style="margin: 4px 0 0; font-size: 17px; font-weight: 600">בנזין · היברידי</dd></div>
+          <div><dt style="font-size: 13px; color: #5b6475">בעלות</dt><dd style="margin: 4px 0 0; font-size: 17px; font-weight: 600">פרטי · יד 1</dd></div>
+          <div><dt style="font-size: 13px; color: #5b6475">עלייה לכביש</dt><dd style="margin: 4px 0 0; font-size: 17px; font-weight: 600">02/2016</dd></div>
+        </dl>
+      </div>
+
+      <!-- model image (not tied to the specific plate) -->
+      <a href="#" style="flex: 1 1 400px; min-width: 0; background: #eef1f6; position: relative; display: flex; flex-direction: column; justify-content: center; align-items: center; padding: 28px; text-decoration: none; color: #0f172a; min-height: 300px">
+        <span style="position: absolute; top: 16px; left: 16px; display: flex; align-items: center; gap: 10px; background: #ffffff; border-radius: 14px; padding: 8px 12px; box-shadow: 0 4px 14px rgba(15,23,42,0.08)">
+          <span style="font-size: 24px; font-weight: 800; color: #1b6b36">7.9</span>
+          <span style="font-size: 12px; color: #5b6475; line-height: 1.2">ציון<br>הדגם</span>
+        </span>
+        <svg viewBox="0 0 400 160" width="100%" style="max-width: 380px" role="img" aria-label="איור טויוטה אוריס היברידית">
+          <ellipse cx="205" cy="146" rx="180" ry="8" fill="#d6dbe5"/>
+          <path d="M20 118 C20 102 30 94 48 92 L112 84 C142 60 170 46 210 44 L282 44 C306 44 330 62 350 82 L372 88 C384 92 390 102 390 114 L390 126 L20 126 Z" fill="#c9ced8" stroke="#8f98a8" stroke-width="2"/>
+          <path d="M128 84 L166 57 L206 53 L206 84 Z" fill="#3a4458"/>
+          <path d="M216 53 L276 53 C292 53 308 66 322 84 L216 84 Z" fill="#3a4458"/>
+          <path d="M60 104 L380 104" stroke="#aeb5c2" stroke-width="2"/>
+          <circle cx="96" cy="126" r="26" fill="#27303f"/><circle cx="96" cy="126" r="12" fill="#b9c0cc"/>
+          <circle cx="316" cy="126" r="26" fill="#27303f"/><circle cx="316" cy="126" r="12" fill="#b9c0cc"/>
+        </svg>
+        <span style="margin-top: 12px; font-size: 12px; color: #5b6475">תמונה להמחשה · טויוטה אוריס היברידית 2016</span>
+        <span style="margin-top: 14px; font-size: 15px; font-weight: 700; color: #1f3a75">לעמוד הדגם המלא ←</span>
+      </a>
+    </article>
+
+    <!-- BODY: main + rail -->
+    <div class="body-cols" style="margin-top: 28px; display: flex; flex-wrap: wrap; gap: 28px; align-items: flex-start">
+
+      <!-- MAIN -->
+      <main class="col-main" style="flex: 999 1 600px; min-width: 0; display: flex; flex-direction: column; gap: 24px">
+
+        <!-- teaser tiles: the bridge to the model page -->
+        <section class="o1" aria-labelledby="h-know" style="background: #ffffff; border-radius: 20px; border: 1px solid #e3e6ee; padding: clamp(18px, 4vw, 28px)">
+          <h2 id="h-know" style="margin: 0; font-size: 22px; font-weight: 800">מה כדאי לדעת על הדגם הזה</h2>
+          <p style="margin: 6px 0 20px; font-size: 15px; color: #5b6475">לפני שקונים אוריס היברידית 2016 — מה בעלים ומעבדות דיווחו</p>
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 14px">
+            <a href="#" style="border: 1px solid #e3e6ee; border-radius: 16px; padding: 18px; text-decoration: none; color: #0f172a; display: flex; flex-direction: column; gap: 10px">
+              <span style="width: 40px; height: 40px; border-radius: 12px; background: #fff3dd; display: flex; align-items: center; justify-content: center">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#9a5b00" stroke-width="2" aria-hidden="true"><path d="M14.7 6.3a4 4 0 0 0-5.4 5.4L3 18l3 3 6.3-6.3a4 4 0 0 0 5.4-5.4l-2.5 2.5-2.4-.6-.6-2.4z"/></svg>
+              </span>
+              <span style="font-size: 17px; font-weight: 700">בעיות נפוצות</span>
+              <span style="font-size: 14px; color: #4b5468">הכי מדווח: סתימת שסתום EGR</span>
+              <span style="font-size: 14px; font-weight: 700; color: #1f3a75; margin-top: auto">ראו את כל הבעיות ←</span>
+            </a>
+            <a href="#" id="recalls" style="border: 1px solid #e3e6ee; border-radius: 16px; padding: 18px; text-decoration: none; color: #0f172a; display: flex; flex-direction: column; gap: 10px">
+              <span style="width: 40px; height: 40px; border-radius: 12px; background: #fdecea; display: flex; align-items: center; justify-content: center">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#a11d14" stroke-width="2" aria-hidden="true"><path d="M12 9v4M12 17h.01M10.3 3.9 2.4 18a2 2 0 0 0 1.7 3h15.8a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/></svg>
+              </span>
+              <span style="font-size: 17px; font-weight: 700">ריקולים לדגם</span>
+              <span style="font-size: 14px; color: #4b5468">[N] קריאות שירות לשנתון 2016</span>
+              <span style="font-size: 14px; font-weight: 700; color: #1f3a75; margin-top: auto">לפרטי הריקולים ←</span>
+            </a>
+            <a href="#" style="border: 1px solid #e3e6ee; border-radius: 16px; padding: 18px; text-decoration: none; color: #0f172a; display: flex; flex-direction: column; gap: 10px">
+              <span style="width: 40px; height: 40px; border-radius: 12px; background: #e6ebf6; display: flex; align-items: center; justify-content: center">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#1f3a75" stroke-width="2" aria-hidden="true"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+              </span>
+              <span style="font-size: 17px; font-weight: 700">עלויות תיקון</span>
+              <span style="font-size: 14px; color: #4b5468">טיפול שנתי ותיקונים נפוצים, בש״ח</span>
+              <span style="font-size: 14px; font-weight: 700; color: #1f3a75; margin-top: auto">למחירון התיקונים ←</span>
+            </a>
+          </div>
+        </section>
+
+        <!-- recent reviews -->
+        <section class="o3" aria-labelledby="h-reviews" style="background: #ffffff; border-radius: 20px; border: 1px solid #e3e6ee; padding: clamp(18px, 4vw, 28px)">
+          <div style="display: flex; align-items: baseline; justify-content: space-between; gap: 12px; flex-wrap: wrap">
+            <h2 id="h-reviews" style="margin: 0; font-size: 22px; font-weight: 800">ביקורות אחרונות של בעלי אוריס היברידית</h2>
+            <a href="#" style="font-size: 15px; font-weight: 700; text-decoration: none">לכל הביקורות ←</a>
+          </div>
+          <div style="margin-top: 20px; display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 14px">
+            <figure style="margin: 0; background: #f7f8fb; border-radius: 16px; padding: 20px; display: flex; flex-direction: column; gap: 10px">
+              <div style="display: flex; align-items: center; justify-content: space-between">
+                <span style="color: #c8961e; font-size: 16px; letter-spacing: 2px" role="img" aria-label="4 מתוך 5 כוכבים">★★★★<span style="color: #c9ced8">★</span></span>
+                <span style="font-size: 13px; color: #5b6475">לפני שבוע</span>
+              </div>
+              <blockquote style="margin: 0; font-size: 15px; line-height: 1.6; color: #1f2937">״חסכונית מאוד בעיר, כמעט לא מרגישים את המעבר בין המנועים. בטיפול ה-120 אלף נדרש ניקוי EGR.״</blockquote>
+              <figcaption style="font-size: 13px; color: #5b6475">בעלים 4 שנים · 135,000 ק״מ</figcaption>
+            </figure>
+            <figure style="margin: 0; background: #f7f8fb; border-radius: 16px; padding: 20px; display: flex; flex-direction: column; gap: 10px">
+              <div style="display: flex; align-items: center; justify-content: space-between">
+                <span style="color: #c8961e; font-size: 16px; letter-spacing: 2px" role="img" aria-label="5 מתוך 5 כוכבים">★★★★★</span>
+                <span style="font-size: 13px; color: #5b6475">לפני 3 שבועות</span>
+              </div>
+              <blockquote style="margin: 0; font-size: 15px; line-height: 1.6; color: #1f2937">״רכב אמין בלי הפתעות. תא מטען קטן יחסית בגלל הסוללה, אבל חוץ מזה אין תלונות.״</blockquote>
+              <figcaption style="font-size: 13px; color: #5b6475">בעלים 6 שנים · 98,000 ק״מ</figcaption>
+            </figure>
+          </div>
+          <a href="#" style="margin-top: 16px; display: flex; align-items: center; justify-content: center; gap: 8px; border: 1.5px dashed #c3cadb; border-radius: 14px; padding: 14px; text-decoration: none; font-size: 15px; font-weight: 600; color: #1f3a75">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
+            נהגתם באוריס? כתבו ביקורת
+          </a>
+        </section>
+
+        <!-- full registry details -->
+        <section class="o4" aria-labelledby="h-details" style="background: #ffffff; border-radius: 20px; border: 1px solid #e3e6ee; padding: clamp(18px, 4vw, 28px)">
+          <h2 id="h-details" style="margin: 0 0 20px; font-size: 22px; font-weight: 800">כל פרטי הרישוי</h2>
+          <dl style="margin: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 20px 24px">
+            <div><dt style="font-size: 13px; color: #5b6475">יצרן</dt><dd style="margin: 4px 0 0; font-size: 16px; font-weight: 600">טויוטה אנגליה</dd></div>
+            <div><dt style="font-size: 13px; color: #5b6475">דגם</dt><dd style="margin: 4px 0 0; font-size: 16px; font-weight: 600">AURIS HYBRID</dd></div>
+            <div><dt style="font-size: 13px; color: #5b6475">שנת ייצור</dt><dd style="margin: 4px 0 0; font-size: 16px; font-weight: 600">2016</dd></div>
+            <div><dt style="font-size: 13px; color: #5b6475">צמיגים</dt><dd style="margin: 4px 0 0; font-size: 16px; font-weight: 600"><span dir="ltr">205/55R16</span></dd></div>
+            <div><dt style="font-size: 13px; color: #5b6475">מסגרת</dt><dd style="margin: 4px 0 0; font-size: 16px; font-weight: 600">0E218080</dd></div>
+            <div><dt style="font-size: 13px; color: #5b6475">עלייה לכביש</dt><dd style="margin: 4px 0 0; font-size: 16px; font-weight: 600">01/02/2016</dd></div>
+          </dl>
+          <div style="margin-top: 24px; border-top: 1px solid #e3e6ee; padding-top: 20px">
+            <h3 style="margin: 0; font-size: 16px; font-weight: 700">היסטוריית בעלות</h3>
+            <p style="margin: 4px 0 14px; font-size: 13px; color: #5b6475">נתוני רישום רשמיים — לא בהכרח העברת בעלות בפועל</p>
+            <div style="display: flex; align-items: center; gap: 12px">
+              <span style="width: 12px; height: 12px; border-radius: 50%; background: #1b6b36; box-shadow: 0 0 0 4px #e7f4ea"></span>
+              <span style="font-size: 16px; font-weight: 700; color: #1b6b36">פרטי</span>
+              <span style="font-size: 13px; color: #5b6475">· מאז 02/2016 · כיום</span>
+            </div>
+          </div>
+        </section>
+      </main>
+
+      <!-- RAIL: side notes -->
+      <aside class="col-rail" aria-label="על הדגם" style="flex: 1 1 340px; min-width: 0; display: flex; flex-direction: column; gap: 20px">
+        <section class="o2" style="background: #13203a; color: #ffffff; border-radius: 20px; padding: 24px; display: flex; flex-direction: column; gap: 18px">
+          <div style="display: flex; align-items: center; gap: 16px">
+            <svg width="84" height="84" viewBox="0 0 84 84" role="img" aria-label="ציון 7.9 מתוך 10">
+              <circle cx="42" cy="42" r="36" fill="none" stroke="#2a3c63" stroke-width="8"/>
+              <circle cx="42" cy="42" r="36" fill="none" stroke="#5fc489" stroke-width="8" stroke-linecap="round" stroke-dasharray="179 226" transform="rotate(-90 42 42)"/>
+              <text x="42" y="49" text-anchor="middle" font-family="Heebo, sans-serif" font-size="22" font-weight="800" fill="#ffffff">7.9</text>
+            </svg>
+            <div>
+              <div style="font-size: 13px; color: #aab6cf">ציון אמינות הדגם</div>
+              <div style="font-size: 20px; font-weight: 800">טויוטה אוריס היברידית</div>
+              <div style="font-size: 13px; color: #aab6cf">שנתונים 2013–2018</div>
+            </div>
+          </div>
+          <div>
+            <div style="font-size: 14px; font-weight: 700; margin-bottom: 10px">בעלים מדווחים בעיקר על</div>
+            <ul style="margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 8px">
+              <li style="display: flex; justify-content: space-between; font-size: 14px; color: #dfe6f3"><span>שסתום EGR</span><span style="color: #f2b33d">שכיח</span></li>
+              <li style="display: flex; justify-content: space-between; font-size: 14px; color: #dfe6f3"><span>משאבת מים</span><span style="color: #aab6cf">בינוני</span></li>
+              <li style="display: flex; justify-content: space-between; font-size: 14px; color: #dfe6f3"><span>רעשים מהבלמים</span><span style="color: #aab6cf">בינוני</span></li>
+            </ul>
+          </div>
+          <a href="#" style="background: #2f6fdb; color: #ffffff; text-decoration: none; text-align: center; border-radius: 12px; padding: 14px; font-size: 16px; font-weight: 700">לעמוד הדגם המלא ←</a>
+        </section>
+
+        <section class="o5" style="background: #ffffff; border: 1px solid #e3e6ee; border-radius: 20px; padding: 22px">
+          <h2 style="margin: 0 0 14px; font-size: 17px; font-weight: 800">השוו לרכבים דומים</h2>
+          <div style="display: flex; flex-direction: column; gap: 4px">
+            <a href="#" style="display: flex; justify-content: space-between; align-items: center; padding: 12px; border-radius: 12px; text-decoration: none; color: #0f172a; background: #f7f8fb"><span style="font-weight: 600">טויוטה קורולה היברידית</span><span style="font-size: 14px; color: #1f3a75; font-weight: 700">השוואה</span></a>
+            <a href="#" style="display: flex; justify-content: space-between; align-items: center; padding: 12px; border-radius: 12px; text-decoration: none; color: #0f172a"><span style="font-weight: 600">טויוטה פריוס</span><span style="font-size: 14px; color: #1f3a75; font-weight: 700">השוואה</span></a>
+            <a href="#" style="display: flex; justify-content: space-between; align-items: center; padding: 12px; border-radius: 12px; text-decoration: none; color: #0f172a"><span style="font-weight: 600">יונדאי איוניק</span><span style="font-size: 14px; color: #1f3a75; font-weight: 700">השוואה</span></a>
+          </div>
+        </section>
+
+        <section class="o6" style="background: #fff8dc; border: 1px solid #ecd9a0; border-radius: 20px; padding: 22px; display: flex; flex-direction: column; gap: 10px">
+          <h2 style="margin: 0; font-size: 17px; font-weight: 800">שוקלים לקנות את הרכב הזה?</h2>
+          <p style="margin: 0; font-size: 14px; color: #4b5468; line-height: 1.6">רשימת בדיקה לקנייה של אוריס היברידית יד 2 — מה לבדוק במוסך לפני שסוגרים.</p>
+          <a href="#" style="font-size: 15px; font-weight: 700; text-decoration: none">לרשימת הבדיקה ←</a>
+        </section>
+      </aside>
+    </div>
+  </div>
+</div>
+</body>
+</html>

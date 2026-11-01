@@ -94,11 +94,14 @@ export default function TrimPerfStrip({ trimSpecs, isEn, requestedYear }: Props)
       result.push({ label: isEn ? 'Cargo' : 'תא מטען', value: mn === mx || !!activeTrim ? `${mn}` : `${mn}–${mx}`, unit: 'L' });
     }
 
-    const priceVals = pool.map(t => t.priceIls).filter((v): v is number => v != null && v >= 50000);
-    if (priceVals.length) {
-      const mn = Math.min(...priceVals), mx = Math.max(...priceVals);
-      const fmt = (v: number) => `₪${Math.round(v / 1000)}K`;
-      result.push({ label: isEn ? 'Price' : 'מחיר', value: mn === mx || !!activeTrim ? fmt(mn) : `${fmt(mn)}–${fmt(mx)}`, unit: '' });
+    // Israeli shekel trim pricing - Hebrew site only.
+    if (!isEn) {
+      const priceVals = pool.map(t => t.priceIls).filter((v): v is number => v != null && v >= 50000);
+      if (priceVals.length) {
+        const mn = Math.min(...priceVals), mx = Math.max(...priceVals);
+        const fmt = (v: number) => `₪${Math.round(v / 1000)}K`;
+        result.push({ label: 'מחיר', value: mn === mx || !!activeTrim ? fmt(mn) : `${fmt(mn)}–${fmt(mx)}`, unit: '' });
+      }
     }
 
     return result;
@@ -117,7 +120,7 @@ export default function TrimPerfStrip({ trimSpecs, isEn, requestedYear }: Props)
   const isFallback = requestedYear != null && dataYear != null && dataYear !== requestedYear;
   const sourceNote = dataYear != null
     ? (isFallback
-        ? (isEn ? `No data for ${requestedYear} — showing ${dataYear}` : `אין נתונים ל-${requestedYear} — מוצג ${dataYear}`)
+        ? (isEn ? `No data for ${requestedYear} - showing ${dataYear}` : `אין נתונים ל-${requestedYear} - מוצג ${dataYear}`)
         : (isEn ? `Data for ${dataYear}` : `נתוני ${dataYear}`))
     : null;
 

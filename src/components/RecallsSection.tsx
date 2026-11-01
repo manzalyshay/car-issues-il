@@ -3,7 +3,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import type { Recall } from '@/app/api/recalls/route';
 import { useLocale } from '@/lib/localeContext';
-import CarDiagramRecalls from '@/components/CarDiagramRecalls';
+import CarDiagramRecalls, { classifyRecall, ZONE_LABELS, type ZoneId } from '@/components/CarDiagramRecalls';
 
 interface Props {
   makeEn: string;
@@ -64,14 +64,18 @@ export default function RecallsSection({ makeEn, modelEn, year, years }: Props) 
     filterYear === 'all' ? recalls : recalls.filter(r => r.year === filterYear),
   [recalls, filterYear]);
 
-  // Group by component for the summary stat
+  const ilCount = useMemo(() => recalls.filter(r => r.source === 'il').length, [recalls]);
+  const usCount = useMemo(() => recalls.filter(r => r.source === 'us').length, [recalls]);
+
+  // Group by diagram zone (same classification the car diagram uses) so this summary
+  // always lists exactly the zones shown below it — no separate, mismatched count.
   const componentCounts = useMemo(() => {
-    const map: Record<string, number> = {};
+    const map: Partial<Record<ZoneId, number>> = {};
     for (const r of recalls) {
-      const k = r.component || 'Other';
-      map[k] = (map[k] ?? 0) + 1;
+      const zone = classifyRecall(r.component, r.componentEn);
+      map[zone] = (map[zone] ?? 0) + 1;
     }
-    return Object.entries(map).sort((a, b) => b[1] - a[1]).slice(0, 3);
+    return (Object.entries(map) as [ZoneId, number][]).sort((a, b) => b[1] - a[1]);
   }, [recalls]);
 
   return (
@@ -89,9 +93,11 @@ export default function RecallsSection({ makeEn, modelEn, year, years }: Props) 
             {recalls.length}
           </span>
         )}
-        {!loading && recalls.length > 0 && (
-          <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
-            {rc.source}
+        {!loading && ilCount > 0 && usCount > 0 && (
+          <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>
+            {isHe
+              ? `${ilCount} ${ilCount === 1 ? 'ישראלי' : 'ישראליים'}, ${usCount} ${usCount === 1 ? 'אמריקאי' : 'אמריקאים'}`
+              : `${ilCount} Israeli, ${usCount} US`}
           </span>
         )}
         {!loading && recalls.length > 0 && (
@@ -133,7 +139,7 @@ export default function RecallsSection({ makeEn, modelEn, year, years }: Props) 
               : rc.noneFound}
           </p>
           <p style={{ margin: '8px 0 0', fontSize: '0.8125rem', color: 'var(--text-muted)' }}>
-            {isHe ? 'אין ריקולים רשומים במאגר הריקולים בארה״ב (NHTSA).' : 'No recalls on record in the NHTSA database.'}
+            {isHe ? 'אין ריקולים רשומים לרכב זה.' : 'No recalls on record for this vehicle.'}
           </p>
         </div>
       )}
@@ -151,12 +157,12 @@ export default function RecallsSection({ makeEn, modelEn, year, years }: Props) 
               <span style={{ fontSize: '0.75rem', fontWeight: 700, color: '#dc2626', textTransform: 'uppercase', letterSpacing: '.05em', alignSelf: 'center', marginInlineEnd: 4 }}>
                 {isHe ? 'מרוכזים ב:' : 'Top areas:'}
               </span>
-              {componentCounts.map(([comp, cnt]) => (
-                <span key={comp} style={{
+              {componentCounts.map(([zone, cnt]) => (
+                <span key={zone} style={{
                   fontSize: '0.75rem', padding: '3px 10px', borderRadius: 999,
                   background: '#fff', border: '1px solid rgba(220,38,38,0.2)', color: '#7f1d1d', fontWeight: 600,
                 }}>
-                  {comp} <span style={{ opacity: 0.6 }}>×{cnt}</span>
+                  {ZONE_LABELS[zone][isHe ? 'he' : 'en']} <span style={{ opacity: 0.6 }}>×{cnt}</span>
                 </span>
               ))}
             </div>
@@ -293,14 +299,35 @@ export default function RecallsSection({ makeEn, modelEn, year, years }: Props) 
                         <p style={{ margin: 0, fontSize: '0.875rem', lineHeight: 1.65 }}>{r.remedy}</p>
                       </div>
                     )}
-                    <a
-                      href={`https://www.nhtsa.gov/vehicle-safety/recalls#${r.id}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      style={{ fontSize: '0.8125rem', color: 'var(--accent)', textDecoration: 'none', fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: 4 }}
-                    >
-                      {rc.moreDetails} →
-                    </a>
+                    {r.source === 'il' && r.importer && (
+                      <div>
+                        <div style={{ fontSize: '0.65rem', fontWeight: 700, color: 'var(--text-muted)', marginBottom: 5, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+                          {isHe ? 'יבואן' : 'Importer'}
+                        </div>
+                        <p style={{ margin: 0, fontSize: '0.875rem', lineHeight: 1.65 }}>{r.importer}</p>
+                      </div>
+                    )}
+                    {r.source === 'il'
+                      ? (r.website && (
+                        <a
+                          href={r.website.startsWith('http') ? r.website : `https://${r.website}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          style={{ fontSize: '0.8125rem', color: 'var(--accent)', textDecoration: 'none', fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: 4 }}
+                        >
+                          {isHe ? 'פרטים נוספים ←' : 'More details ←'}
+                        </a>
+                      ))
+                      : (
+                        <a
+                          href={`https://www.nhtsa.gov/vehicle-safety/recalls#${r.id}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          style={{ fontSize: '0.8125rem', color: 'var(--accent)', textDecoration: 'none', fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: 4 }}
+                        >
+                          {rc.moreDetails} →
+                        </a>
+                      )}
                   </div>
                 )}
               </div>

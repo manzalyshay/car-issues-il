@@ -190,6 +190,23 @@ function resolveSlugFromEnglish(kinuy: string): { makeSlug: string; modelPart: s
   return null;
 }
 
+// Trim codes like "C 200", "C200" or "E 220" use a single class letter the
+// generic word-match below misses: a lone letter is skipped (too noisy to
+// score on its own) and the trim number never appears in the model's generic
+// name ("C-Class" has no "200" in it). Recognize the common class-code
+// patterns and match them exactly against the model name, so "C 200" finds
+// "C-Class" without "CLA"/"CLS"/"CLE" (which would false-match a loose
+// startsWith) ever winning instead.
+function extractClassCode(modelPart: string): string | null {
+  // Mercedes/Audi-style: 1-3 letters directly followed by a 2-4 digit trim number (C200, GLC300).
+  const m1 = modelPart.match(/^([A-Z]{1,3})[\s-]?\d{2,4}\b/);
+  if (m1) return m1[1];
+  // BMW-style: a series digit followed by two more digits and a fuel/body letter (320I, 118D).
+  const m2 = modelPart.match(/^(\d)\d{2}[A-Z]\b/);
+  if (m2) return m2[1];
+  return null;
+}
+
 async function matchToDb(
   tozetNm: string, kinuyMishari: string, shnatYitzur: number | null,
 ): Promise<DbMatch | null> {
@@ -211,6 +228,10 @@ async function matchToDb(
   if (!models.length) return null;
 
   const modelWords = modelPart.split(/\s+/).filter(Boolean);
+  const classCode = extractClassCode(modelPart);
+  const classCandidates = classCode
+    ? [classCode, `${classCode}-CLASS`, `${classCode} CLASS`, `${classCode} SERIES`, `SERIES ${classCode}`]
+    : [];
   let bestSlug: string | null = null;
   let bestScore = 0;
   let bestYear: number | null = null;
@@ -221,18 +242,15 @@ async function matchToDb(
     for (const w of modelWords) {
       if (w.length > 1 && nameUp.includes(w)) score++;
     }
+    if (classCandidates.includes(nameUp)) score += 10;
     if (nameUp === modelPart) score += 5;
     if (score > bestScore) {
       bestScore = score;
       bestSlug = m.slug;
-      try {
-        const years: number[] = JSON.parse(m.years || '[]');
-        if (shnatYitzur && years.length) {
-          bestYear = years.includes(shnatYitzur)
-            ? shnatYitzur
-            : years.reduce((a, b) => Math.abs(b - shnatYitzur) < Math.abs(a - shnatYitzur) ? b : a);
-        }
-      } catch { bestYear = shnatYitzur; }
+      // The registered year is the immutable input for every downstream generation,
+      // score and 3D decision - never clamp or round it to the nearest year the site
+      // happens to have data for, even when that year falls outside car_models.years.
+      bestYear = shnatYitzur;
     }
   }
 
@@ -240,10 +258,30 @@ async function matchToDb(
   return { makeSlug, modelSlug: bestSlug, year: bestYear };
 }
 
+// The government dataset sometimes truncates country names (e.g. "גרמנ" instead
+// of "גרמניה", "ארהב" instead of "ארה״ב"). Normalize the common ones.
+const ORIGIN_FIXES: Record<string, string> = {
+  'גרמנ': 'גרמניה',
+  'ארהב': 'ארה״ב',
+  'צרפ': 'צרפת',
+  'אנגלי': 'אנגליה',
+  'בריטני': 'בריטניה',
+  'דרום קוריא': 'דרום קוריאה',
+  'שבדי': 'שבדיה',
+  'הונגרי': 'הונגריה',
+  'רומני': 'רומניה',
+  'איטלי': 'איטליה',
+  'ספר': 'ספרד',
+};
+
+function normalizeOrigin(raw: string): string {
+  return ORIGIN_FIXES[raw] ?? raw;
+}
+
 function fmtPlate(plate: string): string {
   return plate.length === 7
-    ? `${plate.slice(0, 3)}-${plate.slice(3, 5)}-${plate.slice(5)}`
-    : `${plate.slice(0, 2)}-${plate.slice(2, 5)}-${plate.slice(5)}`;
+    ? `${plate.slice(0, 2)}-${plate.slice(2, 5)}-${plate.slice(5)}`
+    : `${plate.slice(0, 3)}-${plate.slice(3, 5)}-${plate.slice(5)}`;
 }
 
 /** Convert YYYYMM number to a "MM/YYYY" display label */
@@ -290,7 +328,7 @@ async function fetchOwnershipHistory(plateNum: number): Promise<{ records: Owner
     i === 0 || r.date !== records[i - 1].date || r.ownershipType !== records[i - 1].ownershipType
   );
 
-  // Store in cache (fire-and-forget is fine here — reading the next time will miss cache if this fails)
+  // Store in cache (fire-and-forget is fine here - reading the next time will miss cache if this fails)
   try {
     await dbRun(
       'INSERT OR REPLACE INTO vehicle_history_cache (plate, ownership_json, cached_at) VALUES (?, ?, ?)',
@@ -361,7 +399,7 @@ export async function lookupVehicle(rawPlate: string): Promise<LookupResult> {
         name:          kinuy,
         makeHe:        tozet,
         year:          shnat,
-        color:         String(record.tzeva_rechev ?? ''),
+        color:         String(record.tzeva_rechev ?? '') === 'לא ידוע' ? 'לא רשום' : String(record.tzeva_rechev ?? ''),
         fuel:          String(record.sug_delek_nm ?? ''),
         ownership:     currentOwnershipType,
         vin:           String(record.misgeret ?? ''),
@@ -374,7 +412,7 @@ export async function lookupVehicle(rawPlate: string): Promise<LookupResult> {
         odometer:      extra?.kilometer_test_aharon ? Number(extra.kilometer_test_aharon) : null,
         hasAccident:   extra ? Number(extra.gapam_ind) === 1 : null,
         wasRepainted:  extra ? Number(extra.shnui_zeva_ind) === 1 : null,
-        origin:        extra?.mkoriut_nm ? String(extra.mkoriut_nm) : null,
+        origin:        extra?.mkoriut_nm ? normalizeOrigin(String(extra.mkoriut_nm)) : null,
         structuralChange: extra ? Number(extra.shinui_mivne_ind) === 1 : null,
         tireChange:       extra ? Number(extra.shinui_zmig_ind) === 1 : null,
         firstRegistrationDate: extra?.rishum_rishon_dt ? String(extra.rishum_rishon_dt).split(' ')[0] : null,

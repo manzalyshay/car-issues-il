@@ -1,7 +1,7 @@
 /**
  * Turns a model's trim rows into a small, sanity-checked spec summary that page copy
  * (verdicts, FAQs, year/make pages) can safely quote. Values outside plausible ranges
- * are dropped instead of shown, and fuel figures only come from combustion trims —
+ * are dropped instead of shown, and fuel figures only come from combustion trims -
  * the trims table mixes kWh/100km (EVs), plug-in WLTP figures and Hebrew engine labels.
  */
 
