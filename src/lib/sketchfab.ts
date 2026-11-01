@@ -35,7 +35,10 @@ type ModelsMap = Record<string, ModelEntry[]>;
 // interior scene, or a low-poly placeholder rather than a usable exterior model.
 const UNSUITABLE_3D_TITLES: RegExp[] = [
   /\blow[ -]?poly\b/i,
-  /\binterior\b/i,
+  // Interior-only scenes. A full car "with interior" / "+ Interior" / "HQ interior" is fine.
+  /\b(?:dashboard|cockpit)\b/i,
+  /\(interior\)/i,
+  /\binterior\s+(?:only|scene)\b/i,
   /\basset(?:s|'s)?\s+pack\b/i,
   /\b(?:rally\s*1|e-racer|gt2)\b/i,
 ];
@@ -59,7 +62,14 @@ const MISASSIGNED_3D_TITLES: Record<string, RegExp[]> = {
   'volkswagen/taigo': [/\bvirtus\b/i],
 };
 
-function isUnsuitable3DTitle(makeSlug: string, modelSlug: string, title: string): boolean {
+// Models whose title trips a rule above but that were checked by hand and are fine
+// (e.g. titled "Lowpoly" but actually ~335k polygons and the best model available).
+const ALLOWED_3D_UIDS = new Set<string>([
+  'e4087350c4d84d8391de09b405c96488', // Jeep Compass 2022 "Lowpoly" - 334,691 faces
+]);
+
+function isUnsuitable3DTitle(makeSlug: string, modelSlug: string, title: string, uid?: string): boolean {
+  if (uid && ALLOWED_3D_UIDS.has(uid)) return false;
   if (UNSUITABLE_3D_TITLES.some(pattern => pattern.test(title))) return true;
   return (MISASSIGNED_3D_TITLES[`${makeSlug}/${modelSlug}`] ?? []).some(pattern => pattern.test(title));
 }
@@ -163,7 +173,7 @@ export async function findCarModel(
 ): Promise<SketchfabModel | null> {
   const models = await fetch3dModels();
   const entries = models[`${makeSlug}/${modelSlug}`]?.filter(entry =>
-    !isUnsuitable3DTitle(makeSlug, modelSlug, entry.name),
+    !isUnsuitable3DTitle(makeSlug, modelSlug, entry.name, entry.uid),
   );
   if (!entries?.length) return null;
   const entry = pickEntry(entries, year);
