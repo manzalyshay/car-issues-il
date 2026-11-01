@@ -18,21 +18,40 @@ export default function RecallsSection({ makeEn, modelEn, year, years }: Props) 
   const isHe = locale === 'he';
 
   const [recalls, setRecalls]     = useState<Recall[]>([]);
-  const [loading, setLoading]     = useState(false);
+  // Start in loading state so SSR / first paint never shows a false "no recalls" message
+  const [loading, setLoading]     = useState(true);
   const [expanded, setExpanded]   = useState<string | null>(null);
   const [filterYear, setFilterYear] = useState<number | 'all'>('all');
 
+  const yearsKey = years?.join(',') ?? '';
+
   useEffect(() => {
+    let cancelled = false;
     setLoading(true);
-    const params = new URLSearchParams({ make: makeEn, model: modelEn, locale });
-    if (year) params.set('year', String(year));
-    else if (years?.length) params.set('years', years.join(','));
-    fetch(`/api/recalls?${params}`)
-      .then(r => r.json())
-      .then(d => setRecalls(d.recalls ?? []))
-      .catch(() => setRecalls([]))
-      .finally(() => setLoading(false));
-  }, [makeEn, modelEn, year, locale]);
+
+    const load = async (loc: string): Promise<Recall[]> => {
+      const params = new URLSearchParams({ make: makeEn, model: modelEn, locale: loc });
+      if (year) params.set('year', String(year));
+      else if (yearsKey) params.set('years', yearsKey);
+      const res = await fetch(`/api/recalls?${params}`);
+      if (!res.ok) throw new Error(`recalls ${res.status}`);
+      const d = (await res.json()) as { recalls?: Recall[] };
+      return d.recalls ?? [];
+    };
+
+    (async () => {
+      let list: Recall[] = [];
+      try { list = await load(locale); } catch { /* fall through to English */ }
+      // The Hebrew path depends on translation; if it fails or comes back empty,
+      // fall back to the English endpoint (same source the recalls chart uses).
+      if (list.length === 0 && locale !== 'en') {
+        try { list = await load('en'); } catch { /* keep empty */ }
+      }
+      if (!cancelled) { setRecalls(list); setLoading(false); }
+    })();
+
+    return () => { cancelled = true; };
+  }, [makeEn, modelEn, year, yearsKey, locale]);
 
   // Collect unique years for the filter
   const availableYears = useMemo(() => {

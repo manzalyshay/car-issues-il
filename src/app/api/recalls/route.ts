@@ -210,7 +210,36 @@ export async function GET(req: NextRequest) {
       new Date(b.ReportReceivedDate ?? '').getTime() - new Date(a.ReportReceivedDate ?? '').getTime()
     );
 
-    if (unique.length === 0) return NextResponse.json({ recalls: [] });
+    if (unique.length === 0) {
+      // NHTSA returned nothing (or failed). Fall back to our own recalls_cache so the
+      // tab stays consistent with the rest of the page, and never CDN-cache an empty result.
+      const yearFilter = yearParam
+        ? [parseInt(yearParam)]
+        : yearsParam ? yearsParam.split(',').map(y => parseInt(y.trim())).filter(Boolean) : [];
+      const fallback = await dbAll<RecallCacheRow>(
+        'SELECT * FROM recalls_cache WHERE make = ? AND model = ? ORDER BY date DESC',
+        make.toLowerCase(), model.toLowerCase(),
+      ).catch(() => [] as RecallCacheRow[]);
+      const rows = yearFilter.length
+        ? fallback.filter(r => r.recall_year == null || yearFilter.includes(r.recall_year))
+        : fallback;
+      const recalls: Recall[] = rows.map(c => {
+        const isEnLoc = locale === 'en';
+        const compEn = c.component_en || '';
+        return {
+          id:           c.id,
+          year:         c.recall_year ?? null,
+          date:         c.date || '',
+          component:    isEnLoc ? compEn : (formatHeComponent(c.component_he) || compEn),
+          componentEn:  compEn,
+          summary:      (isEnLoc ? c.summary_en : (c.summary_he || c.summary_en)) || '',
+          consequence:  (isEnLoc ? c.consequence_en : (c.consequence_he || c.consequence_en)) || '',
+          remedy:       (isEnLoc ? c.remedy_en : (c.remedy_he || c.remedy_en)) || '',
+          manufacturer: c.manufacturer ?? '',
+        };
+      });
+      return NextResponse.json({ recalls }, { headers: { 'Cache-Control': 'no-store' } });
+    }
 
     // 2. Load cached records for all locales
     const ids = unique.map(r => r.NHTSACampaignNumber);
@@ -365,6 +394,6 @@ export async function GET(req: NextRequest) {
     });
   } catch (err) {
     console.error('[Recalls API]', err);
-    return NextResponse.json({ recalls: [] });
+    return NextResponse.json({ recalls: [] }, { status: 502, headers: { 'Cache-Control': 'no-store' } });
   }
 }
