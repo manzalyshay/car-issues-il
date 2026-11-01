@@ -29,10 +29,10 @@ const TYPE_CATEGORIES: Record<string, string[]> = {
 
 export const revalidate = 3600; // cache 1 hour
 
-interface Props { searchParams: Promise<{ type?: string }> }
+interface Props { searchParams: Promise<{ type?: string; q?: string }> }
 
 export default async function CarsPage({ searchParams }: Props) {
-  const { type } = await searchParams;
+  const { type, q } = await searchParams;
   const [locale, carDatabase] = await Promise.all([
     getHostLocale(),
     getAllMakes().catch(() => []),
@@ -72,7 +72,7 @@ export default async function CarsPage({ searchParams }: Props) {
           <p style={{ color: 'var(--text-muted)', fontSize: '1.0625rem', marginBottom: 20 }}>
             {filtered.length} {cp.subtitle} · {filtered.reduce((s, m) => s + m.models.length, 0)} {cp.models}
           </p>
-          <CarsSearch makes={carDatabase} isEn={isEn} modelsLabel={cp.models} />
+          <CarsSearch makes={carDatabase} isEn={isEn} modelsLabel={cp.models} initialQuery={typeof q === 'string' ? q : ''} />
         </div>
 
         {/* Groups */}

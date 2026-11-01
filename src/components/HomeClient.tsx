@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useState, useEffect, useRef, useMemo } from 'react';
 import { useLocale } from '@/lib/localeContext';
+import { searchCars } from '@/lib/carSearch';
 import { newsPath } from '@/lib/newsSlug';
 import NewsImage from '@/components/NewsImage';
 
@@ -145,25 +146,22 @@ export default function HomeClient({ allMakes, topRanked, recentReviews, tickerI
   const [acIdx, setAcIdx] = useState(-1);
   const searchWrapRef = useRef<HTMLDivElement>(null);
 
-  // Flat list of makes + models for autocomplete
-  const allSuggestions = useMemo(() => {
-    const items: { label: string; sub: string; href: string }[] = [];
-    for (const make of allMakes) {
-      items.push({ label: isHe ? make.nameHe : make.nameEn, sub: isHe ? make.nameEn : make.nameHe, href: `/cars/${make.slug}` });
-      for (const model of make.models) {
-        items.push({ label: isHe ? `${make.nameHe} ${model.nameHe}` : `${make.nameEn} ${model.nameEn}`, sub: '', href: `/cars/${make.slug}/${model.slug}` });
-      }
-    }
-    return items;
-  }, [allMakes, isHe]);
-
+  // Bilingual autocomplete: Hebrew, English, mixed, typos and wrong keyboard layout all match
   const suggestions = useMemo(() => {
-    const q = searchQ.trim().toLowerCase();
-    if (!q || q.length < 1) return [];
-    return allSuggestions.filter(s =>
-      s.label.toLowerCase().includes(q) || s.sub.toLowerCase().includes(q)
-    ).slice(0, 8);
-  }, [searchQ, allSuggestions]);
+    const q = searchQ.trim();
+    if (!q || /^[\d\-\s]+$/.test(q)) return []; // plate numbers aren't car names
+    return searchCars(allMakes, q, 8).map(({ make, model }) => model
+      ? {
+          label: isHe ? `${make.nameHe} ${model.nameHe}` : `${make.nameEn} ${model.nameEn}`,
+          sub:   isHe ? `${make.nameEn} ${model.nameEn}` : `${make.nameHe} ${model.nameHe}`,
+          href:  `/cars/${make.slug}/${model.slug}`,
+        }
+      : {
+          label: isHe ? make.nameHe : make.nameEn,
+          sub:   isHe ? make.nameEn : make.nameHe,
+          href:  `/cars/${make.slug}`,
+        });
+  }, [searchQ, allMakes, isHe]);
 
   // Close on outside click
   useEffect(() => {
@@ -181,6 +179,9 @@ export default function HomeClient({ allMakes, topRanked, recentReviews, tickerI
     const digits = (q.match(/\d/g) || []).length;
     if (digits >= 5 && /^[\d\-\s]+$/.test(q)) {
       router.push(`/vehicle-lookup/${q.replace(/\D/g, '')}`);
+    } else if (suggestions.length > 0) {
+      // Enter / "Search" with a car name goes straight to the best match
+      router.push(suggestions[0].href);
     } else {
       router.push(`/cars?q=${encodeURIComponent(q)}`);
     }

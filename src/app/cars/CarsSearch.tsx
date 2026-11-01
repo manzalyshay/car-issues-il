@@ -1,45 +1,39 @@
 'use client';
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import Link from 'next/link';
 import MakeLogo from '@/components/MakeLogo';
 import type { CarMake } from '@/lib/carsDb';
+import { searchCars } from '@/lib/carSearch';
 
 interface Props {
   makes: CarMake[];
   isEn: boolean;
   modelsLabel: string;
+  initialQuery?: string;
 }
 
-const norm = (s: string) => s.toLowerCase().replace(/[אהוי]/g, '');
-const matches = (target: string, words: string[]) =>
-  words.every(w => target.toLowerCase().includes(w) || norm(target).includes(norm(w)));
-
-export default function CarsSearch({ makes, isEn, modelsLabel }: Props) {
-  const [query, setQuery] = useState('');
+export default function CarsSearch({ makes, isEn, modelsLabel, initialQuery = '' }: Props) {
+  const [query, setQuery] = useState(initialQuery);
 
   const q = query.trim();
-  const words = q ? q.toLowerCase().split(/\s+/) : [];
 
-  const filtered = q
-    ? makes.flatMap(make =>
-        make.models
-          .filter(model => {
-            const combinedHe = `${make.nameHe} ${model.nameHe}`;
-            const combinedEn = `${make.nameEn} ${model.nameEn}`;
-            return (
-              matches(combinedHe, words) ||
-              matches(combinedEn, words) ||
-              matches(make.nameHe, words) ||
-              matches(make.nameEn, words) ||
-              matches(make.slug, words) ||
-              matches(model.nameHe, words) ||
-              matches(model.nameEn, words) ||
-              matches(model.slug, words)
-            );
-          })
-          .map(model => ({ make, model }))
-      ).slice(0, 24)
-    : [];
+  // Bilingual search (Hebrew/English/mixed, typos, wrong keyboard layout).
+  // A make-only query expands to all of that make's models.
+  const filtered = useMemo(() => {
+    if (!q) return [];
+    const out: { make: CarMake; model: CarMake['models'][number] }[] = [];
+    const seen = new Set<string>();
+    for (const hit of searchCars(makes, q, 40)) {
+      const models = hit.model ? [hit.model] : hit.make.models;
+      for (const model of models) {
+        const key = `${hit.make.slug}/${model.slug}`;
+        if (seen.has(key)) continue;
+        seen.add(key);
+        out.push({ make: hit.make, model });
+      }
+    }
+    return out.slice(0, 24);
+  }, [q, makes]);
 
   return (
     <div style={{ marginBottom: 32 }}>
