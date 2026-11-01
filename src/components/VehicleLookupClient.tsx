@@ -234,7 +234,7 @@ export default function VehicleLookupClient({ initialPlate, initialVehicle, init
   return (
     <>
       {/* ── Compact search band ── */}
-      <div style={{ background: 'linear-gradient(135deg, #0a1628 0%, #0f2c4d 60%, #1a3a5c 100%)', padding: 'clamp(20px,3vw,28px) 0 clamp(90px,10vw,120px)', position: 'relative', overflow: 'hidden' }}>
+      <div className="vl-band" style={{ background: 'linear-gradient(135deg, #0a1628 0%, #0f2c4d 60%, #1a3a5c 100%)', padding: 'clamp(20px,3vw,28px) 0 clamp(90px,10vw,120px)', position: 'relative', overflow: 'hidden' }}>
         {/* decorative radial */}
         <div style={{ position: 'absolute', inset: 0, background: 'radial-gradient(ellipse 70% 60% at 50% 0%, rgba(96,165,250,0.08) 0%, transparent 70%)', pointerEvents: 'none' }} />
 
@@ -324,7 +324,7 @@ export default function VehicleLookupClient({ initialPlate, initialVehicle, init
       </div>
 
       {/* ── RESULT ── */}
-      <div ref={resultRef} className="container" style={{ maxWidth: 1240, margin: 'clamp(-70px,-7vw,-96px) auto 0', padding: '0 16px 64px', position: 'relative' }}>
+      <div ref={resultRef} className="container vl-result" style={{ maxWidth: 1240, margin: 'clamp(-70px,-7vw,-96px) auto 0', padding: '0 16px 64px', position: 'relative' }}>
 
         {status === 'found' && v && (() => {
           return (
@@ -346,8 +346,8 @@ export default function VehicleLookupClient({ initialPlate, initialVehicle, init
                 return (
             <>
               {/* ── Result card ── */}
-              <article className="card" style={{ display: 'flex', flexWrap: 'wrap', overflow: 'hidden', padding: 0, marginBottom: 28 }}>
-                <div style={{ flex: '999 1 560px', minWidth: 0, padding: 'clamp(20px,4vw,32px)', display: 'flex', flexDirection: 'column', gap: 18 }}>
+              <article className="card vl-card" style={{ display: 'flex', flexWrap: 'wrap', overflow: 'hidden', padding: 0, marginBottom: 28 }}>
+                <div className="vl-summary" style={{ flex: '999 1 560px', minWidth: 0, padding: 'clamp(20px,4vw,32px)', display: 'flex', flexDirection: 'column', gap: 18 }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 20, flexWrap: 'wrap' }}>
                     {/* Plate badge */}
                     <div style={{ flexShrink: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}>
@@ -361,7 +361,7 @@ export default function VehicleLookupClient({ initialPlate, initialVehicle, init
                       }}>
                         {displayPlate}
                       </div>
-                      <span style={{ fontSize: '0.6rem', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--text-muted)' }}>
+                      <span className="vl-muted" style={{ fontSize: '0.6rem', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--text-muted)' }}>
                         {isVehicleUk ? 'UK' : isHe ? 'ישראל' : 'IL'}
                       </span>
                     </div>
@@ -369,12 +369,12 @@ export default function VehicleLookupClient({ initialPlate, initialVehicle, init
                     {/* Name block */}
                     <div style={{ minWidth: 0 }}>
                       {v.makeHe && (
-                        <div style={{ fontSize: '0.7rem', fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--text-muted)', marginBottom: 4 }}>
+                        <div className="vl-muted" style={{ fontSize: '0.7rem', fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--text-muted)', marginBottom: 4 }}>
                           {isHe ? v.makeHe : (v.dbMatch?.makeSlug ? slugToDisplay(v.dbMatch.makeSlug) : v.makeHe)}
                           {v.year ? ` · ${v.year}` : ''}
                         </div>
                       )}
-                      <div style={{ fontSize: 'clamp(1.2rem, 4vw, 1.6rem)', fontWeight: 900, lineHeight: 1.1, letterSpacing: '-0.01em', color: 'var(--text)' }}>
+                      <div className="vl-name" style={{ fontSize: 'clamp(1.2rem, 4vw, 1.6rem)', fontWeight: 900, lineHeight: 1.1, letterSpacing: '-0.01em', color: 'var(--text)' }}>
                         {isHe ? (v.name || v.makeHe) : (v.dbMatch?.modelSlug ? slugToDisplay(v.dbMatch.modelSlug) : v.name || v.makeHe)}
                       </div>
                     </div>
@@ -733,7 +733,16 @@ export default function VehicleLookupClient({ initialPlate, initialVehicle, init
           .vl-o5 { order: 4; } .vl-o3 { order: 5; } .vl-o6 { order: 6; }
         }
         @media (max-width: 600px) {
-          .vl-visual { min-height: 0 !important; padding: 16px !important; }
+          /* Phones: the search band and the vehicle summary read as one continuous blue block */
+          .vl-band { padding-bottom: 4px !important; background: #0f2c4d !important; }
+          .vl-result { margin-top: 0 !important; }
+          .vl-card { margin: 0 -16px 16px !important; border-radius: 0 !important; border: 0 !important; box-shadow: none !important; }
+          .vl-summary { background: #0f2c4d; color: #f1f5f9; padding-top: 12px !important; }
+          .vl-summary .vl-name { color: #fff !important; }
+          .vl-summary .vl-muted, .vl-summary dt { color: #9fb3d1 !important; }
+          .vl-summary dl { border-top-color: rgba(255,255,255,.16) !important; }
+          .vl-visual { min-height: 0 !important; padding: 4px 16px 20px !important; background: #0f2c4d !important; }
+          .vl-visual > span { color: #9fb3d1 !important; }
           .vl-visual > img, .vl-visual > div { max-width: 240px !important; }
         }
       `}</style>
