@@ -24,7 +24,7 @@ export async function generateMetadata(): Promise<Metadata> {
     },
   } : {
     // The root layout's title template appends " | CarIssues"
-    title: 'בדיקת רכב חינם לפי מספר רישוי - היסטוריית רכב מלאה',
+    title: 'בדיקת רכב לפי מספר רישוי - חינם, היסטוריית רכב מלאה',
     description: 'בדוק כל רכב ישראלי לפי מספר לוחית רישוי: תוקף טסט, בעלות, קילומטראז׳, היסטוריית נזק, VIN, צבע, סוג דלק ועוד - נתונים חיים ממשרד התחבורה.',
     alternates: { canonical: `${base}/vehicle-lookup`, languages: LANGS },
     openGraph: {
@@ -164,15 +164,16 @@ export default async function VehicleLookupPage() {
           <div style={{ fontSize: '0.72rem', fontWeight: 700, letterSpacing: '0.1em', color: '#60a5fa', textTransform: 'uppercase', marginBottom: 10 }}>
             {isHe ? 'כלי חינמי' : 'Free Tool'}
           </div>
-          <h1 style={{ fontSize: 'clamp(1.6rem, 4vw, 2.4rem)', fontWeight: 900, color: '#f1f5f9', lineHeight: 1.2, marginBottom: 12 }}>
+          <h1 style={{ fontSize: 'clamp(1.6rem, 4vw, 2.4rem)', fontWeight: 900, color: '#f1f5f9', lineHeight: 1.2, marginBottom: 20 }}>
             {isHe ? 'בדיקת רכב לפי מספר רישוי' : 'Israeli License Plate Lookup'}
           </h1>
-          <p style={{ color: '#94a3b8', fontSize: '1rem', lineHeight: 1.7, marginBottom: 32, maxWidth: 560 }}>
+          {/* Plate input first - it's what visitors come here for */}
+          <PlateSearch isHe={isHe} navigateOnSearch />
+          <p style={{ color: '#94a3b8', fontSize: '1rem', lineHeight: 1.7, marginTop: 20, marginBottom: 0, maxWidth: 560 }}>
             {isHe
               ? 'הזן מספר לוחית רישוי וקבל מיד את כל הפרטים - תוקף טסט, היסטוריית נזק, קילומטראז׳ ועוד, ישירות ממשרד התחבורה.'
               : 'Enter any Israeli license plate and instantly get full vehicle details - MOT status, damage history, odometer reading and more, live from Israel\'s Ministry of Transport.'}
           </p>
-          <PlateSearch isHe={isHe} navigateOnSearch />
           <p style={{ color: '#475569', fontSize: '0.72rem', marginTop: 14 }}>
             {isHe
               ? 'מקור: משרד התחבורה (data.gov.il)'

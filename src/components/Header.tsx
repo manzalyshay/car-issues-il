@@ -92,14 +92,14 @@ export default function Header() {
   }, []);
 
   const NAV_LINKS = locale === 'he' ? [
-    { href: '/vehicle-lookup', label: 'בדיקת רכב' },
+    { href: '/vehicle-lookup', label: 'בדיקת רכב', title: 'בדיקת רכב לפי מספר רישוי' },
     { href: '/cars/compare',   label: 'השוואה' },
     { href: '/cars',           label: 'ביקורות' },
     { href: '/rankings',       label: 'דירוגים' },
     { href: '/repairs',        label: 'עלויות תיקון' },
     { href: '/news',           label: 'חדשות' },
   ] : [
-    { href: '/vehicle-lookup', label: t.nav.vehicleLookup },
+    { href: '/vehicle-lookup', label: t.nav.vehicleLookup, title: 'Vehicle check by license plate' },
     { href: '/cars/compare',   label: t.nav.compare },
     { href: '/cars',           label: t.nav.allMakes },
     { href: '/rankings',       label: t.nav.rankings },
@@ -138,7 +138,7 @@ export default function Header() {
             {NAV_LINKS.map(link => {
               const active = pathname === link.href || (link.href !== '/' && pathname.startsWith(link.href));
               return (
-                <Link key={link.href} href={link.href} className="hdr-link"
+                <Link key={link.href} href={link.href} className="hdr-link" title={'title' in link ? link.title : undefined}
                   style={{
                     display: 'flex', alignItems: 'center',
                     padding: '8px 9px', fontSize: '0.875rem', fontWeight: active ? 700 : 600,
