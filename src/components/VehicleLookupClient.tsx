@@ -262,8 +262,17 @@ export default function VehicleLookupClient({ initialPlate, initialVehicle, init
                     <span style={{ fontSize: 9, color: '#fff', fontWeight: 700 }}>🇬🇧</span>
                   </div>
                 ) : (
-                  <div style={{ width: 28, height: '100%', flexShrink: 0, background: 'linear-gradient(180deg, #003399 33%, #fff 33%, #fff 66%, #cc0000 66%)', display: 'flex', alignItems: 'flex-end', justifyContent: 'center', paddingBottom: 4 }}>
-                    <span style={{ fontSize: 8, color: '#fff', fontWeight: 700, lineHeight: 1 }}>IL</span>
+                  <div style={{ width: 28, height: '100%', flexShrink: 0, background: '#003399', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 4 }}>
+                    <svg width="18" height="13" viewBox="0 0 22 16" aria-hidden="true" style={{ display: 'block', borderRadius: 1 }}>
+                      <rect width="22" height="16" fill="#fff" />
+                      <rect y="1.5" width="22" height="2.4" fill="#0038b8" />
+                      <rect y="12.1" width="22" height="2.4" fill="#0038b8" />
+                      <g fill="none" stroke="#0038b8" strokeWidth="0.9">
+                        <polygon points="11,4.9 13.6,9.4 8.4,9.4" />
+                        <polygon points="11,11.1 8.4,6.6 13.6,6.6" />
+                      </g>
+                    </svg>
+                    <span style={{ fontSize: 9, color: '#fff', fontWeight: 800, lineHeight: 1 }}>IL</span>
                   </div>
                 )}
                 <input
@@ -413,13 +422,7 @@ export default function VehicleLookupClient({ initialPlate, initialVehicle, init
                     A single model-wide photo has no reliable generation tag of its own, so it is
                     only trustworthy when the vehicle's year falls inside what the site covers. */}
                 {modelInfo && (modelInfo.sketchfabModel || (modelInfo.leadingImageUrl && modelInfo.yearsCovered)) && (
-                  <div style={{ flex: '1 1 320px', minWidth: 0, background: 'var(--surface-2)', position: 'relative', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', padding: 24, minHeight: 260 }}>
-                    {modelInfo.aiScore != null && modelInfo.yearsCovered && (
-                      <span style={{ position: 'absolute', top: 14, insetInlineStart: 14, zIndex: 2, display: 'flex', alignItems: 'center', gap: 8, background: '#fff', borderRadius: 14, padding: '7px 11px', boxShadow: 'var(--shadow-lg)' }}>
-                        <span style={{ fontSize: 20, fontWeight: 800, color: 'var(--good-ink)' }}>{modelInfo.aiScore.toFixed(1)}</span>
-                        <span style={{ fontSize: 11, color: 'var(--text-muted)', lineHeight: 1.2 }}>{isHe ? <>ציון<br />הדגם</> : <>Model<br />score</>}</span>
-                      </span>
-                    )}
+                  <div className="vl-visual" style={{ flex: '1 1 320px', minWidth: 0, background: 'var(--surface-2)', position: 'relative', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', padding: 24, minHeight: 260 }}>
                     {modelInfo.sketchfabModel ? (
                       <div style={{ width: '100%', maxWidth: 320, aspectRatio: '4/3', borderRadius: 12, overflow: 'hidden' }}>
                         <Car3DViewer
@@ -435,7 +438,6 @@ export default function VehicleLookupClient({ initialPlate, initialVehicle, init
                       <img src={sizedImageUrl(modelInfo.leadingImageUrl, 400) ?? undefined} alt={modelInfo.name} style={{ width: '100%', maxWidth: 320, aspectRatio: '4/3', objectFit: 'cover', borderRadius: 12 }} />
                     )}
                     <span style={{ marginTop: 12, fontSize: 12, color: 'var(--text-muted)' }}>{L.modelImageCaption} · {modelInfo.name}</span>
-                    <Link href={modelInfo.modelUrl} style={{ marginTop: 10, fontSize: 15, fontWeight: 700, color: 'var(--accent)', textDecoration: 'none' }}>{L.fullModelPage}</Link>
                   </div>
                 )}
               </article>
@@ -478,8 +480,8 @@ export default function VehicleLookupClient({ initialPlate, initialVehicle, init
                     </section>
                   )}
 
-                  {/* o3: recent reviews */}
-                  {modelInfo && (
+                  {/* o3: recent reviews - hidden when there are none (no empty box) */}
+                  {modelInfo && modelInfo.recentReviews.length > 0 && (
                     <section className="vl-o3 card" style={{ padding: 'clamp(18px,4vw,28px)' }}>
                       <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
                         <h2 style={{ margin: 0, fontSize: 22, fontWeight: 800 }}>{L.recentReviews} {modelInfo.name}</h2>
@@ -723,10 +725,16 @@ export default function VehicleLookupClient({ initialPlate, initialVehicle, init
         }
         .vl-col-main, .vl-col-rail { display: flex; flex-direction: column; }
         @media (max-width: 960px) {
-          .vl-body-cols { flex-direction: column; align-items: stretch; }
+          /* !important: the container's inline alignItems:flex-start otherwise shrinks cards to content width */
+          .vl-body-cols { flex-direction: column !important; align-items: stretch !important; gap: 16px !important; }
           .vl-col-main, .vl-col-rail { display: contents; }
-          .vl-o1 { order: 1; } .vl-o2 { order: 2; } .vl-o3 { order: 3; }
-          .vl-o4 { order: 4; } .vl-o5 { order: 5; } .vl-o6 { order: 6; }
+          /* Buyer facts first: registry, mileage and ownership history; then model context */
+          .vl-o4 { order: 1; } .vl-o1 { order: 2; } .vl-o2 { order: 3; }
+          .vl-o5 { order: 4; } .vl-o3 { order: 5; } .vl-o6 { order: 6; }
+        }
+        @media (max-width: 600px) {
+          .vl-visual { min-height: 0 !important; padding: 16px !important; }
+          .vl-visual > img, .vl-visual > div { max-width: 240px !important; }
         }
       `}</style>
     </>
