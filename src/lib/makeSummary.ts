@@ -4,6 +4,7 @@
  * the data behind it is missing.
  */
 import { dbAll } from './db';
+import { staticHebrewTitle } from './translateCache';
 import { getAllAiScores, blendWithOwnerRating } from './aiScore';
 import { getModelPriceMins } from './trimSpecsDb';
 import { getCategoryLabel, type CarMake } from '@/data/cars';
@@ -196,10 +197,13 @@ export function buildMakeIntro(make: CarMake, st: MakeStats, locale: 'he' | 'en'
       : `במאגר הריקולים בארה"ב מתועדות ${st.recallTotal} קריאות ריקול לדגמי ${make.nameHe} שבאתר; הכי הרבה קריאות היו ${hp('ל', list(top))}.${comps}`);
   }
   if (st.knownIssues.length > 0) {
-    const items = st.knownIssues.map((k) => `${name(k.slug)}: ${k.title}`);
+    // Hebrew site: use the reviewed translations; mark "(באנגלית)" only if some title has none
+    const heTitles = st.knownIssues.map((k) => staticHebrewTitle(k.title));
+    const allTranslated = heTitles.every(Boolean);
+    const items = st.knownIssues.map((k, i) => `${name(k.slug)}: ${en ? k.title : (heTitles[i] ?? k.title)}`);
     out.push(en
       ? `Most-reported owner complaints on CarComplaints.com include ${list(items)}.`
-      : `בין התלונות הנפוצות של בעלי ${mk} באתר CarComplaints.com (באנגלית): ${list(items)}.`);
+      : `בין התלונות הנפוצות של בעלי ${mk} באתר CarComplaints.com${allTranslated ? '' : ' (חלקן באנגלית)'}: ${list(items)}.`);
   }
   return out;
 }
