@@ -378,6 +378,23 @@ export default function VehicleLookupClient({ initialPlate, initialVehicle, init
                         {isHe ? (v.name || v.makeHe) : (v.dbMatch?.modelSlug ? slugToDisplay(v.dbMatch.modelSlug) : v.name || v.makeHe)}
                       </div>
                     </div>
+
+                    {/* Phones: model score sits at the side of the name (the separate score card is hidden there) */}
+                    {modelInfo && modelInfo.aiScore != null && modelInfo.yearsCovered && (
+                      <div className="vl-m-only" style={{ marginInlineStart: 'auto', textAlign: 'center' }}>
+                        <svg width="60" height="60" viewBox="0 0 84 84" role="img" aria-label={`${L.reliabilityScore} ${modelInfo.aiScore.toFixed(1)} / 10`} style={{ display: 'block', margin: '0 auto' }}>
+                          <circle cx="42" cy="42" r="36" fill="none" stroke="#2a3c63" strokeWidth="9" />
+                          <circle cx="42" cy="42" r="36" fill="none" stroke={modelInfo.aiScore >= 7.5 ? 'var(--good)' : 'var(--warn)'} strokeWidth="9" strokeLinecap="round" strokeDasharray={`${(modelInfo.aiScore / 10) * 226} 226`} transform="rotate(-90 42 42)" />
+                          <text x="42" y="50" textAnchor="middle" fontFamily="Heebo, sans-serif" fontSize="25" fontWeight="800" fill="#fff">{modelInfo.aiScore.toFixed(1)}</text>
+                        </svg>
+                        <div className="vl-muted" style={{ fontSize: 11, marginTop: 4, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                          {L.reliabilityScore}
+                          {modelInfo.proReviewScoreSets && modelInfo.proReviewScoreSets.length > 0 && (
+                            <ScoreSourcesInfo sets={modelInfo.proReviewScoreSets} isHe={isHe} />
+                          )}
+                        </div>
+                      </div>
+                    )}
                   </div>
 
                   {/* Status chips */}
@@ -438,6 +455,28 @@ export default function VehicleLookupClient({ initialPlate, initialVehicle, init
                       <img src={sizedImageUrl(modelInfo.leadingImageUrl, 400) ?? undefined} alt={modelInfo.name} style={{ width: '100%', maxWidth: 320, aspectRatio: '4/3', objectFit: 'cover', borderRadius: 12 }} />
                     )}
                     <span style={{ marginTop: 12, fontSize: 12, color: 'var(--text-muted)' }}>{L.modelImageCaption} · {modelInfo.name}</span>
+                  </div>
+                )}
+
+                {/* Phones: the score card's content (top faults + model page link), merged into this card */}
+                {modelInfo && (
+                  <div className="vl-m-only vl-summary-extra" style={{ flex: '1 1 100%', padding: '0 16px 22px' }}>
+                    {modelInfo.topProblems.length > 0 && (
+                      <div style={{ marginBottom: 16 }}>
+                        <div style={{ fontSize: 14, fontWeight: 700, marginBottom: 10, color: '#fff' }}>{L.ownersReportMostly}</div>
+                        <ul style={{ margin: 0, padding: 0, listStyle: 'none', display: 'flex', flexDirection: 'column', gap: 8 }}>
+                          {modelInfo.topProblems.map((p) => (
+                            <li key={p.title} style={{ display: 'flex', justifyContent: 'space-between', gap: 12, fontSize: 14, color: '#dfe6f3' }}>
+                              <span>{p.title}</span>
+                              <span style={{ color: p.severity === 'שכיח' ? 'var(--warn)' : '#aab6cf', flexShrink: 0 }}>{p.severity}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+                    <Link href={modelInfo.modelUrl} style={{ display: 'block', background: 'var(--accent)', color: '#fff', textDecoration: 'none', textAlign: 'center', borderRadius: 12, padding: 14, fontSize: 16, fontWeight: 700 }}>
+                      {L.fullModelPage}
+                    </Link>
                   </div>
                 )}
               </article>
@@ -724,6 +763,7 @@ export default function VehicleLookupClient({ initialPlate, initialVehicle, init
           50% { opacity: 0.9; }
         }
         .vl-col-main, .vl-col-rail { display: flex; flex-direction: column; }
+        .vl-m-only { display: none; }
         @media (max-width: 960px) {
           /* !important: the container's inline alignItems:flex-start otherwise shrinks cards to content width */
           .vl-body-cols { flex-direction: column !important; flex-wrap: nowrap !important; align-items: stretch !important; gap: 16px !important; }
@@ -743,6 +783,9 @@ export default function VehicleLookupClient({ initialPlate, initialVehicle, init
           .vl-summary dl { border-top-color: rgba(255,255,255,.16) !important; }
           .vl-visual { min-height: 0 !important; padding: 4px 16px 20px !important; background: #0f2c4d !important; }
           .vl-visual > span { color: #9fb3d1 !important; }
+          .vl-m-only { display: block; }
+          .vl-summary-extra { background: #0f2c4d; }
+          .vl-o2 { display: none !important; }
           .vl-visual > img, .vl-visual > div { max-width: 240px !important; }
         }
       `}</style>
