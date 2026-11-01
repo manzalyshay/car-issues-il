@@ -40,7 +40,7 @@ export default function ScoreSourcesInfo({ sets, isHe }: Props) {
   // Viewport position for the panel. It's rendered position:fixed and clamped inside the
   // screen, so it can't run off the edge (RTL, icon near the side) or be clipped by a
   // parent with overflow:hidden.
-  const [pos, setPos] = useState<{ top: number; left: number; width: number } | null>(null);
+  const [pos, setPos] = useState<{ top?: number; bottom?: number; left: number; width: number; maxH: number } | null>(null);
 
   useLayoutEffect(() => {
     if (!open) { setPos(null); return; }
@@ -55,7 +55,12 @@ export default function ScoreSourcesInfo({ sets, isHe }: Props) {
       const rtl = getComputedStyle(icon).direction === 'rtl';
       const preferred = rtl ? r.right - width : r.left;
       const left = Math.max(margin, Math.min(preferred, vw - width - margin));
-      setPos({ top: r.bottom + 8, left, width });
+      // Open below the icon, or above it when there's clearly more room up there
+      const vh = window.innerHeight;
+      const below = vh - r.bottom - 8 - margin;
+      const above = r.top - 8 - margin;
+      if (below >= 320 || below >= above) setPos({ top: r.bottom + 8, left, width, maxH: below });
+      else setPos({ bottom: vh - r.top + 8, left, width, maxH: above });
     };
     place();
     window.addEventListener('resize', place);
@@ -131,8 +136,8 @@ export default function ScoreSourcesInfo({ sets, isHe }: Props) {
           onMouseEnter={cancelCloseAndHover}
           onMouseLeave={scheduleClose}
           style={{
-            position: 'fixed', top: pos.top, left: pos.left, zIndex: 1000,
-            width: pos.width, maxHeight: `calc(100vh - ${Math.round(pos.top) + 12}px)`, overflowY: 'auto',
+            position: 'fixed', top: pos.top, bottom: pos.bottom, left: pos.left, zIndex: 1000,
+            width: pos.width, maxHeight: pos.maxH, overflowY: 'auto',
             textAlign: 'start', background: '#fff', border: '1px solid #d7deea',
             borderRadius: 12, boxShadow: '0 10px 30px rgba(20,40,70,.18)', padding: '14px 16px',
             display: 'flex', flexDirection: 'column', gap: 12,
