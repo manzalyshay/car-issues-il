@@ -188,14 +188,23 @@ export default function PlateSearch({ isHe, navigateOnSearch, initialVehicle, in
               <span style={{ fontSize: 8, color: '#fff', fontWeight: 700, letterSpacing: 0 }}>🇬🇧</span>
             </div>
           ) : (
-            /* Israeli plate flag strip */
+            /* Israeli plate strip: blue band with the Israeli flag and "IL", as on real plates */
             <div style={{
               width: 28, height: '100%', flexShrink: 0,
-              background: 'linear-gradient(180deg, #003399 33%, #fff 33%, #fff 66%, #cc0000 66%)',
-              display: 'flex', alignItems: 'flex-end', justifyContent: 'center',
-              paddingBottom: 4,
+              background: '#003399',
+              display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+              gap: 4,
             }}>
-              <span style={{ fontSize: 8, color: '#fff', fontWeight: 700, lineHeight: 1, letterSpacing: 0 }}>IL</span>
+              <svg width="18" height="13" viewBox="0 0 22 16" aria-hidden="true" style={{ display: 'block', borderRadius: 1 }}>
+                <rect width="22" height="16" fill="#fff" />
+                <rect y="1.5" width="22" height="2.4" fill="#0038b8" />
+                <rect y="12.1" width="22" height="2.4" fill="#0038b8" />
+                <g fill="none" stroke="#0038b8" strokeWidth="0.9">
+                  <polygon points="11,4.9 13.6,9.4 8.4,9.4" />
+                  <polygon points="11,11.1 8.4,6.6 13.6,6.6" />
+                </g>
+              </svg>
+              <span style={{ fontSize: 9, color: '#fff', fontWeight: 800, lineHeight: 1, letterSpacing: 0 }}>IL</span>
             </div>
           )}
           <input
