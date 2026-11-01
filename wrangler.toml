@@ -7,6 +7,7 @@ compatibility_flags = ["nodejs_compat"]
 routes = [
   { pattern = "carissues.co.il/*", zone_name = "carissues.co.il" },
   { pattern = "en.carissues.co.il/*", zone_name = "carissues.co.il" },
+  { pattern = "www.carissues.co.il/*", zone_name = "carissues.co.il" },
   { pattern = "carissues.net/*", zone_name = "carissues.net" },
   { pattern = "www.carissues.net/*", zone_name = "carissues.net" },
 ]
