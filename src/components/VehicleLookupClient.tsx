@@ -183,6 +183,26 @@ export default function VehicleLookupClient({ initialPlate, initialVehicle, init
     consideringBuying: 'Considering buying this vehicle?', consideringBuyingDesc: 'A used-buying checklist - what to check at the garage before closing the deal.', checklistLink: 'Checklist →',
   };
 
+  // Record the search (plate, found, and visitor IP/location/device - see /api/vehicle-lookup/log).
+  // Fire-and-forget: never blocks or breaks the lookup itself.
+  function logLookup(searched: string, found: boolean) {
+    try {
+      fetch('/api/vehicle-lookup/log', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ plate: searched, found }), keepalive: true,
+      }).catch(() => {});
+    } catch { /* ignore */ }
+  }
+
+  // A plate opened directly by URL is rendered on the server - log that search once on load
+  const loggedInitialRef = useRef(false);
+  useEffect(() => {
+    if (loggedInitialRef.current || !initialPlate) return;
+    if (initialStatus !== 'found' && initialStatus !== 'not_found') return;
+    loggedInitialRef.current = true;
+    logLookup(initialPlate, initialStatus === 'found');
+  }, [initialPlate, initialStatus]);
+
   async function handleSearch(e: React.FormEvent) {
     e.preventDefault();
     const country = detectCountry(inputVal);
@@ -205,6 +225,8 @@ export default function VehicleLookupClient({ initialPlate, initialVehicle, init
         signal: AbortSignal.timeout(20000),
       });
       const data = await res.json() as { vehicle?: Vehicle; modelInfo?: ModelInfo | null; error?: string };
+      if (res.status === 404) logLookup(cleaned, false);
+      else if (res.ok && data.vehicle) logLookup(cleaned, true);
       if (!res.ok || data.error) {
         setStatus(res.status === 404 ? 'not_found' : res.status === 400 ? 'invalid' : 'error');
       } else if (data.vehicle) {

@@ -41,7 +41,7 @@ export default async function PrivacyPage() {
 
           <div style={{ marginBottom: 48 }}>
             <h1 style={{ fontSize: 'clamp(1.75rem, 4vw, 2.5rem)', fontWeight: 900, marginBottom: 12 }}>Privacy Policy</h1>
-            <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>Last updated: March 2026</p>
+            <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>Last updated: November 2026</p>
           </div>
 
           <div className="card" style={{ padding: '36px 40px' }}>
@@ -57,6 +57,7 @@ export default async function PrivacyPage() {
                 <li><strong>Content you create:</strong> reviews, ratings, and opinions you publish on the Site.</li>
                 <li><strong>Usage data:</strong> pages visited, anonymous session IDs, and visit dates - for statistical analysis only.</li>
                 <li><strong>Technical info:</strong> browser type, device type, and IP address - collected automatically.</li>
+                <li><strong>Vehicle lookups:</strong> when you search a license plate, we record the plate searched, the time, whether it was found, your IP address, approximate location derived from it (country, region, city), and your device, operating system and browser. We use this to operate and protect the lookup service (including detecting misuse such as mass searches) and for usage statistics.</li>
               </ul>
             </div>
 
@@ -124,7 +125,7 @@ export default async function PrivacyPage() {
             <div style={SECTION_STYLE}>
               <h2 style={H2_STYLE}>9. Data Retention</h2>
               <p style={P_STYLE}>
-                We retain personal information as long as the account is active, or as required for managing legal disputes, enforcing agreements, and complying with legal requirements. Upon account deletion, personally identifying information will be removed within 30 days.
+                We retain personal information as long as the account is active, or as required for managing legal disputes, enforcing agreements, and complying with legal requirements. Upon account deletion, personally identifying information will be removed within 30 days. Vehicle-lookup records (including IP address and location) are deleted automatically after 90 days.
               </p>
             </div>
 
@@ -159,7 +160,7 @@ export default async function PrivacyPage() {
 
         <div style={{ marginBottom: 48 }}>
           <h1 style={{ fontSize: 'clamp(1.75rem, 4vw, 2.5rem)', fontWeight: 900, marginBottom: 12 }}>מדיניות פרטיות</h1>
-          <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>עדכון אחרון: מרץ 2026</p>
+          <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>עדכון אחרון: נובמבר 2026</p>
         </div>
 
         <div className="card" style={{ padding: '36px 40px' }}>
@@ -177,6 +178,7 @@ export default async function PrivacyPage() {
               <li><strong>תוכן שיצרת:</strong> ביקורות, דירוגים וחוות דעת שפרסמת באתר.</li>
               <li><strong>נתוני שימוש:</strong> עמודים שביקרת, מזהי סשן אנונימיים ותאריכי ביקורים - לצורך ניתוח סטטיסטי בלבד.</li>
               <li><strong>מידע טכני:</strong> סוג הדפדפן, סוג המכשיר וכתובת IP - נאספים באופן אוטומטי.</li>
+              <li><strong>בדיקות רכב:</strong> כשאתם מחפשים מספר רישוי, אנו שומרים את המספר שנבדק, את מועד הבדיקה, האם נמצא רכב, את כתובת ה-IP שלכם, מיקום משוער הנגזר ממנה (מדינה, אזור, עיר) ואת סוג המכשיר, מערכת ההפעלה והדפדפן. המידע משמש להפעלת שירות הבדיקה ולהגנה עליו (כולל זיהוי שימוש לרעה כמו חיפושים המוניים) ולסטטיסטיקות שימוש.</li>
             </ul>
           </div>
 
@@ -258,6 +260,7 @@ export default async function PrivacyPage() {
             <p style={P_STYLE}>
               אנו שומרים מידע אישי כל עוד החשבון פעיל, או כנדרש לצורך ניהול סכסוכים משפטיים,
               אכיפת הסכמים ועמידה בדרישות חוקיות. עם מחיקת חשבון, מידע אישי מזהה יוסר תוך 30 יום.
+              רשומות של בדיקות רכב (כולל כתובת IP ומיקום) נמחקות אוטומטית לאחר 90 יום.
             </p>
           </div>
 
