@@ -124,6 +124,14 @@ export default function PlateSearch({ isHe, navigateOnSearch, initialVehicle, in
       setError(t.invalidInput);
       return;
     }
+    if (navigateOnSearch) {
+      // Go straight to the result page: it shows a loading screen with progress while the
+      // data loads, and handles not-found itself (no double wait).
+      setLoading(true);
+      window.dispatchEvent(new Event('carissues:nav-start'));
+      router.push(`/vehicle-lookup/${encodeURIComponent(cleaned)}`);
+      return;
+    }
     setLoading(true);
     setVehicle(null);
     setError(null);

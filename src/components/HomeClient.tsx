@@ -155,6 +155,8 @@ export default function HomeClient({ allMakes, topRanked, recentReviews, tickerI
   }, []);
 
   function handleSearch(href?: string) {
+    // Start the top progress bar right away - router.push doesn't trigger it on its own
+    if (href || searchQ.trim()) window.dispatchEvent(new Event('carissues:nav-start'));
     if (href) { router.push(href); setAcOpen(false); return; }
     const q = searchQ.trim();
     if (!q) return;

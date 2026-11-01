@@ -23,14 +23,10 @@ export default function NavigationProgress() {
     return () => clearTimeout(done);
   }, [pathname]);
 
-  // Start the bar on link click (before navigation resolves)
+  // Start the bar on link click (before navigation resolves), or when code navigates with
+  // router.push and announces it via window.dispatchEvent(new Event('carissues:nav-start')).
   useEffect(() => {
-    const handleClick = (e: MouseEvent) => {
-      const anchor = (e.target as HTMLElement).closest('a');
-      if (!anchor) return;
-      const href = anchor.getAttribute('href');
-      if (!href || href.startsWith('#') || href.startsWith('http') || href.startsWith('mailto')) return;
-
+    const start = () => {
       if (timerRef.current) clearTimeout(timerRef.current);
       setVisible(true);
       setWidth(0);
@@ -46,10 +42,19 @@ export default function NavigationProgress() {
         setWidth(0);
       }, 8000);
     };
+    const handleClick = (e: MouseEvent) => {
+      const anchor = (e.target as HTMLElement).closest('a');
+      if (!anchor) return;
+      const href = anchor.getAttribute('href');
+      if (!href || href.startsWith('#') || href.startsWith('http') || href.startsWith('mailto')) return;
+      start();
+    };
 
     document.addEventListener('click', handleClick);
+    window.addEventListener('carissues:nav-start', start);
     return () => {
       document.removeEventListener('click', handleClick);
+      window.removeEventListener('carissues:nav-start', start);
       if (timerRef.current) clearTimeout(timerRef.current);
     };
   }, []);
