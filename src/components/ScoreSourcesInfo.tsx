@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useId, useRef, useEffect } from 'react';
+import { useState, useId, useRef, useEffect, useLayoutEffect } from 'react';
 import { labelForScoreSet, type ProReviewScoreSet } from '@/lib/proReviewScoreLabels';
 
 interface Props {
@@ -36,6 +36,32 @@ export default function ScoreSourcesInfo({ sets, isHe }: Props) {
   const containerRef = useRef<HTMLSpanElement>(null);
   const hoverCapableRef = useRef(true);
   const closeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const iconRef = useRef<HTMLSpanElement>(null);
+  // Viewport position for the panel. It's rendered position:fixed and clamped inside the
+  // screen, so it can't run off the edge (RTL, icon near the side) or be clipped by a
+  // parent with overflow:hidden.
+  const [pos, setPos] = useState<{ top: number; left: number; width: number } | null>(null);
+
+  useLayoutEffect(() => {
+    if (!open) { setPos(null); return; }
+    const place = () => {
+      const icon = iconRef.current;
+      if (!icon) return;
+      const r = icon.getBoundingClientRect();
+      const vw = document.documentElement.clientWidth;
+      const margin = 12;
+      const width = Math.min(340, vw - margin * 2);
+      // Prefer opening toward the reading direction from the icon, then clamp on-screen
+      const rtl = getComputedStyle(icon).direction === 'rtl';
+      const preferred = rtl ? r.right - width : r.left;
+      const left = Math.max(margin, Math.min(preferred, vw - width - margin));
+      setPos({ top: r.bottom + 8, left, width });
+    };
+    place();
+    window.addEventListener('resize', place);
+    window.addEventListener('scroll', place, true);
+    return () => { window.removeEventListener('resize', place); window.removeEventListener('scroll', place, true); };
+  }, [open]);
 
   useEffect(() => {
     hoverCapableRef.current = typeof window !== 'undefined'
@@ -75,6 +101,7 @@ export default function ScoreSourcesInfo({ sets, isHe }: Props) {
   return (
     <span ref={containerRef} style={{ position: 'relative', display: 'inline-flex', marginInlineStart: 6 }}>
       <span
+        ref={iconRef}
         role="button"
         tabIndex={0}
         aria-expanded={open}
@@ -97,15 +124,16 @@ export default function ScoreSourcesInfo({ sets, isHe }: Props) {
         i
       </span>
 
-      {open && (
+      {open && pos && (
         <div
           id={panelId}
           role="region"
           onMouseEnter={cancelCloseAndHover}
           onMouseLeave={scheduleClose}
           style={{
-            position: 'absolute', top: 'calc(100% + 8px)', insetInlineStart: 0, zIndex: 30,
-            width: 'min(340px, 86vw)', background: '#fff', border: '1px solid #d7deea',
+            position: 'fixed', top: pos.top, left: pos.left, zIndex: 1000,
+            width: pos.width, maxHeight: `calc(100vh - ${Math.round(pos.top) + 12}px)`, overflowY: 'auto',
+            textAlign: 'start', background: '#fff', border: '1px solid #d7deea',
             borderRadius: 12, boxShadow: '0 10px 30px rgba(20,40,70,.18)', padding: '14px 16px',
             display: 'flex', flexDirection: 'column', gap: 12,
           }}
