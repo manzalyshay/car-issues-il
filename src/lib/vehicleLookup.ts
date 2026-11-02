@@ -173,9 +173,17 @@ export type LookupResult =
 interface DbModel { make_slug: string; slug: string; name_en: string; years: string; }
 interface CacheRow { ownership_json: string; extra_json: string | null; cached_at: number; }
 
+// The Ministry of Transport spells makes with or without a geresh, and with
+// either an ASCII apostrophe or a Hebrew geresh ("דאצ'יה", "דאצ׳יה", "דאציה").
+// Strip those marks on both sides so every spelling hits the same entry.
+const normalizeHeMake = (s: string) => s.replace(/['׳"״`’]/g, '');
+const HE_MAKE_MAP_NORMALIZED: Record<string, string> = Object.fromEntries(
+  Object.entries(HE_MAKE_MAP).map(([k, v]) => [normalizeHeMake(k), v]),
+);
+
 function resolveSlugFromHebrew(tozetNm: string): string | null {
-  const firstWord = tozetNm.trim().split(/\s+/)[0];
-  return HE_MAKE_MAP[firstWord] ?? null;
+  const firstWord = normalizeHeMake(tozetNm.trim().split(/\s+/)[0] ?? '');
+  return HE_MAKE_MAP_NORMALIZED[firstWord] ?? null;
 }
 
 function resolveSlugFromEnglish(kinuy: string): { makeSlug: string; modelPart: string } | null {
