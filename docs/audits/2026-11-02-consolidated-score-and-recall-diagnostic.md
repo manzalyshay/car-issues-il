@@ -299,3 +299,17 @@ The Corolla 26V110000 (2026) row being stored proves ingestion at *some* time, n
 5. **Publisher additions:** if approved after a terms review, a 5-row worked sample (the verified table in §4.1) with before/after headline arithmetic shown, applied manually and not via the pipeline.
 
 *Report generated read-only. No code, data, scores, schedules or deployments were changed.*
+
+---
+
+## Correction (2026-11-03): cause of the US recall gaps
+
+The dry-run diff run on 2026-11-03 for Range Rover, Kuga and Corolla shows that **every campaign NHTSA lists for them is already in `recalls_cache`**. The ones "missing" from those pages are stored under *another* model: Range Rover's under RR Sport, Evoque, Discovery (Sport), Defender and Velar; Kuga's under Focus, Fiesta, Puma and Ranger; Corolla's under Prius, RAV4 and Lexus NX. `recalls_cache.id` is the campaign number, so a campaign covering several models could only be attached to one of them.
+
+| Model | Live unique | Listed on page before | Stored under another model | New to fetch | Date repairs (empty / swapped) |
+|---|---:|---:|---:|---:|---:|
+| Range Rover | 47 | 21 | 26 | 0 | 37 / 8 |
+| Kuga (→ Escape) | 75 | 48 | 27 | 0 | 8 / 19 |
+| Corolla | 15 | 10 | 5 | 0 | 12 / 3 |
+
+So findings §1.7 and §5.6 ("cache materially incomplete … non-ingestion") are corrected. The data was ingested, but the one-model-per-campaign storage hid it. The "probable: cron not completing" finding stays unverified: run evidence is still missing, and that is what the new `cron_runs` ledger is for. The fix (link table `recalls_cache_models`) is on branch `claude/consolidated-diagnostic-report-kyf3vj`.
