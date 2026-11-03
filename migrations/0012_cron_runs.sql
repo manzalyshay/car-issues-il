@@ -1,15 +1,15 @@
 -- Recall/news pipeline support: run ledger, job cursors, freshness stamps and a
 -- campaign→model link table.
 --
--- ALREADY APPLIED to production D1 on 2026-11-03 (do not re-run these; ALTER ADD
--- COLUMN is not idempotent):
+-- ALL statements in this file were applied to production D1 on 2026-11-03
+-- (do not re-run; ALTER ADD COLUMN is not idempotent). Applied first:
 --   CREATE TABLE cron_state (key TEXT PRIMARY KEY, value TEXT, updated_at TEXT);
 --   ALTER TABLE recalls_cache ADD COLUMN first_seen_at TEXT;
 --   CREATE TABLE recalls_cache_models (id, make, model, model_years, PRIMARY KEY (id, make, model));
 --   CREATE INDEX idx_recalls_cache_models_mm ON recalls_cache_models(make, model);
 --   INSERT OR IGNORE INTO recalls_cache_models … SELECT … FROM recalls_cache;   (1,920 links)
 --
--- STILL TO APPLY before deploying the cron changes (the statements below):
+-- Applied second (before the deploy):
 
 -- Run ledger for scheduled jobs: one row per job run, plus one per cron dispatch
 -- written by worker-entry.js recording the HTTP status the job route returned.
