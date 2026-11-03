@@ -43,7 +43,7 @@ export function parseYearRange(years: string | null): [number, number | null] | 
 }
 
 /** Restricts a model's score sets to those whose `years` range covers the given year. */
-export function filterScoreSetsForYear(sets: ProReviewScoreSet[], year: number): ProReviewScoreSet[] | null {
+export function filterScoreSetsForYear<T extends { years: string | null }>(sets: T[], year: number): T[] | null {
   const matching = sets.filter((s) => {
     const range = parseYearRange(s.years);
     if (!range) return false;
@@ -51,6 +51,35 @@ export function filterScoreSetsForYear(sets: ProReviewScoreSet[], year: number):
     return year >= start && (end === null || year <= end);
   });
   return matching.length > 0 ? matching : null;
+}
+
+/** Weight of the external test-score average in the displayed headline score. */
+export const TEST_SCORE_WEIGHT = 0.3;
+
+/**
+ * The score sets that count toward the headline score. A set assessed on a
+ * single variant (e.g. an AMG C63 or Ioniq 5 N test) says little about the
+ * range most buyers get, so it is left out of the average whenever the model
+ * also has a range/powertrain-level set. It still appears in the sources
+ * popup. If a model only has variant-level sets, those are used as-is.
+ */
+export function headlineScoreSets<T extends { assessmentLevel: string | null }>(sets: T[] | null | undefined): T[] {
+  if (!sets || sets.length === 0) return [];
+  const broad = sets.filter((s) => s.assessmentLevel !== 'variant');
+  return broad.length > 0 ? broad : sets;
+}
+
+/** Unweighted mean of the headline-eligible sets' scores, or null if none. */
+export function headlineTestScoreAvg(sets: Array<{ score: number; assessmentLevel: string | null }> | null | undefined): number | null {
+  const used = headlineScoreSets(sets);
+  if (used.length === 0) return null;
+  return used.reduce((s, set) => s + set.score, 0) / used.length;
+}
+
+/** Blends the external test-score average into a base score (fixed 30% weight). */
+export function blendWithTestScore(baseScore: number, testScoreAvg: number | null): number {
+  if (testScoreAvg == null) return baseScore;
+  return baseScore * (1 - TEST_SCORE_WEIGHT) + testScoreAvg * TEST_SCORE_WEIGHT;
 }
 
 function formatYearsLabel(years: string | null, isHe: boolean): string | null {

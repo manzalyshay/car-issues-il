@@ -5,7 +5,7 @@ import VerdictCardClient from './VerdictCardClient';
 import ScoreSourcesInfo from './ScoreSourcesInfo';
 import { aiSourceLabel } from '@/lib/aiSource';
 import { type AiScore, AI_SCORE_CAPTION_HE, AI_SCORE_CAPTION_EN, AI_SCORE_ESTIMATED_HE, AI_SCORE_ESTIMATED_EN, blendWithOwnerRating, formatOwnerScoreHe, formatOwnerScoreEn } from '@/lib/aiScore';
-import type { ProReviewScoreSet } from '@/lib/proReviewScoreLabels';
+import { type ProReviewScoreSet, headlineTestScoreAvg, blendWithTestScore } from '@/lib/proReviewScoreLabels';
 
 interface Props {
   expertReview: ExpertReview | null;
@@ -27,21 +27,8 @@ interface Props {
   proReviewScoreSets?: ProReviewScoreSet[] | null;
 }
 
-/** Average of a model's applicable verified test-score sets (null if none). */
-function computeTestScoreAvg(sets: ProReviewScoreSet[] | null | undefined): number | null {
-  if (!sets || sets.length === 0) return null;
-  const sum = sets.reduce((s, set) => s + set.score, 0);
-  return sum / sets.length;
-}
-
-/** Blends the verified external test-score average into a base score once one
- * exists - a fixed 30% weight, the same "one input among several" treatment
- * owner ratings already get via blendWithOwnerRating. */
-function blendWithTestScore(baseScore: number, testScoreAvg: number | null): number {
-  if (testScoreAvg == null) return baseScore;
-  const TEST_WEIGHT = 0.3;
-  return baseScore * (1 - TEST_WEIGHT) + testScoreAvg * TEST_WEIGHT;
-}
+/** Headline-eligible test-score average (variant-only sets dropped when broader sets exist). */
+const computeTestScoreAvg = headlineTestScoreAvg;
 
 function hasHebrew(s: string | null | undefined): boolean {
   return !!(s && /[֐-׿]/.test(s));

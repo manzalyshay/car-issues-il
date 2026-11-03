@@ -1,6 +1,8 @@
 import { getAllMakes } from '@/lib/carsDb';
 import { dbAll, dbFirst } from '@/lib/db';
 import { getAllAiScores, blendWithOwnerRating } from '@/lib/aiScore';
+import { getAllHeadlineTestAverages } from '@/lib/proReviewScores';
+import { blendWithTestScore } from '@/lib/proReviewScoreLabels';
 import { getLatestNews } from '@/lib/carNews';
 import { getHostLocale } from '@/lib/hostLocale';
 import HomeClient from '@/components/HomeClient';
@@ -22,7 +24,7 @@ async function getTopRanked(limit = 3, isEn = false) {
     for (const model of make.models)
       lookup.set(`${make.slug}/${model.slug}`, { makeHe: make.nameHe, modelHe: model.nameHe, makeEn: make.nameEn, modelEn: model.nameEn, logoUrl: make.logoUrl, leadingImageUrl: model.leadingImageUrl ?? null });
 
-  const [aiScores, reviewData, modelData, testScoreData] = await Promise.all([
+  const [aiScores, reviewData, modelData, testScoreAvgs] = await Promise.all([
     getAllAiScores(),
     dbAll<{ make_slug: string; model_slug: string; rating: number }>(
       'SELECT make_slug, model_slug, rating FROM reviews',
@@ -30,9 +32,7 @@ async function getTopRanked(limit = 3, isEn = false) {
     dbAll<{ make_slug: string; model_slug: string; sketchfab_uid: string; year_from: number | null; year_to: number | null }>(
       'SELECT make_slug, model_slug, sketchfab_uid, year_from, year_to FROM car_3d_models WHERE hidden IS NOT 1',
     ).catch(() => []),
-    dbAll<{ make_slug: string; model_slug: string; score: number }>(
-      'SELECT make_slug, model_slug, score FROM pro_review_scores',
-    ).catch(() => []),
+    getAllHeadlineTestAverages().catch(() => new Map<string, number>()),
   ]);
 
   const reviewMap = new Map<string, number[]>();
@@ -43,13 +43,6 @@ async function getTopRanked(limit = 3, isEn = false) {
   }
   // Verified external test scores (icar, Autocar, carwow, etc.) - averaged per
   // model and blended into the displayed score below as one more real input.
-  const testScoreMap = new Map<string, number[]>();
-  for (const row of testScoreData) {
-    const key = `${row.make_slug}/${row.model_slug}`;
-    if (!testScoreMap.has(key)) testScoreMap.set(key, []);
-    testScoreMap.get(key)!.push(row.score);
-  }
-  const TEST_SCORE_WEIGHT = 0.3;
   // Keep only the most recent 3D model per car (open-ended yearTo wins, else highest yearFrom)
   const fabBest = new Map<string, { uid: string; yearFrom: number | null; yearTo: number | null }>();
   for (const row of modelData) {
@@ -71,11 +64,8 @@ async function getTopRanked(limit = 3, isEn = false) {
     const ratings = reviewMap.get(key) ?? [];
     const avgRating = ratings.length ? ratings.reduce((a, b) => a + b, 0) / ratings.length : null;
     let displayScore = blendWithOwnerRating(ai.score, avgRating, ratings.length);
-    const testScores = testScoreMap.get(key);
-    if (testScores && testScores.length > 0) {
-      const testAvg = testScores.reduce((a, b) => a + b, 0) / testScores.length;
-      displayScore = displayScore * (1 - TEST_SCORE_WEIGHT) + testAvg * TEST_SCORE_WEIGHT;
-    }
+    const testAvg = testScoreAvgs.get(key) ?? null;
+    if (testAvg != null) displayScore = blendWithTestScore(displayScore, testAvg);
     const [makeSlug, modelSlug] = key.split('/');
     ranked.push({ makeSlug, modelSlug, ...info, aiScore: displayScore, aiConfidence: ai.confidence, avgRating, reviewCount: ratings.length, imageUrl: info.leadingImageUrl, sketchfabUid: fabMap.get(key) ?? null });
   }

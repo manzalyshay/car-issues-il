@@ -3,6 +3,8 @@ import Link from 'next/link';
 import { dbAll } from '@/lib/db';
 import { getAllMakes } from '@/lib/carsDb';
 import { getAllAiScores, blendWithOwnerRating } from '@/lib/aiScore';
+import { getAllHeadlineTestAverages } from '@/lib/proReviewScores';
+import { blendWithTestScore } from '@/lib/proReviewScoreLabels';
 import { getHostLocale, getBaseUrl } from '@/lib/hostLocale';
 import { translations } from '@/lib/translations';
 import StarRating from '@/components/StarRating';
@@ -77,16 +79,7 @@ export default async function RankingsPage({ searchParams }: { searchParams: Pro
 
   // Also factor in verified external test scores (icar, Autocar, carwow, etc.)
   // as one more input into the displayed score, same treatment as model pages.
-  const testScoreData = await dbAll<{ make_slug: string; model_slug: string; score: number }>(
-    'SELECT make_slug, model_slug, score FROM pro_review_scores',
-  ).catch(() => []);
-  const testScoreMap = new Map<string, number[]>();
-  for (const row of testScoreData) {
-    const key = `${row.make_slug}/${row.model_slug}`;
-    if (!testScoreMap.has(key)) testScoreMap.set(key, []);
-    testScoreMap.get(key)!.push(row.score);
-  }
-  const TEST_SCORE_WEIGHT = 0.3;
+  const testScoreAvgs = await getAllHeadlineTestAverages().catch(() => new Map<string, number>());
 
   // Build ranked list
   const ranked: RankedModel[] = [];
@@ -97,11 +90,8 @@ export default async function RankingsPage({ searchParams }: { searchParams: Pro
     const avgRating = ratings.length ? ratings.reduce((a, b) => a + b, 0) / ratings.length : null;
     const reviewCount = ratings.length;
     let displayScore = blendWithOwnerRating(ai.score, avgRating, reviewCount);
-    const testScores = testScoreMap.get(key);
-    if (testScores && testScores.length > 0) {
-      const testAvg = testScores.reduce((a, b) => a + b, 0) / testScores.length;
-      displayScore = displayScore * (1 - TEST_SCORE_WEIGHT) + testAvg * TEST_SCORE_WEIGHT;
-    }
+    const testAvg = testScoreAvgs.get(key) ?? null;
+    if (testAvg != null) displayScore = blendWithTestScore(displayScore, testAvg);
 
     const [makeSlug, modelSlug] = key.split('/');
     ranked.push({ makeSlug, modelSlug, ...info, aiScore: displayScore, aiConfidence: ai.confidence, avgRating, reviewCount });

@@ -4,6 +4,7 @@
  */
 import { dbAll } from './db';
 import type { ProReviewScoreSet } from './proReviewScoreLabels';
+import { filterScoreSetsForYear, headlineTestScoreAvg } from './proReviewScoreLabels';
 
 export { filterScoreSetsForYear } from './proReviewScoreLabels';
 
@@ -51,6 +52,45 @@ export async function getExternalScores(makeSlug: string, modelSlug: string, isE
       url: typeof s.url === 'string' ? s.url : null,
     })).filter(s => s.site),
   })).filter(r => r.sources.length > 0);
+}
+
+/**
+ * Headline test-score average for every model, applying the same rules as the
+ * model page: hidden sets excluded, sets restricted to the generation covering
+ * the model's newest year (when the model has years), and variant-level sets
+ * left out when broader sets exist. Used by list pages (home, rankings,
+ * categories) so their scores match the model page.
+ */
+export async function getAllHeadlineTestAverages(): Promise<Map<string, number>> {
+  const [rows, models] = await Promise.all([
+    dbAll<{ make_slug: string; model_slug: string; score: number; years: string | null; assessment_level: string | null }>(
+      `SELECT make_slug, model_slug, score, years, assessment_level FROM pro_review_scores
+       WHERE hidden IS NULL OR hidden != 1 ORDER BY set_index`,
+    ).catch(() => []),
+    dbAll<{ make_slug: string; slug: string; years: string | null }>(
+      'SELECT make_slug, slug, years FROM car_models',
+    ).catch(() => []),
+  ]);
+  const maxYear = new Map<string, number>();
+  for (const m of models) {
+    const years = parseJson<number[]>(m.years, []);
+    if (years.length) maxYear.set(`${m.make_slug}/${m.slug}`, Math.max(...years));
+  }
+  const byModel = new Map<string, Array<{ score: number; years: string | null; assessmentLevel: string | null }>>();
+  for (const r of rows) {
+    const key = `${r.make_slug}/${r.model_slug}`;
+    if (!byModel.has(key)) byModel.set(key, []);
+    byModel.get(key)!.push({ score: r.score, years: r.years, assessmentLevel: r.assessment_level });
+  }
+  const out = new Map<string, number>();
+  for (const [key, sets] of byModel) {
+    const year = maxYear.get(key);
+    // Same as the model page: no matching generation means no test blend.
+    const relevant = year != null ? filterScoreSetsForYear(sets, year) : sets;
+    const avg = headlineTestScoreAvg(relevant);
+    if (avg != null) out.set(key, avg);
+  }
+  return out;
 }
 
 /** Full score-set rows (richer schema: sample size, powertrains, caveats, tested/n-a

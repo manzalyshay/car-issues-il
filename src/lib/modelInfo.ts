@@ -18,7 +18,7 @@ import { getModelRepairCosts, getRepairCosts } from './repairCostsDb';
 import { getReviewsForModel } from './reviewsDb';
 import type { Review } from '@/data/reviews';
 import { findCarModel, type SketchfabModel } from './sketchfab';
-import type { ProReviewScoreSet } from './proReviewScoreLabels';
+import { type ProReviewScoreSet, headlineTestScoreAvg, blendWithTestScore } from './proReviewScoreLabels';
 import { translateTitlesToHebrew } from './translateCache';
 
 export interface ModelInfo {
@@ -143,8 +143,7 @@ export async function getModelInfo(
   // Blend in the verified external test scores (icar, Autocar, carwow, etc.)
   // as one more real input, same treatment as every other score surface.
   if (blendedScore != null && relevantProReviewScoreSets && relevantProReviewScoreSets.length > 0) {
-    const testAvg = relevantProReviewScoreSets.reduce((s, set) => s + set.score, 0) / relevantProReviewScoreSets.length;
-    blendedScore = blendedScore * 0.7 + testAvg * 0.3;
+    blendedScore = blendWithTestScore(blendedScore, headlineTestScoreAvg(relevantProReviewScoreSets));
   }
 
   const topRepair = modelRepairCosts[0] ?? null;

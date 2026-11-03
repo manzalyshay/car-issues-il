@@ -5,6 +5,8 @@ import { getHostLocale, getBaseUrl } from '@/lib/hostLocale';
 import { translations } from '@/lib/translations';
 import { dbAll } from '@/lib/db';
 import { getAllAiScores, blendWithOwnerRating } from '@/lib/aiScore';
+import { getAllHeadlineTestAverages } from '@/lib/proReviewScores';
+import { blendWithTestScore } from '@/lib/proReviewScoreLabels';
 import { notFound } from 'next/navigation';
 import CategoryGrid, { type GridModel } from './CategoryGrid';
 
@@ -66,26 +68,17 @@ export default async function CategoryPage({ params }: Props) {
   const cp = translations[locale].carsPage;
 
   // Fetch review counts, AI scores, verified test scores and 3D models in parallel
-  const [reviewCounts, aiScores, testScoreRows, models3d] = await Promise.all([
+  const [reviewCounts, aiScores, testScoreAvgs, models3d] = await Promise.all([
     dbAll<{ make_slug: string; model_slug: string; cnt: number; avg_rating: number }>(
       'SELECT make_slug, model_slug, COUNT(*) as cnt, AVG(rating) as avg_rating FROM reviews GROUP BY make_slug, model_slug',
     ).catch(() => [] as { make_slug: string; model_slug: string; cnt: number; avg_rating: number }[]),
     getAllAiScores().catch(() => ({} as Record<string, { score: number; confidence: 'high' | 'medium' | 'low' }>)),
-    dbAll<{ make_slug: string; model_slug: string; score: number }>(
-      'SELECT make_slug, model_slug, score FROM pro_review_scores',
-    ).catch(() => [] as { make_slug: string; model_slug: string; score: number }[]),
+    getAllHeadlineTestAverages().catch(() => new Map<string, number>()),
     dbAll<{ make_slug: string; model_slug: string; sketchfab_uid: string; sketchfab_name: string; sketchfab_author: string; year_from: number | null; year_to: number | null }>(
       'SELECT make_slug, model_slug, sketchfab_uid, sketchfab_name, sketchfab_author, year_from, year_to FROM car_3d_models WHERE hidden IS NOT 1',
     ).catch(() => [] as { make_slug: string; model_slug: string; sketchfab_uid: string; sketchfab_name: string; sketchfab_author: string; year_from: number | null; year_to: number | null }[]),
   ]);
   // Verified external test scores blended in as one more input, same as model pages.
-  const testScoreMap = new Map<string, number[]>();
-  for (const row of testScoreRows) {
-    const key = `${row.make_slug}/${row.model_slug}`;
-    if (!testScoreMap.has(key)) testScoreMap.set(key, []);
-    testScoreMap.get(key)!.push(row.score);
-  }
-  const TEST_SCORE_WEIGHT = 0.3;
 
   const countMap: Record<string, number> = {};
   const ratingMap: Record<string, number> = {};
@@ -118,11 +111,8 @@ export default async function CategoryPage({ params }: Props) {
       const avgRating = ratingMap[key] ?? null;
       const reviewCount = countMap[key] ?? 0;
       let expertScore = ai != null ? blendWithOwnerRating(ai.score, avgRating, reviewCount) : null;
-      const testScores = testScoreMap.get(key);
-      if (expertScore != null && testScores && testScores.length > 0) {
-        const testAvg = testScores.reduce((a, b) => a + b, 0) / testScores.length;
-        expertScore = expertScore * (1 - TEST_SCORE_WEIGHT) + testAvg * TEST_SCORE_WEIGHT;
-      }
+      const testAvg = testScoreAvgs.get(key) ?? null;
+      if (expertScore != null && testAvg != null) expertScore = blendWithTestScore(expertScore, testAvg);
       models.push({
         makeSlug: make.slug,
         modelSlug: model.slug,
