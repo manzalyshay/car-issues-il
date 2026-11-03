@@ -35,7 +35,10 @@ export async function getMakeStats(make: CarMake): Promise<MakeStats> {
     ).catch(() => []),
     getAllAiScores().catch(() => ({} as Record<string, { score: number; confidence: 'high' | 'medium' | 'low' }>)),
     dbAll<{ model: string; component_he: string | null }>(
-      'SELECT model, component_he FROM recalls_cache WHERE make = ?', make.nameEn.toLowerCase(),
+      `SELECT l.id AS id, l.model AS model, c.component_he AS component_he FROM recalls_cache_models l
+       JOIN recalls_cache c ON c.id = l.id WHERE l.make = ?
+       UNION SELECT id, model, component_he FROM recalls_cache WHERE make = ?`,
+      make.nameEn.toLowerCase(), make.nameEn.toLowerCase(),
     ).catch(() => []),
     dbAll<{ model_slug: string; title: string; rank: number | null }>(
       'SELECT model_slug, title, MIN(rank) AS rank FROM known_issues WHERE make_slug = ? GROUP BY model_slug, title ORDER BY rank IS NULL, rank', make.slug,

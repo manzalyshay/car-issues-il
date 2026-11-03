@@ -31,6 +31,8 @@ export default function RecallsSection({ makeEn, modelEn, year, years }: Props) 
 
     const load = async (loc: string): Promise<Recall[]> => {
       const params = new URLSearchParams({ make: makeEn, model: modelEn, locale: loc });
+      // Hebrew site: include Israeli manufacturer notices (data.gov.il) alongside US recalls.
+      if (loc !== 'en') params.set('il', '1');
       if (year) params.set('year', String(year));
       else if (yearsKey) params.set('years', yearsKey);
       const res = await fetch(`/api/recalls?${params}`);
@@ -42,10 +44,13 @@ export default function RecallsSection({ makeEn, modelEn, year, years }: Props) 
     (async () => {
       let list: Recall[] = [];
       try { list = await load(locale); } catch { /* fall through to English */ }
-      // The Hebrew path depends on translation; if it fails or comes back empty,
-      // fall back to the English endpoint (same source the recalls chart uses).
-      if (list.length === 0 && locale !== 'en') {
-        try { list = await load('en'); } catch { /* keep empty */ }
+      // The Hebrew path depends on translation; if it fails or returns no US rows,
+      // add the English US list (same source the recalls chart uses).
+      if (locale !== 'en' && !list.some(r => r.source !== 'il')) {
+        try {
+          const en = await load('en');
+          list = [...list, ...en.map(r => ({ ...r, source: 'us' as const }))];
+        } catch { /* keep what we have */ }
       }
       if (!cancelled) { setRecalls(list); setLoading(false); }
     })();
@@ -243,6 +248,28 @@ export default function RecallsSection({ makeEn, modelEn, year, years }: Props) 
                       )}
                       {r.date && (
                         <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>{r.date}</span>
+                      )}
+                      {r.source === 'il' && (
+                        <span style={{
+                          fontSize: '0.7rem', fontWeight: 700,
+                          background: 'rgba(37,99,235,0.08)', color: '#1d4ed8',
+                          padding: '1px 7px', borderRadius: 4,
+                        }}>
+                          {isHe ? 'ישראל' : 'Israel'}
+                          {r.ilRecallYear ? ` · ${isHe ? 'הודעה' : 'notice'} ${r.ilRecallYear}` : ''}
+                          {(r.buildBegin || r.buildEnd)
+                            ? ` · ${isHe ? 'ייצור' : 'built'} ${(r.buildBegin ?? '').slice(0, 4)}–${(r.buildEnd ?? '').slice(0, 4)}`
+                            : ''}
+                        </span>
+                      )}
+                      {r.source === 'us' && ilCount > 0 && (
+                        <span style={{
+                          fontSize: '0.7rem', fontWeight: 700,
+                          background: 'var(--bg-muted)', color: 'var(--text-muted)',
+                          padding: '1px 7px', borderRadius: 4,
+                        }}>
+                          {isHe ? 'ארה״ב' : 'US'}
+                        </span>
                       )}
                       <span style={{ fontSize: '0.6rem', color: 'var(--text-muted)', fontFamily: 'monospace', opacity: 0.5 }}>
                         #{r.id}

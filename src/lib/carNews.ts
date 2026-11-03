@@ -73,17 +73,18 @@ function parseRss(xml: string): RssItem[] {
   return items;
 }
 
-async function fetchRss(url: string): Promise<RssItem[]> {
+/** Fetches a feed. A failed fetch is reported as an error, not as an empty feed. */
+async function fetchRss(url: string): Promise<{ items: RssItem[]; error: string | null }> {
   try {
     const res = await fetch(url, {
       headers: { 'User-Agent': 'Mozilla/5.0 (compatible; CarIssues/1.0)' },
       signal: AbortSignal.timeout(15000),
     });
-    if (!res.ok) return [];
+    if (!res.ok) return { items: [], error: `HTTP ${res.status}` };
     const xml = await res.text();
-    return parseRss(xml);
-  } catch {
-    return [];
+    return { items: parseRss(xml), error: null };
+  } catch (err) {
+    return { items: [], error: err instanceof Error ? `${err.name}: ${err.message}` : String(err) };
   }
 }
 
@@ -271,29 +272,44 @@ export async function ensureNewsTable(): Promise<void> {
  * @param maxPerRun Max articles to process (to control AI cost)
  * @returns Number of new articles saved
  */
-export async function refreshCarNews(maxPerRun = 15): Promise<number> {
+/** Per-source counts from one refresh run, for the cron run ledger. */
+export interface NewsRefreshStats {
+  saved: number;
+  sources: Record<string, { fetched: number; alreadyStored: number; unseen: number; picked: number; error: string | null }>;
+}
+
+export async function refreshCarNews(maxPerRun = 15, stats?: NewsRefreshStats): Promise<number> {
   await ensureNewsTable();
 
   // Load existing IDs to skip already-stored articles
   const existing = await dbAll<{ id: string }>('SELECT id FROM car_news');
   const existingIds = new Set(existing.map(r => r.id));
 
-  const toProcess: Array<{ source: string; item: RssItem }> = [];
-
+  // Unseen items per source, in feed order (newest first).
+  const perSource: Array<Array<{ source: string; item: RssItem }>> = [];
   for (const source of SOURCES) {
-    const items = await fetchRss(source.url);
+    const { items, error } = await fetchRss(source.url);
+    const unseen: Array<{ source: string; item: RssItem }> = [];
     for (const item of items) {
       const id = await urlHash(item.link);
-      if (!existingIds.has(id)) {
-        toProcess.push({ source: source.key, item });
-      }
+      if (!existingIds.has(id)) unseen.push({ source: source.key, item });
     }
+    perSource.push(unseen);
+    if (stats) stats.sources[source.key] = { fetched: items.length, alreadyStored: items.length - unseen.length, unseen: unseen.length, picked: 0, error };
+  }
+
+  // Alternate between sources (round-robin) so one busy feed can't fill the
+  // whole per-run cap and starve the others.
+  const toProcess: Array<{ source: string; item: RssItem }> = [];
+  for (let i = 0; perSource.some(list => i < list.length); i++) {
+    for (const list of perSource) if (i < list.length) toProcess.push(list[i]);
   }
 
   if (toProcess.length === 0) return 0;
 
   // Limit per run to control cost
   const batch = toProcess.slice(0, maxPerRun);
+  if (stats) for (const { source } of batch) stats.sources[source].picked++;
   let saved = 0;
 
   for (const { source, item } of batch) {
@@ -327,6 +343,7 @@ export async function refreshCarNews(maxPerRun = 15): Promise<number> {
     saved++;
   }
 
+  if (stats) stats.saved = saved;
   return saved;
 }
 

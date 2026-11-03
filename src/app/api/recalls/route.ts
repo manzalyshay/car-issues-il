@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { dbAll, dbRun } from '@/lib/db';
+import { dbAll, dbRun, dbBatch } from '@/lib/db';
 import { runWorkersAI } from '@/lib/workersAi';
+import { getIsraeliRecalls, buildWindowOverlaps } from '@/lib/israeliRecallsDb';
+import { NHTSA_ALIASES, formatNhtsaDate, extractYear, dateSortKey, type NhtsaRecall } from '@/lib/nhtsaRecalls';
 
 export interface Recall {
   id: string;
@@ -16,29 +18,16 @@ export interface Recall {
   source?: 'il' | 'us';
   importer?: string | null;
   website?: string | null;
+  /** Israeli notices only: notice year (SHNAT_RECALL), production window and notice type. */
+  ilRecallYear?: number | null;
+  buildBegin?: string | null;
+  buildEnd?: string | null;
+  recallType?: string | null;
 }
 
 // ── Date formatting ───────────────────────────────────────────────────────────
 
-function formatDate(raw: string): string {
-  if (!raw) return '';
-  // Try MM/DD/YYYY (NHTSA format)
-  const slashMatch = raw.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
-  if (slashMatch) {
-    const [, mm, dd, yyyy] = slashMatch;
-    return `${dd.padStart(2, '0')}/${mm.padStart(2, '0')}/${yyyy}`;
-  }
-  // Try YYYYMMDD
-  const digits = raw.replace(/\D/g, '');
-  if (digits.length === 8 && parseInt(digits.slice(0, 4)) > 1900) {
-    return `${digits.slice(6, 8)}/${digits.slice(4, 6)}/${digits.slice(0, 4)}`;
-  }
-  const d = new Date(raw);
-  if (!isNaN(d.getTime())) {
-    return d.toLocaleDateString('he-IL', { day: '2-digit', month: '2-digit', year: 'numeric' });
-  }
-  return raw;
-}
+const formatDate = formatNhtsaDate;
 
 // Format raw NHTSA component strings like "ENGINE AND ENGINE COOLING:ENGINE:COOLING FAN"
 // into readable title case: "Cooling Fan"
@@ -57,29 +46,9 @@ function formatHeComponent(raw: string | null | undefined): string {
   return parts[parts.length - 1].trim();
 }
 
-function extractYear(raw: string): number | null {
-  const digits = raw.replace(/\D/g, '');
-  if (digits.length >= 4) {
-    const yr = parseInt(digits.slice(0, 4));
-    if (yr > 1980 && yr <= new Date().getFullYear() + 1) return yr;
-  }
-  return null;
-}
-
 // ── Translation via Cloudflare Workers AI ───────────────────────────────────
 
 interface RecallFields { component: string; summary: string; consequence: string; remedy: string; }
-
-interface NhtsaRecall {
-  NHTSACampaignNumber: string;
-  ModelYear?: string;
-  ReportReceivedDate?: string;
-  Component?: string;
-  Summary?: string;
-  Consequence?: string;
-  Remedy?: string;
-  Manufacturer?: string;
-}
 
 interface RecallCacheRow {
   id: string;
@@ -134,31 +103,60 @@ async function translateRecalls(recalls: RecallFields[]): Promise<RecallFields[]
   return out;
 }
 
-// ── NHTSA model aliases (EU/non-US models → US-market equivalents) ───────────
-// Keyed by lowercase "make|model" as sent in the URL (English names from our DB)
-const NHTSA_ALIASES: Record<string, { make: string; model: string }> = {
-  'nissan|qashqai':           { make: 'Nissan',     model: 'Rogue Sport' },
-  'nissan|x-trail':           { make: 'Nissan',     model: 'Rogue' },
-  'nissan|navara':            { make: 'Nissan',     model: 'Frontier' },
-  'nissan|note':              { make: 'Nissan',     model: 'Versa Note' },
-  'honda|jazz':               { make: 'Honda',      model: 'Fit' },
-  'honda|hr-v':               { make: 'Honda',      model: 'HR-V' },
-  'ford|kuga':                { make: 'Ford',       model: 'Escape' },
-  'ford|puma':                { make: 'Ford',       model: 'Bronco Sport' },
-  'ford|mondeo':              { make: 'Ford',       model: 'Fusion' },
-  'mitsubishi|asx':           { make: 'Mitsubishi', model: 'Outlander Sport' },
-  'mitsubishi|eclipse cross': { make: 'Mitsubishi', model: 'Eclipse Cross' },
-  'mitsubishi|pajero sport':  { make: 'Mitsubishi', model: 'Montero Sport' },
-  'toyota|hilux':             { make: 'Toyota',     model: 'Tacoma' },
-  'toyota|yaris':             { make: 'Toyota',     model: 'Yaris' },
-  'toyota|corolla cross':     { make: 'Toyota',     model: 'Corolla Cross' },
-  'mazda|cx-3':               { make: 'Mazda',      model: 'CX-3' },
-  'mazda|cx-30':              { make: 'Mazda',      model: 'CX-30' },
-};
-
 // ── Main handler ──────────────────────────────────────────────────────────────
 
+/**
+ * GET /api/recalls?make=&model=&years=|year=&locale=[&il=1]
+ * US (NHTSA) recalls for the model; with il=1 (Hebrew site only) the Israeli
+ * manufacturer notices from data.gov.il are added first, each row tagged with
+ * `source` so the UI can label them separately. Israeli rows are limited to
+ * notices whose production window overlaps the requested model year(s).
+ */
 export async function GET(req: NextRequest) {
+  const res = await getUsRecalls(req);
+  const sp = new URL(req.url).searchParams;
+  if (sp.get('il') !== '1' || (sp.get('locale') ?? 'he') === 'en') return res;
+
+  const body = await res.json().catch(() => null) as { recalls?: Recall[] } | null;
+  const us = (body?.recalls ?? []).map(r => ({ ...r, source: 'us' as const }));
+  const make = sp.get('make') ?? '';
+  const model = sp.get('model') ?? '';
+  const yearParam = sp.get('year');
+  const years = yearParam
+    ? [parseInt(yearParam)]
+    : (sp.get('years') ?? '').split(',').map(y => parseInt(y.trim())).filter(y => !isNaN(y));
+  const il = await getIsraeliRecalls(make, model).catch(() => []);
+  const ilInRange = years.length
+    ? il.filter(r => buildWindowOverlaps(r, Math.min(...years), Math.max(...years)))
+    : il;
+  const ilRows: Recall[] = ilInRange.map(r => ({
+    id: r.id,
+    year: null,
+    date: '',
+    component: r.faultType ?? '',
+    componentEn: '',
+    summary: r.faultDescription ?? '',
+    consequence: '',
+    remedy: r.fixMethod ?? '',
+    manufacturer: r.manufacturer,
+    source: 'il',
+    importer: r.importer,
+    website: r.website,
+    ilRecallYear: r.year,
+    buildBegin: r.buildBegin,
+    buildEnd: r.buildEnd,
+    recallType: r.recallType,
+  }));
+  const headers = new Headers();
+  const cc = res.headers.get('Cache-Control');
+  if (cc) headers.set('Cache-Control', cc);
+  // Israeli rows come from our own table, so they're still worth returning when the US lookup failed.
+  const status = !res.ok && ilRows.length > 0 ? 200 : res.status;
+  if (status !== res.status) headers.set('Cache-Control', 'no-store');
+  return NextResponse.json({ recalls: [...ilRows, ...us] }, { status, headers });
+}
+
+async function getUsRecalls(req: NextRequest): Promise<NextResponse> {
   const { searchParams } = new URL(req.url);
   const make       = searchParams.get('make');
   const model      = searchParams.get('model');
@@ -210,8 +208,9 @@ export async function GET(req: NextRequest) {
       if (!id) continue;
       if (!seen.has(id)) { seen.add(id); unique.push(r); }
     }
+    // ReportReceivedDate is DD/MM/YYYY - sort on a YYYYMMDD key, not new Date().
     unique.sort((a, b) =>
-      new Date(b.ReportReceivedDate ?? '').getTime() - new Date(a.ReportReceivedDate ?? '').getTime()
+      dateSortKey(formatDate(b.ReportReceivedDate ?? '')).localeCompare(dateSortKey(formatDate(a.ReportReceivedDate ?? '')))
     );
 
     if (unique.length === 0) {
@@ -221,8 +220,11 @@ export async function GET(req: NextRequest) {
         ? [parseInt(yearParam)]
         : yearsParam ? yearsParam.split(',').map(y => parseInt(y.trim())).filter(Boolean) : [];
       const fallback = await dbAll<RecallCacheRow>(
-        'SELECT * FROM recalls_cache WHERE make = ? AND model = ? ORDER BY date DESC',
-        make.toLowerCase(), model.toLowerCase(),
+        `SELECT c.* FROM recalls_cache c
+         WHERE c.id IN (SELECT id FROM recalls_cache_models WHERE make = ? AND model = ?)
+            OR (c.make = ? AND c.model = ?)
+         ORDER BY c.date DESC`,
+        make.toLowerCase(), model.toLowerCase(), make.toLowerCase(), model.toLowerCase(),
       ).catch(() => [] as RecallCacheRow[]);
       const rows = yearFilter.length
         ? fallback.filter(r => r.recall_year == null || yearFilter.includes(r.recall_year))
@@ -243,6 +245,18 @@ export async function GET(req: NextRequest) {
         };
       });
       return NextResponse.json({ recalls }, { headers: { 'Cache-Control': 'no-store' } });
+    }
+
+    // Link every campaign NHTSA listed for this model to it, so campaigns shared by
+    // several models (stored once in recalls_cache) still count for each of them.
+    {
+      const linkStmts = unique.map(r => ({
+        sql: 'INSERT OR IGNORE INTO recalls_cache_models (id, make, model) VALUES (?, ?, ?)',
+        params: [r.NHTSACampaignNumber, make.toLowerCase(), model.toLowerCase()] as (string | number | null)[],
+      }));
+      for (let i = 0; i < linkStmts.length; i += 50) {
+        await dbBatch(linkStmts.slice(i, i + 50)).catch(err => console.error('[Recalls link upsert]', err));
+      }
     }
 
     // 2. Load cached records for all locales
@@ -294,7 +308,7 @@ export async function GET(req: NextRequest) {
         return {
           id:           r.NHTSACampaignNumber ?? '',
           year:         r.ModelYear ? parseInt(r.ModelYear) : extractYear(r.ReportReceivedDate ?? ''),
-          date:         c?.date || formatDate(r.ReportReceivedDate ?? ''),
+          date:         formatDate(r.ReportReceivedDate ?? '') || c?.date || '',
           component:    compEn,
           componentEn:  compEn,
           summary:      c?.summary_en   || (r.Summary     ?? ''),
@@ -383,7 +397,7 @@ export async function GET(req: NextRequest) {
         return {
           id:          r.NHTSACampaignNumber,
           year:        r.ModelYear ? parseInt(r.ModelYear) : extractYear(r.ReportReceivedDate ?? ''),
-          date:        cached?.date || formatDate(r.ReportReceivedDate ?? ''),
+          date:        formatDate(r.ReportReceivedDate ?? '') || cached?.date || '',
           component:   formatHeComponent(cached?.component_he) || formatComponent(r.Component ?? ''),
           componentEn: cached?.component_en || formatComponent(r.Component ?? ''),
           summary:     cached?.summary_he    || r.Summary     || '',

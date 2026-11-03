@@ -1,4 +1,5 @@
 import { dbAll } from '@/lib/db';
+import { dateSortKey } from '@/lib/nhtsaRecalls';
 
 export interface CachedRecall {
   id: string;
@@ -17,11 +18,20 @@ export interface CachedRecall {
   remedy_he: string | null;
 }
 
-/** Fetch all cached recalls for a make+model (all years). Returns empty array on error. */
+/**
+ * Fetch all cached US recalls for a make+model (all years), including campaigns
+ * shared with other models (via recalls_cache_models). Newest first.
+ * Returns an empty array on error.
+ */
 export async function getRecallsFromCache(makeEn: string, modelEn: string): Promise<CachedRecall[]> {
-  return dbAll<CachedRecall>(
-    'SELECT * FROM recalls_cache WHERE make = ? AND model = ? ORDER BY date DESC',
-    makeEn.toLowerCase(),
-    modelEn.toLowerCase(),
-  ).catch(() => []);
+  const make = makeEn.toLowerCase();
+  const model = modelEn.toLowerCase();
+  const rows = await dbAll<CachedRecall>(
+    `SELECT c.* FROM recalls_cache c
+     WHERE c.id IN (SELECT id FROM recalls_cache_models WHERE make = ? AND model = ?)
+        OR (c.make = ? AND c.model = ?)`,
+    make, model, make, model,
+  ).catch(() => [] as CachedRecall[]);
+  // Stored dates are DD/MM/YYYY strings - sort on YYYYMMDD, not the raw string.
+  return rows.sort((a, b) => dateSortKey(b.date).localeCompare(dateSortKey(a.date)));
 }

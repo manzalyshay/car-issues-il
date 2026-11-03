@@ -54,8 +54,12 @@ export default async function MakeProblemsPage({ params }: Props) {
       makeSlug,
     ).catch(() => []),
     dbAll<{ model: string; cnt: number }>(
-      'SELECT model, COUNT(*) as cnt FROM recalls_cache WHERE make = ? GROUP BY model',
-      make.nameEn.toLowerCase(),
+      // Per-model campaign counts, including campaigns shared between models.
+      `SELECT model, COUNT(DISTINCT id) as cnt FROM (
+         SELECT id, model FROM recalls_cache_models WHERE make = ?
+         UNION SELECT id, model FROM recalls_cache WHERE make = ?
+       ) GROUP BY model`,
+      make.nameEn.toLowerCase(), make.nameEn.toLowerCase(),
     ).catch(() => []),
   ]);
 

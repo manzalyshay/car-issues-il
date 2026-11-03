@@ -7,18 +7,45 @@ export { DOQueueHandler, DOShardedTagCache, BucketCachePurge };
 
 // Maps the exact cron string (from wrangler.toml [triggers]) to the internal route it runs.
 const CRON_ROUTES = {
-  "0 3 * * *": "/api/cron/refresh-recalls",
+  "17 * * * *": "/api/cron/refresh-recalls",       // hourly; each run handles a batch of models
+  "40 2 * * *": "/api/cron/sync-israeli-recalls",  // daily, data.gov.il manufacturer notices
   "0 6 * * *": "/api/cron/refresh-news",
 };
+
+// One `cron_runs` row per dispatch with the HTTP status the job route returned, so a
+// job that never ran (e.g. 401 because CRON_SECRET is missing) is visible in the data.
+async function recordDispatch(env, cron, path, status, ok, note) {
+  try {
+    await env.DB.prepare(
+      `INSERT INTO cron_runs (job, trigger, started_at, finished_at, status, http_status, detail)
+       VALUES (?, ?, datetime('now'), datetime('now'), ?, ?, ?)`,
+    ).bind(`dispatch:${path}`, cron, ok ? "ok" : "failed", status, JSON.stringify({ note: note || null, cronSecretSet: !!env.CRON_SECRET })).run();
+  } catch (err) {
+    console.error("[cron dispatch] could not record run", err);
+  }
+}
 
 export default {
   fetch: openNextWorker.fetch,
   async scheduled(event, env, ctx) {
     const path = CRON_ROUTES[event.cron];
-    if (!path) return;
+    if (!path) {
+      console.error("[cron dispatch] no route for cron", event.cron);
+      return;
+    }
     const req = new Request(`https://carissues.co.il${path}`, {
-      headers: { Authorization: `Bearer ${env.CRON_SECRET}` },
+      headers: { Authorization: `Bearer ${env.CRON_SECRET}`, "x-cron-trigger": event.cron },
     });
-    ctx.waitUntil(openNextWorker.fetch(req, env, ctx));
+    ctx.waitUntil((async () => {
+      try {
+        const res = await openNextWorker.fetch(req, env, ctx);
+        const body = await res.text().catch(() => "");
+        if (!res.ok) console.error(`[cron dispatch] ${path} -> HTTP ${res.status}`, body.slice(0, 500));
+        await recordDispatch(env, event.cron, path, res.status, res.ok, res.ok ? null : body.slice(0, 500));
+      } catch (err) {
+        console.error(`[cron dispatch] ${path} threw`, err);
+        await recordDispatch(env, event.cron, path, null, false, String(err).slice(0, 500));
+      }
+    })());
   },
 };
