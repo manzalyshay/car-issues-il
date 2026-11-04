@@ -57,11 +57,11 @@ export default async function VehicleLookupPage() {
   ];
 
   const steps = isHe ? [
-    { n: '1', title: 'הזן מספר רישוי', desc: 'הקלד את מספר הלוחית של הרכב (7 ספרות לרכב ישראלי)' },
+    { n: '1', title: 'הזן מספר רישוי', desc: 'הקלד את מספר הלוחית של הרכב (7 או 8 ספרות לרכב ישראלי)' },
     { n: '2', title: 'בדיקה מיידית', desc: 'המערכת מחפשת ברשומות משרד התחבורה בזמן אמת' },
     { n: '3', title: 'קבל את הדו"ח', desc: 'צפה בכל הנתונים מיד - ללא הרשמה, ללא עלות' },
   ] : [
-    { n: '1', title: 'Enter the plate number', desc: 'Type the vehicle\'s license plate (7 digits for Israeli, e.g. AB12 CDE for UK)' },
+    { n: '1', title: 'Enter the plate number', desc: 'Type the vehicle\'s license plate (7 or 8 digits for Israeli plates, or a UK plate such as AB12 CDE)' },
     { n: '2', title: 'Instant lookup', desc: 'We query the Ministry of Transport records in real time' },
     { n: '3', title: 'Get the full report', desc: 'View all details immediately - no registration, no cost' },
   ];
@@ -78,6 +78,10 @@ export default async function VehicleLookupPage() {
     {
       q: 'איך לבדוק עבר רכב לפני קנייה?',
       a: 'לפני רכישת רכב יד שנייה מומלץ לבדוק: כמה בעלים היו לרכב, האם נרשם נזק בתאונה, מה הקילומטראז׳ בטסט האחרון, והאם תוקף הטסט תקף. הכניסו את מספר הרישוי בשדה למעלה וכל המידע יוצג מיד.',
+    },
+    {
+      q: 'איך בודקים תאונות לפי מספר רכב?',
+      a: 'הזינו את מספר הרכב בשדה למעלה. אם במאגר משרד התחבורה נרשם נזק לרכב, הוא יופיע בדו"ח. היעדר רישום לא מוכיח שהרכב לא עבר תאונה, ולכן לפני קנייה כדאי לבדוק אותו גם במכון בדיקה.',
     },
     {
       q: 'כמה בעלים היו לרכב - איך בודקים?',
@@ -184,6 +188,14 @@ export default async function VehicleLookupPage() {
 
       {/* ── WHAT YOU GET ── */}
       <div className="container" style={{ maxWidth: 760, padding: '48px 16px' }}>
+        <h2 style={{ fontSize: '1.25rem', fontWeight: 800, marginBottom: 10 }}>
+          {isHe ? 'בדיקת היסטוריית רכב לפי מספר, בחינם' : 'Check a car\'s history by plate number, free'}
+        </h2>
+        <p style={{ color: 'var(--text-muted)', fontSize: '0.9375rem', lineHeight: 1.7, marginBottom: 40 }}>
+          {isHe
+            ? 'בדיקת רכב לפי מספר רישוי היא צעד ראשון טוב לפני קניית רכב יד שנייה. מזינים את מספר הרכב ורואים את מה שרשום במשרד התחבורה: תוקף טסט, קילומטראז׳ בטסט האחרון, היסטוריית בעלות ונזק, כשהוא מופיע במאגר. הבדיקה מראה מה נרשם, לא את מצבו המכני של הרכב, ולכן היא לא מחליפה בדיקה במכון.'
+            : 'Checking a car by its plate number is a good first step before buying used. Enter the plate to see what the Ministry of Transport has on record: test validity, odometer at the last test, ownership history and damage, when it appears in the database. The check shows what was recorded, not the car\'s mechanical condition, so it doesn\'t replace an inspection at a garage.'}
+        </p>
         <h2 style={{ fontSize: '1.25rem', fontWeight: 800, marginBottom: 6 }}>
           {isHe ? 'מה תקבל בבדיקה?' : 'What does the check include?'}
         </h2>

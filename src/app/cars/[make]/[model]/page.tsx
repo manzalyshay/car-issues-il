@@ -1,7 +1,8 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound, permanentRedirect } from 'next/navigation';
-import { getMakeBySlug, getModelBySlug, getCategoryLabel, getSimilarModels } from '@/lib/carsDb';
+import { getMakeBySlug, getModelBySlug, getCategoryLabel, getSimilarModels, getAllMakes } from '@/lib/carsDb';
+import { comparePairsForModel } from '@/lib/comparePairs';
 import { getReviewsForModel, getAverageRating } from '@/lib/reviewsDb';
 import ReviewNudge from '@/components/ReviewNudge';
 import { findCarModel } from '@/lib/sketchfab';
@@ -159,6 +160,8 @@ export default async function ModelPage({ params, searchParams }: Props) {
     Promise.all(similarModels.map(({ makeSlug: ms, model: m }) => getAverageRating(ms, m.slug).catch(() => null))),
     Promise.all(similarModels.map(({ makeSlug: ms, model: m }) => getImagesForCar(ms, m.slug).catch(() => []))),
   ]);
+  // Most-searched comparisons first, rather than the first models in catalogue order.
+  const comparePairs = comparePairsForModel(await getAllMakes().catch(() => []), makeSlug, modelSlug, 6);
   const expertReview = expertReviewsList[0] ?? null;
   const curatedModelData = expertReview?.curatedModelData ?? null;
   const avgRating = allReviews.length
@@ -515,15 +518,15 @@ export default async function ModelPage({ params, searchParams }: Props) {
                 {cp.compareWith} {makeName} {modelName} {cp.compareVs}
               </div>
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
-                {similarModels.slice(0, 6).map(({ makeSlug: ms, makeNameHe, makeNameEn, model: m }) => {
-                  const [s1, s2] = [`${makeSlug}/${modelSlug}`, `${ms}/${m.slug}`].sort();
+                {comparePairs.map((pair) => {
+                  const other = pair.a.key === `${makeSlug}/${modelSlug}` ? pair.b : pair.a;
                   return (
                     <Link
-                      key={`cmp-${ms}/${m.slug}`}
-                      href={`/cars/compare/${s1}/${s2}`}
+                      key={`cmp-${other.key}`}
+                      href={pair.path}
                       style={{ padding: '6px 12px', borderRadius: 20, fontSize: '0.8rem', background: 'transparent', color: 'var(--accent)', textDecoration: 'none', border: '1px solid var(--accent)', whiteSpace: 'nowrap' }}
                     >
-                      {isEn ? `${makeNameEn} ${m.nameEn}` : `${makeNameHe} ${m.nameHe}`}
+                      {isEn ? `${other.make.nameEn} ${other.model.nameEn}` : `${other.make.nameHe} ${other.model.nameHe}`}
                     </Link>
                   );
                 })}
