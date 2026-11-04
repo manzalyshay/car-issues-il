@@ -1,5 +1,6 @@
 'use client';
 
+import { blendWithTestScore } from '@/lib/proReviewScoreLabels';
 import { useState, useEffect, useCallback, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
@@ -158,16 +159,20 @@ function ComparePageInner({ showHeader = true }: { showHeader?: boolean }) {
       const reviews = reviewsRes.ok ? await reviewsRes.json() : { reviews: [] };
       const expert  = expertRes.ok  ? await expertRes.json()  : [];
       const model3d = modelRes.ok   ? await modelRes.json()   : null;
-      const aiScore: { score: number; confidence: 'high' | 'medium' | 'low' } | null = aiScoreRes.ok ? await aiScoreRes.json() : null;
+      const aiScore: { score: number; confidence: 'high' | 'medium' | 'low'; testAvg?: number | null } | null = aiScoreRes.ok ? await aiScoreRes.json() : null;
       const rev: any[] = reviews.reviews ?? [];
       const exp: any   = Array.isArray(expert) ? expert[0] ?? null : expert.reviews?.[0] ?? null;
       const avgRating  = rev.length ? rev.reduce((s: number, r: any) => s + r.rating, 0) / rev.length : null;
-      // Blend in the owner rating once there are 3+ reviews (same formula as the model/compare pages).
+      // Same score as the model page: owner rating once there are 3+ reviews,
+      // then the external test average (30%, capped near the tests).
       const blendedScore = (() => {
         if (aiScore == null) return null;
-        if (rev.length < 3 || avgRating == null) return aiScore.score;
-        const w = Math.min(0.4, (rev.length - 2) * 0.1);
-        return aiScore.score * (1 - w) + (avgRating * 2) * w;
+        let s = aiScore.score;
+        if (rev.length >= 3 && avgRating != null) {
+          const w = Math.min(0.4, (rev.length - 2) * 0.1);
+          s = aiScore.score * (1 - w) + (avgRating * 2) * w;
+        }
+        return blendWithTestScore(s, aiScore.testAvg ?? null);
       })();
 
       let localSummary:  string | null = exp?.localSummaryHe  ?? null;

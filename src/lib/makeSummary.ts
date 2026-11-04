@@ -5,7 +5,7 @@
  */
 import { dbAll } from './db';
 import { staticHebrewTitle } from './translateCache';
-import { getAllAiScores, blendWithOwnerRating } from './aiScore';
+import { getAllDisplayScores } from './displayScore';
 import { getModelPriceMins } from './trimSpecsDb';
 import { getCategoryLabel, type CarMake } from '@/data/cars';
 import { fmtIls, kmPerL, summarizeTrims, type TrimLike } from './specSummary';
@@ -33,7 +33,7 @@ export async function getMakeStats(make: CarMake): Promise<MakeStats> {
     dbAll<{ model_slug: string; n: number; avg: number }>(
       'SELECT model_slug, COUNT(*) AS n, AVG(rating) AS avg FROM reviews WHERE make_slug = ? GROUP BY model_slug', make.slug,
     ).catch(() => []),
-    getAllAiScores().catch(() => ({} as Record<string, { score: number; confidence: 'high' | 'medium' | 'low' }>)),
+    getAllDisplayScores().catch(() => new Map<string, { score: number }>()),
     dbAll<{ model: string; component_he: string | null }>(
       `SELECT l.id AS id, l.model AS model, c.component_he AS component_he FROM recalls_cache_models l
        JOIN recalls_cache c ON c.id = l.id WHERE l.make = ?
@@ -103,13 +103,9 @@ export async function getMakeStats(make: CarMake): Promise<MakeStats> {
       .sort((a, b) => b.avg - a.avg || b.count - a.count),
     reviewTotal: reviews.filter((r) => slugs.has(r.model_slug)).reduce((s, r) => s + r.n, 0),
     aiScores: make.models
-      .filter((m) => slugs.has(m.slug) && scores[`${make.slug}/${m.slug}`] != null)
-      .map((m) => {
-        const r = reviews.find((rr) => rr.model_slug === m.slug);
-        const base = scores[`${make.slug}/${m.slug}`]!.score;
-        const score = r ? blendWithOwnerRating(base, r.avg, r.n) : base;
-        return { slug: m.slug, score };
-      })
+      .filter((m) => slugs.has(m.slug) && scores.has(`${make.slug}/${m.slug}`))
+      // Same displayed score as the model page (owner reviews + external tests, capped).
+      .map((m) => ({ slug: m.slug, score: scores.get(`${make.slug}/${m.slug}`)!.score }))
       .sort((a, b) => b.score - a.score),
     recallTotal,
     recallTopModels: [...recallByModel.entries()].map(([slug, count]) => ({ slug, count })).sort((a, b) => b.count - a.count).slice(0, 3),

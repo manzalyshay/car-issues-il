@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getMakeBySlug, getModelBySlug } from '@/lib/carsDb';
 import { getExpertReviews } from '@/lib/expertReviews';
-import { getAiScore } from '@/lib/aiScore';
+import { getDisplayScore } from '@/lib/displayScore';
 
 export const dynamic = 'force-dynamic';
 
@@ -21,7 +21,7 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ mak
   const reviews = await getExpertReviews(makeSlug, modelSlug);
   const review = reviews[0] ?? null;
 
-  const aiScore = await getAiScore(makeSlug, modelSlug).catch(() => null);
+  const aiScore = await getDisplayScore(makeSlug, modelSlug).catch(() => null);
   const score = aiScore?.score ?? null;
   const scoreColor = score == null ? MUTED : score >= 7.5 ? GREEN : score >= 5.5 ? '#f59e0b' : R;
   const pros = review?.pros?.slice(0, 2) ?? [];

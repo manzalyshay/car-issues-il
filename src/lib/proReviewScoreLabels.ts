@@ -76,10 +76,29 @@ export function headlineTestScoreAvg(sets: Array<{ score: number; assessmentLeve
   return used.reduce((s, set) => s + set.score, 0) / used.length;
 }
 
-/** Blends the external test-score average into a base score (fixed 30% weight). */
+/**
+ * Largest distance the displayed score may sit from the external test average.
+ * The base reputation score has no stored sources, the test average does, so the
+ * blend is clamped to stay within this band of what the verified tests say.
+ */
+export const MAX_TEST_DRIFT = 1.5;
+
+/**
+ * Blends the external test-score average into a base score (fixed 30% weight),
+ * then keeps the result within MAX_TEST_DRIFT of the test average.
+ */
 export function blendWithTestScore(baseScore: number, testScoreAvg: number | null): number {
   if (testScoreAvg == null) return baseScore;
-  return baseScore * (1 - TEST_SCORE_WEIGHT) + testScoreAvg * TEST_SCORE_WEIGHT;
+  const blended = baseScore * (1 - TEST_SCORE_WEIGHT) + testScoreAvg * TEST_SCORE_WEIGHT;
+  return Math.min(testScoreAvg + MAX_TEST_DRIFT, Math.max(testScoreAvg - MAX_TEST_DRIFT, blended));
+}
+
+/** How far below the external tests a displayed score must be before the summary explains the model's weak points. */
+export const BELOW_TESTS_NOTE_GAP = 1.0;
+
+/** True when the displayed score sits clearly below the external test average. */
+export function isClearlyBelowTests(displayScore: number | null, testScoreAvg: number | null): boolean {
+  return displayScore != null && testScoreAvg != null && testScoreAvg - displayScore >= BELOW_TESTS_NOTE_GAP;
 }
 
 function formatYearsLabel(years: string | null, isHe: boolean): string | null {
@@ -105,4 +124,50 @@ export function labelForScoreSet(set: ProReviewScoreSet, siblings: ProReviewScor
   const powertrainLabel = powertrainList.length > 0 ? powertrainList.join(' / ') : null;
   if (powertrainLabel && yearsLabel) return `${powertrainLabel}, ${yearsLabel}`;
   return powertrainLabel ?? yearsLabel;
+}
+
+/** Minimum recall campaigns before the below-tests note mentions them. */
+export const NOTE_MIN_RECALLS = 3;
+
+/** Adds a closing period unless the text already ends with ? or !. */
+function endSentence(s: string): string {
+  return /[?!]$/u.test(s) ? s : `${s}.`;
+}
+
+function cleanConItem(raw: string, isEn: boolean): string {
+  let s = raw.trim().replace(/[.;,\s]+$/u, '');
+  // Curated Hebrew cons are sometimes split mid-sentence ("והמחיר לא זול"): drop the leading "and".
+  if (!isEn && /^וה/u.test(s)) s = s.slice(1);
+  return s;
+}
+
+/**
+ * One summary sentence about the model's documented weak points, shown when its
+ * displayed score sits clearly below the external tests. It talks about the cons
+ * themselves (the model's curated cons list and its recall count), never about
+ * the score. Returns null when there is nothing documented to say.
+ */
+export function belowTestsNote(opts: { cons: string[]; recallCount?: number | null; isEn: boolean }): string | null {
+  const { isEn } = opts;
+  const items = opts.cons
+    .filter((c) => typeof c === 'string' && c.trim().length > 0 && (!isEn || !/[֐-׿]/.test(c)))
+    .map((c) => cleanConItem(c, isEn))
+    .filter((c) => c.length > 0)
+    .slice(0, 2);
+  const recalls = opts.recallCount != null && opts.recallCount >= NOTE_MIN_RECALLS ? opts.recallCount : null;
+  if (items.length === 0 && recalls == null) return null;
+
+  if (isEn) {
+    const parts: string[] = [];
+    if (items.length) {
+      const list = items.map((c, i) => (i === 0 ? c.charAt(0).toUpperCase() + c.slice(1) : c.charAt(0).toLowerCase() + c.slice(1)));
+      parts.push(`Worth weighing before buying: ${endSentence(list.join('; '))}`);
+    }
+    if (recalls != null) parts.push(`${items.length ? 'The model also has' : 'Worth weighing before buying: the model has'} ${recalls} recall campaigns on record.`);
+    return parts.join(' ');
+  }
+  const parts: string[] = [];
+  if (items.length) parts.push(`כדאי לקחת בחשבון לפני קנייה: ${endSentence(items.join('; '))}`);
+  if (recalls != null) parts.push(`${items.length ? 'בנוסף, לדגם' : 'כדאי לקחת בחשבון לפני קנייה: לדגם'} רשומות ${recalls} קריאות ריקול.`);
+  return parts.join(' ');
 }

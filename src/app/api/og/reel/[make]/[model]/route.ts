@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getMakeBySlug, getModelBySlug } from '@/lib/carsDb';
 import { getExpertReviews } from '@/lib/expertReviews';
-import { getAiScore } from '@/lib/aiScore';
+import { getDisplayScore } from '@/lib/displayScore';
 import { findCarModel } from '@/lib/sketchfab';
 
 export const dynamic = 'force-dynamic';
@@ -22,7 +22,7 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ mak
   const [reviews, carModel, aiScore] = await Promise.all([
     getExpertReviews(makeSlug, modelSlug),
     findCarModel(makeSlug, modelSlug),
-    getAiScore(makeSlug, modelSlug).catch(() => null),
+    getDisplayScore(makeSlug, modelSlug).catch(() => null),
   ]);
 
   const review = reviews[0] ?? null;

@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { dbAll } from '@/lib/db';
 import { getAllMakes } from '@/lib/carsDb';
-import { getAllAiScores } from '@/lib/aiScore';
+import { getAllDisplayScores } from '@/lib/displayScore';
 
 export const dynamic = 'force-dynamic';
 
@@ -20,7 +20,7 @@ async function getTopRanked(limit = 6) {
       lookup.set(`${make.slug}/${model.slug}`, { makeHe: make.nameHe, modelHe: model.nameHe, logoUrl: make.logoUrl });
 
   const [aiScores, reviewData] = await Promise.all([
-    getAllAiScores().catch(() => ({} as Record<string, { score: number; confidence: 'high' | 'medium' | 'low' }>)),
+    getAllDisplayScores().catch(() => new Map<string, { score: number }>()),
     dbAll<{ make_slug: string; model_slug: string; rating: number }>(
       'SELECT make_slug, model_slug, rating FROM reviews',
     ).catch(() => []),
@@ -35,7 +35,7 @@ async function getTopRanked(limit = 6) {
 
   const ranked: { key: string; combined: number; reviewCount: number }[] = [];
   for (const [key] of lookup) {
-    const ai = aiScores[key] ?? null;
+    const ai = aiScores.get(key) ?? null;
     if (!ai) continue;
     const ratings = reviewMap.get(key) ?? [];
     ranked.push({ key, combined: ai.score, reviewCount: ratings.length });

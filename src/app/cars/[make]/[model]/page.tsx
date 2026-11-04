@@ -380,6 +380,7 @@ export default async function ModelPage({ params, searchParams }: Props) {
             reviewCount={allReviews.length}
             aiScore={aiScore}
             proReviewScoreSets={relevantProReviewScoreSets}
+            recallCount={recallCount}
           />
         </div>
 

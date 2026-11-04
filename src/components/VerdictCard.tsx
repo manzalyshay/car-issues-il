@@ -5,7 +5,7 @@ import VerdictCardClient from './VerdictCardClient';
 import ScoreSourcesInfo from './ScoreSourcesInfo';
 import { aiSourceLabel } from '@/lib/aiSource';
 import { type AiScore, AI_SCORE_CAPTION_HE, AI_SCORE_CAPTION_EN, AI_SCORE_ESTIMATED_HE, AI_SCORE_ESTIMATED_EN, blendWithOwnerRating, formatOwnerScoreHe, formatOwnerScoreEn } from '@/lib/aiScore';
-import { type ProReviewScoreSet, headlineTestScoreAvg, blendWithTestScore } from '@/lib/proReviewScoreLabels';
+import { type ProReviewScoreSet, headlineTestScoreAvg, blendWithTestScore, isClearlyBelowTests, belowTestsNote } from '@/lib/proReviewScoreLabels';
 
 interface Props {
   expertReview: ExpertReview | null;
@@ -25,6 +25,8 @@ interface Props {
    * Gear, Car and Driver, etc.) - blended into the displayed score as one of
    * its inputs, with the sources/dates/links shown via the small ⓘ next to it. */
   proReviewScoreSets?: ProReviewScoreSet[] | null;
+  /** Recall campaigns on record for the model (same count as the recalls tab), used in the weak-points note. */
+  recallCount?: number | null;
 }
 
 /** Headline-eligible test-score average (variant-only sets dropped when broader sets exist). */
@@ -44,7 +46,7 @@ const noData = (s: string | null | undefined) =>
 export default function VerdictCard({
   expertReview, repairCosts, trimSpecs, makeSlug, modelSlug,
   makeNameHe, modelNameHe, makeNameEn, modelNameEn,
-  isEn, avgRating, reviewCount, aiScore, proReviewScoreSets,
+  isEn, avgRating, reviewCount, aiScore, proReviewScoreSets, recallCount,
 }: Props) {
   if (!expertReview && avgRating === null && aiScore === null) return null;
 
@@ -124,8 +126,14 @@ export default function VerdictCard({
     ? (expertReview.consEn?.length && !expertReview.consEn.some(hasHebrew) ? expertReview.consEn : [])
     : expertReview.cons;
 
+  const testScoreAvg = computeTestScoreAvg(proReviewScoreSets);
   const overallScore = aiScore != null
-    ? blendWithTestScore(blendWithOwnerRating(aiScore.score, avgRating, reviewCount), computeTestScoreAvg(proReviewScoreSets))
+    ? blendWithTestScore(blendWithOwnerRating(aiScore.score, avgRating, reviewCount), testScoreAvg)
+    : null;
+  // When the score sits clearly below the external road tests, say what weighs
+  // on the model (its own curated cons and recall record), not why the number is lower.
+  const weakPointsNote = isClearlyBelowTests(overallScore, testScoreAvg)
+    ? belowTestsNote({ cons, recallCount, isEn })
     : null;
   const ownerScoreLine = (avgRating != null && reviewCount > 0)
     ? (isEn ? formatOwnerScoreEn(avgRating, reviewCount) : formatOwnerScoreHe(avgRating, reviewCount))
@@ -314,9 +322,11 @@ export default function VerdictCard({
           )}
         </div>
         {/* Summary */}
-        {leadSummary && (
+        {(leadSummary || weakPointsNote) && (
           <p style={{ margin: 0, fontSize: 14, color: '#4a5b6d', maxWidth: '60ch', flex: 1, minWidth: 200, lineHeight: 1.6 }}>
             {leadSummary}
+            {leadSummary && weakPointsNote ? ' ' : null}
+            {weakPointsNote}
           </p>
         )}
         {/* Chips */}
