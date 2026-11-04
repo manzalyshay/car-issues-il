@@ -1,12 +1,13 @@
 /**
  * Car news scraper + AI rewriter.
  * Fetches RSS feeds from global automotive news sources,
- * rewrites articles in Hebrew using Workers AI, and stores in D1.
+ * rewrites articles in Hebrew (Gemini, falling back to Workers AI), and stores in D1.
  */
 import { dbRun, dbAll } from '@/lib/db';
 import { runWorkersAI } from '@/lib/workersAi';
 import { parseNewsSegment } from './newsSlug';
 import { findNewsImage } from './newsImage';
+import { callGemini, callWorkersAi, translateWithFallback, recordOutcome, type TranslationStats } from './newsTranslate';
 
 export interface CarNewsItem {
   id: string;
@@ -197,51 +198,27 @@ Source title: ${titleEn}
 Source content: ${source}`;
 }
 
-function parseHebrewJson(raw: string): { titleHe: string; bodyHe: string } | null {
-  const cleaned = raw.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/, '').trim();
-  const parsed = JSON.parse(cleaned);
-  if (!parsed?.title || !parsed?.body) return null;
-  return { titleHe: parsed.title.trim(), bodyHe: parsed.body.trim() };
-}
-
-async function rewriteWithGemini(titleEn: string, bodyEn: string): Promise<{ titleHe: string; bodyHe: string } | null> {
-  const apiKey = process.env.GEMINI_API_KEY;
-  if (!apiKey) return null;
-  try {
-    const res = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent?key=${apiKey}`,
-      {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          contents: [{ parts: [{ text: buildHebrewPrompt(titleEn, bodyEn) }] }],
-          generationConfig: { temperature: 0.2, maxOutputTokens: 1200 },
-        }),
-        signal: AbortSignal.timeout(20000),
-      }
-    );
-    if (!res.ok) return null;
-    const data = await res.json() as { candidates?: { content?: { parts?: { text?: string }[] } }[] };
-    const raw = data?.candidates?.[0]?.content?.parts?.[0]?.text ?? '';
-    if (!raw) return null;
-    return parseHebrewJson(raw);
-  } catch {
-    return null;
-  }
-}
-
-async function rewriteWithWorkersAI(titleEn: string, bodyEn: string): Promise<{ titleHe: string; bodyHe: string } | null> {
-  try {
-    const raw = await runWorkersAI([{ role: 'user', content: buildHebrewPrompt(titleEn, bodyEn) }], { max_tokens: 1200, temperature: 0.2 });
-    if (!raw) return null;
-    return parseHebrewJson(raw);
-  } catch {
-    return null;
-  }
-}
-
-async function rewriteInHebrew(titleEn: string, bodyEn: string): Promise<{ titleHe: string; bodyHe: string } | null> {
-  return rewriteWithGemini(titleEn, bodyEn);
+/**
+ * Rewrite in Hebrew. Gemini first; when `fallback` is set, the existing Workers AI
+ * rewrite is tried if Gemini fails. Every outcome is recorded in `stats` with the
+ * failure reason per provider, so the news job can report it.
+ */
+async function rewriteInHebrew(
+  titleEn: string,
+  bodyEn: string,
+  stats?: TranslationStats,
+  opts: { fallback?: boolean } = {},
+): Promise<{ titleHe: string; bodyHe: string } | null> {
+  const prompt = buildHebrewPrompt(titleEn, bodyEn);
+  const outcome = await translateWithFallback(
+    () => callGemini(prompt, { apiKey: process.env.GEMINI_API_KEY }),
+    opts.fallback === false
+      ? undefined
+      : () => callWorkersAi(prompt, p => runWorkersAI([{ role: 'user', content: p }], { max_tokens: 1200, temperature: 0.2 })),
+  );
+  if (stats) recordOutcome(stats, outcome);
+  if (!outcome.ok) console.warn('[carNews] Hebrew rewrite failed', outcome.failures);
+  return outcome.ok ? outcome.article : null;
 }
 
 export async function ensureNewsTable(): Promise<void> {
@@ -275,6 +252,8 @@ export async function ensureNewsTable(): Promise<void> {
 /** Per-source counts from one refresh run, for the cron run ledger. */
 export interface NewsRefreshStats {
   saved: number;
+  /** Hebrew rewrite outcomes for the articles saved in this run. */
+  translation?: TranslationStats;
   sources: Record<string, { fetched: number; alreadyStored: number; unseen: number; picked: number; error: string | null }>;
 }
 
@@ -319,7 +298,7 @@ export async function refreshCarNews(maxPerRun = 15, stats?: NewsRefreshStats): 
     const fullBody = await fetchArticleBody(item.link);
     const articleBody = fullBody ?? item.description;
 
-    const rewritten = await rewriteInHebrew(item.title, articleBody);
+    const rewritten = await rewriteInHebrew(item.title, articleBody, stats?.translation);
     // Source-site photos can't be republished; use a freely licensed Commons photo instead.
     const image = await findNewsImage(item.title).catch(() => null);
 
@@ -376,7 +355,7 @@ export async function fillMissingNewsImages(max = 10): Promise<number> {
  * Retry translation for articles that previously failed (title_he IS NULL).
  * @param maxRetry Max articles to retry per call
  */
-export async function retranslateUntranslated(maxRetry = 10): Promise<number> {
+export async function retranslateUntranslated(maxRetry = 10, stats?: TranslationStats): Promise<number> {
   const rows = await dbAll<{ id: string; title_en: string | null; body_en: string | null }>(
     `SELECT id, title_en, body_en FROM car_news WHERE (title_he IS NULL OR body_he IS NULL) AND title_en IS NOT NULL AND body_en IS NOT NULL ORDER BY published_at DESC LIMIT ?`,
     maxRetry,
@@ -384,7 +363,7 @@ export async function retranslateUntranslated(maxRetry = 10): Promise<number> {
   let fixed = 0;
   for (const row of rows) {
     if (!row.title_en || !row.body_en) continue;
-    const result = await rewriteInHebrew(row.title_en, row.body_en);
+    const result = await rewriteInHebrew(row.title_en, row.body_en, stats);
     if (result) {
       await dbRun(`UPDATE car_news SET title_he=?, body_he=? WHERE id=?`, result.titleHe, result.bodyHe, row.id);
       fixed++;
@@ -424,9 +403,10 @@ export async function getNewsArticleBySegment(segment: string): Promise<CarNewsI
 
 /**
  * Retranslate articles that have a very short body_he (likely generated by Workers AI).
- * Forces regeneration with Claude/Gemini for proper length and quality.
+ * Forces regeneration with Gemini only: these articles already have Hebrew, so
+ * falling back to Workers AI would just swap one short body for another.
  */
-export async function retranslateShort(maxRetry = 10, minBodyLen = 150): Promise<number> {
+export async function retranslateShort(maxRetry = 10, minBodyLen = 150, stats?: TranslationStats): Promise<number> {
   const rows = await dbAll<{ id: string; title_en: string | null; body_en: string | null }>(
     `SELECT id, title_en, body_en FROM car_news WHERE body_he IS NOT NULL AND length(body_he) < ? AND title_en IS NOT NULL AND body_en IS NOT NULL ORDER BY published_at DESC LIMIT ?`,
     String(minBodyLen), String(maxRetry),
@@ -434,7 +414,7 @@ export async function retranslateShort(maxRetry = 10, minBodyLen = 150): Promise
   let fixed = 0;
   for (const row of rows) {
     if (!row.title_en || !row.body_en) continue;
-    const result = await rewriteInHebrew(row.title_en, row.body_en);
+    const result = await rewriteInHebrew(row.title_en, row.body_en, stats, { fallback: false });
     if (result) {
       await dbRun(`UPDATE car_news SET title_he=?, body_he=? WHERE id=?`, result.titleHe, result.bodyHe, row.id);
       fixed++;

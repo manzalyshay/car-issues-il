@@ -9,6 +9,7 @@
     "preview:cf": "opennextjs-cloudflare preview",
     "start": "next start",
     "lint": "eslint",
+    "test": "node --test tests/*.test.mjs",
     "scrape:all": "node scripts/scrape-all.mjs",
     "scrape:all:skip": "SKIP_EXISTING=true node scripts/scrape-all.mjs",
     "scrape:stale": "node scripts/scrape-stale.mjs",
