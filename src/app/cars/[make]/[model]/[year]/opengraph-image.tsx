@@ -2,7 +2,7 @@ import { ImageResponse } from 'next/og';
 import { getMakeBySlug, getModelBySlug } from '@/lib/carsDb';
 import { getReviewsForCar } from '@/lib/reviewsDb';
 import { getAiScore, blendWithOwnerRating } from '@/lib/aiScore';
-import { getProReviewScoreSets, filterScoreSetsForYear } from '@/lib/proReviewScores';
+import { getProReviewScoreSets, scoreSetsForPageYear } from '@/lib/proReviewScores';
 import { headlineTestScoreAvg, blendWithTestScore } from '@/lib/proReviewScoreLabels';
 
 export const runtime = 'nodejs';
@@ -34,7 +34,7 @@ export default async function OGImage({ params }: Props) {
     ? reviews.reduce((s, r) => s + r.rating, 0) / reviews.length
     : null;
   // Same as the year page: owner reviews, then this year's external test sets (capped).
-  const yearSets = allSets ? filterScoreSetsForYear(allSets, yearNum) : null;
+  const yearSets = allSets ? scoreSetsForPageYear(allSets, yearNum, model.years.length ? Math.max(...model.years) : null) : null;
   const score = aiScore != null
     ? blendWithTestScore(blendWithOwnerRating(aiScore.score, avgRating, reviews.length), headlineTestScoreAvg(yearSets))
     : null;

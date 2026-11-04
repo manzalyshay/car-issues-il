@@ -13,7 +13,7 @@ import { getModelRepairCosts } from '@/lib/repairCostsDb';
 import { getRecallsFromCache } from '@/lib/recallsDb';
 import { isModelYearIndexable } from '@/lib/seoIndexing';
 import { getAiScore } from '@/lib/aiScore';
-import { getProReviewScoreSets, filterScoreSetsForYear } from '@/lib/proReviewScores';
+import { getProReviewScoreSets, scoreSetsForPageYear } from '@/lib/proReviewScores';
 import SharePopup from '@/components/SharePopup';
 import RecallsBadge from '@/components/RecallsBadge';
 import HeroMedia from '@/components/HeroMedia';
@@ -138,7 +138,7 @@ export default async function CarYearPage({ params }: Props) {
     getAiScore(makeSlug, modelSlug).catch(() => null),
     getProReviewScoreSets(makeSlug, modelSlug).catch(() => null),
   ]);
-  const proReviewScoreSets = allProReviewScoreSets ? filterScoreSetsForYear(allProReviewScoreSets, yearNum) : null;
+  const proReviewScoreSets = allProReviewScoreSets ? scoreSetsForPageYear(allProReviewScoreSets, yearNum, model.years.length ? Math.max(...model.years) : null) : null;
   const { minPrice: schemaMinPrice, maxPrice: schemaMaxPrice } = getPriceRange(trimSpecs);
 
   const expertReview = Array.isArray(expertReviewsList) ? (expertReviewsList[0] ?? null) : null;

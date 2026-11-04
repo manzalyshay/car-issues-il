@@ -4,9 +4,9 @@
  */
 import { dbAll } from './db';
 import type { ProReviewScoreSet } from './proReviewScoreLabels';
-import { filterScoreSetsForYear, headlineTestScoreAvg } from './proReviewScoreLabels';
+import { scoreSetsForPageYear, headlineTestScoreAvg } from './proReviewScoreLabels';
 
-export { filterScoreSetsForYear } from './proReviewScoreLabels';
+export { filterScoreSetsForYear, scoreSetsForPageYear } from './proReviewScoreLabels';
 
 export interface ExternalScoreSource {
   site: string;
@@ -86,7 +86,7 @@ export async function getAllHeadlineTestAverages(): Promise<Map<string, number>>
   for (const [key, sets] of byModel) {
     const year = maxYear.get(key);
     // Same as the model page: no matching generation means no test blend.
-    const relevant = year != null ? filterScoreSetsForYear(sets, year) : sets;
+    const relevant = year != null ? scoreSetsForPageYear(sets, year, year) : sets;
     const avg = headlineTestScoreAvg(relevant);
     if (avg != null) out.set(key, avg);
   }

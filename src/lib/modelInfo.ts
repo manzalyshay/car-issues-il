@@ -11,7 +11,7 @@ import { getKnownIssues, knownIssueSourceLabel } from './knownIssuesDb';
 import { comparePairsForModel } from './comparePairs';
 import { aiSourceLabel } from './aiSource';
 import { getAiScore, blendWithOwnerRating, type AiConfidence } from './aiScore';
-import { getProReviewScoreSets, filterScoreSetsForYear } from './proReviewScores';
+import { getProReviewScoreSets, scoreSetsForPageYear } from './proReviewScores';
 import { getRecallsFromCache } from './recallsDb';
 import { getIsraeliRecalls } from './israeliRecallsDb';
 import { getModelRepairCosts, getRepairCosts } from './repairCostsDb';
@@ -134,7 +134,7 @@ export async function getModelInfo(
   // via filterScoreSetsForYear.
   const scoreReferenceYear = vehicleYear ?? (model.years.length ? Math.max(...model.years) : null);
   const relevantProReviewScoreSets = proReviewScoreSets && scoreReferenceYear != null
-    ? filterScoreSetsForYear(proReviewScoreSets, scoreReferenceYear)
+    ? scoreSetsForPageYear(proReviewScoreSets, scoreReferenceYear, model.years.length ? Math.max(...model.years) : null)
     : proReviewScoreSets;
 
   const avgRatingVal = rating?.n ? rating.avg : null;

@@ -71,3 +71,31 @@ test('nothing documented: no note', () => {
   assert.equal(belowTestsNote({ cons: [], recallCount: null, isEn: false }), null);
   assert.equal(belowTestsNote({ cons: ['עברית בלבד'], recallCount: 0, isEn: true }), null);
 });
+
+// ── Test-set year fallback ───────────────────────────────────────────────────
+import { scoreSetsForPageYear, TEST_YEAR_FALLBACK } from '../src/lib/proReviewScoreLabels.ts';
+
+test('exact year match is used as before', () => {
+  const sets = [{ years: '2022-', score: 8 }];
+  assert.deepEqual(scoreSetsForPageYear(sets, 2026, 2026), sets);
+});
+
+test('Huracan: tests 2014-2024, model listed to 2026 -> tests used on the model page', () => {
+  const sets = [{ years: '2014-2024', score: 7.6 }];
+  assert.deepEqual(scoreSetsForPageYear(sets, 2026, 2026), sets);
+  assert.deepEqual(scoreSetsForPageYear(sets, 2025, 2026), sets);
+});
+
+test('Corvette: C7 tests (2014-2019) never stand in for the C8 (2020-2026)', () => {
+  const sets = [{ years: '2014-2019', score: 8 }];
+  assert.equal(scoreSetsForPageYear(sets, 2026, 2026), null);
+  assert.equal(scoreSetsForPageYear(sets, 2021, 2026), null);
+  assert.equal(scoreSetsForPageYear(sets, 2020, 2026), null);
+  assert.deepEqual(scoreSetsForPageYear(sets, 2019, 2026), sets);
+});
+
+test(`fallback window is ${TEST_YEAR_FALLBACK} years from the end of the range, not from the page year`, () => {
+  const sets = [{ years: '2015-2022', score: 8 }];
+  assert.equal(scoreSetsForPageYear(sets, 2026, 2026), null); // 4 years past the tests
+  assert.equal(scoreSetsForPageYear(sets, 2024, 2026), null); // inside the window, but no test in 2024..2024
+});

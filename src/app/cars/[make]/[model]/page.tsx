@@ -30,7 +30,7 @@ import HeroYearPicker from '@/components/HeroYearPicker';
 import { getRecallsFromCache } from '@/lib/recallsDb';
 import { getIsraeliRecalls } from '@/lib/israeliRecallsDb';
 import { getAiScore } from '@/lib/aiScore';
-import { getProReviewScoreSets, filterScoreSetsForYear } from '@/lib/proReviewScores';
+import { getProReviewScoreSets, scoreSetsForPageYear } from '@/lib/proReviewScores';
 import { getModelSynthesisRows } from '@/lib/modelSynthesis';
 import ModelSynthesis from '@/components/ModelSynthesis';
 
@@ -154,7 +154,7 @@ export default async function ModelPage({ params, searchParams }: Props) {
   // this page's own years actually cover, the same way year pages already do
   // via filterScoreSetsForYear.
   const relevantProReviewScoreSets = proReviewScoreSets && model.years.length
-    ? filterScoreSetsForYear(proReviewScoreSets, Math.max(...model.years))
+    ? scoreSetsForPageYear(proReviewScoreSets, Math.max(...model.years), Math.max(...model.years))
     : proReviewScoreSets;
   const [similarRatings, similarImages] = await Promise.all([
     Promise.all(similarModels.map(({ makeSlug: ms, model: m }) => getAverageRating(ms, m.slug).catch(() => null))),

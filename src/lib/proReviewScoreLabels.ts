@@ -53,6 +53,30 @@ export function filterScoreSetsForYear<T extends { years: string | null }>(sets:
   return matching.length > 0 ? matching : null;
 }
 
+/** How many years before a model's newest year a test set may end and still count for it. */
+export const TEST_YEAR_FALLBACK = 2;
+
+/**
+ * Score sets for a page about `year` of a model whose newest listed year is
+ * `latestModelYear`. Uses the sets covering `year`; if none do and `year` is in
+ * the last TEST_YEAR_FALLBACK years of the model's range, falls back to the sets
+ * covering the closest earlier year in that window. Model year lists often run
+ * a year or two past the end of production or the newest review (Huracan tests
+ * 2014-2024, model listed to 2026). The window is anchored to the end of the
+ * range so an older generation's test never stands in for a newer, untested one.
+ */
+export function scoreSetsForPageYear<T extends { years: string | null }>(sets: T[], year: number, latestModelYear: number | null): T[] | null {
+  const exact = filterScoreSetsForYear(sets, year);
+  if (exact || latestModelYear == null) return exact;
+  const floor = latestModelYear - TEST_YEAR_FALLBACK;
+  if (year < floor) return null;
+  for (let y = year - 1; y >= floor; y--) {
+    const m = filterScoreSetsForYear(sets, y);
+    if (m) return m;
+  }
+  return null;
+}
+
 /** Weight of the external test-score average in the displayed headline score. */
 export const TEST_SCORE_WEIGHT = 0.3;
 
