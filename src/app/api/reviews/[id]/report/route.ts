@@ -9,7 +9,10 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     const body = await req.json();
     const reason: string = REASONS.includes(body.reason) ? body.reason : 'other';
 
-    const ip = req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ?? 'unknown';
+    // Cloudflare puts the visitor's IP in cf-connecting-ip (x-forwarded-for arrives empty here).
+    const ip = req.headers.get('cf-connecting-ip')
+      ?? req.headers.get('x-forwarded-for')?.split(',')[0]?.trim()
+      ?? 'unknown';
 
     // A repeat report of the same review from the same IP is ignored (UNIQUE review_id, ip).
     await dbRun(
