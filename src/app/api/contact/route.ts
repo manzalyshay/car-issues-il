@@ -1,13 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient, SupabaseClient } from '@supabase/supabase-js';
 import { Resend } from 'resend';
-
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-let _sb: SupabaseClient<any, 'public', any> | null = null;
-function getSb() {
-  if (!_sb) _sb = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!);
-  return _sb;
-}
+import { dbRun } from '@/lib/db';
 
 const SUBJECT_LABELS: Record<string, string> = {
   general: 'שאלה כללית',
@@ -23,15 +16,16 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'missing fields' }, { status: 400 });
   }
 
-  const { error } = await getSb().from('contact_messages').insert({
-    name: String(body.name).slice(0, 120),
-    email: String(body.email).slice(0, 200),
-    subject: String(body.subject || 'general').slice(0, 60),
-    message: String(body.message).slice(0, 4000),
-    status: 'unread',
-  });
-
-  if (error) {
+  try {
+    await dbRun(
+      "INSERT INTO contact_messages (id, name, email, subject, message, status) VALUES (?, ?, ?, ?, ?, 'unread')",
+      crypto.randomUUID(),
+      String(body.name).slice(0, 120),
+      String(body.email).slice(0, 200),
+      String(body.subject || 'general').slice(0, 60),
+      String(body.message).slice(0, 4000),
+    );
+  } catch (error) {
     console.error('contact insert error', error);
     return NextResponse.json({ error: 'db error' }, { status: 500 });
   }

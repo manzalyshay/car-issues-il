@@ -49,7 +49,7 @@ interface ContactMessage {
 }
 
 interface ReportRow {
-  id: number;
+  id: string;
   review_id: string;
   reason: string;
   ip: string;
@@ -219,16 +219,23 @@ function AdminPageInner() {
   const fetchReports = useCallback(async () => {
     setReportsFetching(true);
     try {
-      const { data } = await supabase
-        .from('review_reports')
-        .select('*, reviews(make_slug,model_slug,year,title,author,body)')
-        .order('created_at', { ascending: false })
-        .limit(200);
-      setReports((data ?? []) as ReportRow[]);
+      const token = await getToken();
+      const res = await fetch('/api/admin/reports', { headers: { Authorization: `Bearer ${token}` } });
+      setReports(res.ok ? (await res.json()) as ReportRow[] : []);
     } catch { /* ignore */ } finally {
       setReportsFetching(false);
     }
-  }, []);
+  }, [getToken]);
+
+  const reportAction = useCallback(async (body: Record<string, string>) => {
+    const token = await getToken();
+    const res = await fetch('/api/admin/reports', {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    });
+    return res.ok;
+  }, [getToken]);
 
   useEffect(() => {
     if (isAdmin && tab === 'reports') fetchReports();
@@ -1134,8 +1141,8 @@ function AdminPageInner() {
                           </span>
                           <button
                             onClick={async () => {
-                              await supabase.from('review_reports').delete().eq('id', report.id);
-                              setReports((prev) => prev.filter((r) => r.id !== report.id));
+                              if (await reportAction({ action: 'dismiss', id: report.id }))
+                                setReports((prev) => prev.filter((r) => r.id !== report.id));
                             }}
                             style={{ padding: '4px 10px', borderRadius: 6, border: '1px solid var(--border)', background: 'transparent', cursor: 'pointer', fontSize: '0.75rem', color: 'var(--text-muted)' }}
                           >
@@ -1144,9 +1151,8 @@ function AdminPageInner() {
                           <button
                             onClick={async () => {
                               if (!confirm('מחק את הביקורת לצמיתות?')) return;
-                              await supabase.from('reviews').delete().eq('id', report.review_id);
-                              await supabase.from('review_reports').delete().eq('review_id', report.review_id);
-                              setReports((prev) => prev.filter((r) => r.review_id !== report.review_id));
+                              if (await reportAction({ action: 'delete_review', reviewId: report.review_id }))
+                                setReports((prev) => prev.filter((r) => r.review_id !== report.review_id));
                             }}
                             style={{ padding: '4px 10px', borderRadius: 6, border: 'none', background: 'var(--brand-red)', color: '#fff', cursor: 'pointer', fontSize: '0.75rem', fontWeight: 700 }}
                           >
