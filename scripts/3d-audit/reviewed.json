@@ -1,0 +1,17 @@
+{
+  "_about": "Cars/models already reviewed and deliberately kept. audit.py skips these unless the shown uid changes. Add an entry whenever a check decides 'keep' or 'skip'.",
+  "uids": {
+    "d0f0f0a0eba949288b4da620d6d9f60b": "mitsubishi/colt: low-poly, but the only 2024 Colt with a Mitsubishi face (Clio models show a Renault logo). Kept 2026-11-05.",
+    "4f7c7318a29d4e16a6047c2d58bba28d": "peugeot/3008: 70k faces but well made, 441 likes, 0.6 MB. Kept 2026-11-05.",
+    "7e2ef9be2dd74cf4b980d068d272dfff": "mazda/mazda3: 18.8 MB sedan, owner chose to keep it. Kept 2026-11-05.",
+    "c6c443fdc4a74197a0f4c93f95a9b0cb": "geely/starray: 20.6 MB, the only Starray model (Monjaro is a different car). Kept 2026-11-05.",
+    "91b8cce2ec3b4e0c8460bb8dc0debc6b": "jeep/avenger: low-poly, the only alternative has no preview. Kept 2026-11-05.",
+    "29aaeaf4cf9e43e799fc7f79809db2d7": "lexus/rz: 27.8 MB, no usable lighter RZ model. Kept 2026-11-05.",
+    "4200138ec0b640b98defde1481bfe165": "geely/coolray: 24.4 MB, the only alternative (Binyue 2020) looks unfinished. Kept 2026-11-05."
+  },
+  "missing_ok": {
+    "hyundai/i25": "Owner chose to skip (Accent 2013 model was offered). 2026-11-05.",
+    "mercedes/eqe-suv": "No EQE SUV model exists on Sketchfab; wrong model hidden. 2026-11-05.",
+    "geely/ex5": "Only replacement is 53 MB; broken model hidden. 2026-11-05."
+  }
+}
