@@ -13,6 +13,8 @@ export interface CarModel {
   trims?: string[];
   leadingImageUrl?: string | null;
   activeVehiclesIl?: number | null;
+  /** Date (YYYY-MM-DD) the count was taken from the Ministry of Transport registry. */
+  activeVehiclesIlAsOf?: string | null;
 }
 
 export type EngineType = 'petrol' | 'hybrid' | 'phev' | 'electric' | 'diesel';

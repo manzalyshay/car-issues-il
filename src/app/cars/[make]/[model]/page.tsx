@@ -275,7 +275,9 @@ export default async function ModelPage({ params, searchParams }: Props) {
                   </span>
                   {' '}רכבים פעילים בישראל
                   <span style={{ opacity: 0.65, marginInlineStart: 4 }}>
-                    (אוק׳ 2026)
+                    ({model.activeVehiclesIlAsOf
+                      ? new Date(`${model.activeVehiclesIlAsOf}T12:00:00Z`).toLocaleDateString('he-IL', { month: 'short', year: 'numeric', timeZone: 'Asia/Jerusalem' })
+                      : 'אוק׳ 2026'})
                   </span>
                 </div>
               )}

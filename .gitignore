@@ -53,3 +53,4 @@ scripts/gsc-token.json
 # local data / scrape cache
 *.sqlite
 .cache/
+__pycache__/

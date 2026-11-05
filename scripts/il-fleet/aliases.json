@@ -1,0 +1,272 @@
+{
+  "_about": "Extra matching rules for fleet.py. makes: registry make (tozar, Hebrew) -> site make. models: {registry make: {site car: [extra registry names]}} (a registry make can point at another site make, e.g. Mini is registered under BMW). prefixes: registry-name prefixes to strip before matching ('*' = every make; the site make name is always tried). exclude: registry names (prefix) that must not be counted for that make, because they are a different car. class_rules: a prefix followed by a digit means that model (Mercedes 'C200' -> C-Class, BMW '318I' -> 3 Series).",
+  "makes": {
+    "מזדה": "mazda",
+    "מרצדס": "mercedes",
+    "מרצדס בנץ": "mercedes",
+    "ב מ וו": "bmw",
+    "בי ווי די": "byd",
+    "מרוטי סוזוקי": "suzuki",
+    "דאציה": "dacia",
+    "דאצ'יה": "dacia",
+    "ג'אקו": "jaecoo",
+    "ג'יפ אוונג'ר": "jeep",
+    "קרייזלר": "jeep",
+    "אקספנג": "xpeng",
+    "קיי ג'י מובילי": "kgm",
+    "לנדרובר": "land-rover",
+    "רובר": "land-rover",
+    "מ.ג'י": "mg",
+    "מזארטי": "maserati",
+    "גי.איי.סי": "gac",
+    "ג'יי איי סי": "gac",
+    "איון": "gac",
+    "אודי": "audi",
+    "וולבו": "volvo",
+    "לינק אנד קו": "lynk-co",
+    "סאנגיונג": "ssangyong"
+  },
+  "models": {
+    "hyundai": {
+      "hyundai/elantra": [
+        "I35"
+      ],
+      "genesis/gv70": [
+        "GENESIS GV70"
+      ],
+      "genesis/gv80": [
+        "GENESIS GV80"
+      ],
+      "genesis/g80": [
+        "GENESIS G80"
+      ]
+    },
+    "kia": {
+      "kia/picanto": [
+        "PICANT0"
+      ],
+      "kia/rio": [
+        "RI0"
+      ]
+    },
+    "chery": {
+      "chery/omoda-fx": [
+        "FX"
+      ]
+    },
+    "isuzu": {
+      "isuzu/d-max": [
+        "PICK-UP",
+        "PICKUP"
+      ]
+    },
+    "byd": {
+      "byd/sealion6": [
+        "SEAL U"
+      ]
+    },
+    "toyota": {
+      "toyota/aygo": [
+        "AYGO"
+      ],
+      "toyota/verso": [
+        "SPACE VERSO"
+      ]
+    },
+    "subaru": {
+      "subaru/xv": [
+        "CROSSTREK"
+      ]
+    },
+    "suzuki": {
+      "suzuki/sx4": [
+        "CROSSOVER"
+      ]
+    },
+    "renault": {
+      "renault/megane": [
+        "GRAND COUPE"
+      ]
+    },
+    "fiat": {
+      "fiat/500": [
+        "ABARTH 500"
+      ]
+    },
+    "jeep": {
+      "jeep/grand-cherokee": [
+        "GRAND CHER",
+        "G CHEROKEE",
+        "JEEP GRAND CHER"
+      ],
+      "jeep/wrangler": [
+        "JEEP WRANGLER"
+      ],
+      "jeep/cherokee": [
+        "JEEP CHEROKEE"
+      ]
+    },
+    "land-rover": {
+      "land-rover/range-rover-sport": [
+        "RANGE R SPORT",
+        "R ROVER SPORT",
+        "RANGE ROVER SPO",
+        "RANGE ROVER SPORT"
+      ],
+      "land-rover/range-rover-evoque": [
+        "R ROVER EVOQUE",
+        "RANGE ROVER EVOQUE",
+        "RANGE R EVOQUE"
+      ],
+      "land-rover/range-rover-velar": [
+        "R ROVER VELAR",
+        "RANGE ROVER VELAR",
+        "RANGE R VELAR"
+      ],
+      "land-rover/discovery-sport": [
+        "DISCOVRY SPORT",
+        "DISCOVERY SPORT"
+      ],
+      "land-rover/range-rover": [
+        "RENGE ROVER",
+        "RANGE ROVER"
+      ]
+    },
+    "bmw": {
+      "mini/cooper": [
+        "COOPER",
+        "MINI COOPER",
+        "MINI ONE",
+        "ONE",
+        "JCW",
+        "MINI JCW"
+      ],
+      "mini/mini-electric": [
+        "COOPER SE",
+        "MINI COOPER SE",
+        "MINI ELECTRIC"
+      ],
+      "mini/countryman": [
+        "COUNTRYMAN",
+        "MINI COUNTRYMAN"
+      ],
+      "mini/clubman": [
+        "CLUBMAN",
+        "MINI CLUBMAN"
+      ]
+    },
+    "mini": {
+      "mini/cooper": [
+        "COOPER",
+        "MINI COOPER",
+        "JCW"
+      ]
+    },
+    "mercedes": {
+      "mercedes/maybach-s": [
+        "MAYBACH",
+        "S580 MAYBACH",
+        "S680 MAYBACH"
+      ],
+      "mercedes/amg-gt-4door": [
+        "AMG GT 43",
+        "AMG GT43",
+        "AMG GT 53",
+        "AMG GT53"
+      ]
+    },
+    "nissan": {
+      "infiniti/q50": [
+        "INFINITI Q50",
+        "Q50"
+      ],
+      "infiniti/qx50": [
+        "INFINITI QX50",
+        "QX50"
+      ],
+      "infiniti/qx60": [
+        "INFINITI QX60",
+        "QX60"
+      ]
+    },
+    "seat": {
+      "cupra/born": [
+        "BORN",
+        "CUPRA BORN"
+      ],
+      "cupra/formentor": [
+        "CUPRA FORMENTOR",
+        "FORMENTOR"
+      ],
+      "cupra/ateca": [
+        "CUPRA ATECA"
+      ]
+    }
+  },
+  "prefixes": {
+    "*": [
+      "NEW"
+    ],
+    "mercedes": [
+      "AMG",
+      "MERCEDES"
+    ],
+    "lynk-co": [
+      "LYNK CO",
+      "LYNK AND CO"
+    ],
+    "land-rover": [
+      "LAND ROVER"
+    ],
+    "volkswagen": [
+      "VW"
+    ],
+    "alfa-romeo": [
+      "ALFA",
+      "LFA"
+    ]
+  },
+  "exclude": {
+    "byd": [
+      "SEAL 5",
+      "SEALION 5",
+      "BYD SEAL 5",
+      "BYD SEALION 5",
+      "DOLPHIN SURF"
+    ],
+    "citroen": [
+      "C4 PICASSO",
+      "C4 GD PICASSO",
+      "C3 PICASSO",
+      "C3 AIRCROSS",
+      "C4 CACTUS",
+      "C4X",
+      "E-C4 X"
+    ],
+    "suzuki": [
+      "GRAND VITARA"
+    ],
+    "toyota": [
+      "COROLLA VERSO"
+    ]
+  },
+  "class_rules": {
+    "mercedes": {
+      "A": "mercedes/a-class",
+      "B": "mercedes/b-class",
+      "C": "mercedes/c-class",
+      "E": "mercedes/e-class",
+      "G": "mercedes/g-class",
+      "S": "mercedes/s-class",
+      "V": "mercedes/v-class",
+      "ML": "mercedes/ml-class"
+    },
+    "bmw": {
+      "1": "bmw/series1",
+      "2": "bmw/series2",
+      "3": "bmw/series3",
+      "4": "bmw/series4",
+      "5": "bmw/series5"
+    }
+  }
+}

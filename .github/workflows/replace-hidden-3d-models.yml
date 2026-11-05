@@ -31,12 +31,6 @@ jobs:
         # Exit code 1 = nothing replaced (no hidden models or none found) — not a failure
         continue-on-error: true
 
-      - name: Sync all data from Supabase to D1
-        env:
-          NEXT_PUBLIC_SUPABASE_URL:  ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
-          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
-          CLOUDFLARE_API_TOKEN:      ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          CLOUDFLARE_ACCOUNT_ID:     ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          D1_DATABASE_ID:            ${{ secrets.D1_DATABASE_ID }}
-        run: node scripts/migrate-supabase-to-d1.mjs
-        continue-on-error: true
+      # The Supabase -> D1 sync step was removed on 2026-11-05: D1 is the source of truth (AGENTS.md),
+      # and INSERT OR REPLACE from Supabase would undo changes made directly in D1 (3D models,
+      # hidden photos, vehicle counts). Its writes had been failing anyway ("POST not supported").

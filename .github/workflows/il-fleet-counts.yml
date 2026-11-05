@@ -1,0 +1,29 @@
+name: Israel vehicle counts
+
+# Every 3 days: count active vehicles in Israel per site model from the Ministry of Transport
+# open data (data.gov.il) and write car_models.active_vehicles_il (+ _as_of) in production D1.
+# See scripts/il-fleet/fleet.py. The output (counts, unmatched registry names, SQL + rollback)
+# is kept as a run artifact.
+on:
+  schedule:
+    - cron: '23 2 */3 * *'
+  workflow_dispatch: {}
+
+jobs:
+  counts:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Count and update D1
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+        run: python3 -I scripts/il-fleet/fleet.py --d1 il-fleet-out --apply
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: il-fleet-counts
+          path: il-fleet-out/
+          retention-days: 30

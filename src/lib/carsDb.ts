@@ -45,7 +45,8 @@ async function fetchAllMakes(): Promise<CarMake[]> {
       slug: string; make_slug: string; name_he: string; name_en: string;
       years: string; category: string; trims: string; sort_order: number;
       leading_image_url: string | null; active_vehicles_il: number | null;
-    }>('SELECT slug, make_slug, name_he, name_en, years, category, trims, sort_order, leading_image_url, active_vehicles_il FROM car_models ORDER BY make_slug, sort_order'),
+      active_vehicles_il_as_of: string | null;
+    }>('SELECT slug, make_slug, name_he, name_en, years, category, trims, sort_order, leading_image_url, active_vehicles_il, active_vehicles_il_as_of FROM car_models ORDER BY make_slug, sort_order'),
   ]);
 
   const data = makesData.map((m) => ({
@@ -65,6 +66,7 @@ async function fetchAllMakes(): Promise<CarMake[]> {
         category: mo.category as CarModel['category'],
         leadingImageUrl: mo.leading_image_url ?? null,
         activeVehiclesIl: mo.active_vehicles_il ?? null,
+        activeVehiclesIlAsOf: mo.active_vehicles_il_as_of ?? null,
         trims: (() => {
           const t = JSON.parse(mo.trims || '[]');
           return Array.isArray(t) && t.length > 0 ? (t as string[]) : undefined;

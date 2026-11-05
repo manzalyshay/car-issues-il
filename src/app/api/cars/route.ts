@@ -9,7 +9,7 @@ export async function GET(req: NextRequest) {
     const isEn = req.nextUrl.searchParams.get('locale') === 'en';
     // On the English site, never send Hebrew-only or Israel-specific fields over the wire.
     const data = isEn
-      ? makes.map((m) => ({ ...m, nameHe: '', country: '', models: m.models.map((mo) => ({ ...mo, nameHe: '', trims: undefined, activeVehiclesIl: undefined })) }))
+      ? makes.map((m) => ({ ...m, nameHe: '', country: '', models: m.models.map((mo) => ({ ...mo, nameHe: '', trims: undefined, activeVehiclesIl: undefined, activeVehiclesIlAsOf: undefined })) }))
       : makes;
     return NextResponse.json(data);
   } catch (err) {

@@ -217,7 +217,7 @@ export default async function HomePage() {
   // that HomeClient never renders on the English site but that still get
   // serialized into the page HTML as client component props - strip them for EN.
   const makesForClient = locale === 'en'
-    ? allMakes.map((m) => ({ ...m, nameHe: '', country: '', models: m.models.map((mm) => ({ ...mm, nameHe: '', trims: undefined, activeVehiclesIl: undefined })) }))
+    ? allMakes.map((m) => ({ ...m, nameHe: '', country: '', models: m.models.map((mm) => ({ ...mm, nameHe: '', trims: undefined, activeVehiclesIl: undefined, activeVehiclesIlAsOf: undefined })) }))
     : allMakes;
 
   const topPairs = resolvePairs(allMakes, TOP_COMPARE_PAIRS).slice(0, 6).map((p) => ({
