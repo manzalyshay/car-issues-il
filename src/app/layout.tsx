@@ -145,6 +145,9 @@ export default async function RootLayout({ children }: { children: React.ReactNo
           <>
             <Script src={`https://www.googletagmanager.com/gtag/js?id=${isEn ? GA4_EN : GA4_HE}`} strategy="afterInteractive" />
             <Script id="ga4-init" strategy="afterInteractive">{`
+              // Automated browsers (screenshot and test tools) set navigator.webdriver.
+              // Google's opt-out flag stops them from counting as visitors.
+              if (navigator.webdriver) window['ga-disable-${isEn ? GA4_EN : GA4_HE}'] = true;
               window.dataLayer = window.dataLayer || [];
               function gtag(){dataLayer.push(arguments);}
               gtag('js', new Date());
