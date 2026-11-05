@@ -58,7 +58,7 @@ const HE_MODELS = {
   'swift': 'סוויפט', 'vitara': 'ויטרה', 'sx4': 'SX4',
   'forester': 'פורסטר', 'outback': 'אאוטבק', 'xv': 'XV', 'impreza': 'אימפרזה',
   'outlander': 'אאוטלנדר', 'eclipse-cross': 'אקליפס קרוס', 'colt': 'קולט',
-  'space-star': 'ספייס סטאר', 'l200': 'L200', 'pajero-sport': 'פג׳רו ספורט',
+  'space-star': 'ספייס סטאר', 'l200': 'L200', 'pajero-sport': 'פאג׳רו ספורט',
   'compass': 'קומפס', 'renegade': 'רנגייד', 'wrangler': 'רנגלר',
   'grand-cherokee': 'גרנד צ׳רוקי', 'avenger': 'אוונג׳ר',
   'formentor': 'פורמנטור', 'born': 'Born',

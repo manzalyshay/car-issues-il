@@ -113,7 +113,7 @@ const HE_MODELS = {
   clio:'קליאו',megane:'מגאן',kadjar:"קדג'ר",arkana:'ארקנה',zoe:'זואי',
   xc40:'XC40',xc60:'XC60',xc90:'XC90',s60:'S60',ex30:'EX30',
   renegade:'רנגייד',compass:'קומפס','grand-cherokee':'גרנד צ׳רוקי',wrangler:'רנגלר',cherokee:"צ'רוקי",avenger:"אוונג'ר",
-  outlander:'אאוטלנדר','eclipse-cross':'אקליפס קרוס',asx:'ASX',colt:'קולט','space-star':'ספייס סטאר',l200:'L200','pajero-sport':'פג׳רו ספורט',
+  outlander:'אאוטלנדר','eclipse-cross':'אקליפס קרוס',asx:'ASX',colt:'קולט','space-star':'ספייס סטאר',l200:'L200','pajero-sport':'פאג׳רו ספורט',
   forester:'פורסטר',outback:'אאוטבק',xv:'XV',impreza:'אימפרזה',
   formentor:'פורמנטור',born:'בורן',ateca:'אטקה',ibiza:'איביזה',leon:'ליאון',arona:'ארונה',
   corsa:'קורסה',astra:'אסטרה',mokka:'מוקה',grandland:'גרנדלנד',crossland:'קרוסלנד',

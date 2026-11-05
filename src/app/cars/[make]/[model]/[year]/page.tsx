@@ -105,10 +105,13 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const ratingStr = avgRating ? ` ⭐ ${avgRating.toFixed(1)}` : '';
   const reviewPart = yearReviews.length > 0
     ? `${yearReviews.length} ביקורות בעלים${ratingStr}`
-    : 'חוות דעת ואמינות';
+    : '';
   const recallPartHe = metaRecalls.length > 0 ? ` ${metaRecalls.length === 1 ? 'ריקול אחד' : `${metaRecalls.length} ריקולים`}.` : '';
   return {
-    title: `${make.nameHe} ${model.nameHe} ${year}${priceHook} - ${reviewPart} | מחיר, מפרט ואמינות`,
+    // No reviews yet: one suffix, so "ואמינות" isn't repeated and the title isn't cut off in Google.
+    title: yearReviews.length > 0
+      ? `${make.nameHe} ${model.nameHe} ${year}${priceHook} - ${reviewPart} | מחיר, מפרט ואמינות`
+      : `${make.nameHe} ${model.nameHe} ${year}${priceHook} – מחיר, חוות דעת ואמינות`,
     description: `${yearReviews.length > 0 ? `${yearReviews.length} ביקורות אמיתיות על` : 'כל מה שצריך לדעת על'} ${make.nameHe} ${model.nameHe} ${year} (${make.nameEn} ${model.nameEn})${avgRating ? ` - דירוג ממוצע ${avgRating.toFixed(1)}/5` : ''}.${priceDesc}${trimDesc}${recallPartHe} יתרונות, חסרונות ובעיות נפוצות מבעלי רכב בישראל.`.slice(0, 160),
     robots: indexable ? { index: true, follow: true } : { index: false, follow: true },
     alternates: { canonical: url, languages: { he: url, en: `https://carissues.net/cars/${make.slug}/${model.slug}/${year}`, 'x-default': `https://carissues.net/cars/${make.slug}/${model.slug}/${year}` } },

@@ -89,7 +89,7 @@ const models: Array<{ make_slug: string; slug: string; name_he: string; name_en:
   { make_slug: 'mitsubishi', slug: 'colt',          name_he: 'קולט',         name_en: 'Colt',          years: ryr(2023),       category: 'hatchback', sort_order: 3 },
   { make_slug: 'mitsubishi', slug: 'space-star',    name_he: 'ספייס סטאר',  name_en: 'Space Star',    years: ryr(2014, 2023), category: 'hatchback', sort_order: 4 },
   { make_slug: 'mitsubishi', slug: 'l200',          name_he: 'L200',         name_en: 'L200',          years: ryr(2014),       category: 'pickup',    sort_order: 5 },
-  { make_slug: 'mitsubishi', slug: 'pajero-sport',  name_he: 'פג׳רו ספורט', name_en: 'Pajero Sport',  years: ryr(2016),       category: 'suv',       sort_order: 6 },
+  { make_slug: 'mitsubishi', slug: 'pajero-sport',  name_he: 'פאג׳רו ספורט', name_en: 'Pajero Sport',  years: ryr(2016),       category: 'suv',       sort_order: 6 },
   // Subaru
   { make_slug: 'subaru', slug: 'forester', name_he: 'פורסטר',  name_en: 'Forester', years: ryr(2013), category: 'suv',       sort_order: 0 },
   { make_slug: 'subaru', slug: 'outback',  name_he: 'אאוטבק',  name_en: 'Outback',  years: ryr(2013), category: 'suv',       sort_order: 1 },
