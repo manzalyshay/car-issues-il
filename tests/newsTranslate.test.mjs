@@ -1,16 +1,19 @@
-// Unit tests for the news Hebrew rewrite: failure reasons, counts, run status,
-// and that there is no fallback provider. No network: every Gemini call goes to a mocked fetch.
+// Unit tests for the news Hebrew rewrite: failure reasons, the Workers AI fallback,
+// the 429 circuit breaker, counts and run status. No network: Gemini goes to a mocked
+// fetch and Workers AI to a mocked env.AI.run.
 // Run: npm test   (node --test, Node 22+ strips the TypeScript types)
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import {
-  callGemini, translateHebrew, parseHebrewJson,
-  newTranslationStats, recordOutcome, newsRunStatus, sanitizeDiagnostic,
+  callGemini, callWorkersAi, translateHebrew, parseHebrewJson, geminiGenerationConfig, newRunState,
+  newTranslationStats, recordOutcome, newsRunStatus, sanitizeDiagnostic, WORKERS_AI_MODEL,
 } from '../src/lib/newsTranslate.ts';
 
 const KEY = 'test-key-123';
-const GOOD = JSON.stringify({ title: 'כותרת', body: 'גוף הכתבה' });
+const BODY = 'טויוטה הציגה את הדור החדש של הקורולה עם מערכת הנעה היברידית משופרת. '.repeat(6).trim();
+const GOOD = JSON.stringify({ title: 'כותרת', body: BODY });
+const ARTICLE = { titleHe: 'כותרת', bodyHe: BODY };
 
 const json = (status, body) => async () =>
   new Response(typeof body === 'string' ? body : JSON.stringify(body), { status, headers: { 'Content-Type': 'application/json' } });
@@ -68,7 +71,31 @@ test('empty candidate text', async () => {
 
 test('success, including a fenced JSON reply', async () => {
   const r = await callGemini('p', { apiKey: KEY, fetchImpl: geminiReply('```json\n' + GOOD + '\n```') });
-  assert.deepEqual(r, { ok: true, article: { titleHe: 'כותרת', bodyHe: 'גוף הכתבה' } });
+  assert.deepEqual(r, { ok: true, article: ARTICLE });
+});
+
+test('JSON surrounded by chatter still parses', async () => {
+  const chatter = `*Expanding slightly while remaining factual*:\n${GOOD}\nParagraph 2: done.`;
+  assert.deepEqual(parseHebrewJson(chatter), ARTICLE);
+  const r = await callGemini('p', { apiKey: KEY, fetchImpl: geminiReply('Here you go:\n```json\n' + GOOD + '\n```\nHope this helps') });
+  assert.deepEqual(r, { ok: true, article: ARTICLE });
+});
+
+test('parseHebrewJson rejects a stub body and a body with no Hebrew', () => {
+  assert.equal(parseHebrewJson(JSON.stringify({ title: 'כותרת', body: 'גוף קצר' })), null);
+  assert.equal(parseHebrewJson(JSON.stringify({ title: 'כותרת', body: 'English only. '.repeat(40) })), null);
+  assert.equal(parseHebrewJson(JSON.stringify({ title: 'Title', body: BODY })), null);
+});
+
+test('Gemini is asked for schema-constrained JSON with room for a full article', async () => {
+  let sent;
+  const fetchImpl = async (_url, init) => { sent = JSON.parse(init.body); return geminiReply(GOOD)(); };
+  await callGemini('p', { apiKey: KEY, fetchImpl });
+  const c = sent.generationConfig;
+  assert.equal(c.responseMimeType, 'application/json');
+  assert.deepEqual(c.responseSchema.required, ['title', 'body']);
+  assert.ok(c.maxOutputTokens >= 4096);
+  assert.deepEqual(geminiGenerationConfig('gemini-2.5-flash').thinkingConfig, { thinkingBudget: 0 });
 });
 
 test('parseHebrewJson rejects missing or blank fields without throwing', () => {
@@ -116,45 +143,114 @@ test('sanitizeDiagnostic masks keys and tokens, strips control characters, clips
   assert.equal(sanitizeDiagnostic({ a: 1 }), '{"a":1}');
 });
 
-// ── No fallback ──────────────────────────────────────────────────────────────
+// ── Workers AI ───────────────────────────────────────────────────────────────
 
-test('no fallback: a Gemini failure is an untranslated outcome with reason and message', async () => {
+const aiReply = reply => async () => reply;
+const aiThrows = message => async () => { throw new Error(message); };
+
+test('Workers AI: missing binding, error, string, object and choices replies', async () => {
+  assert.deepEqual(await callWorkersAi('p', { run: undefined }), { ok: false, reason: 'missing_binding' });
+  const e = await callWorkersAi('p', { run: aiThrows('capacity exceeded') });
+  assert.equal(e.reason, 'error');
+  assert.match(e.message, /capacity/);
+  assert.deepEqual(await callWorkersAi('p', { run: aiReply({ response: GOOD }) }), { ok: true, article: ARTICLE });
+  assert.deepEqual(await callWorkersAi('p', { run: aiReply({ response: JSON.parse(GOOD) }) }), { ok: true, article: ARTICLE });
+  assert.deepEqual(await callWorkersAi('p', { run: aiReply({ choices: [{ message: { content: GOOD } }] }) }), { ok: true, article: ARTICLE });
+  assert.deepEqual(await callWorkersAi('p', { run: aiReply({ response: '' }) }), { ok: false, reason: 'empty' });
+  assert.equal((await callWorkersAi('p', { run: aiReply({ response: 'sorry' }) })).reason, 'bad_json');
+});
+
+test('Workers AI: default model, system message and generation settings', async () => {
+  let call;
+  await callWorkersAi('prompt text', { run: async (model, input) => { call = { model, input }; return { response: GOOD }; } });
+  assert.equal(call.model, WORKERS_AI_MODEL);
+  assert.deepEqual(call.input.messages[0], { role: 'system', content: 'Return only a JSON object' });
+  assert.deepEqual(call.input.messages[1], { role: 'user', content: 'prompt text' });
+  assert.equal(call.input.max_tokens, 2048);
+  assert.equal(call.input.temperature, 0.2);
+});
+
+// ── Fallback and circuit breaker ─────────────────────────────────────────────
+
+const g429 = () => callGemini('p', { apiKey: KEY, fetchImpl: json(429, { error: { message: 'You exceeded your current quota' } }) });
+const gOk = () => callGemini('p', { apiKey: KEY, fetchImpl: geminiReply(GOOD) });
+const wOk = () => callWorkersAi('p', { run: aiReply({ response: GOOD }) });
+const wBad = () => callWorkersAi('p', { run: aiReply({ response: 'not json' }) });
+
+test('Gemini success: Workers AI is not called', async () => {
+  calls = 0;
+  const out = await translateHebrew(gOk, counting(wOk));
+  assert.equal(out.ok, true);
+  assert.equal(out.provider, 'gemini');
+  assert.deepEqual(out.failures, {});
+  assert.equal(calls, 0);
+});
+
+test('Gemini 429 then Workers AI ok: translated via Workers AI, Gemini reason kept', async () => {
+  const s = newTranslationStats();
+  const out = await translateHebrew(g429, wOk);
+  recordOutcome(s, out);
+  assert.equal(out.ok, true);
+  assert.equal(out.provider, 'workers_ai');
+  assert.deepEqual(out.article, ARTICLE);
+  assert.deepEqual(out.failures, { gemini: 'http_429' });
+  assert.equal(s.translated, 1);
+  assert.equal(s.viaWorkersAi, 1);
+  assert.equal(s.viaGemini, 0);
+  assert.equal(s.untranslated, 0);
+});
+
+test('both fail: untranslated with both reasons and messages', async () => {
+  const s = newTranslationStats();
+  const out = await translateHebrew(g429, wBad);
+  recordOutcome(s, out);
+  assert.equal(out.ok, false);
+  assert.deepEqual(out.failures, { gemini: 'http_429', workers_ai: 'bad_json' });
+  assert.match(out.messages.gemini, /quota/);
+  assert.equal(out.messages.workers_ai, 'not json');
+  assert.equal(s.untranslated, 1);
+  assert.deepEqual(s.reasons, { 'gemini:http_429': 1, 'workers_ai:bad_json': 1 });
+});
+
+test('any Gemini failure falls back, not only 429', async () => {
+  for (const g of [
+    () => callGemini('p', { apiKey: undefined, fetchImpl: geminiReply(GOOD) }),
+    () => callGemini('p', { apiKey: KEY, fetchImpl: json(503, 'Service Unavailable') }),
+    () => callGemini('p', { apiKey: KEY, fetchImpl: geminiReply('Paragraph 2: no json here') }),
+    () => callGemini('p', { apiKey: KEY, fetchImpl: throws('TimeoutError') }),
+  ]) {
+    const out = await translateHebrew(g, wOk);
+    assert.equal(out.provider, 'workers_ai');
+  }
+});
+
+test('circuit breaker: after a 429, the next call skips Gemini', async () => {
+  const state = newRunState();
+  let geminiCalls = 0;
+  const gemini = async () => { geminiCalls++; return g429(); };
+  const first = await translateHebrew(gemini, wOk, state);
+  assert.equal(state.geminiSkipped, true);
+  assert.deepEqual(first.failures, { gemini: 'http_429' });
+  const second = await translateHebrew(gemini, wOk, state);
+  assert.equal(geminiCalls, 1);
+  assert.equal(second.ok, true);
+  assert.equal(second.provider, 'workers_ai');
+  assert.deepEqual(second.failures, { gemini: 'skipped_after_429' });
+});
+
+test('circuit breaker: other Gemini failures do not trip it', async () => {
+  const state = newRunState();
+  await translateHebrew(() => callGemini('p', { apiKey: KEY, fetchImpl: json(503, 'busy') }), wOk, state);
+  assert.equal(state.geminiSkipped, false);
+});
+
+test('without a fallback, a Gemini failure is untranslated with its reason', async () => {
   const out = await translateHebrew(() => callGemini('p', { apiKey: KEY, fetchImpl: json(404, { error: { message: 'models/gemini-3.6-flash is not found' } }) }));
   assert.deepEqual(out, {
     ok: false,
     failures: { gemini: 'http_404' },
     messages: { gemini: 'models/gemini-3.6-flash is not found' },
   });
-});
-
-test('no fallback: Gemini success is the only way to get Hebrew', async () => {
-  const out = await translateHebrew(() => callGemini('p', { apiKey: KEY, fetchImpl: geminiReply(GOOD) }));
-  assert.equal(out.ok, true);
-  assert.equal(out.provider, 'gemini');
-  assert.deepEqual(out.failures, {});
-});
-
-test('no fallback: each failure reason passes through unchanged', async () => {
-  const cases = [
-    [undefined, geminiReply(GOOD), 'missing_key'],
-    [KEY, throws('TimeoutError'), 'timeout'],
-    [KEY, json(429, { error: { message: 'quota' } }), 'http_429'],
-    [KEY, geminiReply('nope'), 'bad_json'],
-    [KEY, json(200, { candidates: [] }), 'empty'],
-  ];
-  for (const [apiKey, fetchImpl, reason] of cases) {
-    const out = await translateHebrew(() => callGemini('p', { apiKey, fetchImpl }));
-    assert.equal(out.ok, false);
-    assert.deepEqual(out.failures, { gemini: reason });
-  }
-});
-
-test('no fallback: news code no longer imports or calls Workers AI', () => {
-  const lib = readFileSync(new URL('../src/lib/newsTranslate.ts', import.meta.url), 'utf8');
-  const news = readFileSync(new URL('../src/lib/carNews.ts', import.meta.url), 'utf8');
-  for (const src of [lib, news]) {
-    assert.ok(!/runWorkersAI|workersAi|callWorkersAi|translateWithFallback/.test(src));
-  }
 });
 
 // ── Counts and run status ────────────────────────────────────────────────────
@@ -169,7 +265,7 @@ test('counts per run, with samples', async () => {
   recordOutcome(s, await translateHebrew(q));
   recordOutcome(s, await translateHebrew(t));
   assert.deepEqual(s, {
-    attempted: 4, translated: 1, viaGemini: 1, untranslated: 3,
+    attempted: 4, translated: 1, viaGemini: 1, viaWorkersAi: 0, untranslated: 3,
     reasons: { 'gemini:http_429': 2, 'gemini:timeout': 1 },
     samples: { 'gemini:http_429': 'quota' },
   });
@@ -185,13 +281,25 @@ test('run status is honest', () => {
   assert.equal(newsRunStatus(0, [stats(0, 0), stats(0, 0)]), 'ok');
 });
 
-test('no-fallback run with every Gemini call failing is recorded as failed', async () => {
+test('a run where only Workers AI worked is ok (or partial on a feed error), not failed', async () => {
+  const state = newRunState();
+  const fresh = newTranslationStats();
+  const retry = newTranslationStats();
+  for (let i = 0; i < 5; i++) recordOutcome(fresh, await translateHebrew(g429, wOk, state));
+  for (let i = 0; i < 3; i++) recordOutcome(retry, await translateHebrew(g429, wOk, state));
+  assert.equal(fresh.viaWorkersAi, 5);
+  assert.equal(newsRunStatus(0, [fresh, retry]), 'ok');
+  assert.equal(newsRunStatus(1, [fresh, retry]), 'partial');
+  assert.deepEqual(fresh.reasons, { 'gemini:http_429': 1, 'gemini:skipped_after_429': 4 });
+});
+
+test('run with every call failing on both providers is recorded as failed', async () => {
   const fresh = newTranslationStats();
   const retry = newTranslationStats();
   const fail = () => callGemini('p', { apiKey: KEY, fetchImpl: json(404, { error: { message: 'not found' } }) });
-  for (let i = 0; i < 5; i++) recordOutcome(fresh, await translateHebrew(fail));
-  for (let i = 0; i < 10; i++) recordOutcome(retry, await translateHebrew(fail));
+  for (let i = 0; i < 5; i++) recordOutcome(fresh, await translateHebrew(fail, wBad));
+  for (let i = 0; i < 10; i++) recordOutcome(retry, await translateHebrew(fail, wBad));
   assert.equal(newsRunStatus(0, [fresh, retry]), 'failed');
-  assert.deepEqual(fresh.reasons, { 'gemini:http_404': 5 });
+  assert.deepEqual(fresh.reasons, { 'gemini:http_404': 5, 'workers_ai:bad_json': 5 });
   assert.equal(fresh.samples['gemini:http_404'], 'not found');
 });

@@ -1,12 +1,17 @@
 /**
  * Car news scraper + AI rewriter.
  * Fetches RSS feeds from global automotive news sources,
- * rewrites articles in Hebrew with Gemini (no fallback provider), and stores in D1.
+ * rewrites articles in Hebrew (Gemini, with Cloudflare Workers AI as the fallback),
+ * and stores in D1.
  */
+import { getCloudflareContext } from '@opennextjs/cloudflare';
 import { dbRun, dbAll } from '@/lib/db';
 import { parseNewsSegment } from './newsSlug';
 import { findNewsImage } from './newsImage';
-import { callGemini, translateHebrew, recordOutcome, type TranslationStats } from './newsTranslate';
+import {
+  callGemini, callWorkersAi, translateHebrew, recordOutcome, newRunState, WORKERS_AI_MODEL,
+  type TranslationStats, type RunState, type AiRun,
+} from './newsTranslate';
 
 export interface CarNewsItem {
   id: string;
@@ -197,17 +202,36 @@ Source title: ${titleEn}
 Source content: ${source}`;
 }
 
+/** env.AI.run from the Workers AI binding (same lookup as src/lib/workersAi.ts), or undefined. */
+async function getAiRun(): Promise<AiRun | undefined> {
+  try {
+    const ctx = await getCloudflareContext({ async: true });
+    const ai = (ctx.env as Record<string, unknown>).AI as
+      | { run: (model: string, input: unknown) => Promise<unknown> }
+      | undefined;
+    return ai ? (model, input) => ai.run(model, input) : undefined;
+  } catch {
+    return undefined;
+  }
+}
+
 /**
- * Rewrite in Hebrew with Gemini only (no fallback provider). Every outcome is
- * recorded in `stats` with its failure reason, so the news job can report it.
+ * Rewrite in Hebrew: Gemini first, Workers AI if Gemini fails. Every outcome is
+ * recorded in `stats` with its failure reasons. `state` carries the per-run
+ * circuit breaker (Gemini skipped after its first 429).
  */
 async function rewriteInHebrew(
   titleEn: string,
   bodyEn: string,
   stats?: TranslationStats,
+  state?: RunState,
 ): Promise<{ titleHe: string; bodyHe: string } | null> {
   const prompt = buildHebrewPrompt(titleEn, bodyEn);
-  const outcome = await translateHebrew(() => callGemini(prompt, { apiKey: process.env.GEMINI_API_KEY }));
+  const outcome = await translateHebrew(
+    () => callGemini(prompt, { apiKey: process.env.GEMINI_API_KEY }),
+    async () => callWorkersAi(prompt, { run: await getAiRun(), model: WORKERS_AI_MODEL }),
+    state,
+  );
   if (stats) recordOutcome(stats, outcome);
   if (!outcome.ok) console.warn('[carNews] Hebrew rewrite failed', outcome.failures);
   return outcome.ok ? outcome.article : null;
@@ -249,7 +273,7 @@ export interface NewsRefreshStats {
   sources: Record<string, { fetched: number; alreadyStored: number; unseen: number; picked: number; error: string | null }>;
 }
 
-export async function refreshCarNews(maxPerRun = 15, stats?: NewsRefreshStats): Promise<number> {
+export async function refreshCarNews(maxPerRun = 15, stats?: NewsRefreshStats, state: RunState = newRunState()): Promise<number> {
   await ensureNewsTable();
 
   // Load existing IDs to skip already-stored articles
@@ -290,7 +314,7 @@ export async function refreshCarNews(maxPerRun = 15, stats?: NewsRefreshStats): 
     const fullBody = await fetchArticleBody(item.link);
     const articleBody = fullBody ?? item.description;
 
-    const rewritten = await rewriteInHebrew(item.title, articleBody, stats?.translation);
+    const rewritten = await rewriteInHebrew(item.title, articleBody, stats?.translation, state);
     // Source-site photos can't be republished; use a freely licensed Commons photo instead.
     const image = await findNewsImage(item.title).catch(() => null);
 
@@ -343,19 +367,29 @@ export async function fillMissingNewsImages(max = 10): Promise<number> {
   return filled;
 }
 
+/** Untranslated articles older than this are left alone: only the latest news gets retried. */
+export const RETRY_MAX_AGE_DAYS = 3;
+
 /**
- * Retry translation for articles that previously failed (title_he IS NULL).
+ * Retry translation for recent articles that previously failed (title_he IS NULL),
+ * newest first, one call at a time. Only articles stored in the last `maxAgeDays`
+ * days are retried, so the old untranslated backlog is not worked through.
  * @param maxRetry Max articles to retry per call
  */
-export async function retranslateUntranslated(maxRetry = 10, stats?: TranslationStats): Promise<number> {
+export async function retranslateUntranslated(
+  maxRetry = 10, stats?: TranslationStats, state: RunState = newRunState(), maxAgeDays = RETRY_MAX_AGE_DAYS,
+): Promise<number> {
   const rows = await dbAll<{ id: string; title_en: string | null; body_en: string | null }>(
-    `SELECT id, title_en, body_en FROM car_news WHERE (title_he IS NULL OR body_he IS NULL) AND title_en IS NOT NULL AND body_en IS NOT NULL ORDER BY published_at DESC LIMIT ?`,
-    maxRetry,
+    `SELECT id, title_en, body_en FROM car_news
+     WHERE (title_he IS NULL OR body_he IS NULL) AND title_en IS NOT NULL AND body_en IS NOT NULL
+       AND created_at >= datetime('now', ?)
+     ORDER BY published_at DESC LIMIT ?`,
+    `-${maxAgeDays} days`, maxRetry,
   );
   let fixed = 0;
   for (const row of rows) {
     if (!row.title_en || !row.body_en) continue;
-    const result = await rewriteInHebrew(row.title_en, row.body_en, stats);
+    const result = await rewriteInHebrew(row.title_en, row.body_en, stats, state);
     if (result) {
       await dbRun(`UPDATE car_news SET title_he=?, body_he=? WHERE id=?`, result.titleHe, result.bodyHe, row.id);
       fixed++;
@@ -391,27 +425,6 @@ export async function getNewsArticleBySegment(segment: string): Promise<CarNewsI
     `${parsed.idPrefix}%`,
   );
   return rows[0] ?? null;
-}
-
-/**
- * Retranslate articles that have a very short body_he (likely generated by Workers AI).
- * Forces regeneration with Gemini for proper length and quality.
- */
-export async function retranslateShort(maxRetry = 10, minBodyLen = 150, stats?: TranslationStats): Promise<number> {
-  const rows = await dbAll<{ id: string; title_en: string | null; body_en: string | null }>(
-    `SELECT id, title_en, body_en FROM car_news WHERE body_he IS NOT NULL AND length(body_he) < ? AND title_en IS NOT NULL AND body_en IS NOT NULL ORDER BY published_at DESC LIMIT ?`,
-    String(minBodyLen), String(maxRetry),
-  );
-  let fixed = 0;
-  for (const row of rows) {
-    if (!row.title_en || !row.body_en) continue;
-    const result = await rewriteInHebrew(row.title_en, row.body_en, stats);
-    if (result) {
-      await dbRun(`UPDATE car_news SET title_he=?, body_he=? WHERE id=?`, result.titleHe, result.bodyHe, row.id);
-      fixed++;
-    }
-  }
-  return fixed;
 }
 
 export async function deleteNewsArticle(id: string): Promise<void> {
