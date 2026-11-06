@@ -25,7 +25,20 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const isEn = locale === 'en';
   const base = getBaseUrl(locale);
   const url = `${base}/cars/${make.slug}/${model.slug}/issues`;
+  // carissues.net: an issues page with no English problem data (no expert-review cons or
+  // summary, no owner reviews, no recalls) is a template shell - keep it out of the index.
+  let thinEn = false;
+  if (isEn) {
+    const [er, reviews, recalls] = await Promise.all([
+      getExpertReviews(make.slug, model.slug).catch(() => []),
+      getReviewsForModel(make.slug, model.slug).catch(() => []),
+      getRecallsFromCache(make.nameEn, model.nameEn).catch(() => []),
+    ]);
+    const e = er[0];
+    thinEn = !(e?.consEn?.length || e?.localSummaryEn) && reviews.length === 0 && recalls.length === 0;
+  }
   return {
+    ...(thinEn ? { robots: { index: false, follow: true } } : {}),
     title: isEn
       ? `${make.nameEn} ${model.nameEn} - Common Problems & Issues`
       : `${make.nameHe} ${model.nameHe} - בעיות נפוצות ותקלות`,

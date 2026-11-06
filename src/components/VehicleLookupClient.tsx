@@ -529,6 +529,14 @@ export default function VehicleLookupClient({ initialPlate, initialVehicle, init
                           <span style={{ fontSize: 14, color: 'var(--text-muted)' }}>{modelInfo.recallCount > 0 ? `${modelInfo.recallCount} ${L.recallsCount}` : L.noRecalls}</span>
                           <span style={{ fontSize: 14, fontWeight: 700, color: 'var(--accent)', marginTop: 'auto' }}>{L.recallsDetails}</span>
                         </Link>
+                        {isHe && modelInfo.priceMin != null && (
+                          <Link href={`${modelInfo.modelUrl}?tab=specs`} style={{ border: '1px solid var(--border)', borderRadius: 16, padding: 18, textDecoration: 'none', color: 'var(--text)', display: 'flex', flexDirection: 'column', gap: 10 }}>
+                            <span style={{ width: 40, height: 40, borderRadius: 12, background: 'var(--accent-soft)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18 }}>🏷️</span>
+                            <span style={{ fontSize: 17, fontWeight: 700 }}>מחיר דגם חדש</span>
+                            <span style={{ fontSize: 14, color: 'var(--text-muted)' }}>{`החל מ-₪${modelInfo.priceMin.toLocaleString('he-IL')} במחירון היבואן`}</span>
+                            <span style={{ fontSize: 14, fontWeight: 700, color: 'var(--accent)', marginTop: 'auto' }}>למחירון הגרסאות ←</span>
+                          </Link>
+                        )}
                         {modelInfo.repairCostTeaser && (
                           <Link href={`${modelInfo.modelUrl}#repair`} style={{ border: '1px solid var(--border)', borderRadius: 16, padding: 18, textDecoration: 'none', color: 'var(--text)', display: 'flex', flexDirection: 'column', gap: 10 }}>
                             <span style={{ width: 40, height: 40, borderRadius: 12, background: 'var(--accent-soft)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18 }}>₪</span>

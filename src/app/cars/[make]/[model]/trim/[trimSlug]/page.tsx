@@ -65,6 +65,9 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     const hpStr = trim.engineHp ? ` · ${trim.engineHp} hp` : '';
     return {
       title: `${make.nameEn} ${model.nameEn} ${trim.name} ${year} - Specs & Features`,
+      // carissues.net trim pages are bare spec sheets (the Israeli price and reviews live on
+      // the Hebrew site): not indexed, links still followed. The .co.il trim pages are unchanged.
+      robots: { index: false, follow: true },
       description: `Full specs for ${make.nameEn} ${model.nameEn} ${trim.name} ${year}.${hpStr} Technology, safety, and comfort features.`,
       alternates: { canonical: url, languages: trimLangs },
       openGraph: {

@@ -47,6 +47,8 @@ export default async function VehicleLookupPage() {
     { icon: '🔢', title: 'קילומטראז׳', desc: 'מד-האוץ בטסט האחרון - כשקיים במאגר משרד התחבורה' },
     { icon: '🪪', title: 'מספר שלדה ובעלות', desc: 'מספר שלדה (VIN) וסוג הבעלות (פרטי / עסקי)' },
     { icon: '🌍', title: 'מקור הרכב', desc: 'רכב מקורי, מיובא מאירופה, ארה"ב או אחר - כשקיים' },
+    { icon: '📢', title: 'ריקולים לדגם', desc: 'קריאות שירות (ריקולים) שפורסמו לדגם, בישראל ובארה"ב' },
+    { icon: '⭐', title: 'בעיות נפוצות וביקורות', desc: 'הבעיות הנפוצות בדגם, ביקורות בעלים ומחיר מחירון - כשקיימים באתר' },
   ] : [
     { icon: '📋', title: 'Full Vehicle Details', desc: 'Make, model, year, color, fuel type' },
     { icon: '🔧', title: 'Test & License Status', desc: 'Last test date and license expiry - instantly' },
@@ -54,6 +56,8 @@ export default async function VehicleLookupPage() {
     { icon: '🔢', title: 'Odometer Reading', desc: 'Mileage at last test - when available in Ministry of Transport records' },
     { icon: '🪪', title: 'VIN & Ownership Type', desc: 'Vehicle frame number and ownership type (private / business)' },
     { icon: '🌍', title: 'Vehicle Origin', desc: 'Original, European import, US or other - when recorded' },
+    { icon: '📢', title: 'Model Recalls', desc: 'Recall campaigns published for the model, in Israel and the US' },
+    { icon: '⭐', title: 'Common Problems & Reviews', desc: 'The model\'s common problems and owner reviews - when we have them' },
   ];
 
   const steps = isHe ? [
@@ -69,7 +73,7 @@ export default async function VehicleLookupPage() {
   const faqs = isHe ? [
     {
       q: 'מה ניתן לבדוק לפי מספר רישוי?',
-      a: 'ניתן לבדוק: שם הרכב (יצרן + דגם), שנת ייצור, צבע, סוג דלק, תוקף טסט ורישיון, מסגרת (VIN), בעלות, קילומטראז׳ בטסט האחרון, היסטוריית נזק ומקור הרכב - הכל ישירות ממשרד התחבורה.',
+      a: 'ניתן לבדוק: שם הרכב (יצרן + דגם), שנת ייצור, צבע, סוג דלק, תוקף טסט ורישיון, מסגרת (VIN), בעלות, קילומטראז׳ בטסט האחרון, היסטוריית נזק ומקור הרכב - ישירות ממשרד התחבורה. בנוסף מוצגים ריקולים לדגם, בעיות נפוצות וביקורות בעלים, כשהם קיימים באתר.',
     },
     {
       q: 'האם השירות בחינם?',

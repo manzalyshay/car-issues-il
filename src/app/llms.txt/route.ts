@@ -15,7 +15,7 @@ export async function GET() {
   const base = en ? 'https://carissues.net' : 'https://carissues.co.il';
   const makes = await getAllMakes().catch(() => []);
   const modelCount = makes.reduce((s, m) => s + m.models.length, 0);
-  const topPairs = resolvePairs(makes, TOP_COMPARE_PAIRS).slice(0, 15);
+  const topPairs = resolvePairs(makes, TOP_COMPARE_PAIRS).slice(0, 20);
 
   const pairLines = topPairs.map(({ path, a, b }) =>
     en

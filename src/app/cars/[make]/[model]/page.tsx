@@ -42,6 +42,19 @@ interface Props {
   searchParams: Promise<{ tab?: string }>;
 }
 
+/**
+ * "<model> — חוות דעת, בעיות נפוצות ומחיר", kept to 60 characters where possible
+ * (no "| CarIssues" suffix). "ומחיר" only when the model has an Israeli trim price.
+ * If the full name pushes it over 60, the make is dropped from the front.
+ */
+function hebrewModelTitle(makeHe: string, modelHe: string, yearSuffix: string, hasPrice: boolean): string {
+  const tail = hasPrice ? 'חוות דעת, בעיות נפוצות ומחיר' : 'חוות דעת ובעיות נפוצות';
+  const full = `${makeHe} ${modelHe}${yearSuffix} — ${tail}`;
+  if (full.length <= 60) return full;
+  const short = `${modelHe}${yearSuffix} — ${tail}`;
+  return short.length < full.length && modelHe.length >= 3 ? short : full;
+}
+
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { make: makeSlug, model: modelSlug } = await params;
   const [locale, make, model] = await Promise.all([
@@ -57,8 +70,9 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     getReviewsForModel(makeSlug, modelSlug).catch(() => []),
     getTrimSpecs(makeSlug, modelSlug).catch(() => []),
   ]);
+  // min-max, not first/last: car_models.years is not always sorted newest-first.
   const yearRange = model.years.length > 1
-    ? `${model.years[model.years.length - 1]}-${model.years[0]}`
+    ? `${Math.min(...model.years)}-${Math.max(...model.years)}`
     : model.years.length === 1 ? `${model.years[0]}` : '';
   const yearSuffix = yearRange ? ` ${yearRange}` : '';
   // Same photo the page itself shows as its default (getImagesForCar's first
@@ -97,12 +111,9 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     : minPrice ? ` מחיר מומלץ: ₪${minPrice.toLocaleString('he-IL')}.` : '';
   const trimNames = trims.slice(0, 6).map(t => t.name).join(', ');
   const trimDesc = trimNames ? ` גימורים: ${trimNames}${trims.length > 6 ? ' ועוד' : ''}.` : '';
-  const reviewPart = reviews.length >= 20
-    ? `בעיות נפוצות וחוות דעת בעלים (${reviews.length} ביקורות${avgRating ? ` ⭐ ${avgRating.toFixed(1)}` : ''})`
-    : 'בעיות נפוצות, אמינות וחוות דעת בעלים';
   const recentYears = model.years.slice(0, 4).join(', ');
   return {
-    title: `${make.nameHe} ${model.nameHe}${yearSuffix}: ${reviewPart}`,
+    title: { absolute: hebrewModelTitle(make.nameHe, model.nameHe, yearSuffix, minPrice != null) },
     description: `${reviews.length > 0 ? `${reviews.length} ביקורות אמיתיות` : 'ביקורות אמיתיות'} על ${make.nameHe} ${model.nameHe} (${make.nameEn} ${model.nameEn})${yearRange ? ` שנים ${yearRange}` : ''}${avgRating ? `. דירוג ממוצע ${avgRating.toFixed(1)}/5` : ''}.${priceDesc}${recentYears ? ` חוות דעת ${recentYears}.` : ''}${trimDesc} יתרונות, חסרונות ובעיות נפוצות מבעלי רכב בישראל.`.slice(0, 160),
     alternates: { canonical: url, languages: { he: url, en: `https://carissues.net/cars/${make.slug}/${model.slug}`, 'x-default': `https://carissues.net/cars/${make.slug}/${model.slug}` } },
     openGraph: {
@@ -191,8 +202,9 @@ export default async function ModelPage({ params, searchParams }: Props) {
       }))
     : allReviews;
 
+  // min-max, not first/last: car_models.years is not always sorted newest-first.
   const yearRange = model.years.length > 1
-    ? `${model.years[model.years.length - 1]}-${model.years[0]}`
+    ? `${Math.min(...model.years)}-${Math.max(...model.years)}`
     : model.years.length === 1 ? `${model.years[0]}` : '';
 
   // 3D model relevance: year-aware lookup already handles year_from/year_to entries;
@@ -354,6 +366,46 @@ export default async function ModelPage({ params, searchParams }: Props) {
         safetyHe={safetyHeForClient}
         techComfortHe={techComfortHeForClient}
       >
+        {/* ── Quick links (server-rendered, above the reviews): most reported problems,
+             the current-year page and the top compare pages ── */}
+        {(() => {
+          const problemItems = (isEn ? expertReview?.consEn : expertReview?.cons)?.filter(Boolean).slice(0, 3) ?? [];
+          const currentYear = model.years.length ? Math.max(...model.years) : null;
+          const topCompares = comparePairs.slice(0, 5);
+          if (!problemItems.length && !currentYear && !topCompares.length) return null;
+          const chip: React.CSSProperties = { padding: '5px 11px', borderRadius: 20, fontSize: '0.8rem', color: 'var(--accent)', textDecoration: 'none', border: '1px solid var(--accent)', whiteSpace: 'nowrap' };
+          const label: React.CSSProperties = { fontSize: '0.78rem', fontWeight: 700, color: 'var(--text-muted)', marginInlineEnd: 4 };
+          return (
+            <nav aria-label={isEn ? 'Quick links' : 'קישורים מהירים'} className="card" style={{ padding: '14px 16px', marginBottom: 20, display: 'flex', flexDirection: 'column', gap: 10 }}>
+              {problemItems.length > 0 && (
+                <div style={{ fontSize: '0.86rem', lineHeight: 1.6 }}>
+                  <span style={label}>{isEn ? 'Problems and drawbacks owners mention:' : 'בעיות וחסרונות שבעלים מציינים:'}</span>
+                  {problemItems.join(' · ')}{' '}
+                  <Link href={`/cars/${make.slug}/${model.slug}/issues`} style={{ color: 'var(--accent)', fontWeight: 700, textDecoration: 'none', whiteSpace: 'nowrap' }}>
+                    {isEn ? 'All common problems →' : 'כל הבעיות הנפוצות ←'}
+                  </Link>
+                </div>
+              )}
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, alignItems: 'center' }}>
+                {currentYear && (
+                  <Link href={`/cars/${make.slug}/${model.slug}/${currentYear}`} style={{ ...chip, background: 'var(--accent)', color: '#fff', fontWeight: 700 }}>
+                    {isEn ? `${make.nameEn} ${model.nameEn} ${currentYear}` : `${make.nameHe} ${model.nameHe} ${currentYear}: מחיר וגרסאות`}
+                  </Link>
+                )}
+                {topCompares.length > 0 && <span style={label}>{isEn ? 'Compare:' : 'השוואה:'}</span>}
+                {topCompares.map((pair) => {
+                  const other = pair.a.key === `${makeSlug}/${modelSlug}` ? pair.b : pair.a;
+                  return (
+                    <Link key={`qc-${other.key}`} href={pair.path} style={chip}>
+                      {isEn ? `vs ${other.make.nameEn} ${other.model.nameEn}` : `מול ${other.make.nameHe} ${other.model.nameHe}`}
+                    </Link>
+                  );
+                })}
+              </div>
+            </nav>
+          );
+        })()}
+
         {/* ── Owner reviews - write review at top ── */}
         <div id="reviews" style={{ paddingTop: 0 }}>
           <ModelReviewsSection
