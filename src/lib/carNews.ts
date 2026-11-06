@@ -367,15 +367,24 @@ export async function fillMissingNewsImages(max = 10): Promise<number> {
   return filled;
 }
 
+/** Untranslated articles older than this are left alone: only the latest news gets retried. */
+export const RETRY_MAX_AGE_DAYS = 3;
+
 /**
- * Retry translation for articles that previously failed (title_he IS NULL), newest first,
- * one call at a time. Also used by the backlog admin route with a larger limit.
+ * Retry translation for recent articles that previously failed (title_he IS NULL),
+ * newest first, one call at a time. Only articles stored in the last `maxAgeDays`
+ * days are retried, so the old untranslated backlog is not worked through.
  * @param maxRetry Max articles to retry per call
  */
-export async function retranslateUntranslated(maxRetry = 10, stats?: TranslationStats, state: RunState = newRunState()): Promise<number> {
+export async function retranslateUntranslated(
+  maxRetry = 10, stats?: TranslationStats, state: RunState = newRunState(), maxAgeDays = RETRY_MAX_AGE_DAYS,
+): Promise<number> {
   const rows = await dbAll<{ id: string; title_en: string | null; body_en: string | null }>(
-    `SELECT id, title_en, body_en FROM car_news WHERE (title_he IS NULL OR body_he IS NULL) AND title_en IS NOT NULL AND body_en IS NOT NULL ORDER BY published_at DESC LIMIT ?`,
-    maxRetry,
+    `SELECT id, title_en, body_en FROM car_news
+     WHERE (title_he IS NULL OR body_he IS NULL) AND title_en IS NOT NULL AND body_en IS NOT NULL
+       AND created_at >= datetime('now', ?)
+     ORDER BY published_at DESC LIMIT ?`,
+    `-${maxAgeDays} days`, maxRetry,
   );
   let fixed = 0;
   for (const row of rows) {

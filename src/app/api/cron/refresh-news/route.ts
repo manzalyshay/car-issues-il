@@ -4,7 +4,9 @@
  * Hebrew (Gemini, Workers AI fallback), saves to D1. The three rewrite passes run
  * one after another (new articles first), each one article at a time, so a run
  * never fires a burst of Gemini calls; after the first Gemini 429 the rest of the
- * run uses Workers AI only (detail.geminiSkippedAfter429). Called by the Cloudflare Cron Trigger (daily at 06:00 UTC).
+ * run uses Workers AI only (detail.geminiSkippedAfter429). Untranslated articles are
+ * retried only if stored in the last RETRY_MAX_AGE_DAYS (3) days - the older backlog
+ * is left as is. Called by the Cloudflare Cron Trigger (daily at 06:00 UTC).
  * Protected by CRON_SECRET. Every run is recorded in `cron_runs` with per-feed
  * fetched / already-stored / picked counts, feed errors, and Hebrew rewrite
  * counts with a failure reason per provider. Status: failed when no new or
@@ -34,7 +36,8 @@ export async function GET(req: NextRequest) {
   try {
     // Sequential on purpose: in parallel these fired up to 25 Gemini calls at once.
     const newArticles = await refreshCarNews(5, stats, state);
-    const retranslated = await retranslateUntranslated(10, retryStats, state);
+    // 15 = 3-day retry window x 5 new articles a day, so every recent article gets a retry.
+    const retranslated = await retranslateUntranslated(15, retryStats, state);
     const retranslatedShort = await retranslateShort(MAX_SHORT_RETRIES, 150, shortStats, state);
     // Run after the refresh so freshly inserted articles without a photo are covered too.
     const imagesFilled = await fillMissingNewsImages(10);
