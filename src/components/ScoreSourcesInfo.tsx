@@ -16,6 +16,9 @@ const L = {
     single: 'מבחן אחד, לא קונצנזוס',
     basedOn: (n: number) => `מבוסס על ${n} מבחנים`,
     sources: 'מקורות', close: 'סגור',
+    notKnown: 'מה לא ידוע',
+    reliabilityCaveat: 'אמינות ארוכת-טווח וחוויית בעלות אינן נמדדות על ידי מבחני הרכב הללו.',
+    notCovered: 'לא מכוסה בציון זה:',
   },
   en: {
     aria: 'Sources and scores from other tests',
@@ -24,6 +27,9 @@ const L = {
     single: 'Single test, not a consensus',
     basedOn: (n: number) => `Based on ${n} reviews`,
     sources: 'Sources', close: 'Close',
+    notKnown: 'What is not known',
+    reliabilityCaveat: 'Long-term reliability and ownership experience are not measured by these car tests.',
+    notCovered: 'Not covered by this score:',
   },
 };
 
@@ -192,9 +198,20 @@ export default function ScoreSourcesInfo({ sets, isHe }: Props) {
                     </li>
                   ))}
                 </ul>
+                {(() => {
+                  const na = isHe ? set.notApplicable : (set.notApplicableEn.length ? set.notApplicableEn : set.notApplicable);
+                  return na.length > 0 ? (
+                    <div style={{ fontSize: 11.5, color: '#66788c', lineHeight: 1.5, marginTop: 6 }}>{`${t.notCovered} ${na.join('; ')}.`}</div>
+                  ) : null;
+                })()}
               </div>
             );
           })}
+
+          {/* Moved here from the old "Summary" box on model pages: what these tests don't measure. */}
+          <div style={{ borderTop: '1px solid #eef1f5', paddingTop: 10, fontSize: 11.5, color: '#66788c', lineHeight: 1.5 }}>
+            <strong style={{ color: '#4a5b6d' }}>{t.notKnown}: </strong>{t.reliabilityCaveat}
+          </div>
         </div>
       )}
     </span>
