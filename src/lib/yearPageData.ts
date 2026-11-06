@@ -8,7 +8,7 @@
  * Every part is null/empty when the data is missing - nothing is estimated.
  */
 import { dbAll } from './db';
-import { knownTitleHeStatic } from './translateCache';
+import { staticHebrewTitle } from './translateCache';
 
 const MIN_PLAUSIBLE_PRICE_ILS = 20000;
 
@@ -109,7 +109,7 @@ export async function getYearPageData(
       makeSlug, modelSlug, fromYear, start - 1,
     ).catch(() => []);
     const shown = issues
-      .map((i) => ({ ...i, text: locale === 'he' ? knownTitleHeStatic(i.title) : i.title }))
+      .map((i) => ({ ...i, text: locale === 'he' ? staticHebrewTitle(i.title) : i.title }))
       .filter((i): i is typeof i & { text: string } => !!i.text)
       .slice(0, 5);
     if (shown.length) {

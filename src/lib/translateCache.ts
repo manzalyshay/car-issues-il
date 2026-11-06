@@ -236,8 +236,3 @@ export async function translateTitlesToHebrew(items: string[]): Promise<string[]
   }
   return items.map((it) => c.get(it) ?? it);
 }
-
-/** Reviewed Hebrew for a known_issues title, or null - never calls a model. */
-export function knownTitleHeStatic(title: string): string | null {
-  return STATIC_TITLES_HE[title] ?? null;
-}

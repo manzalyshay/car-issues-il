@@ -5,7 +5,7 @@ import { getAllMakes, getMakeBySlug, getCategoryLabel } from '@/lib/carsDb';
 import MakeLogo from '@/components/MakeLogo';
 import { getHostLocale, getBaseUrl } from '@/lib/hostLocale';
 import { translations } from '@/lib/translations';
-import { getMakeSummary } from '@/lib/makeSummary';
+import { getMakeStats, buildMakeIntro } from '@/lib/makeSummary';
 
 interface Props { params: Promise<{ make: string }> }
 
@@ -50,7 +50,13 @@ export default async function MakePage({ params }: Props) {
   const isEn = locale === 'en';
 
   const categories = [...new Set(make.models.map((m) => m.category))];
-  const summary = await getMakeSummary(make, locale).catch(() => null);
+  const stats = await getMakeStats(make).catch(() => null);
+  const intro = stats ? buildMakeIntro(make, stats, locale) : [];
+  // Most common models on Israeli roads (Ministry of Transport registry counts), linked from the intro.
+  const topModels = make.models
+    .filter((m) => (m.activeVehiclesIl ?? 0) > 0)
+    .sort((a, b) => (b.activeVehiclesIl ?? 0) - (a.activeVehiclesIl ?? 0))
+    .slice(0, 3);
 
   return (
     <div style={{ background: 'var(--bg)', minHeight: '100vh' }}>
@@ -111,17 +117,17 @@ export default async function MakePage({ params }: Props) {
       {/* ── MODELS GRID ── */}
       <div className="container" style={{ padding: '36px 1.5rem 72px' }}>
 
-        {/* About the make - text built only from data on file (see src/lib/makeSummary.ts) */}
-        {summary && summary.paragraphs.length > 0 && (
+        {/* About the make - text built only from data on file (src/lib/makeSummary.ts) */}
+        {intro.length > 0 && (
           <section style={{ maxWidth: 820, marginBottom: 32, fontSize: '0.95rem', lineHeight: 1.8, color: 'var(--text-muted)' }}>
             <h2 style={{ fontSize: '1.1rem', fontWeight: 700, color: 'var(--text)', marginBottom: 10 }}>
               {isEn ? `${make.nameEn} at a glance` : `${make.nameHe}: נתונים עיקריים`}
             </h2>
-            {summary.paragraphs.map((p, i) => <p key={i} style={{ margin: '0 0 10px' }}>{p}</p>)}
-            {summary.topModels.length > 0 && (
+            {intro.map((p, i) => <p key={i} style={{ margin: '0 0 10px' }}>{p}</p>)}
+            {topModels.length > 0 && (
               <p style={{ margin: 0, display: 'flex', gap: 12, flexWrap: 'wrap' }}>
-                {summary.topModels.map((m) => (
-                  <Link key={m.slug} href={`/cars/${make.slug}/${m.slug}`} style={{ color: 'var(--accent)', fontWeight: 600, textDecoration: 'none' }}>{m.name} {isEn ? "→" : "←"}</Link>
+                {topModels.map((m) => (
+                  <Link key={m.slug} href={`/cars/${make.slug}/${m.slug}`} style={{ color: 'var(--accent)', fontWeight: 600, textDecoration: 'none' }}>{isEn ? `${make.nameEn} ${m.nameEn}` : `${make.nameHe} ${m.nameHe}`} {isEn ? "→" : "←"}</Link>
                 ))}
                 <Link href={`/cars/${make.slug}/problems`} style={{ color: 'var(--accent)', fontWeight: 600, textDecoration: 'none' }}>{isEn ? `${make.nameEn} common problems` : `בעיות נפוצות ב${make.nameHe}`} {isEn ? "→" : "←"}</Link>
               </p>
