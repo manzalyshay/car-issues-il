@@ -427,27 +427,6 @@ export async function getNewsArticleBySegment(segment: string): Promise<CarNewsI
   return rows[0] ?? null;
 }
 
-/**
- * Retranslate articles that have a very short body_he (old stub rewrites).
- * Calls run one at a time, like the other rewrite loops, to stay within Gemini's rate limit.
- */
-export async function retranslateShort(maxRetry = 10, minBodyLen = 150, stats?: TranslationStats, state: RunState = newRunState()): Promise<number> {
-  const rows = await dbAll<{ id: string; title_en: string | null; body_en: string | null }>(
-    `SELECT id, title_en, body_en FROM car_news WHERE body_he IS NOT NULL AND length(body_he) < ? AND title_en IS NOT NULL AND body_en IS NOT NULL ORDER BY published_at DESC LIMIT ?`,
-    String(minBodyLen), String(maxRetry),
-  );
-  let fixed = 0;
-  for (const row of rows) {
-    if (!row.title_en || !row.body_en) continue;
-    const result = await rewriteInHebrew(row.title_en, row.body_en, stats, state);
-    if (result) {
-      await dbRun(`UPDATE car_news SET title_he=?, body_he=? WHERE id=?`, result.titleHe, result.bodyHe, row.id);
-      fixed++;
-    }
-  }
-  return fixed;
-}
-
 export async function deleteNewsArticle(id: string): Promise<void> {
   await dbRun(`DELETE FROM car_news WHERE id = ?`, id);
 }
