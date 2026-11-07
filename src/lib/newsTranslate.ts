@@ -22,7 +22,7 @@ export interface HebrewArticle { titleHe: string; bodyHe: string }
 
 export type Provider = 'gemini' | 'workers_ai';
 
-/** missing_key | missing_binding | http_<status> | timeout | network_error | error | empty | bad_json | skipped_after_429 */
+/** missing_key | missing_binding | http_<status> | timeout | network_error | error | empty | bad_json | skipped_after_429 | skipped_after_timeouts */
 export type FailureReason = string;
 
 export type ProviderResult =
@@ -49,6 +49,13 @@ export const WORKERS_AI_MODEL = '@cf/meta/llama-4-scout-17b-16e-instruct';
 /** A rewrite shorter than this is a stub, not an article. */
 export const MIN_BODY_CHARS = 300;
 const HEBREW_LETTER = /[\u05D0-\u05EA]/;
+/**
+ * A lowercase English word inside a Hebrew sentence ("י arrive עם") or glued to Hebrew letters
+ * ("הטruck", "פorsche") means the
+ * model lost the language mid-sentence. Brand and model names are capitalised or follow a
+ * hyphen ("ה-e-tron"), so they don't match.
+ */
+const MIXED_SCRIPT = /[\u05D0-\u05EA] ?[a-z]{2,} ?[\u05D0-\u05EA]|[\u05D0-\u05EA][a-z]{2,}|[a-z]{2,}[\u05D0-\u05EA]/;
 
 /** Signature of env.AI.run from the Workers AI binding. */
 export type AiRun = (model: string, input: unknown) => Promise<unknown>;
@@ -78,6 +85,7 @@ export function parseHebrewJson(raw: string): HebrewArticle | null {
   const bodyHe = parsed.body.trim();
   if (!titleHe || bodyHe.length < MIN_BODY_CHARS) return null;
   if (!HEBREW_LETTER.test(titleHe) || !HEBREW_LETTER.test(bodyHe)) return null;
+  if (MIXED_SCRIPT.test(titleHe) || MIXED_SCRIPT.test(bodyHe)) return null;
   return { titleHe, bodyHe };
 }
 
@@ -121,7 +129,7 @@ export async function callGemini(
   prompt: string,
   opts: { apiKey: string | undefined; fetchImpl?: typeof fetch; timeoutMs?: number; model?: string },
 ): Promise<ProviderResult> {
-  const { apiKey, fetchImpl = fetch, timeoutMs = 20000, model = GEMINI_MODEL } = opts;
+  const { apiKey, fetchImpl = fetch, timeoutMs = 30000, model = GEMINI_MODEL } = opts;
   if (!apiKey) return { ok: false, reason: 'missing_key' };
   let res: Response;
   try {
@@ -204,12 +212,19 @@ export async function callWorkersAi(
 
 /** Per-run state shared by every translateHebrew call in one cron run. */
 export interface RunState {
-  /** Set after the first Gemini http_429: Gemini is skipped for the rest of the run. */
+  /** Set after the first Gemini http_429 (or GEMINI_TIMEOUT_LIMIT timeouts): Gemini is skipped for the rest of the run. */
   geminiSkipped: boolean;
+  /** Gemini timeouts so far in this run; GEMINI_TIMEOUT_LIMIT of them also trip the breaker. */
+  geminiTimeouts: number;
+  /** Why the breaker tripped, used as the Gemini failure reason for skipped calls. */
+  geminiSkipReason?: 'skipped_after_429' | 'skipped_after_timeouts';
 }
 
+/** After this many Gemini timeouts in one run, the rest of the run uses Workers AI (keeps the job inside its time limit). */
+export const GEMINI_TIMEOUT_LIMIT = 3;
+
 export function newRunState(): RunState {
-  return { geminiSkipped: false };
+  return { geminiSkipped: false, geminiTimeouts: 0 };
 }
 
 /**
@@ -226,13 +241,17 @@ export async function translateHebrew(
   const messages: Partial<Record<Provider, string>> = {};
 
   if (state?.geminiSkipped) {
-    failures.gemini = 'skipped_after_429';
+    failures.gemini = state.geminiSkipReason ?? 'skipped_after_429';
   } else {
     const g = await gemini();
     if (g.ok) return { ok: true, article: g.article, provider: 'gemini', failures, messages };
     failures.gemini = g.reason;
     if (g.message) messages.gemini = g.message;
-    if (state && g.reason === 'http_429') state.geminiSkipped = true;
+    if (state && g.reason === 'http_429') { state.geminiSkipped = true; state.geminiSkipReason = 'skipped_after_429'; }
+    if (state && g.reason === 'timeout' && ++state.geminiTimeouts >= GEMINI_TIMEOUT_LIMIT && !state.geminiSkipped) {
+      state.geminiSkipped = true;
+      state.geminiSkipReason = 'skipped_after_timeouts';
+    }
   }
 
   if (!fallback) return { ok: false, failures, messages };

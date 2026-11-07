@@ -303,3 +303,37 @@ test('run with every call failing on both providers is recorded as failed', asyn
   assert.deepEqual(fresh.reasons, { 'gemini:http_404': 5, 'workers_ai:bad_json': 5 });
   assert.equal(fresh.samples['gemini:http_404'], 'not found');
 });
+
+// ── Quality guard and timeout breaker ────────────────────────────────────────
+
+test('a rewrite with English words glued into the Hebrew is rejected', () => {
+  const bad = (body) => JSON.stringify({ title: 'כותרת', body });
+  assert.equal(parseHebrewJson(bad(BODY + ' הדגם החדש י arrive עם מנוע 2.4 ליטר טורבו.')), null);
+  assert.equal(parseHebrewJson(bad('חברת ג meנטרל מוטורס רשמה פטנט. ' + BODY)), null);
+  assert.equal(parseHebrewJson(bad('פורד חושפת את הטruck החדש. ' + BODY)), null);
+  assert.equal(parseHebrewJson(bad('מכונית פerrarרי נדירה. ' + BODY)), null);
+  // Brand and model names are fine: capitalised, or after a hyphen
+  const ok = BODY + ' הדגם מגיע עם Apple CarPlay ומערכת EyeSight, ממש כמו ה-e-tron ו-iX3. לקוראי carissues.co.il, פנסי pop-up.';
+  assert.deepEqual(parseHebrewJson(bad(ok)), { titleHe: 'כותרת', bodyHe: ok });
+});
+
+test('Gemini gets 30 seconds by default', async () => {
+  let signal;
+  await callGemini('p', { apiKey: KEY, fetchImpl: async (_u, init) => { signal = init.signal; return geminiReply(GOOD)(); } });
+  assert.ok(signal instanceof AbortSignal);
+});
+
+test('three Gemini timeouts trip the breaker, with their own reason', async () => {
+  const state = newRunState();
+  const gTimeout = () => callGemini('p', { apiKey: KEY, fetchImpl: throws('TimeoutError') });
+  let calls = 0;
+  const gemini = async () => { calls++; return gTimeout(); };
+  for (let i = 0; i < 2; i++) await translateHebrew(gemini, wOk, state);
+  assert.equal(state.geminiSkipped, false);
+  await translateHebrew(gemini, wOk, state);
+  assert.equal(state.geminiSkipped, true);
+  const next = await translateHebrew(gemini, wOk, state);
+  assert.equal(calls, 3);
+  assert.deepEqual(next.failures, { gemini: 'skipped_after_timeouts' });
+  assert.equal(next.provider, 'workers_ai');
+});

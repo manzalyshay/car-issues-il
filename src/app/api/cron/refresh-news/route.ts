@@ -4,7 +4,7 @@
  * Hebrew (Gemini, Workers AI fallback), saves to D1. New articles are rewritten
  * first, then recent untranslated ones are retried, one article at a time, so a run
  * never fires a burst of Gemini calls; after the first Gemini 429 the rest of the
- * run uses Workers AI only (detail.geminiSkippedAfter429). Untranslated articles are
+ * run uses Workers AI only (detail.geminiSkippedAfter429); 3 Gemini timeouts do the same. Untranslated articles are
  * retried only if stored in the last RETRY_MAX_AGE_DAYS (3) days - the older backlog
  * is left as is. Called by the Cloudflare Cron Trigger (daily at 06:00 UTC).
  * Protected by CRON_SECRET. Every run is recorded in `cron_runs` with per-feed
@@ -41,6 +41,8 @@ export async function GET(req: NextRequest) {
     const detail = {
       newArticles, retranslated, imagesFilled, sources: stats.sources,
       geminiSkippedAfter429: state.geminiSkipped,
+      geminiSkipReason: state.geminiSkipReason ?? null,
+      geminiTimeouts: state.geminiTimeouts,
       translation: { newArticles: stats.translation, retryUntranslated: retryStats },
       elapsedMs: Date.now() - started,
     };
