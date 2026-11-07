@@ -46,3 +46,22 @@ test('placeholders are kept', () => {
     for (const ph of en.match(/\$\{\w\}|\{\w\}/g) ?? []) assert.ok(r.includes(ph), `${path}: lost ${ph}`);
   }
 });
+
+import { ruPluralIndex, ruCount, RU_COUNT_FORMS } from '../src/lib/translations.ru.ts';
+
+test('Russian plural rule', () => {
+  const cases = { 0: 2, 1: 0, 2: 1, 4: 1, 5: 2, 11: 2, 12: 2, 14: 2, 21: 0, 22: 1, 25: 2, 101: 0, 111: 2, 112: 2, 122: 1 };
+  for (const [n, want] of Object.entries(cases)) assert.equal(ruPluralIndex(Number(n)), want, `n=${n}`);
+  assert.equal(ruCount(1, 'makePage.reviews'), '1 отзыв');
+  assert.equal(ruCount(3, 'makePage.reviews'), '3 отзыва');
+  assert.equal(ruCount(7, 'makePage.reviews'), '7 отзывов');
+  assert.equal(ruCount(21, 'home.models'), '21 модель');
+});
+
+test('every counted key exists in ru, and its "many" form is the ru string itself', () => {
+  for (const [key, forms] of Object.entries(RU_COUNT_FORMS)) {
+    const v = key.split('.').reduce((o, k) => o?.[k], ru);
+    assert.equal(typeof v, 'string', `${key} not in ru`);
+    assert.equal(forms[2], v, `${key}: many-form differs from ru string`);
+  }
+});

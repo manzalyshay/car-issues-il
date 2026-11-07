@@ -5,8 +5,13 @@
  * has two locales (he, en) until the /ru routing lands.
  *
  * Audience: Russian-speaking Israelis. Prices stay in ₪, the Israeli annual inspection is
- * «техосмотр (тест)», and recalls are «отзывные кампании» so they are never confused with
- * owner reviews («отзывы владельцев»). Needs a native-speaker review before launch.
+ * «техосмотр (тест)», the yearly licence fee is «лицензионный сбор (агра)», workshops are
+ * «автосервис», and recalls are «отзывные кампании» so they are never confused with owner
+ * reviews («отзывы владельцев»).
+ *
+ * Counted words: the strings below hold the form used after 5+ («12 отзывов»). Russian needs
+ * three forms (1 отзыв, 3 отзыва, 5 отзывов), so pages must render counts with
+ * ruCount(n, key) / RU_COUNT_FORMS below, not by gluing the number to the string.
  */
 import type { Translations } from './translations';
 
@@ -21,7 +26,7 @@ export const ru = {
     vehicleLookup: 'Проверка авто по номеру',
     news: 'Новости',
     sales: 'Акции',
-    admin: 'Админ',
+    admin: 'Админ-панель',
     login: 'Войти',
     loginRegister: 'Вход / Регистрация',
     logout: 'Выйти',
@@ -71,7 +76,7 @@ export const ru = {
     errorName: 'Укажите отображаемое имя',
   },
   errorPage: {
-    title: 'Сайт на техобслуживании',
+    title: 'На сайте ведутся технические работы',
     body: 'База данных сейчас недоступна. Мы уже работаем над этим и скоро вернёмся.',
     retry: 'Попробуйте ещё раз через несколько минут.',
     tryAgain: 'Попробовать снова',
@@ -91,7 +96,7 @@ export const ru = {
       { href: '/contact', label: 'Контакты' },
     ],
     disclaimer: 'Отказ от ответственности',
-    disclaimerText: 'Информация на сайте основана на мнениях пользователей и не заменяет профессиональную консультацию в лицензированном гараже.',
+    disclaimerText: 'Информация на сайте основана на мнениях пользователей и не заменяет профессиональную консультацию в лицензированном автосервисе.',
     copyright: 'CarIssues.co.il. Все права защищены.',
     builtWith: 'Сделано с ♥ для покупателей автомобилей',
     legal: 'Логотипы производителей являются зарегистрированными товарными знаками их владельцев. Сайт не связан ни с одним производителем. 3D-модели с Sketchfab показаны по лицензии CC BY 4.0 с указанием автора. Сайт использует cookie только для базовых функций (вход в аккаунт). Рекламные cookie не используются.',
@@ -123,7 +128,7 @@ export const ru = {
     closeForm: '✕ Закрыть',
     allYears: 'Все годы',
     loadMore: 'Показать ещё',
-    noReviewsForYearPrefix: 'Пока нет отзывов за год',
+    noReviewsForYearPrefix: 'Пока нет отзывов за модельный год',
     noReviewsBeFirstModel: 'Станьте первым, кто оставит отзыв об этой модели!',
     translatedBadge: 'Перевод',
     translatedFrom: 'Переведено с иврита',
@@ -142,7 +147,7 @@ export const ru = {
     general: 'Общее',
     sortNewest: 'Сначала новые',
     sortHelpful: 'Самые полезные',
-    sortRating: 'С высокой оценкой',
+    sortRating: 'Сначала высокие оценки',
     noReviews: 'Отзывов пока нет. Напишите первый!',
     noReviewsCategory: 'В этой категории отзывов нет.',
     km: 'км',
@@ -157,13 +162,13 @@ export const ru = {
     reportButton: '⚑ Пожаловаться',
     reportSent: '✓ Жалоба отправлена',
     reportReason: 'Причина:',
-    reportReasons: { spam: 'Спам', fake: 'Фальшивый отзыв', offensive: 'Оскорбительное содержание', wrong_car: 'Не тот автомобиль', other: 'Другое' },
+    reportReasons: { spam: 'Спам', fake: 'Поддельный отзыв', offensive: 'Оскорбительное содержание', wrong_car: 'Не тот автомобиль', other: 'Другое' },
     share: 'Поделиться',
   },
   expertReview: {
     defaultLabel: 'Что говорят владельцы',
     israeli: 'Отзывы владельцев',
-    global: 'Мировые обзоры',
+    global: 'Зарубежные обзоры',
     pros: 'Плюсы',
     cons: 'Минусы',
     footer: 'Информация основана на данных о модели и отзывах владельцев на этом сайте.',
@@ -177,7 +182,7 @@ export const ru = {
   },
   repairCostSubmit: {
     ownersOf: 'Данные владельцев',
-    question: 'Платили за ремонт своего',
+    question: 'Платили за ремонт своего автомобиля',
     questionSuffix: '?',
     helpOthers: 'Помогите другим понять, чего ожидать: поделитесь стоимостью ремонта',
     cancel: 'Отмена',
@@ -188,14 +193,14 @@ export const ru = {
     repairName: 'Название ремонта',
     cost: 'Стоимость (₪)',
     carYear: 'Год выпуска',
-    garageType: 'Тип гаража',
+    garageType: 'Тип автосервиса',
     notes: 'Примечания (необязательно)',
     submit: 'Отправить',
     submitting: 'Отправка...',
-    garagePlaceholder: 'Тип гаража',
+    garagePlaceholder: 'Тип автосервиса',
     dealer: 'Официальный дилер',
-    chain: 'Сеть гаражей',
-    independent: 'Частный гараж',
+    chain: 'Сеть автосервисов',
+    independent: 'Частный автосервис',
   },
   rankingsPage: {
     title: 'Рейтинг надёжности автомобилей',
@@ -278,7 +283,7 @@ export const ru = {
     allYears: 'Все годы',
     loading: 'Загрузка отзывных кампаний...',
     noneFound: 'Отзывные кампании не найдены',
-    noneForYear: 'Нет отзывных кампаний за год',
+    noneForYear: 'Нет отзывных кампаний для модельного года',
     component: 'Отзывная кампания',
     descLabel: 'Описание проблемы',
     riskLabel: 'Возможный риск',
@@ -306,8 +311,8 @@ export const ru = {
     reports: 'сообщений',
     noData: 'Пока нет данных о стоимости для',
     noDataSuffix: '. Если вы ремонтировали этот автомобиль, поделитесь стоимостью!',
-    disclaimer: 'Цены основаны на сообщениях с форумов и могут отличаться в зависимости от гаража и года выпуска.',
-    garage: { dealer: 'Официальный дилер', independent: 'Частный гараж', chain: 'Сеть гаражей' },
+    disclaimer: 'Цены основаны на сообщениях с форумов и могут отличаться в зависимости от автосервиса и года выпуска.',
+    garage: { dealer: 'Официальный дилер', independent: 'Частный автосервис', chain: 'Сеть автосервисов' },
   },
   trimSpecs: {
     loading: 'Загрузка характеристик...',
@@ -328,9 +333,9 @@ export const ru = {
     transmission: 'Коробка передач',
     drive: 'Привод',
     upholstery: 'Обивка',
-    seats: 'Мест',
+    seats: 'Сиденья',
     screen: 'Мультимедийный экран',
-    moreDetails: 'Все данные комплектации',
+    moreDetails: 'Подробнее о комплектации',
     disclaimer: 'Характеристики могут отличаться в зависимости от рынка и года выпуска · Уточняйте у дилера',
     hp: 'л.с.',
     cc: 'см³',
@@ -363,15 +368,15 @@ export const ru = {
     noData: 'Пока недостаточно данных',
     aiSummary: 'Резюме ИИ',
     israeliReviews: '📝 Отзывы владельцев',
-    globalReviews: '🌍 Мировые обзоры',
-    noSummary: 'Резюме нет',
+    globalReviews: '🌍 Зарубежные обзоры',
+    noSummary: 'Резюме пока нет',
     fullModelPage: 'Полная страница модели →',
     selectSecond: 'Выберите второй автомобиль для сравнения',
     selectBoth: 'Выберите два автомобиля, чтобы сравнить их',
     popularPairs: 'Популярные сравнения',
   },
   yearPage: {
-    yearSummaryBadge: 'Резюме за',
+    yearSummaryBadge: 'Резюме по модельному году',
     generalSummaryBadge: 'Общее резюме',
     reviews: 'отзывов',
     loading: 'Загрузка...',
@@ -398,10 +403,10 @@ export const ru = {
     aiAnalysis: '🤖 Анализ ИИ: что говорят владельцы',
     repairCosts: '🔧 Типичная стоимость ремонта',
     pricesNote: 'Ориентировочные цены',
-    allRepairCosts: 'Вся стоимость ремонта',
+    allRepairCosts: 'Все цены на ремонт',
     ownersSay: '💬 Что говорят владельцы',
     carOwner: 'Владелец автомобиля',
-    backTo: '← Назад к',
+    backTo: '← Вернуться на страницу',
     addReview: '✍️ Добавить отзыв',
   },
   firstReviewCta: {
@@ -473,7 +478,7 @@ export const ru = {
   },
   tcoPage: {
     title: '🚗 Калькулятор стоимости владения автомобилем',
-    subtitle: 'Сколько на самом деле стоит ваш автомобиль? Рассчитайте годовую стоимость владения: топливо, страховка, обслуживание, амортизация и регистрация.',
+    subtitle: 'Сколько на самом деле стоит ваш автомобиль? Рассчитайте годовую стоимость владения: топливо, страховка, обслуживание, потеря стоимости и лицензионный сбор.',
     carDetails: '⚙️ Данные автомобиля',
     category: 'Категория',
     categories: { city: 'Городской / малый', family: 'Семейный / хэтчбек', suv: 'Кроссовер / SUV', luxury: 'Премиум', electric: 'Электромобиль' },
@@ -485,19 +490,19 @@ export const ru = {
     consumption: 'Расход (км/л)',
     consumptionEv: 'Расход (кВт·ч/100 км)',
     annualCosts: '💰 Годовые расходы (можно изменить)',
-    insurance: 'Страховка КАСКО',
-    service: 'Обслуживание и техуход',
-    registration: 'Регистрация и налоги (техосмотр, «тест»)',
+    insurance: 'Страховка КАСКО (мекиф)',
+    service: 'Плановое обслуживание',
+    registration: 'Лицензионный сбор (агра) и налоги',
     period: 'Период расчёта (лет)',
     summary: '📊 Итог стоимости владения',
-    totalYears: 'Всего за {n} лет',
+    totalYears: 'Итого за весь период ({n} г.)',
     monthlyAvg: 'Средние расходы в месяц',
     fuelYear: 'Топливо (в год)',
-    deprYear1: 'Амортизация за 1-й год',
+    deprYear1: 'Потеря стоимости за 1-й год',
     tableTitle: '📅 Расходы по годам',
-    tableHeaders: ['Год', 'Амортизация', 'Топливо', 'Страховка', 'Обслуживание', 'Регистрация', 'Итого за год', 'Нарастающим итогом'],
+    tableHeaders: ['Год', 'Потеря стоимости', 'Топливо', 'Страховка', 'Обслуживание', 'Сбор (агра)', 'Итого за год', 'Нарастающим итогом'],
     yearRow: 'Год',
-    footnote: '* Цены на топливо в расчёте: бензин ${p}/л, дизель ${d}/л, гибрид ${h}/л, электричество ${e}/кВт·ч. Амортизация рассчитывается от остаточной стоимости автомобиля.',
+    footnote: '* Цены на топливо в расчёте: бензин ${p}/л, дизель ${d}/л, гибрид ${h}/л, электричество ${e}/кВт·ч. Потеря стоимости рассчитывается от остаточной стоимости автомобиля.',
     repairCostsLink: 'Стоимость ремонта',
     compareCta: 'Сравнить модели →',
     repairsCta: 'Стоимость ремонта',
@@ -519,7 +524,7 @@ export const ru = {
     sourceLabel: 'Источник',
     laborNote: 'Стоимость работ может отличаться в зависимости от региона',
     categories: { service: '🔧 Плановое ТО', engine: '⚙️ Двигатель', brakes: '🛑 Тормоза', suspension: '🔩 Рулевое управление и подвеска', electrical: '⚡ Электрика' },
-    workshopTypes: { dealer: 'Официальный дилер', chain: 'Сеть гаражей', independent: 'Частный гараж' },
+    workshopTypes: { dealer: 'Официальный дилер', chain: 'Сеть автосервисов', independent: 'Частный автосервис' },
   },
   contactPage: {
     home: 'Главная',
@@ -548,7 +553,7 @@ export const ru = {
     backHome: 'Вернуться на главную',
   },
   profilePage: {
-    loginRequired: 'Нужно войти',
+    loginRequired: 'Требуется вход',
     loginBody: 'Войдите, чтобы увидеть свои отзывы и данные аккаунта.',
     backHome: 'Вернуться на главную',
     home: 'Главная',
@@ -566,6 +571,46 @@ export const ru = {
     foundHelpful: 'сочли полезным',
   },
 } as const;
+
+/** Russian plural category for an integer: 0 = one (1, 21, 101), 1 = few (2-4, 22-24), 2 = many (0, 5-20, 25...). */
+export function ruPluralIndex(n: number): 0 | 1 | 2 {
+  const a = Math.abs(Math.trunc(n));
+  const m10 = a % 10, m100 = a % 100;
+  if (m10 === 1 && m100 !== 11) return 0;
+  if (m10 >= 2 && m10 <= 4 && (m100 < 12 || m100 > 14)) return 1;
+  return 2;
+}
+
+/** [one, few, many] for every string in `ru` that follows a number. Keyed by its path in `ru`. */
+export const RU_COUNT_FORMS = {
+  'home.models': ['модель', 'модели', 'моделей'],
+  'carPage.ownerReviewsSuffix': ['отзыв владельца', 'отзыва владельцев', 'отзывов владельцев'],
+  'reviewList.replies': ['ответ', 'ответа', 'ответов'],
+  'expertReview.reviews': ['отзыв', 'отзыва', 'отзывов'],
+  'expertReview.discussions': ['обсуждение', 'обсуждения', 'обсуждений'],
+  'expertReview.sources': ['источник', 'источника', 'источников'],
+  // after «из» (genitive): из 1 модели / из 3 моделей / из 5 моделей
+  'rankingsPage.models': ['модели', 'моделей', 'моделей'],
+  'makePage.models': ['модель', 'модели', 'моделей'],
+  'makePage.issues': ['проблема', 'проблемы', 'проблем'],
+  'makePage.reviews': ['отзыв', 'отзыва', 'отзывов'],
+  'complaints.total': ['жалоба', 'жалобы', 'жалоб'],
+  // after «На основе» (genitive): на основе 1 сообщения / 3 сообщений / 5 сообщений
+  'repairCosts.ownerReports': ['сообщения владельца · автофорумы', 'сообщений владельцев · автофорумы', 'сообщений владельцев · автофорумы'],
+  'repairCosts.reports': ['сообщение', 'сообщения', 'сообщений'],
+  'comparePage.reviews': ['отзыв', 'отзыва', 'отзывов'],
+  'compareStaticPage.reviews': ['отзыв', 'отзыва', 'отзывов'],
+  'yearPage.reviews': ['отзыв', 'отзыва', 'отзывов'],
+  'yearPage.matchesSuffix': ['подходящий отзыв', 'подходящих отзыва', 'подходящих отзывов'],
+  // after «На основе» (genitive): на основе 1 отзыва владельца / 3 отзывов владельцев
+  'issuesPage.ownerReviews': ['отзыва владельца', 'отзывов владельцев', 'отзывов владельцев'],
+  'profilePage.reviewsLabel': ['отзыв', 'отзыва', 'отзывов'],
+} as const satisfies Record<string, readonly [string, string, string]>;
+
+/** "{n} {word}" with the right Russian form, e.g. ruCount(3, 'makePage.reviews') === '3 отзыва'. */
+export function ruCount(n: number, key: keyof typeof RU_COUNT_FORMS): string {
+  return `${n} ${RU_COUNT_FORMS[key][ruPluralIndex(n)]}`;
+}
 
 // Compile-time check: every key the site's Translations type needs is present.
 const _typed: Translations = ru;
