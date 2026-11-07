@@ -5,6 +5,9 @@ import { Heebo, Rubik, Assistant } from 'next/font/google';
 import './globals.css';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
+import RuHeader from '@/components/ru/RuHeader';
+import RuFooter from '@/components/ru/RuFooter';
+import LangBoundary from '@/components/ru/LangBoundary';
 import { AuthProvider } from '@/lib/authContext';
 import { LocaleProvider } from '@/lib/localeContext';
 import NavigationProgress from '@/components/NavigationProgress';
@@ -19,7 +22,8 @@ const heebo = Heebo({
 });
 
 const rubik = Rubik({
-  subsets: ['latin', 'hebrew'],
+  // cyrillic: the /ru pilot pages use Rubik (Heebo has no Cyrillic letters)
+  subsets: ['latin', 'hebrew', 'cyrillic'],
   weight: ['400', '500', '600', '700', '800'],
   display: 'swap',
   variable: '--font-rubik',
@@ -105,6 +109,8 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   }
   const baseUrl = isEn ? EN_URL : HE_URL;
   const isEmbed = (await headers()).get('x-is-embed') === '1';
+  // Set by the middleware for /ru paths on carissues.co.il (Russian pilot)
+  const isRu = !isEn && (await headers()).get('x-locale') === 'ru';
   // Only fire GA4 on real production hosts - keeps localhost/dev traffic out of Analytics
   const isProdHost = isEnHost || isHeHost;
 
@@ -119,6 +125,8 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         logo: { '@type': 'ImageObject', url: `${baseUrl}/favicon.svg` },
         description: isEn
           ? 'Real car owner reviews, common problems, recalls and reliability data - by make, model and year.'
+          : isRu
+          ? 'Информация о моделях автомобилей, отзывы владельцев, типичные проблемы и отзывные кампании в Израиле.'
           : 'מידע על דגמי רכב, ביקורות בעלים, בעיות נפוצות וריקולים בישראל',
       },
       {
@@ -127,7 +135,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         url: baseUrl,
         name: 'CarIssues',
         publisher: { '@id': `${baseUrl}/#organization` },
-        inLanguage: isEn ? 'en' : 'he',
+        inLanguage: isEn ? 'en' : isRu ? 'ru' : 'he',
         potentialAction: {
           '@type': 'SearchAction',
           target: { '@type': 'EntryPoint', urlTemplate: `${baseUrl}/cars?q={search_term_string}` },
@@ -138,7 +146,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   };
 
   return (
-    <html lang={isEn ? 'en' : 'he'} dir={isEn ? 'ltr' : 'rtl'} className={`${heebo.variable} ${rubik.variable} ${assistant.variable}`}>
+    <html lang={isEn ? 'en' : isRu ? 'ru' : 'he'} dir={isEn || isRu ? 'ltr' : 'rtl'} className={`${heebo.variable} ${rubik.variable} ${assistant.variable}`}>
       <body className="flex flex-col min-h-screen">
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(orgJsonLd) }} />
         {isProdHost && !isEmbed && (
@@ -158,16 +166,17 @@ export default async function RootLayout({ children }: { children: React.ReactNo
             `}</Script>
           </>
         )}
-        <LocaleProvider initialLocale={isEn ? 'en' : 'he'}>
+        <LocaleProvider initialLocale={isEn ? 'en' : 'he'} documentLang={isRu ? { lang: 'ru', dir: 'ltr' } : undefined}>
           <AuthProvider>
+            {!isEmbed && !isEn && <LangBoundary serverIsRu={isRu} />}
             {!isEmbed && <NavigationProgress />}
             {!isEmbed && <PageViewTracker />}
             {!isEmbed && (
-              <a href="#main-content" className="skip-link">{isEn ? 'Skip to main content' : 'דלגו לתוכן הראשי'}</a>
+              <a href="#main-content" className="skip-link">{isEn ? 'Skip to main content' : isRu ? 'Перейти к содержанию' : 'דלגו לתוכן הראשי'}</a>
             )}
-            {!isEmbed && <Header />}
+            {!isEmbed && (isRu ? <RuHeader /> : <Header />)}
             <main id="main-content" tabIndex={-1} className={isEmbed ? '' : 'flex-1'}>{children}</main>
-            {!isEmbed && <Footer />}
+            {!isEmbed && (isRu ? <RuFooter /> : <Footer />)}
           </AuthProvider>
         </LocaleProvider>
       </body>

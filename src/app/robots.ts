@@ -7,6 +7,7 @@ export default async function robots(): Promise<MetadataRoute.Robots> {
   const base = isEn ? 'https://carissues.net' : 'https://carissues.co.il';
   return {
     rules: { userAgent: '*', allow: '/' },
-    sitemap: `${base}/sitemap.xml`,
+    // carissues.co.il also lists the Russian pilot sitemap
+    sitemap: isEn ? `${base}/sitemap.xml` : [`${base}/sitemap.xml`, `${base}/sitemaps/ru.xml`],
   };
 }

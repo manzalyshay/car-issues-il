@@ -32,6 +32,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
   const langs = {
     he: `https://carissues.co.il/vehicle-lookup/${plate}`,
+    'ru-IL': `https://carissues.co.il/ru/vehicle-lookup/${plate}`,
     en: `https://carissues.net/vehicle-lookup/${plate}`,
     'x-default': `https://carissues.net/vehicle-lookup/${plate}`,
   };

@@ -101,6 +101,11 @@
   --ease-smooth: cubic-bezier(0.4, 0, 0.2, 1);
   --ease-out:    cubic-bezier(0.16, 1, 0.3, 1);
 }
+/* Russian pilot (/ru): Heebo and Assistant have no Cyrillic, Rubik does */
+html[lang="ru"] {
+  --font-display: var(--font-rubik), 'Rubik', system-ui, sans-serif;
+  --font-body:    var(--font-rubik), 'Rubik', system-ui, sans-serif;
+}
 
 /* ── Reset ── */
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }

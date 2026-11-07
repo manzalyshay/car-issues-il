@@ -12,6 +12,7 @@ import type { TrimSpecWithYear } from '@/lib/trimSpecsDb';
 import { normEngine } from '@/lib/specSummary';
 import { getHostLocale, getBaseUrl } from '@/lib/hostLocale';
 import { getComparePolicy } from '@/lib/seoIndexing';
+import { RU_COMPARE_PATHS } from '@/data/ru-compare-pairs';
 import { translations } from '@/lib/translations';
 import StarRating from '@/components/StarRating';
 import MakeLogo from '@/components/MakeLogo';
@@ -76,6 +77,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       canonical,
       languages: {
         he: `https://carissues.co.il/cars/compare/${c1}/${c2}`,
+        // Russian pilot page exists for the 50 pairs in RU_COMPARE_PAIRS
+        ...(RU_COMPARE_PATHS.has(`/cars/compare/${c1}/${c2}`) ? { 'ru-IL': `https://carissues.co.il/ru/cars/compare/${c1}/${c2}` } : {}),
         en: `https://carissues.net/cars/compare/${c1}/${c2}`,
         'x-default': `https://carissues.net/cars/compare/${c1}/${c2}`,
       },
@@ -446,6 +449,12 @@ export default async function ComparePage({ params }: Props) {
               {shortVerdictFacts.map((f, i) => <span key={i}> {f}</span>)}
             </p>
           </div>
+        )}
+
+        {!isEn && RU_COMPARE_PATHS.has(`/cars/compare/${c1}/${c2}`) && (
+          <p style={{ margin: '-14px 0 24px', fontSize: '0.85rem' }}>
+            <Link href={`/ru/cars/compare/${c1}/${c2}`} lang="ru" hrefLang="ru" style={{ fontWeight: 600, textDecoration: 'none' }}>Сравнение на русском →</Link>
+          </p>
         )}
 
         {/* Header card */}
