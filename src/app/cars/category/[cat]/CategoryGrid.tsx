@@ -1,11 +1,11 @@
 'use client';
 
-import { useState, useEffect, useRef, useCallback, useId } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import Link from 'next/link';
 import MakeLogo from '@/components/MakeLogo';
 import StarRating from '@/components/StarRating';
 import { sizedImageUrl } from '@/lib/imageSizing';
-import { claimActive, isBlockedOnDevice, onOtherActive, trackLive } from '@/lib/viewer3dGuard';
+import { isBlockedOnDevice, trackLive } from '@/lib/viewer3dGuard';
 
 export interface GridModel {
   makeSlug: string;
@@ -35,16 +35,12 @@ function scoreTier(s: number) { return s >= 8.5 ? 'hi' : s >= 7.5 ? 'mid' : 'lo'
 function ModelRow({ m, idx, isEn }: { m: GridModel; idx: number; isEn: boolean }) {
   const [show3d, setShow3d] = useState(false);
   const [blocked3d, setBlocked3d] = useState(false);
-  const viewerId = useId();
   const uid3d = m.sketchfab?.uid;
-  // Only one live 3D viewer per tab, and track it for crash detection (lib/viewer3dGuard).
+  // Crash detection (lib/viewer3dGuard): track the open model so a tab crash gets reported.
   useEffect(() => {
     if (!show3d || !uid3d) return;
-    claimActive(viewerId);
-    const stopTracking = trackLive(uid3d);
-    const stopListening = onOtherActive(viewerId, () => setShow3d(false));
-    return () => { stopListening(); stopTracking(); };
-  }, [show3d, uid3d, viewerId]);
+    return trackLive(uid3d);
+  }, [show3d, uid3d]);
   const name = isEn ? `${m.makeNameEn} ${m.modelNameEn}` : `${m.makeNameHe} ${m.modelNameHe}`;
   const score = m.expertScore != null ? Math.round(m.expertScore * 10) / 10 : null;
   const tier = score != null ? scoreTier(score) : null;
@@ -121,7 +117,7 @@ function ModelRow({ m, idx, isEn }: { m: GridModel; idx: number; isEn: boolean }
           {m.sketchfab && !blocked3d && (
             <button
               onClick={() => {
-                // Never reopen a model that crashed this device before (lib/viewer3dGuard).
+                // Never reopen a model that crashed this device before.
                 if (uid3d && isBlockedOnDevice(uid3d)) { setBlocked3d(true); setShow3d(false); return; }
                 setShow3d(v => !v);
               }}

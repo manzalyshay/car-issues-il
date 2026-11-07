@@ -5,9 +5,11 @@
  * while this Sketchfab model was on screen. One report per model per visitor (hashed IP);
  * once CRASH_HIDE_THRESHOLD distinct visitors report the same model within 7 days, the
  * model is hidden site-wide (hidden=1) so it stops crashing pages.
+ * Every new report emails the admin (ADMIN_NOTIFY_EMAIL, default contact@carissues.co.il).
  */
 import { NextRequest, NextResponse } from 'next/server';
-import { dbFirst, dbRun } from '@/lib/db';
+import { dbAll, dbFirst, dbRun } from '@/lib/db';
+import { sendEmail } from '@/lib/sendEmail';
 
 export const dynamic = 'force-dynamic';
 
@@ -29,36 +31,76 @@ export async function POST(req: NextRequest) {
   if (BOT_UA.test(ua)) return NextResponse.json({ ok: true, skipped: 'bot' });
 
   // Only models we actually show can be reported.
-  const known = await dbFirst<{ n: number }>(
-    'SELECT COUNT(*) AS n FROM car_3d_models WHERE sketchfab_uid = ? AND hidden IS NOT 1', uid,
+  const pages = await dbAll<{ make_slug: string; model_slug: string; sketchfab_name: string }>(
+    'SELECT make_slug, model_slug, sketchfab_name FROM car_3d_models WHERE sketchfab_uid = ? AND hidden IS NOT 1', uid,
   );
-  if (!known?.n) return NextResponse.json({ ok: true, skipped: 'unknown' });
+  if (!pages.length) return NextResponse.json({ ok: true, skipped: 'unknown' });
 
   const ip = req.headers.get('cf-connecting-ip') ?? req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ?? 'unknown';
   const ipHash = await sha256(`car3d:${ip}:${process.env.CRON_SECRET ?? ''}`);
 
   try {
-    await dbRun(
+    const inserted = await dbRun(
       `INSERT INTO car_3d_crash_reports (sketchfab_uid, ip_hash, user_agent) VALUES (?, ?, ?)
-       ON CONFLICT (sketchfab_uid, ip_hash) DO UPDATE SET created_at = datetime('now'), user_agent = excluded.user_agent`,
+       ON CONFLICT (sketchfab_uid, ip_hash) DO NOTHING`,
       uid, ipHash, ua.slice(0, 300) || null,
     );
+    // Same visitor reporting the same model again: refresh the timestamp, no new email.
+    if (!inserted.meta?.changes) {
+      await dbRun(
+        `UPDATE car_3d_crash_reports SET created_at = datetime('now'), user_agent = ? WHERE sketchfab_uid = ? AND ip_hash = ?`,
+        ua.slice(0, 300) || null, uid, ipHash,
+      );
+      return NextResponse.json({ ok: true, repeat: true });
+    }
     const reports = await dbFirst<{ n: number }>(
       `SELECT COUNT(*) AS n FROM car_3d_crash_reports WHERE sketchfab_uid = ? AND created_at >= datetime('now', '-7 days')`,
       uid,
     );
-    if ((reports?.n ?? 0) >= CRASH_HIDE_THRESHOLD) {
+    const count = reports?.n ?? 1;
+    const autoHidden = count >= CRASH_HIDE_THRESHOLD;
+    if (autoHidden) {
       await dbRun(
         `UPDATE car_3d_models SET hidden = 1, hidden_reason = ? WHERE sketchfab_uid = ? AND hidden IS NOT 1`,
-        `auto: tab crash reported by ${reports!.n} visitors`, uid,
+        `auto: tab crash reported by ${count} visitors`, uid,
       );
       const g = globalThis as typeof globalThis & { _3dModelsCache?: unknown };
       delete g._3dModelsCache;
-      return NextResponse.json({ ok: true, hidden: true });
     }
+    await notifyAdmin({ uid, pages, count, autoHidden, ua, country: req.headers.get('cf-ipcountry') });
+    return NextResponse.json({ ok: true, hidden: autoHidden });
   } catch (err) {
     console.error('[car-3d/crash]', err);
     return NextResponse.json({ ok: false }, { status: 500 });
   }
-  return NextResponse.json({ ok: true });
+}
+
+const esc = (v: string) => v.replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]!));
+
+async function notifyAdmin({ uid, pages, count, autoHidden, ua, country }: {
+  uid: string;
+  pages: { make_slug: string; model_slug: string; sketchfab_name: string }[];
+  count: number; autoHidden: boolean; ua: string; country: string | null;
+}) {
+  const carList = pages.map(p => {
+    const url = `https://carissues.co.il/cars/${p.make_slug}/${p.model_slug}`;
+    return `<li><a href="${url}">${esc(`${p.make_slug}/${p.model_slug}`)}</a></li>`;
+  }).join('');
+  const status = autoHidden
+    ? `<p style="color:#b00020;font-weight:bold">The model is now hidden site-wide (${count} visitors reported a crash within 7 days).</p>`
+    : `<p>${count} of ${CRASH_HIDE_THRESHOLD} reports needed to hide it automatically. Visitors who crashed won't load it again.</p>`;
+  await sendEmail({
+    to: process.env.ADMIN_NOTIFY_EMAIL || 'contact@carissues.co.il',
+    subject: autoHidden
+      ? `3D model auto-hidden after crashes: ${pages[0].make_slug}/${pages[0].model_slug}`
+      : `3D model crash reported: ${pages[0].make_slug}/${pages[0].model_slug} (${count}/${CRASH_HIDE_THRESHOLD})`,
+    html: `<div dir="ltr" style="font-family:Arial,sans-serif">
+      <h2>A visitor's browser tab crashed while a 3D model was showing</h2>
+      <p><b>Model:</b> <a href="https://sketchfab.com/3d-models/${uid}">${esc(pages[0].sketchfab_name)}</a> (${uid})</p>
+      <p><b>Shown on:</b></p><ul>${carList}</ul>
+      ${status}
+      <p style="color:#666;font-size:12px"><b>Device:</b> ${esc(ua.slice(0, 200) || 'unknown')}${country ? ` · ${esc(country)}` : ''}</p>
+      <p style="color:#666;font-size:12px">To hide it now: UPDATE car_3d_models SET hidden = 1 WHERE sketchfab_uid = '${uid}'</p>
+    </div>`,
+  });
 }
