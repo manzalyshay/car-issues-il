@@ -18,6 +18,7 @@ import { getLatestNews } from './carNews';
 import { newsPath } from './newsSlug';
 import { curatedPairs, resolvePairs } from './comparePairs';
 import { NET_ORGANIC_COMPARE_PAIRS } from '@/data/net-organic-compare-pairs';
+import { RU_COMPARE_PAIRS } from '@/data/ru-compare-pairs';
 import type { CarMake } from '@/data/cars';
 
 export const HE_BASE = 'https://carissues.co.il';
@@ -242,4 +243,18 @@ export async function enSitemapIndex(): Promise<{ url: string; lastModified?: st
 
 export async function enChildSitemap(name: EnChildSitemap): Promise<MetadataRoute.Sitemap> {
   return enEntries(await loadEnData())[name];
+}
+
+// ── Russian pilot (carissues.co.il/ru) ──────────────────────────────────────────────
+
+/** /sitemaps/ru.xml on the Hebrew host: /ru, /ru/vehicle-lookup and the 50 Russian compare pages. */
+export async function ruSitemapEntries(): Promise<MetadataRoute.Sitemap> {
+  const makes = await getAllMakes().catch(() => [] as CarMake[]);
+  return [
+    { url: `${HE_BASE}/ru`, changeFrequency: 'weekly', priority: 0.8 },
+    { url: `${HE_BASE}/ru/vehicle-lookup`, changeFrequency: 'weekly', priority: 0.9 },
+    ...resolvePairs(makes, RU_COMPARE_PAIRS).map((p) => ({
+      url: `${HE_BASE}/ru${p.path}`, changeFrequency: 'weekly' as const, priority: 0.7,
+    })),
+  ];
 }

@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import Link from 'next/link';
 import { getHostLocale, getBaseUrl } from '@/lib/hostLocale';
 import PlateSearch from '@/components/PlateSearch';
 
@@ -6,6 +7,7 @@ export const revalidate = 3600;
 
 const LANGS = {
   he: 'https://carissues.co.il/vehicle-lookup',
+  'ru-IL': 'https://carissues.co.il/ru/vehicle-lookup',
   en: 'https://carissues.net/vehicle-lookup',
   'x-default': 'https://carissues.net/vehicle-lookup',
 };
@@ -182,6 +184,11 @@ export default async function VehicleLookupPage() {
               ? 'הזן מספר לוחית רישוי וקבל מיד את כל הפרטים - תוקף טסט, היסטוריית נזק, קילומטראז׳ ועוד, ישירות ממשרד התחבורה.'
               : 'Enter any Israeli license plate and instantly get full vehicle details - MOT status, damage history, odometer reading and more, live from Israel\'s Ministry of Transport.'}
           </p>
+          {isHe && (
+            <p style={{ margin: '12px 0 0', fontSize: '0.85rem' }}>
+              <Link href="/ru/vehicle-lookup" lang="ru" hrefLang="ru" style={{ color: "#93c5fd", fontWeight: 600, textDecoration: "none" }}>Проверка авто по номеру на русском →</Link>
+            </p>
+          )}
           <p style={{ color: '#475569', fontSize: '0.72rem', marginTop: 14 }}>
             {isHe
               ? 'מקור: משרד התחבורה (data.gov.il)'

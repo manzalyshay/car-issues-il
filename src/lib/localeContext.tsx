@@ -35,7 +35,12 @@ const LocaleContext = createContext<LocaleContextType>({
   isDomainLocked: false,
 });
 
-export function LocaleProvider({ children, initialLocale }: { children: React.ReactNode; initialLocale?: Locale }) {
+export function LocaleProvider({ children, initialLocale, documentLang }: {
+  children: React.ReactNode;
+  initialLocale?: Locale;
+  /** Overrides <html lang/dir> (the /ru pilot: lang="ru", ltr) while the UI strings stay `initialLocale`. */
+  documentLang?: { lang: string; dir: 'ltr' | 'rtl' };
+}) {
   const [locale, setLocaleState] = useState<Locale>(initialLocale ?? 'he');
   const [isDomainLocked, setIsDomainLocked] = useState(!!initialLocale);
 
@@ -67,11 +72,13 @@ export function LocaleProvider({ children, initialLocale }: { children: React.Re
 
   const dir = locale === 'he' ? 'rtl' : 'ltr';
 
+  const docLang = documentLang?.lang ?? locale;
+  const docDir = documentLang?.dir ?? dir;
   useEffect(() => {
-    document.documentElement.lang = locale;
-    document.documentElement.dir = dir;
-    document.body.style.direction = dir;
-  }, [locale, dir]);
+    document.documentElement.lang = docLang;
+    document.documentElement.dir = docDir;
+    document.body.style.direction = docDir;
+  }, [docLang, docDir]);
 
   return (
     <LocaleContext.Provider value={{ locale, setLocale, t: translations[locale] as Translations, dir, isDomainLocked }}>

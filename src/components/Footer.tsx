@@ -97,7 +97,16 @@ export default function Footer() {
                 : 'מידע על דגמי רכב, ביקורות בעלים, ריקולים ועלויות תיקון.'}
             </p>
           </div>
-          <LangSwitch isEn={isEn} />
+          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+            <LangSwitch isEn={isEn} />
+            {/* Russian pilot pages exist on the Hebrew site only */}
+            {!isEn && (
+              <Link href="/ru" lang="ru" hrefLang="ru" className="lang-switch-dark" style={{
+                display: 'inline-flex', alignItems: 'center', fontSize: '0.75rem', fontWeight: 700, color: '#93a5c0',
+                textDecoration: 'none', border: '1.5px solid rgba(255,255,255,.2)', borderRadius: 8, padding: '5px 12px',
+              }}>Русский</Link>
+            )}
+          </div>
         </div>
 
         {/* Link columns - 3-col desktop, 2-col mobile */}

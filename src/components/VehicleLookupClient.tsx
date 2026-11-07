@@ -7,6 +7,8 @@ import type { Vehicle } from '@/lib/vehicleLookup';
 import { detectCountry } from '@/lib/vehicleLookup';
 import { COLOR_EN, FUEL_EN, ORIGIN_EN, translateValue, normalizeOwnership } from '@/lib/vehicleLookupLabels';
 import { AI_SCORE_CAPTION_HE, AI_SCORE_CAPTION_EN } from '@/lib/aiScore';
+import { colorRu, fuelRu, ownershipRu, originRu } from '@/lib/vehicleLookupRu';
+import { ruComparePath } from '@/data/ru-compare-pairs';
 import { sizedImageUrl } from '@/lib/imageSizing';
 import Car3DViewer from './Car3DViewer';
 import ScoreSourcesInfo from './ScoreSourcesInfo';
@@ -91,6 +93,58 @@ function FlagRow({ color, label, value }: { color: 'amber' | 'neutral'; label: s
   );
 }
 
+// ── Russian (the /ru pilot) ─────────────────────────────────────────────────
+
+/** Russian plural form index: 0 = 1/21, 1 = 2-4, 2 = 0/5-20. */
+function ruPluralIndex(n: number): 0 | 1 | 2 {
+  const a = Math.abs(n) % 100, b = a % 10;
+  if (b === 1 && a !== 11) return 0;
+  if (b >= 2 && b <= 4 && (a < 12 || a > 14)) return 1;
+  return 2;
+}
+
+/** modelInfo.topProblems severity comes as Hebrew ('שכיח' / 'בינוני'). */
+function severityRu(sev: string): string {
+  return sev === 'שכיח' ? 'часто' : 'иногда';
+}
+
+const AI_SCORE_CAPTION_RU = 'Оценка CarIssues по тестам автомобиля, отзывам владельцев и отзывным кампаниям. Это не официальный рейтинг надёжности.';
+
+const RU_LABELS = {
+  placeholder: 'Введите номер', btn: 'Проверить', checking: 'Проверяем...',
+  hint: 'Например: 1234567 • можно и британский номер',
+  notFound: 'Автомобиль с таким номером не найден', apiError: 'Ошибка при проверке, попробуйте ещё раз',
+  invalidInput: 'Введите номер из 7 или 8 цифр',
+  source: 'Данные Министерства транспорта обновляются раз в сутки', sourceUk: 'Данные обновляются раз в сутки',
+  color: 'Цвет', fuel: 'Топливо', ownership: 'Владение', firstRoad: 'На дороге с',
+  tires: 'Шины', vin: 'Номер шасси', engine: 'Двигатель',
+  motValid: 'Техосмотр действителен до', motExpired: 'Техосмотр просрочен',
+  licValid: 'Лицензия действительна до', licExpired: 'Лицензия просрочена',
+  lastTest: 'Последний техосмотр',
+  taxPaid: 'Дорожный налог оплачен', taxNotPaid: 'Дорожный налог не оплачен',
+  odometer: 'Пробег (на последнем техосмотре)', damage: 'История повреждений',
+  damageYes: 'Зарегистрировано повреждение', damageNo: 'Повреждений не зарегистрировано',
+  repaint: 'Перекраска', origin: 'Происхождение', structuralChange: 'Изменение конструкции', tireChange: 'Замена шин',
+  firstReg: 'Первая регистрация', odometerNote: 'Пробег указан на момент последнего техосмотра.',
+  reviews: 'Отзывы и типичные проблемы', checkTitle: 'Проверка авто по номеру',
+  ownershipHistory: 'История владения',
+  ownershipNote: 'Официальные регистрационные данные; это не обязательно фактическая смена владельца',
+  noHistory: 'Других записей в базе нет', periodCount: 'периодов',
+  wasCommercial: 'Ранее использовался в коммерческих целях', currentOwnership: 'Сейчас',
+  detailsFree: 'Израиль • бесплатная проверка',
+  recallsChip: 'Проверьте отзывные кампании модели', modelImageCaption: 'Фото для иллюстрации',
+  fullModelPage: 'Полная страница модели (на иврите) →', fuelHybridSuffix: 'гибрид',
+  whatToKnow: 'Что нужно знать об этой модели', whatToKnowSub: 'Перед покупкой: что сообщают владельцы и сервисы (часть данных на английском)',
+  commonProblems: 'Типичные проблемы', mostReported: 'Чаще всего', allProblems: 'Все проблемы (на иврите) →',
+  recallsForModel: 'Отзывные кампании модели', recallsCount: 'кампаний', noRecalls: 'Отзывных кампаний для этой модели нет', recallsDetails: 'Подробнее (на иврите) →',
+  repairCosts: 'Стоимость ремонта', repairCostsSub: 'Ежегодное ТО и типичный ремонт', repairCostsLink: 'Цены на ремонт (на иврите) →',
+  recentReviews: 'Свежие отзывы владельцев', allReviewsLink: 'Все отзывы (на иврите) →', writeReview: 'Написать отзыв (на иврите)',
+  fullRegistry: 'Все регистрационные данные', manufacturer: 'Производитель', model: 'Модель', year: 'Год выпуска', frame: 'Шасси',
+  reliabilityScore: 'Оценка модели', notEnoughData: 'Мало данных', noSources: 'Нет подходящих тестов для этого года/модели', ownersReportMostly: 'Владельцы чаще всего сообщают:',
+  compareSimilar: 'Сравнить с похожими моделями', comparison: 'Сравнение',
+  consideringBuying: 'Думаете купить этот автомобиль?', consideringBuyingDesc: 'Список проверок при покупке подержанного авто: что проверить в гараже до сделки.', checklistLink: 'Список проверок (на иврите) →',
+};
+
 // ── Main component ─────────────────────────────────────────────────────────
 
 interface Props {
@@ -98,11 +152,14 @@ interface Props {
   initialVehicle: Vehicle | null;
   initialStatus: 'found' | 'not_found' | 'error';
   isHe: boolean;
+  /** 'ru' for the /ru pilot pages; otherwise derived from isHe. */
+  lang?: 'he' | 'en' | 'ru';
   base: string;
   initialModelInfo?: ModelInfo | null;
 }
 
-export default function VehicleLookupClient({ initialPlate, initialVehicle, initialStatus, isHe, base, initialModelInfo = null }: Props) {
+export default function VehicleLookupClient({ initialPlate, initialVehicle, initialStatus, isHe, lang: langProp, base, initialModelInfo = null }: Props) {
+  const isRu = langProp === 'ru';
   const [modelInfo, setModelInfo] = useState<ModelInfo | null>(initialModelInfo);
   const [plate, setPlate]       = useState(initialPlate);
   const [inputVal, setInputVal] = useState(initialPlate.replace(/\D/g, ''));
@@ -115,7 +172,7 @@ export default function VehicleLookupClient({ initialPlate, initialVehicle, init
 
   const isUk = detectCountry(inputVal) === 'uk';
 
-  const L = isHe ? {
+  const L = isRu ? RU_LABELS : isHe ? {
     placeholder: 'הזן מספר רישוי', btn: 'בדיקה', checking: 'בודק...',
     hint: 'לדוגמה: 1234567 • ניתן גם לוחית בריטית',
     notFound: 'לא נמצא רכב עם מספר רישוי זה', apiError: 'שגיאה בבדיקה, נסה שוב',
@@ -218,10 +275,10 @@ export default function VehicleLookupClient({ initialPlate, initialVehicle, init
     setPlate(cleaned);
 
     // Update URL without full navigation
-    window.history.pushState(null, '', `/vehicle-lookup/${encodeURIComponent(cleaned)}`);
+    window.history.pushState(null, '', `${isRu ? '/ru' : ''}/vehicle-lookup/${encodeURIComponent(cleaned)}`);
 
     try {
-      const res = await fetch(`/api/vehicle-lookup?plate=${encodeURIComponent(cleaned)}`, {
+      const res = await fetch(`/api/vehicle-lookup?plate=${encodeURIComponent(cleaned)}${isRu ? '&lang=ru' : ''}`, {
         signal: AbortSignal.timeout(20000),
       });
       const data = await res.json() as { vehicle?: Vehicle; modelInfo?: ModelInfo | null; error?: string };
@@ -247,6 +304,12 @@ export default function VehicleLookupClient({ initialPlate, initialVehicle, init
     }
   }
 
+  // Russian pages show only reviews that have an English translation (never Hebrew text)
+  const reviewsShown = !modelInfo ? [] : isRu
+    ? modelInfo.recentReviews.filter((rv) => rv.bodyEn && !/[\u0590-\u05FF]/.test(`${rv.titleEn ?? ''} ${rv.bodyEn}`))
+    : modelInfo.recentReviews;
+  // Russian dates use dots (01.10.2026)
+  const fd = (raw: string) => (isRu ? fmtDate(raw).replace(/\//g, '.') : fmtDate(raw));
   const displayPlate = fmtPlate(plate);
   const v = vehicle;
   const isVehicleUk = v?.country === 'uk';
@@ -352,7 +415,7 @@ export default function VehicleLookupClient({ initialPlate, initialVehicle, init
           return (
             <>
               {(() => {
-                const fuelValue = isHe ? v.fuel : translateValue(v.fuel, FUEL_EN);
+                const fuelValue = isRu ? fuelRu(v.fuel) : isHe ? v.fuel : translateValue(v.fuel, FUEL_EN);
                 const fuelDisplay = (v.fuel === 'בנזין' && modelInfo?.isHybrid) ? `${fuelValue} · ${L.fuelHybridSuffix}` : fuelValue;
                 const history = !isVehicleUk ? (v.ownershipHistory ?? []) : [];
                 const hasHistory = history.length > 0;
@@ -392,12 +455,12 @@ export default function VehicleLookupClient({ initialPlate, initialVehicle, init
                     <div style={{ minWidth: 0 }}>
                       {v.makeHe && (
                         <div className="vl-muted" style={{ fontSize: '0.7rem', fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--text-muted)', marginBottom: 4 }}>
-                          {isHe ? v.makeHe : (v.dbMatch?.makeSlug ? slugToDisplay(v.dbMatch.makeSlug) : v.makeHe)}
+                          {isHe ? v.makeHe : (v.dbMatch?.makeSlug ? slugToDisplay(v.dbMatch.makeSlug) : isRu ? '' : v.makeHe)}
                           {v.year ? ` · ${v.year}` : ''}
                         </div>
                       )}
                       <div className="vl-name" style={{ fontSize: 'clamp(1.2rem, 4vw, 1.6rem)', fontWeight: 900, lineHeight: 1.1, letterSpacing: '-0.01em', color: 'var(--text)' }}>
-                        {isHe ? (v.name || v.makeHe) : (v.dbMatch?.modelSlug ? slugToDisplay(v.dbMatch.modelSlug) : v.name || v.makeHe)}
+                        {isHe ? (v.name || v.makeHe) : (v.dbMatch?.modelSlug ? slugToDisplay(v.dbMatch.modelSlug) : v.name || (isRu ? '' : v.makeHe))}
                       </div>
                     </div>
 
@@ -412,7 +475,7 @@ export default function VehicleLookupClient({ initialPlate, initialVehicle, init
                         <div className="vl-muted" style={{ fontSize: 11, marginTop: 4, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                           {L.reliabilityScore}
                           {modelInfo.proReviewScoreSets && modelInfo.proReviewScoreSets.length > 0 && (
-                            <ScoreSourcesInfo sets={modelInfo.proReviewScoreSets} isHe={isHe} />
+                            <ScoreSourcesInfo sets={modelInfo.proReviewScoreSets} isHe={isHe} lang={langProp} />
                           )}
                         </div>
                       </div>
@@ -423,13 +486,13 @@ export default function VehicleLookupClient({ initialPlate, initialVehicle, init
                   <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
                     {isVehicleUk ? (
                       <>
-                        <StatusChip ok={!motExpired} label={motExpired ? L.motExpired : `${L.motValid} ${v.motExpiryDate ? fmtDate(v.motExpiryDate) : ''}`} />
+                        <StatusChip ok={!motExpired} label={motExpired ? L.motExpired : `${L.motValid} ${v.motExpiryDate ? fd(v.motExpiryDate) : ''}`} />
                         <StatusChip ok={taxOk} label={taxOk ? L.taxPaid : L.taxNotPaid} />
                       </>
                     ) : (
                       <>
-                        {v.lastTestDate && <StatusChip ok={!motExpired} label={`${L.lastTest}: ${fmtDate(v.lastTestDate)}`} />}
-                        <StatusChip ok={!motExpired} label={motExpired ? L.licExpired : `${L.licValid} ${v.validUntil ? fmtDate(v.validUntil) : ''}`} />
+                        {v.lastTestDate && <StatusChip ok={!motExpired} label={`${L.lastTest}: ${fd(v.lastTestDate)}`} />}
+                        <StatusChip ok={!motExpired} label={motExpired ? L.licExpired : `${L.licValid} ${v.validUntil ? fd(v.validUntil) : ''}`} />
                         {v.hasAccident !== null && <StatusChip ok={!v.hasAccident} label={v.hasAccident ? L.damageYes : L.damageNo} warn={v.hasAccident ?? false} />}
                       </>
                     )}
@@ -443,10 +506,10 @@ export default function VehicleLookupClient({ initialPlate, initialVehicle, init
                   {/* Summary specs */}
                   <dl style={{ margin: 0, display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))', gap: '12px 20px', borderTop: '1px solid var(--border)', paddingTop: 16 }}>
                     {[
-                      { label: L.color, value: isHe ? v.color : translateValue(v.color, COLOR_EN) },
+                      { label: L.color, value: isRu ? colorRu(v.color) : isHe ? v.color : translateValue(v.color, COLOR_EN) },
                       { label: L.fuel, value: fuelDisplay },
-                      !isVehicleUk && { label: L.ownership, value: normalizeOwnership(v.ownership, isHe) },
-                      { label: L.firstRoad, value: v.firstRoad ? fmtDate(v.firstRoad) : '' },
+                      !isVehicleUk && { label: L.ownership, value: isRu ? ownershipRu(v.ownership) : normalizeOwnership(v.ownership, isHe) },
+                      { label: L.firstRoad, value: v.firstRoad ? fd(v.firstRoad) : '' },
                     ].filter(Boolean).filter((r): r is { label: string; value: string } => !!r && !!(r as { value: string }).value).map(({ label, value }) => (
                       <div key={label}>
                         <dt style={{ fontSize: '0.65rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.07em', color: 'var(--text-muted)', marginBottom: 3 }}>{label}</dt>
@@ -490,7 +553,7 @@ export default function VehicleLookupClient({ initialPlate, initialVehicle, init
                           {modelInfo.topProblems.map((p) => (
                             <li key={p.title} style={{ display: 'flex', justifyContent: 'space-between', gap: 12, fontSize: 14, color: '#dfe6f3' }}>
                               <span>{p.title}</span>
-                              <span style={{ color: p.severity === 'שכיח' ? 'var(--warn)' : '#aab6cf', flexShrink: 0 }}>{p.severity}</span>
+                              <span style={{ color: p.severity === 'שכיח' ? 'var(--warn)' : '#aab6cf', flexShrink: 0 }}>{isRu ? severityRu(p.severity) : p.severity}</span>
                             </li>
                           ))}
                         </ul>
@@ -526,9 +589,17 @@ export default function VehicleLookupClient({ initialPlate, initialVehicle, init
                         <Link href={`${modelInfo.modelUrl}?tab=recalls`} style={{ border: '1px solid var(--border)', borderRadius: 16, padding: 18, textDecoration: 'none', color: 'var(--text)', display: 'flex', flexDirection: 'column', gap: 10 }}>
                           <span style={{ width: 40, height: 40, borderRadius: 12, background: 'var(--bad-bg)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18 }}>⚠️</span>
                           <span style={{ fontSize: 17, fontWeight: 700 }}>{L.recallsForModel}</span>
-                          <span style={{ fontSize: 14, color: 'var(--text-muted)' }}>{modelInfo.recallCount > 0 ? `${modelInfo.recallCount} ${L.recallsCount}` : L.noRecalls}</span>
+                          <span style={{ fontSize: 14, color: 'var(--text-muted)' }}>{modelInfo.recallCount > 0 ? `${modelInfo.recallCount} ${isRu ? ['кампания', 'кампании', 'кампаний'][ruPluralIndex(modelInfo.recallCount)] : L.recallsCount}` : L.noRecalls}</span>
                           <span style={{ fontSize: 14, fontWeight: 700, color: 'var(--accent)', marginTop: 'auto' }}>{L.recallsDetails}</span>
                         </Link>
+                        {isRu && modelInfo.priceMin != null && (
+                          <Link href={`${modelInfo.modelUrl}?tab=specs`} style={{ border: '1px solid var(--border)', borderRadius: 16, padding: 18, textDecoration: 'none', color: 'var(--text)', display: 'flex', flexDirection: 'column', gap: 10 }}>
+                            <span style={{ width: 40, height: 40, borderRadius: 12, background: 'var(--accent-soft)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18 }}>🏷️</span>
+                            <span style={{ fontSize: 17, fontWeight: 700 }}>Цена нового автомобиля</span>
+                            <span style={{ fontSize: 14, color: 'var(--text-muted)' }}>{`от ₪${modelInfo.priceMin.toLocaleString('ru-RU')} по прайс-листу импортёра`}</span>
+                            <span style={{ fontSize: 14, fontWeight: 700, color: 'var(--accent)', marginTop: 'auto' }}>Прайс-лист комплектаций (на иврите) →</span>
+                          </Link>
+                        )}
                         {isHe && modelInfo.priceMin != null && (
                           <Link href={`${modelInfo.modelUrl}?tab=specs`} style={{ border: '1px solid var(--border)', borderRadius: 16, padding: 18, textDecoration: 'none', color: 'var(--text)', display: 'flex', flexDirection: 'column', gap: 10 }}>
                             <span style={{ width: 40, height: 40, borderRadius: 12, background: 'var(--accent-soft)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18 }}>🏷️</span>
@@ -537,7 +608,7 @@ export default function VehicleLookupClient({ initialPlate, initialVehicle, init
                             <span style={{ fontSize: 14, fontWeight: 700, color: 'var(--accent)', marginTop: 'auto' }}>למחירון הגרסאות ←</span>
                           </Link>
                         )}
-                        {modelInfo.repairCostTeaser && (
+                        {modelInfo.repairCostTeaser && !(isRu && /[\u0590-\u05FF]/.test(modelInfo.repairCostTeaser)) && (
                           <Link href={`${modelInfo.modelUrl}#repair`} style={{ border: '1px solid var(--border)', borderRadius: 16, padding: 18, textDecoration: 'none', color: 'var(--text)', display: 'flex', flexDirection: 'column', gap: 10 }}>
                             <span style={{ width: 40, height: 40, borderRadius: 12, background: 'var(--accent-soft)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18 }}>₪</span>
                             <span style={{ fontSize: 17, fontWeight: 700 }}>{L.repairCosts}</span>
@@ -550,23 +621,23 @@ export default function VehicleLookupClient({ initialPlate, initialVehicle, init
                   )}
 
                   {/* o3: recent reviews - hidden when there are none (no empty box) */}
-                  {modelInfo && modelInfo.recentReviews.length > 0 && (
+                  {modelInfo && reviewsShown.length > 0 && (
                     <section className="vl-o3 card" style={{ padding: 'clamp(18px,4vw,28px)' }}>
                       <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
                         <h2 style={{ margin: 0, fontSize: 22, fontWeight: 800 }}>{L.recentReviews} {modelInfo.name}</h2>
                         {modelInfo.reviewCount > 0 && <Link href={`${modelInfo.modelUrl}#reviews`} style={{ fontSize: 15, fontWeight: 700, textDecoration: 'none' }}>{L.allReviewsLink}</Link>}
                       </div>
-                      {modelInfo.recentReviews.length > 0 && (
+                      {reviewsShown.length > 0 && (
                         <div style={{ marginTop: 20, display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: 14 }}>
-                          {modelInfo.recentReviews.map((rv) => (
+                          {reviewsShown.map((rv) => (
                             <figure key={rv.id} style={{ margin: 0, background: 'var(--surface-2)', borderRadius: 16, padding: 20, display: 'flex', flexDirection: 'column', gap: 10 }}>
                               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                                 <span style={{ color: 'var(--star)', fontSize: 16, letterSpacing: 2 }}>
                                   {'★'.repeat(rv.rating)}<span style={{ color: 'var(--star-empty)' }}>{'★'.repeat(5 - rv.rating)}</span>
                                 </span>
                               </div>
-                              <blockquote style={{ margin: 0, fontSize: 15, lineHeight: 1.6, color: 'var(--text)' }}>{isHe ? rv.title : (rv.titleEn ?? rv.title)}{isHe ? ` ${rv.body}` : ` ${rv.bodyEn ?? ''}`}</blockquote>
-                              <figcaption style={{ fontSize: 13, color: 'var(--text-muted)' }}>{rv.authorName}{rv.mileage ? ` · ${rv.mileage.toLocaleString()} ${isHe ? 'ק״מ' : 'km'}` : ''}</figcaption>
+                              <blockquote style={{ margin: 0, fontSize: 15, lineHeight: 1.6, color: 'var(--text)' }}>{isHe ? rv.title : isRu ? (rv.titleEn ?? '') : (rv.titleEn ?? rv.title)}{isHe ? ` ${rv.body}` : ` ${rv.bodyEn ?? ''}`}</blockquote>
+                              <figcaption style={{ fontSize: 13, color: 'var(--text-muted)' }}>{isRu && /[\u0590-\u05FF]/.test(rv.authorName) ? 'Владелец' : rv.authorName}{rv.mileage ? ` · ${rv.mileage.toLocaleString()} ${isHe ? 'ק״מ' : isRu ? 'км' : 'km'}` : ''}</figcaption>
                             </figure>
                           ))}
                         </div>
@@ -582,13 +653,13 @@ export default function VehicleLookupClient({ initialPlate, initialVehicle, init
                     <h2 style={{ margin: '0 0 20px', fontSize: 22, fontWeight: 800 }}>{L.fullRegistry}</h2>
                     <dl style={{ margin: 0, display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: '20px 24px' }}>
                       {[
-                        { label: L.manufacturer, value: isHe ? v.makeHe : (v.dbMatch?.makeSlug ? slugToDisplay(v.dbMatch.makeSlug) : v.makeHe) },
-                        { label: L.model, value: isHe ? (v.name || v.makeHe) : (v.dbMatch?.modelSlug ? slugToDisplay(v.dbMatch.modelSlug) : v.name || v.makeHe) },
+                        { label: L.manufacturer, value: isHe ? v.makeHe : (v.dbMatch?.makeSlug ? slugToDisplay(v.dbMatch.makeSlug) : isRu ? '' : v.makeHe) },
+                        { label: L.model, value: isHe ? (v.name || v.makeHe) : (v.dbMatch?.modelSlug ? slugToDisplay(v.dbMatch.modelSlug) : v.name || (isRu ? '' : v.makeHe)) },
                         v.year && { label: L.year, value: String(v.year) },
                         !isVehicleUk && v.frontTire && { label: L.tires, value: v.frontTire },
                         !isVehicleUk && v.vin && { label: L.frame, value: v.vin.slice(-8) },
                         isVehicleUk && v.engineCapacity && { label: L.engine, value: `${v.engineCapacity}cc` },
-                        !isVehicleUk && v.firstRegistrationDate && { label: L.firstReg, value: fmtDate(v.firstRegistrationDate) },
+                        !isVehicleUk && v.firstRegistrationDate && { label: L.firstReg, value: fd(v.firstRegistrationDate) },
                       ].filter(Boolean).filter((r): r is { label: string; value: string } => !!r && !!(r as { value: string }).value).map(({ label, value }) => (
                         <div key={label}>
                           <dt style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>{label}</dt>
@@ -604,14 +675,14 @@ export default function VehicleLookupClient({ initialPlate, initialVehicle, init
                           <div style={{ padding: '14px 18px', borderRadius: 9, border: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                             <div>
                               <div style={{ fontSize: '0.65rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.07em', color: 'var(--text-muted)', marginBottom: 3 }}>{L.odometer}</div>
-                              <div style={{ fontSize: '1.1rem', fontWeight: 800 }}>{v.odometer.toLocaleString()} <span style={{ fontSize: '0.75rem', fontWeight: 500, color: 'var(--text-muted)' }}>km</span></div>
+                              <div style={{ fontSize: '1.1rem', fontWeight: 800 }}>{v.odometer.toLocaleString(isRu ? 'ru-RU' : undefined)} <span style={{ fontSize: '0.75rem', fontWeight: 500, color: 'var(--text-muted)' }}>{isRu ? 'км' : 'km'}</span></div>
                             </div>
                           </div>
                         )}
-                        {v.wasRepainted    && <FlagRow color="amber"   label={L.repaint}          value={isHe ? 'הרכב נצבע מחדש' : 'Vehicle was repainted'} />}
-                        {v.structuralChange && <FlagRow color="amber"  label={L.structuralChange} value={isHe ? 'נרשם שינוי מבנה' : 'Structural change recorded'} />}
-                        {v.tireChange      && <FlagRow color="amber"   label={L.tireChange}        value={isHe ? 'שינוי צמיגים רשום' : 'Non-standard tires recorded'} />}
-                        {v.origin          && <FlagRow color="neutral" label={L.origin}            value={isHe ? v.origin : translateValue(v.origin, ORIGIN_EN)} />}
+                        {v.wasRepainted    && <FlagRow color="amber"   label={L.repaint}          value={isRu ? 'Автомобиль перекрашивался' : isHe ? 'הרכב נצבע מחדש' : 'Vehicle was repainted'} />}
+                        {v.structuralChange && <FlagRow color="amber"  label={L.structuralChange} value={isRu ? 'Зарегистрировано изменение конструкции' : isHe ? 'נרשם שינוי מבנה' : 'Structural change recorded'} />}
+                        {v.tireChange      && <FlagRow color="amber"   label={L.tireChange}        value={isRu ? 'Зарегистрированы нестандартные шины' : isHe ? 'שינוי צמיגים רשום' : 'Non-standard tires recorded'} />}
+                        {v.origin          && <FlagRow color="neutral" label={L.origin}            value={isRu ? originRu(v.origin) : isHe ? v.origin : translateValue(v.origin, ORIGIN_EN)} />}
                       </div>
                     )}
                     {v.odometer && v.odometer > 0 && !isVehicleUk && (
@@ -626,7 +697,9 @@ export default function VehicleLookupClient({ initialPlate, initialVehicle, init
                         {v.ownershipAnalysis && (
                           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 16 }}>
                             <span style={{ padding: '3px 10px', borderRadius: 20, background: 'var(--surface)', border: '1px solid var(--border)', fontSize: '0.75rem', fontWeight: 600 }}>
-                              {isHe
+                              {isRu
+                                ? `${displayedPeriodCount} ${['период', 'периода', 'периодов'][ruPluralIndex(displayedPeriodCount)]}`
+                                : isHe
                                 ? (displayedPeriodCount === 1 ? 'תקופה אחת' : `${displayedPeriodCount} תקופות`)
                                 : `${displayedPeriodCount} ${displayedPeriodCount === 1 ? 'period' : 'periods'}`}
                             </span>
@@ -643,8 +716,8 @@ export default function VehicleLookupClient({ initialPlate, initialVehicle, init
                             <div key={i} style={{ position: 'relative', marginBottom: 12, paddingInlineStart: 14 }}>
                               <div style={{ position: 'absolute', insetInlineStart: -2, top: 5, width: 10, height: 10, borderRadius: '50%', background: dotColorFor(rec.ownershipType), border: '2px solid var(--bg)' }} />
                               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', flexWrap: 'wrap', gap: 4 }}>
-                                <span style={{ fontWeight: 600, fontSize: '0.875rem' }}>{normalizeOwnership(rec.ownershipType, isHe)}</span>
-                                <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)', fontFamily: 'monospace' }}>{rec.dateLabel}</span>
+                                <span style={{ fontWeight: 600, fontSize: '0.875rem' }}>{isRu ? ownershipRu(rec.ownershipType) : normalizeOwnership(rec.ownershipType, isHe)}</span>
+                                <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)', fontFamily: 'monospace' }}>{isRu ? rec.dateLabel.replace(/\//g, '.') : rec.dateLabel}</span>
                               </div>
                             </div>
                           ))}
@@ -652,7 +725,7 @@ export default function VehicleLookupClient({ initialPlate, initialVehicle, init
                             <div style={{ position: 'relative', paddingInlineStart: 14 }}>
                               <div style={{ position: 'absolute', insetInlineStart: -2, top: 5, width: 12, height: 12, borderRadius: '50%', background: dotColorFor(currentEntry.ownershipType), border: '2px solid var(--bg)', boxShadow: `0 0 0 3px ${dotColorFor(currentEntry.ownershipType)}33` }} />
                               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', flexWrap: 'wrap', gap: 4 }}>
-                                <span style={{ fontWeight: 700, fontSize: '0.9rem', color: dotColorFor(currentEntry.ownershipType) }}>{normalizeOwnership(currentEntry.ownershipType, isHe)}</span>
+                                <span style={{ fontWeight: 700, fontSize: '0.9rem', color: dotColorFor(currentEntry.ownershipType) }}>{isRu ? ownershipRu(currentEntry.ownershipType) : normalizeOwnership(currentEntry.ownershipType, isHe)}</span>
                                 <span style={{ fontSize: '0.72rem', color: dotColorFor(currentEntry.ownershipType), fontWeight: 700, fontFamily: 'monospace' }}>{currentEntry.dateLabel}</span>
                               </div>
                               {!hasHistory && (
@@ -668,7 +741,7 @@ export default function VehicleLookupClient({ initialPlate, initialVehicle, init
 
                 {/* RAIL column */}
                 {modelInfo && (
-                  <aside className="vl-col-rail" aria-label={isHe ? 'על הדגם' : 'About this model'} style={{ flex: '1 1 340px', minWidth: 0, gap: 20 }}>
+                  <aside className="vl-col-rail" aria-label={isRu ? 'О модели' : isHe ? 'על הדגם' : 'About this model'} style={{ flex: '1 1 340px', minWidth: 0, gap: 20 }}>
 
                     {/* o2: model score */}
                     <section className="vl-o2" style={{ background: 'var(--ink)', color: '#fff', borderRadius: 'var(--r)', padding: 24, display: 'flex', flexDirection: 'column', gap: 18 }}>
@@ -689,7 +762,7 @@ export default function VehicleLookupClient({ initialPlate, initialVehicle, init
                           <div style={{ fontSize: 13, color: '#aab6cf', display: 'flex', alignItems: 'center' }}>
                             {L.reliabilityScore}
                             {modelInfo.aiScore != null && modelInfo.yearsCovered && modelInfo.proReviewScoreSets && modelInfo.proReviewScoreSets.length > 0 && (
-                              <ScoreSourcesInfo sets={modelInfo.proReviewScoreSets} isHe={isHe} />
+                              <ScoreSourcesInfo sets={modelInfo.proReviewScoreSets} isHe={isHe} lang={langProp} />
                             )}
                           </div>
                           {modelInfo.aiScore != null && modelInfo.yearsCovered && (!modelInfo.proReviewScoreSets || modelInfo.proReviewScoreSets.length === 0) && (
@@ -700,7 +773,7 @@ export default function VehicleLookupClient({ initialPlate, initialVehicle, init
                       </div>
                       {modelInfo.aiScore != null && modelInfo.yearsCovered && (
                         <p style={{ margin: 0, fontSize: 11.5, color: '#aab6cf', lineHeight: 1.5 }}>
-                          {isHe ? AI_SCORE_CAPTION_HE : AI_SCORE_CAPTION_EN}
+                          {isRu ? AI_SCORE_CAPTION_RU : isHe ? AI_SCORE_CAPTION_HE : AI_SCORE_CAPTION_EN}
                         </p>
                       )}
                       {modelInfo.topProblems.length > 0 && (
@@ -710,7 +783,7 @@ export default function VehicleLookupClient({ initialPlate, initialVehicle, init
                             {modelInfo.topProblems.map((p) => (
                               <li key={p.title} style={{ display: 'flex', justifyContent: 'space-between', fontSize: 14, color: '#dfe6f3' }}>
                                 <span>{p.title}</span>
-                                <span style={{ color: p.severity === 'שכיח' ? 'var(--warn)' : '#aab6cf' }}>{p.severity}</span>
+                                <span style={{ color: p.severity === 'שכיח' ? 'var(--warn)' : '#aab6cf' }}>{isRu ? severityRu(p.severity) : p.severity}</span>
                               </li>
                             ))}
                           </ul>
@@ -722,11 +795,13 @@ export default function VehicleLookupClient({ initialPlate, initialVehicle, init
                     </section>
 
                     {/* o5: compare similar */}
-                    {modelInfo.compares.length > 0 && (
+                    {(isRu ? modelInfo.compares.some((c) => ruComparePath(c.path)) : modelInfo.compares.length > 0) && (
                       <section className="vl-o5 card" style={{ padding: 22 }}>
                         <h2 style={{ margin: '0 0 14px', fontSize: 17, fontWeight: 800 }}>{L.compareSimilar}</h2>
                         <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-                          {modelInfo.compares.map((c) => (
+                          {(isRu
+                            ? modelInfo.compares.flatMap((c) => { const p = ruComparePath(c.path); return p ? [{ path: p, label: `${modelInfo.name} или ${c.label.replace(/^vs\s+/i, '')}` }] : []; })
+                            : modelInfo.compares).map((c) => (
                             <Link key={c.path} href={c.path} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: 12, borderRadius: 12, textDecoration: 'none', color: 'var(--text)' }}>
                               <span style={{ fontWeight: 600 }}>{c.label}</span>
                               <span style={{ fontSize: 14, color: 'var(--accent)', fontWeight: 700 }}>{L.comparison}</span>

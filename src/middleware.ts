@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getAllMakes } from './lib/carsDb';
+import { RU_COMPARE_PATHS } from './data/ru-compare-pairs';
 
 const HE_HOST = 'carissues.co.il';
 const EN_HOST = 'carissues.net';
@@ -26,6 +27,12 @@ function notFoundHtml(isEnHost: boolean): string {
   return isEnHost
     ? `<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Page Not Found | CarIssues</title><meta name="robots" content="noindex"></head><body style="font-family:Arial,sans-serif;text-align:center;padding:80px 20px;color:#1c2733"><div style="font-size:4rem;margin-bottom:16px">🚗</div><h1 style="font-size:1.8rem;font-weight:900;margin-bottom:12px">404 - Page Not Found</h1><p style="color:#6b7a8c;margin-bottom:24px">The page you're looking for doesn't exist.</p><a href="/" style="color:#1b4f8a;font-weight:700;text-decoration:none">Back to Home</a></body></html>`
     : `<!DOCTYPE html><html lang="he" dir="rtl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>דף לא נמצא | CarIssues</title><meta name="robots" content="noindex"></head><body style="font-family:Heebo,Arial,sans-serif;text-align:center;padding:80px 20px;color:#1c2733"><div style="font-size:4rem;margin-bottom:16px">🚗</div><h1 style="font-size:1.8rem;font-weight:900;margin-bottom:12px">404 - הדף לא נמצא</h1><p style="color:#6b7a8c;margin-bottom:24px">הדף שחיפשת לא קיים באתר.</p><a href="/" style="color:#1b4f8a;font-weight:700;text-decoration:none">חזרה לדף הבית</a></body></html>`;
+}
+
+/** Real 404 for /ru paths outside the pilot, in Russian (rendered here, not by the app, so crawlers get the text). */
+function ruNotFoundResponse(): NextResponse {
+  const html = `<!DOCTYPE html><html lang="ru" dir="ltr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Страница не найдена | CarIssues</title><meta name="robots" content="noindex"></head><body style="font-family:Rubik,Arial,sans-serif;text-align:center;padding:80px 20px;color:#1c2733"><div style="font-size:4rem;margin-bottom:16px">🚗</div><h1 style="font-size:1.8rem;font-weight:800;margin-bottom:12px">404 — страница не найдена</h1><p style="color:#6b7a8c;margin-bottom:24px">На русском у нас пока есть проверка авто по номеру и самые популярные сравнения.</p><p><a href="/ru" style="color:#1b4f8a;font-weight:700;text-decoration:none;margin:0 10px">На главную</a><a href="/ru/vehicle-lookup" style="color:#1b4f8a;font-weight:700;text-decoration:none;margin:0 10px">Проверка авто по номеру</a></p></body></html>`;
+  return new NextResponse(html, { status: 404, headers: { 'content-type': 'text/html; charset=utf-8' } });
 }
 
 function notFoundResponse(isEnHost: boolean): NextResponse {
@@ -73,6 +80,35 @@ export async function middleware(req: NextRequest) {
       `https://${canonicalHost}${pathname}${req.nextUrl.search}`,
       { status: 301 }
     );
+  }
+
+  // ── Russian pilot (/ru) ─────────────────────────────────────────────────────
+  // Path-based third language on carissues.co.il only (docs/ru-pilot-plan.md). The
+  // x-locale request header tells the root layout to render lang="ru" dir="ltr" with
+  // the Russian header and footer. No cookie or geo redirects apply under /ru.
+  if (pathname === '/ru' || pathname.startsWith('/ru/')) {
+    if (isEnHost) {
+      return NextResponse.redirect(`https://${HE_HOST}${pathname}${req.nextUrl.search}`, { status: 301 });
+    }
+    // Only the pilot pages exist under /ru: the landing page, the plate lookup and the 50
+    // compare pairs in RU_COMPARE_PAIRS. Anything else is a real 404 in Russian.
+    const ruCompare = pathname.match(/^\/ru\/cars\/compare\/([^/]+)\/([^/]+)\/([^/]+)\/([^/]+)\/?$/);
+    if (ruCompare) {
+      const pairA = `${ruCompare[1]}/${ruCompare[2]}`;
+      const pairB = `${ruCompare[3]}/${ruCompare[4]}`;
+      const [c1, c2] = [pairA, pairB].sort();
+      if (!RU_COMPARE_PATHS.has(`/cars/compare/${c1}/${c2}`)) return ruNotFoundResponse();
+      if (pairA !== c1) {
+        const url = req.nextUrl.clone();
+        url.pathname = `/ru/cars/compare/${c1}/${c2}`;
+        return NextResponse.redirect(url, { status: 301 });
+      }
+    } else if (!/^\/ru\/?$/.test(pathname) && !/^\/ru\/vehicle-lookup(\/[^/]+)?\/?$/.test(pathname)) {
+      return ruNotFoundResponse();
+    }
+    const requestHeaders = new Headers(req.headers);
+    requestHeaders.set('x-locale', 'ru');
+    return NextResponse.next({ request: { headers: requestHeaders } });
   }
 
   // ── Model existence check ───────────────────────────────────────────────────

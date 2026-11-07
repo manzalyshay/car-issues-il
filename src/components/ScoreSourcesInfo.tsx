@@ -6,6 +6,8 @@ import { labelForScoreSet, type ProReviewScoreSet } from '@/lib/proReviewScoreLa
 interface Props {
   sets: ProReviewScoreSet[] | null | undefined;
   isHe: boolean;
+  /** 'ru' on the /ru pilot pages (falls back to English data, never Hebrew). */
+  lang?: 'he' | 'en' | 'ru';
 }
 
 const L = {
@@ -31,10 +33,24 @@ const L = {
     reliabilityCaveat: 'Long-term reliability and ownership experience are not measured by these car tests.',
     notCovered: 'Not covered by this score:',
   },
+  ru: {
+    aria: 'Источники и оценки других тестов',
+    heading: 'Оценки автомобильных тестов',
+    definition: 'Оценки внешних сайтов с тестами, проверенные вручную. Это один из факторов, на которых основана оценка выше.',
+    single: 'Один тест, не общее мнение',
+    basedOn: (n: number) => `На основе ${n} ${['теста', 'тестов', 'тестов'][(n % 10 === 1 && n % 100 !== 11) ? 0 : 1]}`,
+    sources: 'Источники', close: 'Закрыть',
+    notKnown: 'Что неизвестно',
+    reliabilityCaveat: 'Долгосрочную надёжность и опыт владения эти тесты не измеряют.',
+    notCovered: 'Не входит в эту оценку:',
+  },
 };
 
-export default function ScoreSourcesInfo({ sets, isHe }: Props) {
-  const t = isHe ? L.he : L.en;
+export default function ScoreSourcesInfo({ sets, isHe, lang }: Props) {
+  const isRu = lang === 'ru';
+  const t = isRu ? L.ru : isHe ? L.he : L.en;
+  // Russian pages show the English data; anything that only exists in Hebrew is left out
+  const noHe = (x: string | null) => (isRu && x && /[\u0590-\u05FF]/.test(x) ? null : x);
   const [hovering, setHovering] = useState(false);
   const [pinned, setPinned] = useState(false);
   const open = hovering || pinned;
@@ -165,7 +181,7 @@ export default function ScoreSourcesInfo({ sets, isHe }: Props) {
           </div>
 
           {sets.map((set) => {
-            const label = labelForScoreSet(set, sets, isHe);
+            const label = noHe(labelForScoreSet(set, sets, isHe));
             const isSingle = set.n === 1;
             return (
               <div key={`${set.scoreKey}-${set.setIndex}`} style={{ borderTop: '1px solid #eef1f5', paddingTop: 10 }}>
@@ -199,7 +215,7 @@ export default function ScoreSourcesInfo({ sets, isHe }: Props) {
                   ))}
                 </ul>
                 {(() => {
-                  const na = isHe ? set.notApplicable : (set.notApplicableEn.length ? set.notApplicableEn : set.notApplicable);
+                  const na = (isHe ? set.notApplicable : (set.notApplicableEn.length ? set.notApplicableEn : set.notApplicable)).filter((x) => noHe(x));
                   return na.length > 0 ? (
                     <div style={{ fontSize: 11.5, color: '#66788c', lineHeight: 1.5, marginTop: 6 }}>{`${t.notCovered} ${na.join('; ')}.`}</div>
                   ) : null;
