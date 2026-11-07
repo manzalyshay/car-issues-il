@@ -31,8 +31,6 @@ import { getRecallsFromCache } from '@/lib/recallsDb';
 import { getIsraeliRecalls } from '@/lib/israeliRecallsDb';
 import { getAiScore } from '@/lib/aiScore';
 import { getProReviewScoreSets, scoreSetsForPageYear } from '@/lib/proReviewScores';
-import { getModelSynthesisRows } from '@/lib/modelSynthesis';
-import ModelSynthesis from '@/components/ModelSynthesis';
 
 
 export const revalidate = 900; // cache 15 minutes
@@ -132,7 +130,7 @@ export default async function ModelPage({ params, searchParams }: Props) {
     notFound();
   }
 
-  const [allReviews, expertReviewsList, sketchfabModel, similarModels, carImages, modelRepairCosts, trimSpecs, recalls, israeliRecalls, aiScore, proReviewScoreSets, synthesisRows] = await Promise.all([
+  const [allReviews, expertReviewsList, sketchfabModel, similarModels, carImages, modelRepairCosts, trimSpecs, recalls, israeliRecalls, aiScore, proReviewScoreSets] = await Promise.all([
     getReviewsForModel(makeSlug, modelSlug).catch(() => []),
     getExpertReviews(makeSlug, modelSlug).catch(() => []),
     findCarModel(makeSlug, modelSlug).catch(() => null),
@@ -144,7 +142,6 @@ export default async function ModelPage({ params, searchParams }: Props) {
     locale === 'en' ? Promise.resolve([]) : getIsraeliRecalls(make.nameEn, model.nameEn).catch(() => []),
     getAiScore(makeSlug, modelSlug).catch(() => null),
     getProReviewScoreSets(makeSlug, modelSlug).catch(() => null),
-    getModelSynthesisRows(makeSlug, modelSlug).catch(() => []),
   ]);
   // Same combined source (Israeli + US-cached) the recalls tab uses, so the FAQ
   // count and the tab count never drift apart.
@@ -385,13 +382,6 @@ export default async function ModelPage({ params, searchParams }: Props) {
             recallCount={recallCount}
           />
         </div>
-
-        {/* ── Test-score synthesis / insufficient-data state ── */}
-        <ModelSynthesis
-          sets={relevantProReviewScoreSets}
-          synthesisRows={synthesisRows}
-          isHe={!isEn}
-        />
 
         {/* ── FAQ ── */}
         <ModelFaq
