@@ -15,8 +15,9 @@ routes = [
 # Cloudflare Cron Triggers — dispatched in worker-entry.js's scheduled() handler
 [triggers]
 # Recalls run hourly in small batches (a full pass over all models takes a few runs);
-# Israeli recall data syncs daily at 02:40 UTC; news at 06:00 UTC. Every run is logged in D1 cron_runs.
-crons = ["17 * * * *", "40 2 * * *", "0 6 * * *"]
+# Israeli recall data syncs daily at 02:40 UTC; news at 06:00 UTC, with Gemini retries of
+# still-untranslated news at 11:30 and 17:30 UTC. Every run is logged in D1 cron_runs.
+crons = ["17 * * * *", "40 2 * * *", "0 6 * * *", "30 11 * * *", "30 17 * * *"]
 
 # Static assets served via ASSETS binding (Next.js static + public/ files)
 [assets]

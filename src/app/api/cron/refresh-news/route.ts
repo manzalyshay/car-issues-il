@@ -1,12 +1,14 @@
 /**
  * GET /api/cron/refresh-news
  * Fetches global car news (Motor1 + Car and Driver, alternating), AI-rewrites in
- * Hebrew (Gemini, Workers AI fallback), saves to D1. New articles are rewritten
+ * Hebrew (Gemini; Workers AI only when the Gemini quota is used up), saves to D1. New articles are rewritten
  * first, then recent untranslated ones are retried, one article at a time, so a run
  * never fires a burst of Gemini calls; after the first Gemini 429 the rest of the
- * run uses Workers AI only (detail.geminiSkippedAfter429); 3 Gemini timeouts do the same. Untranslated articles are
+ * run uses Workers AI only (detail.geminiSkippedAfter429). Workers AI is used only then:
+ * a busy or slow Gemini leaves the article for the next run. Untranslated articles are
  * retried only if stored in the last RETRY_MAX_AGE_DAYS (3) days - the older backlog
- * is left as is. Called by the Cloudflare Cron Trigger (daily at 06:00 UTC).
+ * is left as is. Called by the Cloudflare Cron Triggers: 06:00 UTC (full run) and
+ * 11:30 / 17:30 UTC (?mode=retry: recent untranslated articles only, no new fetch).
  * Protected by CRON_SECRET. Every run is recorded in `cron_runs` with per-feed
  * fetched / already-stored / picked counts, feed errors, and Hebrew rewrite
  * counts with a failure reason per provider. Status: failed when no new or
@@ -30,8 +32,11 @@ export async function GET(req: NextRequest) {
   const retryStats = newTranslationStats();
   const state = newRunState();
   try {
+    // ?mode=retry (the 11:30 and 17:30 UTC runs) only retries recent articles still without
+    // Hebrew, giving Gemini more chances at quieter hours; it fetches no new articles.
+    const retryOnly = req.nextUrl.searchParams.get('mode') === 'retry';
     // Sequential on purpose: in parallel these fired up to 25 Gemini calls at once.
-    const newArticles = await refreshCarNews(5, stats, state);
+    const newArticles = retryOnly ? 0 : await refreshCarNews(5, stats, state);
     // 15 = 3-day retry window x 5 new articles a day, so every recent article gets a retry.
     const retranslated = await retranslateUntranslated(15, retryStats, state);
     // Run after the refresh so freshly inserted articles without a photo are covered too.
@@ -39,6 +44,7 @@ export async function GET(req: NextRequest) {
     const feedErrors = Object.values(stats.sources).filter(s => s.error).length;
     const status = newsRunStatus(feedErrors, [stats.translation!, retryStats]);
     const detail = {
+      mode: retryOnly ? 'retry' : 'full',
       newArticles, retranslated, imagesFilled, sources: stats.sources,
       geminiSkippedAfter429: state.geminiSkipped,
       geminiSkipReason: state.geminiSkipReason ?? null,

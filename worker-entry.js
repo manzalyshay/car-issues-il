@@ -10,6 +10,8 @@ const CRON_ROUTES = {
   "17 * * * *": "/api/cron/refresh-recalls",       // hourly; each run handles a batch of models
   "40 2 * * *": "/api/cron/sync-israeli-recalls",  // daily, data.gov.il manufacturer notices
   "0 6 * * *": "/api/cron/refresh-news",
+  "30 11 * * *": "/api/cron/refresh-news?mode=retry", // retry recent untranslated news with Gemini
+  "30 17 * * *": "/api/cron/refresh-news?mode=retry",
 };
 
 // One `cron_runs` row per dispatch with the HTTP status the job route returned, so a

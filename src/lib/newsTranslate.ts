@@ -5,8 +5,10 @@
  *
  *  - Gemini is asked for JSON with a response schema; replies with chatter
  *    around the JSON are still accepted (parseHebrewJson).
- *  - If Gemini fails for any reason (quota, 5xx, bad JSON, timeout…), the same
- *    prompt goes to Workers AI. Both failure reasons are kept in `failures`.
+ *  - Workers AI writes the article only when Gemini cannot answer at all (quota used
+ *    up, or not set up). A busy Gemini gets one more try after 5s; a slow or still-busy
+ *    one leaves the article for the next run (06:00, 11:30, 17:30 UTC). Both failure
+ *    reasons are kept in `failures`.
  *  - Circuit breaker: after the first Gemini http_429 in a run, Gemini is skipped
  *    for the rest of that run (RunState.geminiSkipped) and Workers AI is used
  *    directly, so one exhausted quota does not cost a doomed call per article.
@@ -232,18 +234,40 @@ export function newRunState(): RunState {
  * Both failure reasons are recorded. With a RunState, the first Gemini 429
  * trips the breaker and later calls go straight to Workers AI.
  */
+/** Gemini cannot answer at all (quota used up, or not set up): only then does Workers AI write the article. */
+const GEMINI_UNAVAILABLE = new Set(['http_429', 'missing_key', 'http_401', 'http_403', 'http_404']);
+/** Worth one more Gemini try after a short wait: busy (5xx), a dropped connection, or a garbled reply. */
+const geminiRetryable = (reason: string) =>
+  reason === 'network_error' || reason === 'bad_json' || reason === 'empty' || /^http_5\d\d$/.test(reason);
+export const GEMINI_RETRY_DELAY_MS = 5000;
+
+/**
+ * Gemini first, and Workers AI only when Gemini really cannot answer (quota used up or not
+ * set up). A busy or glitchy Gemini gets one more try after a short wait; if it still fails,
+ * or it is just slow (timeout), the article stays untranslated and the next run (three a day)
+ * tries Gemini again. With a RunState, the first 429 sends the rest of the run to Workers AI;
+ * GEMINI_TIMEOUT_LIMIT timeouts stop Gemini calls for the run without falling back.
+ */
 export async function translateHebrew(
   gemini: () => Promise<ProviderResult>,
   fallback?: () => Promise<ProviderResult>,
   state?: RunState,
+  opts: { retryDelayMs?: number; sleep?: (ms: number) => Promise<void> } = {},
 ): Promise<TranslateOutcome> {
+  const { retryDelayMs = GEMINI_RETRY_DELAY_MS, sleep = (ms: number) => new Promise<void>((r) => setTimeout(r, ms)) } = opts;
   const failures: Partial<Record<Provider, FailureReason>> = {};
   const messages: Partial<Record<Provider, string>> = {};
 
   if (state?.geminiSkipped) {
     failures.gemini = state.geminiSkipReason ?? 'skipped_after_429';
+    // Slow today, not out of quota: leave it for the next run rather than use the weaker model.
+    if (state.geminiSkipReason === 'skipped_after_timeouts') return { ok: false, failures, messages };
   } else {
-    const g = await gemini();
+    let g = await gemini();
+    if (!g.ok && geminiRetryable(g.reason)) {
+      await sleep(retryDelayMs);
+      g = await gemini();
+    }
     if (g.ok) return { ok: true, article: g.article, provider: 'gemini', failures, messages };
     failures.gemini = g.reason;
     if (g.message) messages.gemini = g.message;
@@ -252,6 +276,7 @@ export async function translateHebrew(
       state.geminiSkipped = true;
       state.geminiSkipReason = 'skipped_after_timeouts';
     }
+    if (!GEMINI_UNAVAILABLE.has(g.reason)) return { ok: false, failures, messages };
   }
 
   if (!fallback) return { ok: false, failures, messages };

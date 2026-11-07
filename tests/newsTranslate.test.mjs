@@ -212,16 +212,42 @@ test('both fail: untranslated with both reasons and messages', async () => {
   assert.deepEqual(s.reasons, { 'gemini:http_429': 1, 'workers_ai:bad_json': 1 });
 });
 
-test('any Gemini failure falls back, not only 429', async () => {
+const noWait = { sleep: async () => {} };
+
+test('Workers AI writes only when Gemini is really unavailable (quota used up or not set up)', async () => {
   for (const g of [
     () => callGemini('p', { apiKey: undefined, fetchImpl: geminiReply(GOOD) }),
-    () => callGemini('p', { apiKey: KEY, fetchImpl: json(503, 'Service Unavailable') }),
-    () => callGemini('p', { apiKey: KEY, fetchImpl: geminiReply('Paragraph 2: no json here') }),
-    () => callGemini('p', { apiKey: KEY, fetchImpl: throws('TimeoutError') }),
+    () => callGemini('p', { apiKey: KEY, fetchImpl: json(429, { error: { message: 'quota' } }) }),
+    () => callGemini('p', { apiKey: KEY, fetchImpl: json(404, { error: { message: 'not found' } }) }),
   ]) {
-    const out = await translateHebrew(g, wOk);
+    const out = await translateHebrew(g, wOk, undefined, noWait);
     assert.equal(out.provider, 'workers_ai');
   }
+});
+
+test('a busy Gemini gets one more try after a wait, and Workers AI is not used', async () => {
+  let n = 0, waited = 0, wCalls = 0;
+  const busyThenOk = async () => (++n === 1 ? callGemini('p', { apiKey: KEY, fetchImpl: json(503, 'busy') }) : gOk());
+  const out = await translateHebrew(busyThenOk, async () => { wCalls++; return wOk(); }, undefined, { retryDelayMs: 5000, sleep: async (ms) => { waited = ms; } });
+  assert.equal(out.provider, 'gemini');
+  assert.equal(n, 2);
+  assert.equal(waited, 5000);
+  assert.equal(wCalls, 0);
+});
+
+test('Gemini still busy after the retry, or slow: untranslated, left for the next run', async () => {
+  let wCalls = 0;
+  const w = async () => { wCalls++; return wOk(); };
+  let n = 0;
+  const busy = async () => { n++; return callGemini('p', { apiKey: KEY, fetchImpl: json(503, 'busy') }); };
+  const a = await translateHebrew(busy, w, undefined, noWait);
+  assert.equal(a.ok, false);
+  assert.deepEqual(a.failures, { gemini: 'http_503' });
+  assert.equal(n, 2);
+  const t = await translateHebrew(() => callGemini('p', { apiKey: KEY, fetchImpl: throws('TimeoutError') }), w, undefined, noWait);
+  assert.equal(t.ok, false);
+  assert.deepEqual(t.failures, { gemini: 'timeout' });
+  assert.equal(wCalls, 0);
 });
 
 test('circuit breaker: after a 429, the next call skips Gemini', async () => {
@@ -240,7 +266,7 @@ test('circuit breaker: after a 429, the next call skips Gemini', async () => {
 
 test('circuit breaker: other Gemini failures do not trip it', async () => {
   const state = newRunState();
-  await translateHebrew(() => callGemini('p', { apiKey: KEY, fetchImpl: json(503, 'busy') }), wOk, state);
+  await translateHebrew(() => callGemini('p', { apiKey: KEY, fetchImpl: json(503, 'busy') }), wOk, state, noWait);
   assert.equal(state.geminiSkipped, false);
 });
 
@@ -323,17 +349,19 @@ test('Gemini gets 30 seconds by default', async () => {
   assert.ok(signal instanceof AbortSignal);
 });
 
-test('three Gemini timeouts trip the breaker, with their own reason', async () => {
+test('three Gemini timeouts stop Gemini for the run, without falling back', async () => {
   const state = newRunState();
   const gTimeout = () => callGemini('p', { apiKey: KEY, fetchImpl: throws('TimeoutError') });
-  let calls = 0;
+  let calls = 0, wCalls = 0;
   const gemini = async () => { calls++; return gTimeout(); };
-  for (let i = 0; i < 2; i++) await translateHebrew(gemini, wOk, state);
+  const w = async () => { wCalls++; return wOk(); };
+  for (let i = 0; i < 2; i++) await translateHebrew(gemini, w, state, noWait);
   assert.equal(state.geminiSkipped, false);
-  await translateHebrew(gemini, wOk, state);
+  await translateHebrew(gemini, w, state, noWait);
   assert.equal(state.geminiSkipped, true);
-  const next = await translateHebrew(gemini, wOk, state);
+  const next = await translateHebrew(gemini, w, state, noWait);
   assert.equal(calls, 3);
+  assert.equal(wCalls, 0);
+  assert.equal(next.ok, false);
   assert.deepEqual(next.failures, { gemini: 'skipped_after_timeouts' });
-  assert.equal(next.provider, 'workers_ai');
 });
