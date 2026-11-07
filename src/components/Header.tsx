@@ -92,7 +92,7 @@ export default function Header() {
   }, []);
 
   const NAV_LINKS = locale === 'he' ? [
-    { href: '/vehicle-lookup', label: 'בדיקת רכב', title: 'בדיקת רכב לפי מספר רישוי' },
+    { href: '/vehicle-lookup', label: 'בדיקת רכב לפי מספר', title: 'בדיקת רכב לפי מספר רישוי' },
     { href: '/cars/compare',   label: 'השוואה' },
     { href: '/cars',           label: 'ביקורות' },
     { href: '/rankings',       label: 'דירוגים' },

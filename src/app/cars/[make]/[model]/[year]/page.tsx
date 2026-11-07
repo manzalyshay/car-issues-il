@@ -7,6 +7,7 @@ import { translations } from '@/lib/translations';
 import { getReviewsForModel } from '@/lib/reviewsDb';
 import { getExpertReviews } from '@/lib/expertReviews';
 import { getTrimSpecs } from '@/lib/trimSpecsDb';
+import { getYearPageData } from '@/lib/yearPageData';
 import { findCarModel } from '@/lib/sketchfab';
 import { getImagesForYear, getOgImage } from '@/lib/carImages';
 import { getModelRepairCosts } from '@/lib/repairCostsDb';
@@ -141,6 +142,7 @@ export default async function CarYearPage({ params }: Props) {
     getAiScore(makeSlug, modelSlug).catch(() => null),
     getProReviewScoreSets(makeSlug, modelSlug).catch(() => null),
   ]);
+  const yearData = await getYearPageData(makeSlug, modelSlug, yearNum, locale, model.years.length ? Math.max(...model.years) : null).catch(() => null);
   const proReviewScoreSets = allProReviewScoreSets ? scoreSetsForPageYear(allProReviewScoreSets, yearNum, model.years.length ? Math.max(...model.years) : null) : null;
   const { minPrice: schemaMinPrice, maxPrice: schemaMaxPrice } = getPriceRange(trimSpecs);
 
@@ -313,6 +315,77 @@ export default async function CarYearPage({ params }: Props) {
         safetyHe={safetyHeForClient}
         techComfortHe={techComfortHeForClient}
       >
+        {/* ── "<model> <year>" summary: Israeli price per trim, changes vs last year,
+             previous generation's known problems - each part only when we have the data ── */}
+        {yearData && (() => {
+          const priced = isEn ? [] : yearData.trims.filter(t => t.priceIls != null);
+          const ch = yearData.changes;
+          const showChanges = ch && (ch.added.length || ch.dropped.length || (!isEn && ch.priceChanges.length));
+          if (!priced.length && !showChanges && !yearData.prevGen) return null;
+          const ils = (n: number) => `₪${n.toLocaleString('he-IL')}`;
+          const h2: React.CSSProperties = { fontSize: '1rem', fontWeight: 800, margin: '0 0 8px' };
+          return (
+            <section className="card" style={{ padding: '16px 18px', marginBottom: 24, display: 'flex', flexDirection: 'column', gap: 18 }}>
+              {priced.length > 0 && (
+                <div>
+                  <h2 style={h2}>{`מחירון ${make.nameHe} ${model.nameHe} ${year} בישראל`}</h2>
+                  <div style={{ overflowX: 'auto' }}>
+                    <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.86rem' }}>
+                      <thead>
+                        <tr style={{ textAlign: 'start', color: 'var(--text-muted)' }}>
+                          <th style={{ textAlign: 'start', padding: '4px 6px' }}>גרסה</th>
+                          <th style={{ textAlign: 'start', padding: '4px 6px' }}>כ&quot;ס</th>
+                          <th style={{ textAlign: 'start', padding: '4px 6px' }}>מחיר מחירון</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {priced.map(t => (
+                          <tr key={t.name} style={{ borderTop: '1px solid var(--border)' }}>
+                            <td style={{ padding: '6px', fontWeight: 600 }}>{t.name}</td>
+                            <td style={{ padding: '6px' }}>{t.hp ?? '-'}</td>
+                            <td style={{ padding: '6px', fontWeight: 700 }}>{ils(t.priceIls!)}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                  <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', margin: '6px 0 0' }}>{yearData.trimsUndated
+                    ? 'לפי מחירון היבואן הנוכחי שבמאגר האתר. המחיר בפועל יכול להשתנות.'
+                    : `לפי מחירון היבואן שבמאגר האתר לשנת ${year}. המחיר בפועל יכול להשתנות.`}</p>
+                </div>
+              )}
+              {showChanges && ch && (
+                <div>
+                  <h2 style={h2}>{isEn ? `What changed vs ${ch.prevYear}` : `מה השתנה לעומת ${ch.prevYear}`}</h2>
+                  <ul style={{ margin: 0, paddingInlineStart: 18, fontSize: '0.86rem', lineHeight: 1.7 }}>
+                    {ch.added.length > 0 && <li>{isEn ? 'New trims: ' : 'גרסאות חדשות: '}{ch.added.join(', ')}</li>}
+                    {ch.dropped.length > 0 && <li>{isEn ? 'Trims no longer listed: ' : 'גרסאות שירדו מהמחירון: '}{ch.dropped.join(', ')}</li>}
+                    {!isEn && ch.priceChanges.map(pc => (
+                      <li key={pc.name}>{`${pc.name}: ${ils(pc.from)} ← ${ils(pc.to)} (${pc.to > pc.from ? 'עלייה' : 'ירידה'} של ${ils(Math.abs(pc.to - pc.from))})`}</li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+              {yearData.prevGen && (
+                <div>
+                  <h2 style={h2}>{isEn
+                    ? `Known problems of the previous generation (${yearData.prevGen.fromYear}-${yearData.prevGen.toYear})`
+                    : `בעיות מוכרות בדור הקודם (${yearData.prevGen.fromYear}-${yearData.prevGen.toYear})`}</h2>
+                  <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', margin: '0 0 6px' }}>{isEn
+                    ? `The current generation starts in ${yearData.prevGen.genStart}. Owner reports for earlier model years:`
+                    : `הדור הנוכחי מתחיל ב-${yearData.prevGen.genStart}. דיווחי בעלים על שנות דגם קודמות:`}</p>
+                  <ul style={{ margin: 0, paddingInlineStart: 18, fontSize: '0.86rem', lineHeight: 1.7 }}>
+                    {yearData.prevGen.items.map(it => <li key={it}>{it}</li>)}
+                  </ul>
+                  <Link href={`/cars/${make.slug}/${model.slug}/issues`} style={{ fontSize: '0.82rem', fontWeight: 700, color: 'var(--accent)', textDecoration: 'none' }}>
+                    {isEn ? 'All common problems →' : 'כל הבעיות הנפוצות ←'}
+                  </Link>
+                </div>
+              )}
+            </section>
+          );
+        })()}
+
         {/* ── Owner reviews - pre-filtered to this year ── */}
         <div id="reviews" style={{ paddingTop: 0 }}>
           <ModelReviewsSection
