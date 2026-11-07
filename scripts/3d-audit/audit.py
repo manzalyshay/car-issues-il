@@ -34,8 +34,15 @@ def rows(path):
 ca = '/root/.ccr/ca-bundle.crt'
 ctx = ssl.create_default_context(cafile=ca) if os.path.exists(ca) else ssl.create_default_context()
 def get(u):
-    try: return json.load(urllib.request.urlopen(u, context=ctx, timeout=30))
-    except Exception as e: return {'_err': str(e)}
+    # Sketchfab rate-limits bursts; retry, and only a 404 means the model is really gone.
+    import time
+    for attempt in range(5):
+        try: return json.load(urllib.request.urlopen(u, context=ctx, timeout=30))
+        except urllib.error.HTTPError as e:
+            if e.code == 404: return {'_err': '404', '_gone': True}
+        except Exception: pass
+        time.sleep(2 * (attempt + 1))
+    return {'_err': 'unreachable'}
 
 def shown(k, es):
     es = [e for e in es if e['sketchfab_uid'] in ALLOWED or not (
@@ -49,14 +56,14 @@ def info(uid):
     a = get(f'https://api.sketchfab.com/v3/models/{uid}')
     b = get(f'https://sketchfab.com/i/models/{uid}')
     mb = round(max([f.get('modelSize', 0) for f in b.get('files') or []] or [0]) / 1e6, 1)
-    return dict(faces=a.get('faceCount'), tex=a.get('textureCount'), mb=mb, broken='_err' in a or a.get('faceCount') is None)
+    return dict(faces=a.get('faceCount'), tex=a.get('textureCount'), mb=mb, broken=bool(a.get('_gone')), unchecked=a.get('_err') == 'unreachable')
 
 models, counts, out = sys.argv[1], sys.argv[2], sys.argv[3]
 n = {r['k']: r['n'] or 0 for r in rows(counts)}
 g = collections.defaultdict(list)
 for r in rows(models): g[f"{r['make_slug']}/{r['model_slug']}"].append(r)
 picks = {k: shown(k, es) for k, es in g.items()}
-with cf.ThreadPoolExecutor(16) as ex:
+with cf.ThreadPoolExecutor(4) as ex:
     infos = dict(zip(picks, ex.map(lambda m: info(m['sketchfab_uid']) if m else None, picks.values())))
 rev = json.load(open(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'reviewed.json')))
 issues = []
@@ -64,6 +71,7 @@ for k, m in picks.items():
     i = infos[k]
     if m is None: kind = 'missing'
     elif i['broken']: kind = 'broken'
+    elif i['unchecked']: continue  # Sketchfab didn't answer; check again next run
     elif (i['faces'] or 0) < 30000 or (i['tex'] == 0 and (i['faces'] or 0) < 80000): kind = 'crude'
     elif i['mb'] > 20: kind = 'heavy'
     else: continue

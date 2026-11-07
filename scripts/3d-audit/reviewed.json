@@ -12,6 +12,11 @@
   "missing_ok": {
     "hyundai/i25": "Owner chose to skip (Accent 2013 model was offered). 2026-11-05.",
     "mercedes/eqe-suv": "No EQE SUV model exists on Sketchfab; wrong model hidden. 2026-11-05.",
-    "geely/ex5": "Only replacement is 53 MB; broken model hidden. 2026-11-05."
+    "geely/ex5": "Only replacement is 53 MB; broken model hidden. 2026-11-05.",
+    "chery/omoda-fx": "Only the petrol Omoda 5 exists on Sketchfab (different front from the electric FX/E5). 2026-11-07.",
+    "mg/ehs": "MG HS 2020 / 2026 models only show tiny in the preview; 2026 is the next generation. 2026-11-07.",
+    "geely/geometry-c": "No Geometry C model on Sketchfab. 2026-11-07.",
+    "xpeng/g6": "No Xpeng G6 car model on Sketchfab (only a wheel scan). 2026-11-07.",
+    "mg/mgs9": "No MG S9 model on Sketchfab. 2026-11-07."
   }
 }
