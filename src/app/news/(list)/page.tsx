@@ -34,9 +34,8 @@ export default async function NewsPage({ searchParams }: Props) {
   const locale = await getHostLocale();
   const isHe = locale === 'he';
   await ensureNewsTable().catch(() => {});
-  const newsAll = await getLatestNews(300, 0, locale).catch(() => []);
-  // Articles with no usable photo are not shown at all (no text-only cards).
-  const newsRaw = newsAll.filter((n) => n.image_url && !n.image_url.includes('motor1.com') && !n.image_url.includes('hearstapps.com'));
+  // Articles with no usable photo are not shown at all (getLatestNews leaves them out).
+  const newsRaw = await getLatestNews(300, 0, locale).catch(() => []);
   // Client component props are serialized into the page HTML - strip the other
   // locale's title/body so Hebrew text never leaks into the English site's source
   // (and vice versa), even when it isn't actually rendered. On the English site,

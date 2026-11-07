@@ -209,7 +209,7 @@ export default async function HomePage() {
     getTopRanked(3, locale === 'en').catch(() => []),
     getRecentReviews(3, locale).catch(() => []),
     getTickerItems().catch(() => []),
-    getLatestNews(12, 0, locale).catch(() => []),
+    getLatestNews(4, 0, locale).catch(() => []),
     dbFirst<{ count: number }>('SELECT COUNT(*) AS count FROM reviews').then(r => r?.count ?? 0).catch(() => 0),
     dbFirst<{ count: number }>('SELECT COUNT(*) AS count FROM recalls_cache').then(r => r?.count ?? 0).catch(() => 0),
   ]);
@@ -219,7 +219,6 @@ export default async function HomePage() {
   // site also drop outlet-identifying fields (source, original_url) - DB-only.
   // Articles with no usable photo are not shown at all (no text-only cards).
   const newsWithImages = news
-    .filter((n) => n.image_url && !n.image_url.includes('motor1.com') && !n.image_url.includes('hearstapps.com'))
     .slice(0, 4);
   const newsForClient = newsWithImages.map((n) => (locale === 'he'
     ? { ...n, title_en: null, body_en: null }

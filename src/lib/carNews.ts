@@ -8,6 +8,7 @@ import { getCloudflareContext } from '@opennextjs/cloudflare';
 import { dbRun, dbAll } from '@/lib/db';
 import { parseNewsSegment } from './newsSlug';
 import { findNewsImage } from './newsImage';
+import { USABLE_IMAGE_SQL } from './newsImageUrl';
 import {
   callGemini, callWorkersAi, translateHebrew, recordOutcome, newRunState, WORKERS_AI_MODEL,
   type TranslationStats, type RunState, type AiRun,
@@ -343,14 +344,15 @@ export async function refreshCarNews(maxPerRun = 15, stats?: NewsRefreshStats, s
 }
 
 /**
- * Attach a Commons photo to articles that have none (or only a source-site photo).
+ * Attach a licensed photo (Commons, else the catalogue's photo of the same model)
+ * to articles that have none or only a source-site photo.
  * @param max Max articles to process per call
  */
 export async function fillMissingNewsImages(max = 10): Promise<number> {
   const rows = await dbAll<{ id: string; title_en: string | null }>(
     `SELECT id, title_en FROM car_news
      WHERE (hidden IS NULL OR hidden != 1) AND title_en IS NOT NULL
-       AND (image_url IS NULL OR image_url LIKE '%cdn.motor1.com%')
+       AND NOT ${USABLE_IMAGE_SQL}
      ORDER BY published_at DESC LIMIT ?`,
     max,
   );
@@ -398,8 +400,15 @@ export async function retranslateUntranslated(
   return fixed;
 }
 
-export async function getLatestNews(limit = 20, offset = 0, locale?: string): Promise<CarNewsItem[]> {
+/**
+ * Latest visible articles. Articles without a usable photo are left out unless
+ * `includeWithoutImage` is set: they are not listed anywhere on the site.
+ */
+export async function getLatestNews(
+  limit = 20, offset = 0, locale?: string, { includeWithoutImage = false }: { includeWithoutImage?: boolean } = {},
+): Promise<CarNewsItem[]> {
   const conditions = ['(hidden IS NULL OR hidden = 0)'];
+  if (!includeWithoutImage) conditions.push(USABLE_IMAGE_SQL);
   if (locale === 'he') conditions.push('title_he IS NOT NULL AND body_he IS NOT NULL');
   else if (locale === 'en') conditions.push('title_en IS NOT NULL AND body_en IS NOT NULL');
   const where = `WHERE ${conditions.join(' AND ')}`;
