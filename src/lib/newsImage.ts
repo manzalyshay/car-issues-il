@@ -29,12 +29,36 @@ async function carQueryFromTitle(titleEn: string): Promise<string | null> {
   return q && q.length <= 60 ? q : null;
 }
 
+const MAKE_ALIASES: Record<string, string> = { chevy: 'Chevrolet', vw: 'Volkswagen', merc: 'Mercedes-Benz', benz: 'Mercedes-Benz' };
+// Words that describe a car but never identify the model, so they can't be the model token.
+const GENERIC = new Set([
+  'the', 'a', 'an', 'new', 'all', 'all-new', 'next', 'first', 'second', 'third', 'fourth', 'fifth',
+  'generation', 'gen', 'facelift', 'refresh', 'refreshed', 'updated', 'model', 'models', 'car', 'cars',
+  'suv', 'crossover', 'sedan', 'hatchback', 'wagon', 'coupe', 'pickup', 'truck', 'ev', 'electric', 'hybrid',
+  'concept', 'prototype', 'review', 'mk', 'mkii', 'mk2', 'my', 'and', 'with', 'is', 'gets', 'has', 'for',
+]);
+
+function tokens(text: string): string[] {
+  return text.toLowerCase().replace(/['’]s\b/g, '').split(/[^a-z0-9]+/).filter(Boolean);
+}
+
+// First words of two-word makes ("Land Rover", "Mercedes-Benz", "Mercedes-AMG", "Alfa Romeo"...).
+const TWO_WORD_MAKE_START = new Set(['land', 'mercedes', 'alfa', 'aston', 'rolls', 'lynk']);
+
+/** Tokens that identify the model: drop the make, years and generic words. */
+export function modelTokens(query: string): string[] {
+  const t = tokens(query).filter(w => !/^(19|20)\d{2}$/.test(w));
+  const makeLen = TWO_WORD_MAKE_START.has(t[0]) ? 2 : 1;
+  return t.slice(makeLen).filter(w => !GENERIC.has(w));
+}
+
 /** Fallback: leading capitalised words of the headline (usually "Make Model"). */
-function heuristicQuery(titleEn: string): string | null {
-  const words = titleEn.replace(/[^\w\s-]/g, ' ').split(/\s+/).filter(Boolean);
+export function heuristicQuery(titleEn: string): string | null {
+  const words = titleEn.replace(/['’]s\b/g, '').replace(/[^\w\s-]/g, ' ').split(/\s+/).filter(Boolean);
   const caps: string[] = [];
   for (const w of words) {
-    if (/^[A-Z0-9]/.test(w)) caps.push(w);
+    if (GENERIC.has(w.toLowerCase()) || /^(19|20)\d{2}$/.test(w)) { if (caps.length) break; continue; }
+    if (/^[A-Z0-9]/.test(w)) caps.push(MAKE_ALIASES[w.toLowerCase()] ?? w);
     else if (caps.length) break;
     if (caps.length === 3) break;
   }
@@ -58,9 +82,15 @@ async function searchCommons(query: string): Promise<NewsImage | null> {
   };
   const data = await res.json() as { query?: { pages?: Record<string, Page> } };
   const pages = Object.values(data.query?.pages ?? {}).sort((a, b) => (a.index ?? 99) - (b.index ?? 99));
+  // The photo must be of the model, not just the brand: Commons search is fuzzy, and a
+  // brand-only match put a 1950s Bel Air on a 2027 Trax article. Require the model name
+  // (first model token of the query) in the file name; a make-only query matches nothing.
+  const model = modelTokens(query)[0];
+  if (!model) return null;
   for (const p of pages) {
     const ii = p.imageinfo?.[0];
     if (!ii?.thumburl || !ii.descriptionurl || BAD_FILE.test(p.title)) continue;
+    if (!tokens(p.title).includes(model)) continue;
     if ((ii.width ?? 0) < (ii.height ?? 0) * 1.2) continue; // landscape only
     const license = ii.extmetadata?.LicenseShortName?.value ?? '';
     if (!/CC|public domain|PD/i.test(license)) continue;
