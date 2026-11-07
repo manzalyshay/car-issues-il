@@ -39,12 +39,13 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const title = (isHe ? (article.title_he ?? article.title_en) : (article.title_en ?? article.title_he))?.replace(/[—–]/g, '-');
   const desc  = isHe ? (article.body_he ?? article.body_en) : (article.body_en ?? article.body_he);
   // Only licensed (non-outlet-hotlinked) images get used as og:image - never the raw motor1/hearst feed photo.
-  const licensedImage = (article.image_url && !article.image_url.includes('motor1.com') && !article.image_url.includes('hearstapps.com'))
-    ? sizedImageUrl(article.image_url, 1200)
-    : null;
+  const licensedImage = isUsableNewsImage(article.image_url) ? sizedImageUrl(article.image_url, 1200) : null;
   return {
     title,
     description: desc?.slice(0, 160) ?? '',
+    // Articles without a licensed photo are not listed or in the sitemap; keep them out of search too
+    // until the daily job finds a photo.
+    ...(licensedImage ? {} : { robots: { index: false, follow: true } }),
     alternates: { canonical: `${base}${newsPath(article)}` },
     openGraph: {
       title: title ?? '',

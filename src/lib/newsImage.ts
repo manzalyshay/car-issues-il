@@ -1,9 +1,15 @@
 /**
- * Finds a freely licensed Wikimedia Commons photo for a news article.
- * Source-site images (e.g. cdn.motor1.com) are not ours to republish, so
- * articles get a Commons photo of the car they are about, with attribution.
+ * Finds a freely licensed photo for a news article. Source-site images (e.g.
+ * cdn.motor1.com) are not ours to republish, so articles get, in order:
+ *   1. a Wikimedia Commons photo of the car they are about, with attribution;
+ *   2. the site's own catalogue photo of that exact model (also Commons-licensed,
+ *      stored in car_images with its author and license).
+ * An article with neither stays without a photo and is not listed (see getLatestNews).
  */
 import { runWorkersAI } from '@/lib/workersAi';
+import { getAllMakes } from '@/lib/carsDb';
+import { getImagesForCar } from '@/lib/carImages';
+import { matchCatalogModel, stripYears } from '@/lib/newsCatalogMatch';
 
 export interface NewsImage {
   url: string;
@@ -41,6 +47,19 @@ function heuristicQuery(titleEn: string): string | null {
   return caps.length ? caps.join(' ') : null;
 }
 
+/** The catalogue's own photo of the exact model in the headline, or null. */
+export async function findCatalogImage(titleEn: string | null): Promise<NewsImage | null> {
+  if (!titleEn) return null;
+  const match = matchCatalogModel(titleEn, await getAllMakes());
+  if (!match) return null;
+  const images = await getImagesForCar(match.makeSlug, match.modelSlug);
+  // Licensed photos only; prefer landscape (news cards are wide).
+  const licensed = images.filter((img) => img.url && img.license);
+  const img = licensed.find((i) => !i.width || !i.height || i.width >= i.height * 1.2) ?? licensed[0];
+  if (!img) return null;
+  return { url: img.url, author: img.author, license: img.license!, sourceUrl: img.source_url ?? img.url };
+}
+
 async function searchCommons(query: string): Promise<NewsImage | null> {
   const params = new URLSearchParams({
     action: 'query', format: 'json', generator: 'search',
@@ -73,10 +92,11 @@ async function searchCommons(query: string): Promise<NewsImage | null> {
 export async function findNewsImage(titleEn: string | null): Promise<NewsImage | null> {
   if (!titleEn) return null;
   const queries = [await carQueryFromTitle(titleEn).catch(() => null), heuristicQuery(titleEn)]
-    .filter((q, i, arr): q is string => !!q && arr.indexOf(q) === i);
+    .flatMap((q) => (q ? [q, stripYears(q)] : []))
+    .filter((q, i, arr) => !!q && arr.indexOf(q) === i);
   for (const q of queries) {
     const img = await searchCommons(q).catch(() => null);
     if (img) return img;
   }
-  return null;
+  return findCatalogImage(titleEn).catch(() => null);
 }
