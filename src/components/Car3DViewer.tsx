@@ -1,6 +1,7 @@
 'use client';
 
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useId } from 'react';
+import { claimActive, isBlockedOnDevice, onOtherActive, shouldAutoload3D, trackLive } from '@/lib/viewer3dGuard';
 import { useAuth } from '@/lib/authContext';
 import { useLocale } from '@/lib/localeContext';
 import { supabase } from '@/lib/supabase';
@@ -29,12 +30,36 @@ export default function Car3DViewer({ uid, modelName, makeSlug, modelSlug, carIm
   // Defer mounting the Sketchfab iframe until the page has loaded and the viewer is near screen.
   // The preview image fills the slot meanwhile so the model still auto-starts but no longer
   // competes with first paint (improves mobile LCP).
+  // Safety (see lib/viewer3dGuard): phones and low-memory devices load only on tap, a model
+  // that crashed this device before is never loaded again here, and only one viewer per tab
+  // is live at a time.
   const wrapRef = useRef<HTMLDivElement>(null);
+  const viewerId = useId();
   const [shouldMount, setShouldMount] = useState(false);
+  const [mode, setMode] = useState<'pending' | 'auto' | 'tap' | 'blocked'>('pending');
+
+  useEffect(() => {
+    setMode(isBlockedOnDevice(uid) ? 'blocked' : shouldAutoload3D() ? 'auto' : 'tap');
+    setShouldMount(false);
+    setIframeReady(false);
+  }, [uid]);
+
+  // While the iframe is mounted: take the single live slot and keep the crash flag set.
+  useEffect(() => {
+    if (!shouldMount) return;
+    claimActive(viewerId);
+    const stopTracking = trackLive(uid);
+    const stopListening = onOtherActive(viewerId, () => {
+      setShouldMount(false);
+      setIframeReady(false);
+      setMode(m => (m === 'auto' ? 'tap' : m)); // never auto-reload after being unloaded
+    });
+    return () => { stopListening(); stopTracking(); };
+  }, [shouldMount, uid, viewerId]);
 
   useEffect(() => {
     const el = wrapRef.current;
-    if (!el || shouldMount) return;
+    if (!el || shouldMount || mode !== 'auto') return;
     let visible = false;
     let loaded = document.readyState === 'complete';
     let cancelled = false;
@@ -53,7 +78,7 @@ export default function Car3DViewer({ uid, modelName, makeSlug, modelSlug, carIm
       : null;
     if (io) io.observe(el); else { visible = true; tryMount(); }
     return () => { cancelled = true; io?.disconnect(); window.removeEventListener('load', onLoad); };
-  }, [shouldMount]);
+  }, [shouldMount, mode]);
 
   // media.sketchfab.com's thumbnail endpoint returns 403 for these models - never use it.
   // The embed auto-loads itself (see shouldMount above); while it's loading, fall back to
@@ -118,21 +143,41 @@ export default function Car3DViewer({ uid, modelName, makeSlug, modelSlug, carIm
             />
           )}
           <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to top, rgba(0,0,0,0.6) 0%, rgba(0,0,0,0.15) 100%)' }} />
-          {/* Spinner + label */}
-          <div style={{ position: 'relative', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12 }}>
-            <div style={{
-              width: 48, height: 48, borderRadius: '50%',
-              border: '3px solid rgba(255,255,255,0.15)',
-              borderTopColor: '#7ba0e8',
-              animation: 'car3d-spin 0.9s linear infinite',
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-            }}>
-              <span style={{ fontSize: '1.2rem', lineHeight: 1 }}>🔷</span>
+          {mode === 'tap' && !shouldMount ? (
+            <button
+              type="button"
+              onClick={() => setShouldMount(true)}
+              aria-label={`${t.viewer3d.ariaLoad} ${modelName}`}
+              style={{
+                position: 'relative', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10,
+                background: 'rgba(0,0,0,0.55)', border: '1px solid rgba(255,255,255,0.25)', borderRadius: 14,
+                padding: '14px 20px', color: '#fff', cursor: 'pointer', backdropFilter: 'blur(4px)',
+              }}
+            >
+              <span style={{ fontSize: '1.6rem', lineHeight: 1 }}>🔷</span>
+              <span style={{ fontWeight: 700, fontSize: '0.875rem' }}>{t.viewer3d.clickToLoad}</span>
+              <span style={{ fontSize: '0.75rem', opacity: 0.8 }}>{modelName}</span>
+            </button>
+          ) : mode === 'blocked' ? (
+            <div style={{ position: 'relative', color: '#fff', fontWeight: 600, fontSize: '0.85rem', textAlign: 'center', padding: '0 16px' }}>
+              {t.viewer3d.unavailable}
             </div>
-            <div style={{ color: '#fff', fontWeight: 700, fontSize: '0.875rem', letterSpacing: '0.02em' }}>
-              {modelName}
+          ) : (
+            <div style={{ position: 'relative', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12 }}>
+              <div style={{
+                width: 48, height: 48, borderRadius: '50%',
+                border: '3px solid rgba(255,255,255,0.15)',
+                borderTopColor: '#7ba0e8',
+                animation: 'car3d-spin 0.9s linear infinite',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+              }}>
+                <span style={{ fontSize: '1.2rem', lineHeight: 1 }}>🔷</span>
+              </div>
+              <div style={{ color: '#fff', fontWeight: 700, fontSize: '0.875rem', letterSpacing: '0.02em' }}>
+                {modelName}
+              </div>
             </div>
-          </div>
+          )}
         </div>
       )}
       <style>{`@keyframes car3d-spin { to { transform: rotate(360deg); } }`}</style>

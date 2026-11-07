@@ -424,6 +424,7 @@ export const ru = {
   viewer3d: {
     loading: 'Загрузка 3D-модели...',
     clickToLoad: 'Нажмите, чтобы загрузить 3D-модель',
+    unavailable: '3D-просмотр недоступен на этом устройстве',
     ariaLoad: 'Загрузить 3D-модель',
     hideModel: 'Скрыть модель',
     hideTitle: 'Скрыть эту 3D-модель',

@@ -1,10 +1,11 @@
 'use client';
 
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback, useId } from 'react';
 import Link from 'next/link';
 import MakeLogo from '@/components/MakeLogo';
 import StarRating from '@/components/StarRating';
 import { sizedImageUrl } from '@/lib/imageSizing';
+import { claimActive, isBlockedOnDevice, onOtherActive, trackLive } from '@/lib/viewer3dGuard';
 
 export interface GridModel {
   makeSlug: string;
@@ -33,6 +34,17 @@ function scoreTier(s: number) { return s >= 8.5 ? 'hi' : s >= 7.5 ? 'mid' : 'lo'
 
 function ModelRow({ m, idx, isEn }: { m: GridModel; idx: number; isEn: boolean }) {
   const [show3d, setShow3d] = useState(false);
+  const [blocked3d, setBlocked3d] = useState(false);
+  const viewerId = useId();
+  const uid3d = m.sketchfab?.uid;
+  // Only one live 3D viewer per tab, and track it for crash detection (lib/viewer3dGuard).
+  useEffect(() => {
+    if (!show3d || !uid3d) return;
+    claimActive(viewerId);
+    const stopTracking = trackLive(uid3d);
+    const stopListening = onOtherActive(viewerId, () => setShow3d(false));
+    return () => { stopListening(); stopTracking(); };
+  }, [show3d, uid3d, viewerId]);
   const name = isEn ? `${m.makeNameEn} ${m.modelNameEn}` : `${m.makeNameHe} ${m.modelNameHe}`;
   const score = m.expertScore != null ? Math.round(m.expertScore * 10) / 10 : null;
   const tier = score != null ? scoreTier(score) : null;
@@ -106,9 +118,13 @@ function ModelRow({ m, idx, isEn }: { m: GridModel; idx: number; isEn: boolean }
               )}
             </span>
           )}
-          {m.sketchfab && (
+          {m.sketchfab && !blocked3d && (
             <button
-              onClick={() => setShow3d(v => !v)}
+              onClick={() => {
+                // Never reopen a model that crashed this device before (lib/viewer3dGuard).
+                if (uid3d && isBlockedOnDevice(uid3d)) { setBlocked3d(true); setShow3d(false); return; }
+                setShow3d(v => !v);
+              }}
               style={{
                 height: 32, padding: '0 12px', borderRadius: 8, border: '1px solid var(--border)',
                 background: show3d ? 'var(--accent)' : 'var(--surface-2)',
@@ -125,7 +141,7 @@ function ModelRow({ m, idx, isEn }: { m: GridModel; idx: number; isEn: boolean }
       </div>
 
       {/* Sketchfab viewer - shown on demand */}
-      {show3d && embedUrl && (
+      {show3d && !blocked3d && embedUrl && (
         <div style={{ width: '100%', aspectRatio: '16/9', background: '#111' }}>
           <iframe
             src={embedUrl}
