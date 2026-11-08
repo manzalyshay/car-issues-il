@@ -5,6 +5,7 @@ import Link from 'next/link';
 import type { TrimSpec } from '@/data/cars';
 import { TRIM_FEATURES } from '@/data/cars';
 import { useLocale } from '@/lib/localeContext';
+import { displayTrimName } from '@/lib/trimLocalize';
 
 function toTrimSlug(name: string) {
   return name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
@@ -170,7 +171,7 @@ export default function TrimSpecsTab({ makeSlug, modelSlug, makeNameHe, modelNam
                 display: 'flex', alignItems: 'center', gap: 6,
               }}
             >
-              {t.name}
+              {displayTrimName(t.name, locale)}
               {t.priceIls && (
                 <span style={{ fontSize: '0.72rem', opacity: on ? 0.85 : 0.6 }}>
                   {fmtPrice(t.priceIls, locale)}
@@ -319,7 +320,7 @@ export default function TrimSpecsTab({ makeSlug, modelSlug, makeNameHe, modelNam
         {/* Card header */}
         <div style={{ background: 'var(--accent)', padding: '16px 20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <div>
-            <div style={{ fontSize: '1.1rem', fontWeight: 800, color: '#fff' }}>{trim.name}</div>
+            <div style={{ fontSize: '1.1rem', fontWeight: 800, color: '#fff' }}>{displayTrimName(trim.name, locale)}</div>
             <div style={{ fontSize: '0.8rem', color: 'rgba(255,255,255,0.75)', marginTop: 2 }}>
               {displayMakeName} {displayModelName}
             </div>
@@ -381,7 +382,7 @@ export default function TrimSpecsTab({ makeSlug, modelSlug, makeNameHe, modelNam
             href={`/cars/${makeSlug}/${modelSlug}/trim/${toTrimSlug(trim.name)}`}
             style={{ fontSize: '0.83rem', color: 'var(--accent)', fontWeight: 600, textDecoration: 'none' }}
           >
-            {ts.moreDetails} {trim.name} ←
+            {ts.moreDetails} {displayTrimName(trim.name, locale)} {locale === 'en' ? '→' : '←'}
           </Link>
         </div>
       </div>

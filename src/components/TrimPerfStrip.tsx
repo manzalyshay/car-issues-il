@@ -2,6 +2,7 @@
 
 import { useState, useMemo } from 'react';
 import type { TrimSpecWithYear } from '@/lib/trimSpecsDb';
+import { trimNameEn } from '@/lib/trimLocalize';
 
 interface Props {
   trimSpecs: TrimSpecWithYear[];
@@ -161,7 +162,7 @@ export default function TrimPerfStrip({ trimSpecs, isEn, requestedYear }: Props)
             >
               <option value="">{isEn ? `All trims (${trimsForYear.length})` : `כל הטרימים (${trimsForYear.length})`}</option>
               {trimsForYear.map(t => (
-                <option key={t.id} value={t.id}>{t.name}</option>
+                <option key={t.id} value={t.id}>{isEn ? trimNameEn(t.name) : t.name}</option>
               ))}
             </select>
           )}

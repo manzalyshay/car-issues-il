@@ -329,7 +329,7 @@ export const translations = {
       engineTypes: { petrol: 'בנזין', hybrid: 'היברידי', phev: 'PHEV', electric: 'חשמלי', diesel: 'דיזל' },
       transmissions: { manual: 'ידני', automatic: 'אוטומטי', cvt: 'CVT', dct: 'DCT' },
       drives: { fwd: 'קדמי', rwd: 'אחורי', awd: 'AWD / 4×4' },
-      upholsteries: { fabric: 'בד', leatherette: 'דמוי-עור', leather: 'עור' },
+      upholsteries: { fabric: 'בד', leatherette: 'דמוי-עור', leather: 'עור', vegan: 'עור טבעוני' },
     },
     comparePage: {
       title: 'השוואת רכבים',
@@ -885,7 +885,7 @@ export const translations = {
       engineTypes: { petrol: 'Petrol', hybrid: 'Hybrid', phev: 'PHEV', electric: 'Electric', diesel: 'Diesel' },
       transmissions: { manual: 'Manual', automatic: 'Automatic', cvt: 'CVT', dct: 'DCT' },
       drives: { fwd: 'FWD', rwd: 'RWD', awd: 'AWD / 4×4' },
-      upholsteries: { fabric: 'Fabric', leatherette: 'Leatherette', leather: 'Leather' },
+      upholsteries: { fabric: 'Fabric', leatherette: 'Leatherette', leather: 'Leather', vegan: 'Vegan Leather' },
     },
     comparePage: {
       title: 'Car Comparison',

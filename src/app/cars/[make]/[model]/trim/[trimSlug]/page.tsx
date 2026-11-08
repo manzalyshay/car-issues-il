@@ -5,6 +5,7 @@ import { getMakeBySlug, getModelBySlug } from '@/lib/carsDb';
 import { getTrimSpecs } from '@/lib/trimSpecsDb';
 import { TRIM_FEATURES } from '@/data/cars';
 import { getHostLocale } from '@/lib/hostLocale';
+import { trimNameEn } from '@/lib/trimLocalize';
 
 export const revalidate = 900; // cache 15 minutes
 
@@ -24,8 +25,8 @@ const TRANSMISSION_EN: Record<string, string> = {
 };
 const DRIVE_HE: Record<string, string> = { fwd: 'קדמית', rwd: 'אחורית', awd: '4×4 / AWD' };
 const DRIVE_EN: Record<string, string> = { fwd: 'Front-wheel Drive', rwd: 'Rear-wheel Drive', awd: '4×4 / AWD' };
-const SEATS_HE: Record<string, string> = { fabric: 'בד', leatherette: 'דמוי-עור', leather: 'עור אמיתי' };
-const SEATS_EN: Record<string, string> = { fabric: 'Fabric', leatherette: 'Leatherette', leather: 'Leather' };
+const SEATS_HE: Record<string, string> = { fabric: 'בד', leatherette: 'דמוי-עור', leather: 'עור אמיתי', vegan: 'עור טבעוני' };
+const SEATS_EN: Record<string, string> = { fabric: 'Fabric', leatherette: 'Leatherette', leather: 'Leather', vegan: 'Vegan Leather' };
 
 const FEATURE_GROUPS_HE = [
   { label: 'טכנולוגיה', icon: '📱', keys: ['apple_carplay','wireless_carplay','wireless_charging','digital_cluster','hud','premium_audio'] },
@@ -62,17 +63,18 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
   const trimLangs = { he: `https://carissues.co.il/cars/${makeSlug}/${modelSlug}/trim/${trimSlug}`, en: `https://carissues.net/cars/${makeSlug}/${modelSlug}/trim/${trimSlug}`, 'x-default': `https://carissues.net/cars/${makeSlug}/${modelSlug}/trim/${trimSlug}` };
   if (isEn) {
+    const trimEn = trimNameEn(trim.name);
     const hpStr = trim.engineHp ? ` · ${trim.engineHp} hp` : '';
     return {
-      title: `${make.nameEn} ${model.nameEn} ${trim.name} ${year} - Specs & Features`,
+      title: `${make.nameEn} ${model.nameEn} ${trimEn} ${year} - Specs & Features`,
       // carissues.net trim pages are bare spec sheets (the Israeli price and reviews live on
       // the Hebrew site): not indexed, links still followed. The .co.il trim pages are unchanged.
       robots: { index: false, follow: true },
-      description: `Full specs for ${make.nameEn} ${model.nameEn} ${trim.name} ${year}.${hpStr} Technology, safety, and comfort features.`,
+      description: `Full specs for ${make.nameEn} ${model.nameEn} ${trimEn} ${year}.${hpStr} Technology, safety, and comfort features.`,
       alternates: { canonical: url, languages: trimLangs },
       openGraph: {
-        title: `${make.nameEn} ${model.nameEn} ${trim.name} | CarIssues`,
-        description: `${make.nameEn} ${model.nameEn} ${trim.name} ${year}${hpStr}`,
+        title: `${make.nameEn} ${model.nameEn} ${trimEn} | CarIssues`,
+        description: `${make.nameEn} ${model.nameEn} ${trimEn} ${year}${hpStr}`,
         url,
       },
     };
@@ -115,6 +117,8 @@ export default async function TrimPage({ params }: Props) {
   const prevTrim = trimIndex > 0 ? trims[trimIndex - 1] : null;
   const nextTrim = trimIndex < trims.length - 1 ? trims[trimIndex + 1] : null;
   const FEATURE_GROUPS = isEn ? FEATURE_GROUPS_EN : FEATURE_GROUPS_HE;
+  const trimEn = trimNameEn(trim.name);
+  const trimName = isEn ? trimEn : trim.name;
 
   const pageUrl = isEn
     ? `https://carissues.net/cars/${makeSlug}/${modelSlug}/trim/${trimSlug}`
@@ -122,11 +126,11 @@ export default async function TrimPage({ params }: Props) {
   const jsonLd = {
     '@context': 'https://schema.org',
     '@type': 'Product',
-    name: `${make.nameEn} ${model.nameEn} ${trim.name} ${year}`,
+    name: `${make.nameEn} ${model.nameEn} ${trimEn} ${year}`,
     brand: { '@type': 'Brand', name: make.nameEn },
     url: pageUrl,
     description: isEn
-      ? `${make.nameEn} ${model.nameEn} ${trim.name} ${year} - specs, features and equipment`
+      ? `${make.nameEn} ${model.nameEn} ${trimEn} ${year} - specs, features and equipment`
       : `${make.nameHe} ${model.nameHe} גימור ${trim.name} ${year} - מפרט ציוד ומחיר`,
     ...(!isEn && trim.priceIls && {
       offers: {
@@ -179,15 +183,15 @@ export default async function TrimPage({ params }: Props) {
           <span>›</span>
           <Link href={`/cars/${make.slug}/${model.slug}`} style={{ color: 'var(--text-muted)', textDecoration: 'none' }}>{modelName}</Link>
           <span>›</span>
-          <span style={{ color: 'var(--text)' }}>{isEn ? 'Trim' : 'גימור'} {trim.name}</span>
+          <span style={{ color: 'var(--text)' }}>{isEn ? 'Trim' : 'גימור'} {trimName}</span>
         </nav>
 
         {/* Title */}
         <h1 style={{ fontSize: '1.75rem', fontWeight: 700, marginBottom: 8 }}>
-          {makeName} {modelName} - {isEn ? 'Trim' : 'גימור'} {trim.name}
+          {makeName} {modelName} - {isEn ? 'Trim' : 'גימור'} {trimName}
         </h1>
         <p style={{ color: 'var(--text-muted)', marginBottom: 32 }}>
-          {make.nameEn} {model.nameEn} {trim.name} · {isEn ? 'Model year' : 'דגם'} {year}
+          {make.nameEn} {model.nameEn} {trimEn} · {isEn ? 'Model year' : 'דגם'} {year}
         </p>
 
         {/* Price - Israeli shekel list price, Hebrew site only */}
@@ -302,7 +306,7 @@ export default async function TrimPage({ params }: Props) {
                     border: active ? '1px solid var(--accent)' : '1px solid var(--border)',
                   }}
                 >
-                  {t.name}
+                  {isEn ? trimNameEn(t.name) : t.name}
                   {!isEn && t.priceIls && (
                     <span style={{ fontSize: '0.75rem', opacity: 0.8, marginRight: 6 }}>
                       ₪{Math.round(t.priceIls / 1000)}K
@@ -318,12 +322,12 @@ export default async function TrimPage({ params }: Props) {
         <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 32 }}>
           {prevTrim ? (
             <Link href={`/cars/${make.slug}/${model.slug}/trim/${toTrimSlug(prevTrim.name)}`} style={{ color: 'var(--accent)', textDecoration: 'none', fontSize: '0.9rem' }}>
-              ← {isEn ? 'Trim' : 'גימור'} {prevTrim.name}
+              ← {isEn ? 'Trim' : 'גימור'} {isEn ? trimNameEn(prevTrim.name) : prevTrim.name}
             </Link>
           ) : <span />}
           {nextTrim ? (
             <Link href={`/cars/${make.slug}/${model.slug}/trim/${toTrimSlug(nextTrim.name)}`} style={{ color: 'var(--accent)', textDecoration: 'none', fontSize: '0.9rem' }}>
-              {isEn ? 'Trim' : 'גימור'} {nextTrim.name} →
+              {isEn ? 'Trim' : 'גימור'} {isEn ? trimNameEn(nextTrim.name) : nextTrim.name} →
             </Link>
           ) : <span />}
         </div>

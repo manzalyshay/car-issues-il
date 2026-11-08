@@ -1,5 +1,6 @@
 import { dbAll, dbFirst } from './db';
 import type { TrimSpec } from '@/data/cars';
+import { normalizeDrive, normalizeEngineType, normalizeSeats, normalizeTransmission } from './trimLocalize';
 
 export interface TrimSpecWithYear extends TrimSpec {
   modelYear: number | null;
@@ -11,12 +12,12 @@ function rowToTrimSpec(row: Record<string, unknown>): TrimSpecWithYear {
     id: row.id as string,
     name: row.name as string,
     sortOrder: (row.sort_order as number) ?? 0,
-    engineType: (row.engine_type as TrimSpec['engineType']) ?? undefined,
+    engineType: normalizeEngineType(row.engine_type) as TrimSpec['engineType'],
     engineCc: (row.engine_cc as number) ?? undefined,
     engineHp: (row.engine_hp as number) ?? undefined,
-    transmission: (row.transmission as TrimSpec['transmission']) ?? undefined,
-    drive: (row.drive as TrimSpec['drive']) ?? undefined,
-    seats: (row.seats as TrimSpec['seats']) ?? undefined,
+    transmission: normalizeTransmission(row.transmission) as TrimSpec['transmission'],
+    drive: normalizeDrive(row.drive) as TrimSpec['drive'],
+    seats: normalizeSeats(row.seats) as TrimSpec['seats'],
     seatCount: (row.seat_count as number) ?? undefined,
     screenSize: row.screen_size != null ? Number(row.screen_size) : undefined,
     features: (() => {
