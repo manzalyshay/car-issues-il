@@ -27,8 +27,85 @@ async function recordDispatch(env, cron, path, status, ok, note) {
   }
 }
 
+// ── Page-view log (internal analytics, D1 page_visits) ──────────────────────
+// Logs human HTML page views only: GET document requests, no /api, /_next, files or bots.
+// Written in ctx.waitUntil so it never delays the response; failures are swallowed.
+const VISIT_RETENTION_DAYS = 90;
+const VISIT_BOT_UA = /bot|crawl|spider|slurp|headless|lighthouse|pagespeed|preview|facebookexternalhit|whatsapp|telegram|curl|wget|python|go-http|axios|node-fetch|httpclient|java\/|monitor|uptime/i;
+const VISIT_HOSTS = /(^|\.)carissues\.(co\.il|net)$/;
+
+function parseUa(ua) {
+  const device = /ipad|tablet/i.test(ua) ? "tablet" : /mobi|iphone|android/i.test(ua) ? "mobile" : "desktop";
+  const os = /iphone|ipad|ios/i.test(ua) ? "iOS"
+    : /android/i.test(ua) ? "Android"
+    : /windows/i.test(ua) ? "Windows"
+    : /mac os x|macintosh/i.test(ua) ? "macOS"
+    : /linux/i.test(ua) ? "Linux" : "other";
+  const browser = /edg\//i.test(ua) ? "Edge"
+    : /samsungbrowser/i.test(ua) ? "Samsung Internet"
+    : /opr\/|opera/i.test(ua) ? "Opera"
+    : /firefox|fxios/i.test(ua) ? "Firefox"
+    : /crios|chrome/i.test(ua) ? "Chrome"
+    : /safari/i.test(ua) ? "Safari" : "other";
+  return { device, os, browser };
+}
+
+function shouldLogVisit(request, url, response) {
+  if (request.method !== "GET") return false;
+  if (!VISIT_HOSTS.test(url.hostname)) return false;
+  const p = url.pathname;
+  if (p.startsWith("/api/") || p.startsWith("/_next/") || p.startsWith("/cdn-cgi/")) return false;
+  if (/\.[a-z0-9]{2,5}$/i.test(p)) return false; // files: .png, .xml, .txt, ...
+  const dest = request.headers.get("sec-fetch-dest");
+  if (dest && dest !== "document") return false;
+  if (!dest && !(request.headers.get("accept") || "").includes("text/html")) return false;
+  if (request.headers.get("rsc") || request.headers.get("next-router-prefetch")) return false;
+  const ua = request.headers.get("user-agent") || "";
+  if (!ua || VISIT_BOT_UA.test(ua)) return false;
+  // Redirects (www → apex, geo) would double-count; keep real pages and 404s
+  return response.status < 300 || response.status === 404;
+}
+
+async function logVisit(env, request, url) {
+  try {
+    const cf = request.cf || {};
+    const ua = request.headers.get("user-agent") || "";
+    const { device, os, browser } = parseUa(ua);
+    await env.DB.prepare(
+      `INSERT INTO page_visits
+        (ip, site, path, query, referer, country, region, city, postal_code, latitude, longitude,
+         timezone, asn, asn_org, device, os, browser, user_agent, lang)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    ).bind(
+      request.headers.get("cf-connecting-ip"),
+      url.hostname.includes("carissues.net") ? "en" : "he",
+      url.pathname.slice(0, 500),
+      url.search ? url.search.slice(0, 500) : null,
+      (request.headers.get("referer") || "").slice(0, 300) || null,
+      cf.country ?? null, cf.region ?? null, cf.city ?? null, cf.postalCode ?? null,
+      cf.latitude ?? null, cf.longitude ?? null, cf.timezone ?? null,
+      cf.asn ?? null, cf.asOrganization ?? null,
+      device, os, browser, ua.slice(0, 400),
+      (request.headers.get("accept-language") || "").slice(0, 40) || null,
+    ).run();
+    if (Math.random() < 0.005) {
+      await env.DB.prepare(`DELETE FROM page_visits WHERE created_at < datetime('now', ?)`)
+        .bind(`-${VISIT_RETENTION_DAYS} days`).run();
+    }
+  } catch (err) {
+    console.error("[page_visits] log failed", err);
+  }
+}
+
 export default {
-  fetch: openNextWorker.fetch,
+  async fetch(request, env, ctx) {
+    const response = await openNextWorker.fetch(request, env, ctx);
+    try {
+      const url = new URL(request.url);
+      if (shouldLogVisit(request, url, response)) ctx.waitUntil(logVisit(env, request, url));
+    } catch { /* never let logging break a page */ }
+    return response;
+  },
   async scheduled(event, env, ctx) {
     const path = CRON_ROUTES[event.cron];
     if (!path) {
