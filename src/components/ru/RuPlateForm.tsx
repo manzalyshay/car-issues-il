@@ -33,7 +33,7 @@ export default function RuPlateForm({ autoFocus = false }: { autoFocus?: boolean
           <input
             id="ru-plate" value={value} autoFocus={autoFocus} inputMode="numeric" maxLength={10}
             onChange={(e) => setValue(e.target.value.toUpperCase())}
-            placeholder="Введите номер"
+            placeholder="Номер авто"
             style={{ flex: 1, minWidth: 0, border: 'none', outline: 'none', background: 'transparent', fontSize: '1.1rem', fontWeight: 700, color: '#1a1a1a', letterSpacing: '0.08em', padding: '0 12px', fontFamily: 'monospace', textAlign: 'center' }}
           />
         </div>
