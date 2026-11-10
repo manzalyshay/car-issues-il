@@ -5,6 +5,7 @@ import Link from 'next/link';
 import type { TrimSpec } from '@/data/cars';
 import { TRIM_FEATURES } from '@/data/cars';
 import { useLocale } from '@/lib/localeContext';
+import { trimDisplayName, trimValueLabel, driveKey, engineKey, transmissionKey, transmissionGears } from '@/lib/trimLabels';
 
 function toTrimSlug(name: string) {
   return name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
@@ -100,6 +101,12 @@ export default function TrimSpecsTab({ makeSlug, modelSlug, makeNameHe, modelNam
 
   const trim = noTrims ? null : (allTrims!.find(t => t.name === selected) ?? allTrims![0]);
 
+  const gears = transmissionGears(trim?.transmission);
+  const engineLabel = trimValueLabel(trim?.engineType, engineKey(trim?.engineType), ts.engineTypes, locale);
+  const transmissionLabel = trimValueLabel(trim?.transmission, transmissionKey(trim?.transmission), ts.transmissions, locale,
+    gears ? (locale === 'ru' ? `(${gears} ступ.)` : locale === 'en' ? `(${gears}-speed)` : undefined) : undefined);
+  const driveLabel = trimValueLabel(trim?.drive, driveKey(trim?.drive), ts.drives, locale);
+  const seatsLabel = trimValueLabel(trim?.seats, trim?.seats ?? null, ts.upholsteries, locale);
   const hasEngine = !!(trim?.engineType || trim?.engineCc || trim?.engineHp || trim?.transmission || trim?.drive);
   const hasInterior = !!(trim?.seats || trim?.screenSize || (trim?.seatCount && trim?.seatCount !== 5));
 
@@ -170,7 +177,7 @@ export default function TrimSpecsTab({ makeSlug, modelSlug, makeNameHe, modelNam
                 display: 'flex', alignItems: 'center', gap: 6,
               }}
             >
-              {t.name}
+              {trimDisplayName(t.name, locale)}
               {t.priceIls && (
                 <span style={{ fontSize: '0.72rem', opacity: on ? 0.85 : 0.6 }}>
                   {fmtPrice(t.priceIls, locale)}
@@ -319,7 +326,7 @@ export default function TrimSpecsTab({ makeSlug, modelSlug, makeNameHe, modelNam
         {/* Card header */}
         <div style={{ background: 'var(--accent)', padding: '16px 20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <div>
-            <div style={{ fontSize: '1.1rem', fontWeight: 800, color: '#fff' }}>{trim.name}</div>
+            <div style={{ fontSize: '1.1rem', fontWeight: 800, color: '#fff' }}>{trimDisplayName(trim.name, locale)}</div>
             <div style={{ fontSize: '0.8rem', color: 'rgba(255,255,255,0.75)', marginTop: 2 }}>
               {displayMakeName} {displayModelName}
             </div>
@@ -339,11 +346,12 @@ export default function TrimSpecsTab({ makeSlug, modelSlug, makeNameHe, modelNam
               <div style={{ fontSize: '0.72rem', fontWeight: 800, color: 'var(--text-muted)', letterSpacing: '0.08em', textTransform: 'uppercase', padding: '14px 0 4px' }}>
                 {ts.engine}
               </div>
-              {trim.engineType && row(ts.engineType, ts.engineTypes[trim.engineType as keyof typeof ts.engineTypes] ?? trim.engineType)}
+              {/* Raw values may be stored as Hebrew text: label them by key; no row rather than Hebrew on en/ru */}
+              {engineLabel && row(ts.engineType, engineLabel)}
               {trim.engineCc && row(ts.engineCc, `${trim.engineCc.toLocaleString()} ${ts.cc}`)}
               {trim.engineHp && row(ts.engineHp, <span style={{ color: 'var(--accent)' }}>{trim.engineHp} {ts.hp}</span>)}
-              {trim.transmission && row(ts.transmission, ts.transmissions[trim.transmission as keyof typeof ts.transmissions] ?? trim.transmission)}
-              {trim.drive && row(ts.drive, ts.drives[trim.drive as keyof typeof ts.drives] ?? trim.drive)}
+              {transmissionLabel && row(ts.transmission, transmissionLabel)}
+              {driveLabel && row(ts.drive, driveLabel)}
             </div>
           )}
 
@@ -353,7 +361,7 @@ export default function TrimSpecsTab({ makeSlug, modelSlug, makeNameHe, modelNam
               <div style={{ fontSize: '0.72rem', fontWeight: 800, color: 'var(--text-muted)', letterSpacing: '0.08em', textTransform: 'uppercase', padding: '14px 0 4px' }}>
                 {ts.interior}
               </div>
-              {trim.seats && row(ts.upholstery, ts.upholsteries[trim.seats as keyof typeof ts.upholsteries] ?? trim.seats)}
+              {seatsLabel && row(ts.upholstery, seatsLabel)}
               {trim.seatCount && trim.seatCount !== 5 && row(ts.seats, trim.seatCount)}
               {trim.screenSize && row(ts.screen, `${trim.screenSize}"`)}
             </div>
@@ -381,7 +389,7 @@ export default function TrimSpecsTab({ makeSlug, modelSlug, makeNameHe, modelNam
             href={`/cars/${makeSlug}/${modelSlug}/trim/${toTrimSlug(trim.name)}`}
             style={{ fontSize: '0.83rem', color: 'var(--accent)', fontWeight: 600, textDecoration: 'none' }}
           >
-            {ts.moreDetails} {trim.name} ←
+            {ts.moreDetails} {trimDisplayName(trim.name, locale)} {locale === 'he' ? '←' : '→'}
           </Link>
         </div>
       </div>

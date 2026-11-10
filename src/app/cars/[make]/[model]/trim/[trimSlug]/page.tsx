@@ -1,3 +1,4 @@
+import { trimNameEn, trimValueLabel, driveKey, engineKey, transmissionKey } from '@/lib/trimLabels';
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
@@ -56,6 +57,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
   const year = model.years[0];
   const isEn = locale === 'en';
+  // Trim names are often Hebrew (Israeli price list): English pages show the translation
+  const trimName = isEn ? trimNameEn(trim.name) : trim.name;
   const url = isEn
     ? `https://carissues.net/cars/${makeSlug}/${modelSlug}/trim/${trimSlug}`
     : `https://carissues.co.il/cars/${makeSlug}/${modelSlug}/trim/${trimSlug}`;
@@ -64,15 +67,15 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   if (isEn) {
     const hpStr = trim.engineHp ? ` · ${trim.engineHp} hp` : '';
     return {
-      title: `${make.nameEn} ${model.nameEn} ${trim.name} ${year} - Specs & Features`,
+      title: `${make.nameEn} ${model.nameEn} ${trimName} ${year} - Specs & Features`,
       // carissues.net trim pages are bare spec sheets (the Israeli price and reviews live on
       // the Hebrew site): not indexed, links still followed. The .co.il trim pages are unchanged.
       robots: { index: false, follow: true },
-      description: `Full specs for ${make.nameEn} ${model.nameEn} ${trim.name} ${year}.${hpStr} Technology, safety, and comfort features.`,
+      description: `Full specs for ${make.nameEn} ${model.nameEn} ${trimName} ${year}.${hpStr} Technology, safety, and comfort features.`,
       alternates: { canonical: url, languages: trimLangs },
       openGraph: {
-        title: `${make.nameEn} ${model.nameEn} ${trim.name} | CarIssues`,
-        description: `${make.nameEn} ${model.nameEn} ${trim.name} ${year}${hpStr}`,
+        title: `${make.nameEn} ${model.nameEn} ${trimName} | CarIssues`,
+        description: `${make.nameEn} ${model.nameEn} ${trimName} ${year}${hpStr}`,
         url,
       },
     };
@@ -81,12 +84,12 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const priceStr = trim.priceIls ? ` · מחיר מומלץ ₪${trim.priceIls.toLocaleString('he-IL')}` : '';
   const hpStr = trim.engineHp ? ` ${trim.engineHp} כ"ס` : '';
   return {
-    title: `${make.nameHe} ${model.nameHe} ${trim.name} ${year} – מפרט, ציוד ומחיר`,
-    description: `מפרט מלא של ${make.nameHe} ${model.nameHe} גימור ${trim.name} ${year}.${hpStr}${priceStr}. ציוד, בטיחות, נוחות וטכנולוגיה.`,
+    title: `${make.nameHe} ${model.nameHe} ${trimName} ${year} – מפרט, ציוד ומחיר`,
+    description: `מפרט מלא של ${make.nameHe} ${model.nameHe} גימור ${trimName} ${year}.${hpStr}${priceStr}. ציוד, בטיחות, נוחות וטכנולוגיה.`,
     alternates: { canonical: url, languages: trimLangs },
     openGraph: {
-      title: `${make.nameHe} ${model.nameHe} ${trim.name} | CarIssues IL`,
-      description: `${make.nameHe} ${model.nameHe} ${trim.name} ${year}${priceStr}`,
+      title: `${make.nameHe} ${model.nameHe} ${trimName} | CarIssues IL`,
+      description: `${make.nameHe} ${model.nameHe} ${trimName} ${year}${priceStr}`,
       url,
     },
   };
@@ -108,6 +111,7 @@ export default async function TrimPage({ params }: Props) {
   if (!trim) notFound();
 
   const isEn = locale === 'en';
+  const trimName = isEn ? trimNameEn(trim.name) : trim.name;
   const makeName = isEn ? make.nameEn : make.nameHe;
   const modelName = isEn ? model.nameEn : model.nameHe;
   const year = model.years[0];
@@ -122,12 +126,12 @@ export default async function TrimPage({ params }: Props) {
   const jsonLd = {
     '@context': 'https://schema.org',
     '@type': 'Product',
-    name: `${make.nameEn} ${model.nameEn} ${trim.name} ${year}`,
+    name: `${make.nameEn} ${model.nameEn} ${trimName} ${year}`,
     brand: { '@type': 'Brand', name: make.nameEn },
     url: pageUrl,
     description: isEn
-      ? `${make.nameEn} ${model.nameEn} ${trim.name} ${year} - specs, features and equipment`
-      : `${make.nameHe} ${model.nameHe} גימור ${trim.name} ${year} - מפרט ציוד ומחיר`,
+      ? `${make.nameEn} ${model.nameEn} ${trimName} ${year} - specs, features and equipment`
+      : `${make.nameHe} ${model.nameHe} גימור ${trimName} ${year} - מפרט ציוד ומחיר`,
     ...(!isEn && trim.priceIls && {
       offers: {
         '@type': 'Offer',
@@ -142,12 +146,16 @@ export default async function TrimPage({ params }: Props) {
 
   const specs: { label: string; value: string }[] = [];
   if (isEn) {
-    if (trim.engineType) specs.push({ label: 'Engine Type', value: ENGINE_TYPE_EN[trim.engineType] ?? trim.engineType });
+    const engineEn = trimValueLabel(trim.engineType, engineKey(trim.engineType), ENGINE_TYPE_EN, 'en');
+    if (engineEn) specs.push({ label: 'Engine Type', value: engineEn });
     if (trim.engineCc) specs.push({ label: 'Displacement', value: `${trim.engineCc} cc` });
     if (trim.engineHp) specs.push({ label: 'Power', value: `${trim.engineHp} hp` });
-    if (trim.transmission) specs.push({ label: 'Transmission', value: TRANSMISSION_EN[trim.transmission] ?? trim.transmission });
-    if (trim.drive) specs.push({ label: 'Drive', value: DRIVE_EN[trim.drive] ?? trim.drive });
-    if (trim.seats) specs.push({ label: 'Upholstery', value: SEATS_EN[trim.seats] ?? trim.seats });
+    const transmissionEn = trimValueLabel(trim.transmission, transmissionKey(trim.transmission), TRANSMISSION_EN, 'en');
+    if (transmissionEn) specs.push({ label: 'Transmission', value: transmissionEn });
+    const driveEn = trimValueLabel(trim.drive, driveKey(trim.drive), DRIVE_EN, 'en');
+    if (driveEn) specs.push({ label: 'Drive', value: driveEn });
+    const seatsEn = trimValueLabel(trim.seats, trim.seats ?? null, SEATS_EN, 'en');
+    if (seatsEn) specs.push({ label: 'Upholstery', value: seatsEn });
     if (trim.seatCount) specs.push({ label: 'Seats', value: String(trim.seatCount) });
     if (trim.screenSize) specs.push({ label: 'Multimedia Screen', value: `${trim.screenSize}"` });
   } else {
@@ -179,15 +187,15 @@ export default async function TrimPage({ params }: Props) {
           <span>›</span>
           <Link href={`/cars/${make.slug}/${model.slug}`} style={{ color: 'var(--text-muted)', textDecoration: 'none' }}>{modelName}</Link>
           <span>›</span>
-          <span style={{ color: 'var(--text)' }}>{isEn ? 'Trim' : 'גימור'} {trim.name}</span>
+          <span style={{ color: 'var(--text)' }}>{isEn ? 'Trim' : 'גימור'} {trimName}</span>
         </nav>
 
         {/* Title */}
         <h1 style={{ fontSize: '1.75rem', fontWeight: 700, marginBottom: 8 }}>
-          {makeName} {modelName} - {isEn ? 'Trim' : 'גימור'} {trim.name}
+          {makeName} {modelName} - {isEn ? 'Trim' : 'גימור'} {trimName}
         </h1>
         <p style={{ color: 'var(--text-muted)', marginBottom: 32 }}>
-          {make.nameEn} {model.nameEn} {trim.name} · {isEn ? 'Model year' : 'דגם'} {year}
+          {make.nameEn} {model.nameEn} {trimName} · {isEn ? 'Model year' : 'דגם'} {year}
         </p>
 
         {/* Price - Israeli shekel list price, Hebrew site only */}
@@ -302,7 +310,7 @@ export default async function TrimPage({ params }: Props) {
                     border: active ? '1px solid var(--accent)' : '1px solid var(--border)',
                   }}
                 >
-                  {t.name}
+                  {isEn ? trimNameEn(t.name) : t.name}
                   {!isEn && t.priceIls && (
                     <span style={{ fontSize: '0.75rem', opacity: 0.8, marginRight: 6 }}>
                       ₪{Math.round(t.priceIls / 1000)}K
