@@ -248,13 +248,21 @@ export async function enChildSitemap(name: EnChildSitemap): Promise<MetadataRout
 // ── Russian pilot (carissues.co.il/ru) ──────────────────────────────────────────────
 
 /** /sitemaps/ru.xml on the Hebrew host: /ru, /ru/vehicle-lookup and the 50 Russian compare pages. */
+/**
+ * When the /ru pages' content last changed (2026-11-10: they now render the shared
+ * Hebrew/English components in Russian). Update this date whenever the Russian pages
+ * change, so search engines recrawl them; leave it alone otherwise, because Google
+ * ignores lastmod on sites where it changes without the content changing.
+ */
+const RU_PAGES_UPDATED = new Date('2026-11-10T12:00:00Z');
+
 export async function ruSitemapEntries(): Promise<MetadataRoute.Sitemap> {
   const makes = await getAllMakes().catch(() => [] as CarMake[]);
   return [
-    { url: `${HE_BASE}/ru`, changeFrequency: 'weekly', priority: 0.8 },
-    { url: `${HE_BASE}/ru/vehicle-lookup`, changeFrequency: 'weekly', priority: 0.9 },
+    { url: `${HE_BASE}/ru`, lastModified: RU_PAGES_UPDATED, changeFrequency: 'weekly', priority: 0.8 },
+    { url: `${HE_BASE}/ru/vehicle-lookup`, lastModified: RU_PAGES_UPDATED, changeFrequency: 'weekly', priority: 0.9 },
     ...resolvePairs(makes, RU_COMPARE_PAIRS).map((p) => ({
-      url: `${HE_BASE}/ru${p.path}`, changeFrequency: 'weekly' as const, priority: 0.7,
+      url: `${HE_BASE}/ru${p.path}`, lastModified: RU_PAGES_UPDATED, changeFrequency: 'weekly' as const, priority: 0.7,
     })),
   ];
 }
