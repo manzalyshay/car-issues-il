@@ -16,13 +16,3 @@ export async function getHostLocale(): Promise<'en' | 'he'> {
 export function getBaseUrl(locale: 'en' | 'he') {
   return locale === 'en' ? 'https://carissues.net' : 'https://carissues.co.il';
 }
-
-/**
- * Locale for pages that also serve the Russian pilot: 'ru' for /ru paths on carissues.co.il
- * (the middleware sets x-locale: ru), else the host locale. Hebrew/English-only pages keep
- * using getHostLocale().
- */
-export async function getSiteLocale(): Promise<'en' | 'he' | 'ru'> {
-  if ((await headers()).get('x-locale') === 'ru') return 'ru';
-  return getHostLocale();
-}
