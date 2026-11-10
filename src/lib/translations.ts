@@ -1,4 +1,5 @@
-export type Locale = 'he' | 'en';
+/** he = carissues.co.il, en = carissues.net, ru = carissues.co.il/ru (Russian pilot). */
+export type Locale = 'he' | 'en' | 'ru';
 
 export const translations = {
   he: {

@@ -8,6 +8,7 @@ import { searchCars } from '@/lib/carSearch';
 import { newsPath } from '@/lib/newsSlug';
 import NewsImage from '@/components/NewsImage';
 import { sizedImageUrl } from '@/lib/imageSizing';
+import { pick, localHref } from '@/lib/i18n';
 
 /* ── Types ──────────────────────────────────────────────── */
 interface Make { slug: string; nameHe: string; nameEn: string; logoUrl: string; country: string; models: { slug: string; nameHe: string; nameEn: string }[]; }
@@ -116,7 +117,13 @@ function useCountUp(ref: React.RefObject<HTMLElement | null>, to: number, decima
    ═══════════════════════════════════════════════════════════ */
 export default function HomeClient({ allMakes, topRanked, recentReviews, tickerItems: tickerProp, initialNews, topPairs = [], reviewTotal, recallTotal }: Props) {
   const { locale } = useLocale();
+  // isHe = Hebrew data + RTL. UI text goes through tr() so each language has its own string.
+  // The Russian page (/ru) gets no news, model, review or ticker data (none exists in
+  // Russian), so those sections render only for he/en.
   const isHe = locale === 'he';
+  const isRu = locale === 'ru';
+  const isEn = locale === 'en';
+  const tr = (v: { he: string; en: string; ru: string }) => pick(locale, v);
   const totalModels = allMakes.reduce((s, m) => s + m.models.length, 0);
 
   const tickerItems = tickerProp ?? [];
@@ -135,15 +142,15 @@ export default function HomeClient({ allMakes, topRanked, recentReviews, tickerI
     return searchCars(allMakes, q, 8).map(({ make, model }) => model
       ? {
           label: isHe ? `${make.nameHe} ${model.nameHe}` : `${make.nameEn} ${model.nameEn}`,
-          sub:   isHe ? `${make.nameEn} ${model.nameEn}` : `${make.nameHe} ${model.nameHe}`,
+          sub:   isRu ? 'страница на иврите' : isHe ? `${make.nameEn} ${model.nameEn}` : `${make.nameHe} ${model.nameHe}`,
           href:  `/cars/${make.slug}/${model.slug}`,
         }
       : {
           label: isHe ? make.nameHe : make.nameEn,
-          sub:   isHe ? make.nameEn : make.nameHe,
+          sub:   isRu ? 'страница на иврите' : isHe ? make.nameEn : make.nameHe,
           href:  `/cars/${make.slug}`,
         });
-  }, [searchQ, allMakes, isHe]);
+  }, [searchQ, allMakes, isHe, isRu]);
 
   // Close on outside click
   useEffect(() => {
@@ -161,8 +168,8 @@ export default function HomeClient({ allMakes, topRanked, recentReviews, tickerI
     const q = searchQ.trim();
     if (!q) return;
     const digits = (q.match(/\d/g) || []).length;
-    if (isHe && digits >= 5 && /^[\d\-\s]+$/.test(q)) {
-      router.push(`/vehicle-lookup/${q.replace(/\D/g, '')}`);
+    if (!isEn && digits >= 5 && /^[\d\-\s]+$/.test(q)) {
+      router.push(localHref(locale, `/vehicle-lookup/${q.replace(/\D/g, '')}`));
     } else if (suggestions.length > 0) {
       // Enter / "Search" with a car name goes straight to the best match
       router.push(suggestions[0].href);
@@ -182,11 +189,11 @@ export default function HomeClient({ allMakes, topRanked, recentReviews, tickerI
 
   const searchBadge = (() => {
     const q = searchQ.trim();
-    if (!q) return isHe ? 'זיהוי אוטומטי' : 'Auto-detect';
+    if (!q) return tr({ he: 'זיהוי אוטומטי', en: 'Auto-detect', ru: 'Автоопределение' });
     const digits = (q.match(/\d/g) || []).length;
-    if (digits >= 5 && /^[\d\-\s]+$/.test(q)) return isHe ? 'זוהה מספר רכב' : 'Plate detected';
-    if (digits >= 4) return isHe ? 'זוהה דגם ושנה' : 'Model & year detected';
-    return isHe ? 'זוהה יצרן או דגם' : 'Make or model detected';
+    if (digits >= 5 && /^[\d\-\s]+$/.test(q)) return tr({ he: 'זוהה מספר רכב', en: 'Plate detected', ru: 'Распознан номер авто' });
+    if (digits >= 4) return tr({ he: 'זוהה דגם ושנה', en: 'Model & year detected', ru: 'Распознаны модель и год' });
+    return tr({ he: 'זוהה יצרן או דגם', en: 'Make or model detected', ru: 'Распознана марка или модель' });
   })();
 
   /* Refs for count-up */
@@ -242,10 +249,10 @@ export default function HomeClient({ allMakes, topRanked, recentReviews, tickerI
           {/* Search column */}
           <div data-ci-group="90" style={{ flex: '999 1 560px', minWidth: 0, display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
             <span style={{ fontSize: 14, color: '#7a9cc8', letterSpacing: '0.04em', fontWeight: 600 }}>
-              {isHe ? 'בעיות · ריקולים · עלויות תיקון' : 'Problems · Recalls · Repair costs'}
+              {tr({ he: 'בעיות · ריקולים · עלויות תיקון', en: 'Problems · Recalls · Repair costs', ru: 'Проверка по номеру · Сравнения · Отзывные кампании' })}
             </span>
-            <h1 style={{ fontFamily: 'Heebo,sans-serif', fontWeight: 900, fontSize: 'clamp(26px,3vw,42px)', lineHeight: 1.1, letterSpacing: '-.03em', margin: '10px 0 0', color: '#fff' }}>
-              {isHe ? 'איזה רכב אתם בודקים?' : 'Which car are you checking?'}
+            <h1 style={{ fontFamily: 'var(--font-display)', fontWeight: 900, fontSize: 'clamp(26px,3vw,42px)', lineHeight: 1.1, letterSpacing: '-.03em', margin: '10px 0 0', color: '#fff' }}>
+              {tr({ he: 'איזה רכב אתם בודקים?', en: 'Which car are you checking?', ru: 'Проверка авто и сравнение автомобилей в Израиле' })}
             </h1>
 
             {/* Search pill */}
@@ -254,16 +261,16 @@ export default function HomeClient({ allMakes, topRanked, recentReviews, tickerI
                 <input
                   className="input-in-box"
                   type="text"
-                  aria-label={isHe ? 'חיפוש לפי מספר רישוי או שם דגם' : 'Search by car model'}
+                  aria-label={tr({ he: 'חיפוש לפי מספר רישוי או שם דגם', en: 'Search by car model', ru: 'Поиск по номеру авто или модели' })}
                   value={searchQ}
                   onChange={e => { setSearchQ(e.target.value); setAcOpen(true); setAcIdx(-1); }}
                   onKeyDown={handleKeyDown}
                   onFocus={() => setAcOpen(true)}
-                  placeholder={isHe ? 'מספר רישוי או שם דגם' : 'Enter a make or model'}
+                  placeholder={tr({ he: 'מספר רישוי או שם דגם', en: 'Enter a make or model', ru: 'Номер авто или модель' })}
                   style={{ flex: 1, minWidth: 0, border: 0, background: 'transparent', padding: '10px 14px', fontSize: 16, outline: 'none', color: '#0d1b2f', direction: isHe ? 'rtl' : 'ltr' }}
                 />
                 <button type="button" onClick={() => handleSearch()} style={{ border: 0, background: 'var(--accent)', color: '#fff', fontWeight: 700, fontSize: 16, padding: '0 26px', height: 48, borderRadius: 11, cursor: 'pointer', whiteSpace: 'nowrap' }}>
-                  {isHe ? 'חפש' : 'Search'}
+                  {tr({ he: 'חפש', en: 'Search', ru: 'Найти' })}
                 </button>
               </div>
               {acOpen && suggestions.length > 0 && (
@@ -288,14 +295,14 @@ export default function HomeClient({ allMakes, topRanked, recentReviews, tickerI
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>
                 {searchBadge}
               </span>
-              {isHe && (
+              {!isEn && (
                 <>
                   <span aria-hidden="true" style={{ color: '#3b4a6b' }}>·</span>
-                  <span style={{ fontSize: 12, color: '#aab6cf' }}>מספר רישוי = בדיקת פרטי רכב מלאה</span>
+                  <span style={{ fontSize: 12, color: '#aab6cf' }}>{tr({ he: 'מספר רישוי = בדיקת פרטי רכב מלאה', en: '', ru: 'Номер авто = полная проверка автомобиля' })}</span>
                 </>
               )}
             </div>
-            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginTop: 10, alignItems: 'center' }}>
+            {!isRu && <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginTop: 10, alignItems: 'center' }}>
               {(isHe
                 ? [['סובארו XV', '/cars/subaru/xv'], ['טויוטה RAV4', '/cars/toyota/rav4'], ['יונדאי טוסון', '/cars/hyundai/tucson'], ['קיה ספורטז׳', '/cars/kia/sportage']]
                 : [['Subaru XV', '/cars/subaru/xv'], ['Toyota RAV4', '/cars/toyota/rav4'], ['Hyundai Tucson', '/cars/hyundai/tucson'], ['Kia Sportage', '/cars/kia/sportage']]
@@ -304,8 +311,26 @@ export default function HomeClient({ allMakes, topRanked, recentReviews, tickerI
                   {label}
                 </Link>
               ))}
-            </div>
+            </div>}
           </div>
+
+          {/* Russian site: the most compared pairs (Russian pages), in place of the model ranking */}
+          {isRu && topPairs.length > 0 && (
+            <aside aria-label="Чаще всего сравнивают" style={{ flex: '1 1 380px', minWidth: 0, background: '#1b2b4d', border: '1px solid #2a3c63', borderRadius: 'var(--r)', padding: 24, display: 'flex', flexDirection: 'column', gap: 6 }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
+                <h2 style={{ margin: 0, fontSize: 18, fontWeight: 700 }}>Чаще всего сравнивают</h2>
+                <Link href="#compare" style={{ fontSize: 14, color: '#8fb3ff', textDecoration: 'none' }}>Все сравнения →</Link>
+              </div>
+              {topPairs.slice(0, 4).map((vs, i) => (
+                <Link key={vs.href} href={vs.href} className="ci-trend-row" style={{ display: 'flex', alignItems: 'center', gap: 14, padding: 12, borderRadius: 14, textDecoration: 'none', color: '#fff' }}>
+                  <span style={{ width: 28, fontSize: 15, fontWeight: 700, color: '#8fb3ff', textAlign: 'center' }}>{i + 1}</span>
+                  <span style={{ flex: 1, minWidth: 0, fontSize: 16, fontWeight: 700, lineHeight: 1.3 }}>
+                    {vs.aEn} <span style={{ color: '#7a9cc8', fontWeight: 500 }}>vs</span> {vs.bEn}
+                  </span>
+                </Link>
+              ))}
+            </aside>
+          )}
 
           {/* נבדקים השבוע aside */}
           {topRanked.length > 0 && (
@@ -341,12 +366,12 @@ export default function HomeClient({ allMakes, topRanked, recentReviews, tickerI
         {/* Stats row - inside the dark band, no overlap */}
         <div data-ci-group="70" style={{ maxWidth: MAXW, margin: 'clamp(32px,3.4vw,48px) auto 0', borderTop: '1px solid rgba(255,255,255,.12)', display: 'grid', gridTemplateColumns: 'repeat(3,minmax(0,1fr))' }}>
           {[
-            { ref: refMakes,   value: allMakes.length, label: isHe ? 'יצרנים' : 'Makes' },
-            { ref: refModels,  value: totalModels,     label: isHe ? 'דגמים' : 'Models' },
-            { ref: null,       value: recallTotal,      label: isHe ? 'ריקולים' : 'Recalls' },
+            { ref: refMakes,   value: allMakes.length, label: tr({ he: 'יצרנים', en: 'Makes', ru: 'марок' }) },
+            { ref: refModels,  value: totalModels,     label: tr({ he: 'דגמים', en: 'Models', ru: 'моделей' }) },
+            { ref: null,       value: recallTotal,      label: tr({ he: 'ריקולים', en: 'Recalls', ru: 'отзывных кампаний' }) },
           ].map((s, i, arr) => (
             <div key={i} style={{ padding: '20px 12px', textAlign: 'center', borderInlineEnd: i < arr.length - 1 ? '1px solid rgba(255,255,255,.12)' : 'none' }}>
-              <div style={{ fontFamily: 'Heebo,sans-serif', fontWeight: 900, fontSize: 'clamp(22px,3vw,30px)', letterSpacing: '-.04em' }}>
+              <div style={{ fontFamily: 'var(--font-display)', fontWeight: 900, fontSize: 'clamp(22px,3vw,30px)', letterSpacing: '-.04em' }}>
                 <span ref={s.ref as React.RefObject<HTMLSpanElement>}>{Number(s.value ?? 0).toLocaleString(isHe ? 'he-IL' : 'en-US')}</span>
               </div>
               <div style={{ fontSize: 13, color: '#aab6cf', fontWeight: 600, marginTop: 2 }}>{s.label}</div>
@@ -366,7 +391,7 @@ export default function HomeClient({ allMakes, topRanked, recentReviews, tickerI
                 <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8, fontSize: 12, fontWeight: 700, letterSpacing: '.1em', color: '#17408f', background: '#eaf0fb', border: '1px solid #d3e0f6', padding: '5px 12px', borderRadius: 999 }}>
                   {isHe ? 'חדשות רכב' : 'Car News'}
                 </div>
-                <h2 style={{ fontFamily: 'Heebo,sans-serif', fontWeight: 900, fontSize: 'clamp(24px,2.6vw,34px)', letterSpacing: '-.035em', margin: '14px 0 0' }}>
+                <h2 style={{ fontFamily: 'var(--font-display)', fontWeight: 900, fontSize: 'clamp(24px,2.6vw,34px)', letterSpacing: '-.035em', margin: '14px 0 0' }}>
                   {isHe ? 'מה חדש בשוק' : "What's new"}
                 </h2>
               </div>
@@ -385,7 +410,7 @@ export default function HomeClient({ allMakes, topRanked, recentReviews, tickerI
                       <div style={{ display: 'flex', gap: 10, alignItems: 'center', fontSize: 12.5, color: '#5b6a86', fontWeight: 600 }}>
                         <span>{news[0].published_at ? timeAgo(news[0].published_at, isHe) : ''}</span>
                       </div>
-                      <h3 style={{ fontFamily: 'Heebo,sans-serif', fontWeight: 900, fontSize: 'clamp(18px,2vw,24px)', lineHeight: 1.25, letterSpacing: '-.03em', margin: '10px 0 10px', direction: isHe ? 'rtl' : 'ltr' }}>
+                      <h3 style={{ fontFamily: 'var(--font-display)', fontWeight: 900, fontSize: 'clamp(18px,2vw,24px)', lineHeight: 1.25, letterSpacing: '-.03em', margin: '10px 0 10px', direction: isHe ? 'rtl' : 'ltr' }}>
                         {isHe ? (news[0].title_he ?? news[0].title_en) : (news[0].title_en ?? news[0].title_he)}
                       </h3>
                       <p style={{ color: '#5b6a86', fontSize: 15, lineHeight: 1.6, margin: 0, overflow: 'hidden', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', direction: isHe ? 'rtl' : 'ltr' }}>
@@ -413,7 +438,7 @@ export default function HomeClient({ allMakes, topRanked, recentReviews, tickerI
                   <Link key={item.id} href={newsPath(item)} style={{ display: 'flex', gap: 14, background: '#fff', border: '1px solid #e4e9f2', borderRadius: 16, padding: 14, alignItems: 'center', textDecoration: 'none', color: 'inherit' }} className="ci-news-row">
                     <NewsImage src={sizedImageUrl(item.image_url, 160)} isHe={isHe} loading="lazy" style={{ width: 96, height: 70, flexShrink: 0, borderRadius: 11, padding: '0 8px' }} />
                     <span>
-                      <span style={{ fontFamily: 'Heebo,sans-serif', fontWeight: 700, fontSize: 16, lineHeight: 1.3, color: '#0d1b2f', direction: isHe ? 'rtl' : 'ltr', overflow: 'hidden', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' } as React.CSSProperties}>
+                      <span style={{ fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: 16, lineHeight: 1.3, color: '#0d1b2f', direction: isHe ? 'rtl' : 'ltr', overflow: 'hidden', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' } as React.CSSProperties}>
                         {isHe ? (item.title_he ?? item.title_en) : (item.title_en ?? item.title_he)}
                       </span>
                       <span style={{ display: 'block', fontSize: 12.5, color: '#5b6a86', marginTop: 6 }}>
@@ -432,7 +457,7 @@ export default function HomeClient({ allMakes, topRanked, recentReviews, tickerI
           <section id="models" style={{ padding: `clamp(34px,3.6vw,52px) ${GUTTER} 0` }}>
             <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: 24, flexWrap: 'wrap', marginBottom: 18 }}>
               <div data-ci-reveal>
-                <h2 style={{ fontFamily: 'Heebo,sans-serif', fontWeight: 900, fontSize: 'clamp(24px,2.6vw,34px)', letterSpacing: '-.035em', margin: '0 0 6px' }}>
+                <h2 style={{ fontFamily: 'var(--font-display)', fontWeight: 900, fontSize: 'clamp(24px,2.6vw,34px)', letterSpacing: '-.035em', margin: '0 0 6px' }}>
                   {isHe ? 'גלו דגמים' : 'Explore Models'}
                 </h2>
                 <p style={{ color: '#5b6a86', fontSize: 16, margin: 0 }}>{isHe ? 'הדגמים הפופולריים באתר השבוע' : 'Popular models on the site this week'}</p>
@@ -450,10 +475,10 @@ export default function HomeClient({ allMakes, topRanked, recentReviews, tickerI
                         /* eslint-disable-next-line @next/next/no-img-element */
                         <img src={sizedImageUrl(car.imageUrl, 400) ?? undefined} alt={name} style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} loading="lazy" />
                       )}
-                      <span style={{ position: 'absolute', top: 12, insetInlineEnd: 12, background: '#17408f', color: '#fff', fontFamily: 'Heebo,sans-serif', fontWeight: 900, fontSize: 15, padding: '5px 11px', borderRadius: 9 }}>{score}</span>
+                      <span style={{ position: 'absolute', top: 12, insetInlineEnd: 12, background: '#17408f', color: '#fff', fontFamily: 'var(--font-display)', fontWeight: 900, fontSize: 15, padding: '5px 11px', borderRadius: 9 }}>{score}</span>
                     </span>
                     <span style={{ display: 'block', padding: '13px 16px 16px' }}>
-                      <span style={{ display: 'block', fontFamily: 'Heebo,sans-serif', fontWeight: 700, fontSize: 18, color: '#0d1b2f' }}>{name}</span>
+                      <span style={{ display: 'block', fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: 18, color: '#0d1b2f' }}>{name}</span>
                       {car.reviewCount > 0 && (
                         <span style={{ display: 'block', fontSize: 13.5, color: '#5b6a86', marginTop: 4 }}>
                           {isHe ? `${car.reviewCount} ${car.reviewCount === 1 ? 'ביקורת בעלים' : 'ביקורות בעלים'}` : `${car.reviewCount} owner review${car.reviewCount === 1 ? '' : 's'}`}
@@ -474,7 +499,7 @@ export default function HomeClient({ allMakes, topRanked, recentReviews, tickerI
         {recentReviews.length > 0 && (
           <section style={{ padding: `clamp(34px,3.6vw,52px) ${GUTTER} 0` }}>
             <div data-ci-reveal style={{ marginBottom: 18 }}>
-              <h2 style={{ fontFamily: 'Heebo,sans-serif', fontWeight: 900, fontSize: 'clamp(22px,2.4vw,32px)', letterSpacing: '-.035em', margin: '0 0 6px' }}>
+              <h2 style={{ fontFamily: 'var(--font-display)', fontWeight: 900, fontSize: 'clamp(22px,2.4vw,32px)', letterSpacing: '-.035em', margin: '0 0 6px' }}>
                 {isHe ? 'ביקורות אחרונות' : 'Recent Reviews'}
               </h2>
               <p style={{ color: '#5b6a86', fontSize: 15, margin: 0 }}>{isHe ? 'מה בעלי רכב כותבים לאחרונה' : 'What owners are saying lately'}</p>
@@ -502,7 +527,7 @@ export default function HomeClient({ allMakes, topRanked, recentReviews, tickerI
                     {/* Content */}
                     <span style={{ flex: 1, minWidth: 0 }}>
                       <span style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4, flexWrap: 'wrap' }}>
-                        <span style={{ fontFamily: 'Heebo,sans-serif', fontWeight: 700, fontSize: 14, color: '#0d1b2f' }}>{carName}</span>
+                        <span style={{ fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: 14, color: '#0d1b2f' }}>{carName}</span>
                         {rv.year && <span style={{ fontSize: 12, color: '#8595a6' }}>{rv.year}</span>}
                         <span style={{ fontSize: 13, color: '#f59e0b', letterSpacing: 1 }}>{'★'.repeat(stars)}{'☆'.repeat(5 - stars)}</span>
                         <span style={{ fontSize: 11.5, color: '#a0adb8', marginInlineStart: 'auto' }}>{timeAgo(rv.created_at, isHe)}</span>
@@ -520,24 +545,24 @@ export default function HomeClient({ allMakes, topRanked, recentReviews, tickerI
         )}
 
         {/* ── Head to Head ─────────────────────────────── */}
-        <section id="head" style={{ padding: `clamp(34px,3.6vw,52px) ${GUTTER} 0` }}>
+        <section id={isRu ? 'compare' : 'head'} style={{ padding: `clamp(34px,3.6vw,52px) ${GUTTER} 0`, scrollMarginTop: 80 }}>
           <div data-ci-reveal style={{ marginBottom: 18 }}>
-            <h2 style={{ fontFamily: 'Heebo,sans-serif', fontWeight: 900, fontSize: 'clamp(24px,2.6vw,34px)', letterSpacing: '-.035em', margin: '0 0 6px' }}>
-              {isHe ? 'ראש בראש' : 'Head to Head'}
+            <h2 style={{ fontFamily: 'var(--font-display)', fontWeight: 900, fontSize: 'clamp(24px,2.6vw,34px)', letterSpacing: '-.035em', margin: '0 0 6px' }}>
+              {tr({ he: 'ראש בראש', en: 'Head to Head', ru: 'Сравнение автомобилей' })}
             </h2>
-            <p style={{ color: '#5b6a86', fontSize: 16, margin: 0 }}>{isHe ? 'ההשוואות שנבדקות הכי הרבה' : 'The comparisons people run most'}</p>
+            <p style={{ color: '#5b6a86', fontSize: 16, margin: 0 }}>{tr({ he: 'ההשוואות שנבדקות הכי הרבה', en: 'The comparisons people run most', ru: 'Цены по израильскому прайс-листу, расход, багажник, оценки владельцев и отзывные кампании' })}</p>
           </div>
           <div data-ci-group="70" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(240px,1fr))', gap: 16 }}>
             {topPairs.map((vs, i) => {
               return (
                 <Link key={i} href={vs.href} style={{ background: '#fff', border: '1px solid #e4e9f2', borderRadius: 16, padding: 20, display: 'block', textDecoration: 'none' }} className="ci-vs-card">
-                  <span style={{ display: 'grid', gridTemplateColumns: '1fr auto 1fr', alignItems: 'start', gap: 8, fontFamily: 'Heebo,sans-serif', fontWeight: 700, fontSize: 16.5, color: '#0d1b2f' }}>
+                  <span style={{ display: 'grid', gridTemplateColumns: '1fr auto 1fr', alignItems: 'start', gap: 8, fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: 16.5, color: '#0d1b2f' }}>
                     <span style={{ minWidth: 0, overflow: 'hidden', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', lineHeight: 1.25 }} title={isHe ? vs.aHe : vs.aEn}>{isHe ? vs.aHe : vs.aEn}</span>
                     <span style={{ fontSize: 11, letterSpacing: '.14em', color: '#5f6e88', paddingTop: 3 }}>VS</span>
                     <span style={{ minWidth: 0, overflow: 'hidden', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', lineHeight: 1.25, textAlign: 'end' }} title={isHe ? vs.bHe : vs.bEn}>{isHe ? vs.bHe : vs.bEn}</span>
                   </span>
                   <span style={{ display: 'block', fontSize: 12.5, color: '#5b6a86', marginTop: 12 }}>
-                    {isHe ? 'להשוואת דגמים' : 'Compare these models'}
+                    {tr({ he: 'להשוואת דגמים', en: 'Compare these models', ru: 'Сравнить →' })}
                   </span>
                 </Link>
               );
@@ -547,19 +572,25 @@ export default function HomeClient({ allMakes, topRanked, recentReviews, tickerI
 
       </div>{/* /maxw wrapper */}
 
-      {/* ── Closing CTA - Israeli plate lookup, Hebrew site only ── */}
-      {isHe && (
+      {/* ── Closing CTA - Israeli plate lookup (Hebrew and Russian sites) ── */}
+      {!isEn && (
         <section style={{ background: '#0d1b2f', color: '#fff', padding: 'clamp(40px,4.5vw,64px) clamp(16px,3vw,32px)', marginTop: 'clamp(34px,3.6vw,52px)' }}>
           <div data-ci-group="90" style={{ maxWidth: 820, margin: '0 auto', textAlign: 'center' }}>
-            <h2 style={{ fontFamily: 'Heebo,sans-serif', fontWeight: 900, fontSize: 'clamp(24px,2.8vw,38px)', lineHeight: 1.12, letterSpacing: '-.04em', margin: 0, color: '#fff' }}>
-              בדיקת פרטי רכב לפי מספר רישוי
+            <h2 style={{ fontFamily: 'var(--font-display)', fontWeight: 900, fontSize: 'clamp(24px,2.8vw,38px)', lineHeight: 1.12, letterSpacing: '-.04em', margin: 0, color: '#fff' }}>
+              {tr({ he: 'בדיקת פרטי רכב לפי מספר רישוי', en: '', ru: 'Покупаете подержанный автомобиль?' })}
             </h2>
             <p style={{ color: '#b8c8e4', fontSize: 'clamp(15px,1.2vw,17px)', margin: '12px 0 20px' }}>
-              בעלות, ריקולים פתוחים, נסועה, בטיחות וצבע מקורי - הכל במקום אחד.
+              {tr({ he: 'בעלות, ריקולים פתוחים, נסועה, בטיחות וצבע מקורי - הכל במקום אחד.', en: '', ru: 'Техосмотр, история владения, пробег и повреждения по номеру — бесплатно, за несколько секунд.' })}
             </p>
-            <Link href="/vehicle-lookup" style={{ display: 'inline-block', background: '#fff', color: '#0d1b2f', fontWeight: 800, fontSize: 16, padding: '13px 30px', borderRadius: 13 }}>
-              בדיקת רכב ←
+            <Link href={localHref(locale, '/vehicle-lookup')} style={{ display: 'inline-block', background: '#fff', color: '#0d1b2f', fontWeight: 800, fontSize: 16, padding: '13px 30px', borderRadius: 13 }}>
+              {tr({ he: 'בדיקת רכב ←', en: '', ru: 'Проверить авто по номеру →' })}
             </Link>
+            {isRu && (
+              <p style={{ color: '#93a5c0', fontSize: 14, margin: '22px 0 0' }}>
+                Отзывы владельцев, страницы моделей и стоимость ремонта пока доступны только на иврите.{' '}
+                <Link href="/" hrefLang="he" style={{ color: '#8fb3ff', fontWeight: 700, textDecoration: 'none' }}>Сайт на иврите →</Link>
+              </p>
+            )}
           </div>
         </section>
       )}
