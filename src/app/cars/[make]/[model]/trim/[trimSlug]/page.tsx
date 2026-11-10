@@ -326,12 +326,12 @@ export default async function TrimPage({ params }: Props) {
         <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 32 }}>
           {prevTrim ? (
             <Link href={`/cars/${make.slug}/${model.slug}/trim/${toTrimSlug(prevTrim.name)}`} style={{ color: 'var(--accent)', textDecoration: 'none', fontSize: '0.9rem' }}>
-              ← {isEn ? 'Trim' : 'גימור'} {prevTrim.name}
+              ← {isEn ? 'Trim' : 'גימור'} {isEn ? trimNameEn(prevTrim.name) : prevTrim.name}
             </Link>
           ) : <span />}
           {nextTrim ? (
             <Link href={`/cars/${make.slug}/${model.slug}/trim/${toTrimSlug(nextTrim.name)}`} style={{ color: 'var(--accent)', textDecoration: 'none', fontSize: '0.9rem' }}>
-              {isEn ? 'Trim' : 'גימור'} {nextTrim.name} →
+              {isEn ? 'Trim' : 'גימור'} {isEn ? trimNameEn(nextTrim.name) : nextTrim.name} →
             </Link>
           ) : <span />}
         </div>
