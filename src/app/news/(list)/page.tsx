@@ -19,11 +19,11 @@ export async function generateMetadata({ searchParams }: Props): Promise<Metadat
   const pageSuffix = page > 1 ? (locale === 'he' ? ` - עמוד ${page}` : ` - Page ${page}`) : '';
   return locale === 'he' ? {
     title: `חדשות רכב${pageSuffix}`,
-    description: 'חדשות רכב עדכניות מהעולם - עיבוד ותרגום AI, מתעדכן יומית',
+    description: 'חדשות רכב עדכניות מהעולם, מתעדכן יומית',
     alternates: { canonical },
   } : {
     title: `Car News${pageSuffix}`,
-    description: 'Latest car news from around the world - AI-rewritten daily',
+    description: 'Latest car news from around the world, updated daily',
     alternates: { canonical },
   };
 }
@@ -70,8 +70,8 @@ export default async function NewsPage({ searchParams }: Props) {
           </h1>
           <p style={{ margin: 0, color: 'var(--text-muted)', fontSize: '0.875rem' }}>
             {isHe
-              ? 'חדשות מהעולם, עיבוד מחדש בידי AI - מתעדכן יומית'
-              : 'World automotive news, AI-rewritten - updated daily'}
+              ? 'חדשות רכב מהעולם - מתעדכן יומית'
+              : 'World automotive news - updated daily'}
           </p>
         </div>
 

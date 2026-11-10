@@ -91,9 +91,11 @@ export default async function IssuesPage({ params }: Props) {
   const pros = isEn ? (expertReview?.prosEn ?? []) : (expertReview?.pros ?? []);
   const aiSummary = isEn ? expertReview?.localSummaryEn : expertReview?.localSummaryHe;
 
-  // Reviews mentioning problems
+  // Reviews mentioning problems. English pages show only reviews with an English
+  // translation (body_en), never the Hebrew original, and no Hebrew author names.
   const problemReviews = allReviews
-    .filter(r => r.rating <= 3 || (r.body && r.body.length > 50))
+    .map(r => (isEn ? { ...r, body: r.bodyEn ?? '', authorName: r.authorName && !/[\u0590-\u05FF]/.test(r.authorName) ? r.authorName : null } : r))
+    .filter(r => (!isEn || !!r.body) && (r.rating <= 3 || (r.body && r.body.length > 50)))
     .slice(0, 5);
 
   const faqItems = [
