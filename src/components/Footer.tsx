@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useLocale } from '@/lib/localeContext';
+import { pick } from '@/lib/i18n';
 
 
 function LangSwitch({ isEn }: { isEn: boolean }) {
@@ -49,11 +50,45 @@ function LangSwitch({ isEn }: { isEn: boolean }) {
   );
 }
 
-export default function Footer() {
-  const { locale } = useLocale();
-  const isEn = locale === 'en';
+const pillStyle: React.CSSProperties = {
+  display: 'inline-flex', alignItems: 'center', fontSize: '0.75rem', fontWeight: 700, color: '#93a5c0',
+  textDecoration: 'none', border: '1.5px solid rgba(255,255,255,.2)', borderRadius: 8, padding: '5px 12px',
+};
 
-  const cols = [
+export default function Footer() {
+  const { locale, t } = useLocale();
+  const isEn = locale === 'en';
+  const isRu = locale === 'ru';
+
+  // The Russian site links its own pages (/ru URLs) and labels the Hebrew-only ones.
+  const ruCols = [
+    {
+      head: 'На русском',
+      links: [
+        { href: '/ru', label: 'Главная' },
+        { href: '/ru/vehicle-lookup', label: 'Проверка авто по номеру' },
+        { href: '/ru#compare', label: 'Сравнение автомобилей' },
+      ],
+    },
+    {
+      head: 'На иврите',
+      links: [
+        { href: '/cars', label: 'Все марки и модели' },
+        { href: '/rankings', label: 'Рейтинги моделей' },
+        { href: '/repairs', label: 'Стоимость ремонта' },
+      ],
+    },
+    {
+      head: 'Информация',
+      links: [
+        { href: '/privacy', label: `${t.footer.links.find((l) => l.href === '/privacy')?.label ?? 'Конфиденциальность'} (на иврите)` },
+        { href: '/terms', label: `${t.footer.links.find((l) => l.href === '/terms')?.label ?? 'Условия'} (на иврите)` },
+        { href: '/contact', label: `${t.footer.links.find((l) => l.href === '/contact')?.label ?? 'Контакты'} (на иврите)` },
+      ],
+    },
+  ];
+
+  const cols = isRu ? ruCols : [
     {
       head: isEn ? 'Explore' : 'עיון',
       links: [
@@ -92,15 +127,22 @@ export default function Footer() {
               <img src={isEn ? '/logo-net.png' : '/logo-light.png'} alt={isEn ? 'carissues.net' : 'carissues.co.il'} style={{ height: isEn ? 48 : 28, width: 'auto', display: 'block' }} />
             </span>
             <p style={{ fontSize: 13.5, lineHeight: 1.5, margin: 0, color: '#93a5c0' }} className="footer-tagline">
-              {isEn
-                ? 'Car model information, owner reviews, recalls and repair costs.'
-                : 'מידע על דגמי רכב, ביקורות בעלים, ריקולים ועלויות תיקון.'}
+              {pick(locale, {
+                he: 'מידע על דגמי רכב, ביקורות בעלים, ריקולים ועלויות תיקון.',
+                en: 'Car model information, owner reviews, recalls and repair costs.',
+                ru: t.footer.about,
+              })}
             </p>
           </div>
           <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-            <LangSwitch isEn={isEn} />
+            {isRu ? (
+              <>
+                <Link href="/" lang="he" hrefLang="he" className="lang-switch-dark" style={pillStyle}>עברית</Link>
+                <a href="https://carissues.net" lang="en" hrefLang="en" className="lang-switch-dark" style={pillStyle}>🌐 EN</a>
+              </>
+            ) : <LangSwitch isEn={isEn} />}
             {/* Russian pilot pages exist on the Hebrew site only */}
-            {!isEn && (
+            {locale === 'he' && (
               <Link href="/ru" lang="ru" hrefLang="ru" className="lang-switch-dark" style={{
                 display: 'inline-flex', alignItems: 'center', fontSize: '0.75rem', fontWeight: 700, color: '#93a5c0',
                 textDecoration: 'none', border: '1.5px solid rgba(255,255,255,.2)', borderRadius: 8, padding: '5px 12px',
@@ -116,7 +158,7 @@ export default function Footer() {
               <div style={{ color: '#fff', fontWeight: 700, fontSize: 13.5, marginBottom: 10 }}>{col.head}</div>
               <div style={{ display: 'grid', gap: 7, fontSize: 13.5 }}>
                 {col.links.map(l => (
-                  <Link key={l.href} href={l.href} className="footer-link" style={{ color: '#93a5c0', textDecoration: 'none' }}>
+                  <Link key={l.href} href={l.href} hrefLang={isRu && !l.href.startsWith('/ru') ? 'he' : undefined} className="footer-link" style={{ color: '#93a5c0', textDecoration: 'none' }}>
                     {l.label}
                   </Link>
                 ))}
