@@ -1,9 +1,16 @@
 'use client';
 import { useState, useEffect, useRef } from 'react';
 import type { Recall } from '@/app/api/recalls/route';
+import { ilRecallYears } from '@/lib/recallYears';
 
 const COLOR_A = '#22d3ee'; // cyan
 const COLOR_B = '#a78bfa'; // purple
+
+/** The last six model years, newest first - the window this comparison covers. */
+function lastYears(): number[] {
+  const y = new Date().getFullYear();
+  return Array.from({ length: 6 }, (_, i) => y - i);
+}
 
 function RecallsYearChart({ recalls1, recalls2, name1, name2, isHe }: {
   recalls1: Recall[]; recalls2: Recall[]; name1: string; name2: string; isHe: boolean;
@@ -22,7 +29,12 @@ function RecallsYearChart({ recalls1, recalls2, name1, name2, isHe }: {
 
   const countByYear = (recalls: Recall[]) => {
     const m = new Map<number, number>();
-    for (const r of recalls) if (r.year) m.set(r.year, (m.get(r.year) ?? 0) + 1);
+    const covered = lastYears();
+    for (const r of recalls) {
+      // Israeli notices have a production window instead of a model year
+      const ys = r.source === 'il' ? ilRecallYears(r, covered) : r.year ? [r.year] : [];
+      for (const y of ys) m.set(y, (m.get(y) ?? 0) + 1);
+    }
     return m;
   };
 
@@ -140,14 +152,13 @@ export default function RecallsCompare({ make1, model1, name1, make2, model2, na
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const currentYear = new Date().getFullYear();
-    const years = Array.from({ length: 6 }, (_, i) => currentYear - i).join(',');
-    Promise.all([
-      fetch(`/api/recalls?make=${encodeURIComponent(make1En)}&model=${encodeURIComponent(model1En)}&years=${years}&locale=en`)
-        .then(r => r.json()).then((d: { recalls: Recall[] }) => d.recalls ?? []).catch(() => []),
-      fetch(`/api/recalls?make=${encodeURIComponent(make2En)}&model=${encodeURIComponent(model2En)}&years=${years}&locale=en`)
-        .then(r => r.json()).then((d: { recalls: Recall[] }) => d.recalls ?? []).catch(() => []),
-    ]).then(([r1, r2]) => {
+    const years = lastYears().join(',');
+    // Hebrew site: Israeli notices (Ministry of Transport) are added to the US ones
+    const extra = locale === 'he' ? '&locale=he&il=1' : '&locale=en';
+    const get = (make: string, model: string) =>
+      fetch(`/api/recalls?make=${encodeURIComponent(make)}&model=${encodeURIComponent(model)}&years=${years}${extra}`)
+        .then(r => r.json()).then((d: { recalls: Recall[] }) => d.recalls ?? []).catch(() => [] as Recall[]);
+    Promise.all([get(make1En, model1En), get(make2En, model2En)]).then(([r1, r2]) => {
       setRecalls1(r1);
       setRecalls2(r2);
       setLoading(false);
@@ -159,6 +170,10 @@ export default function RecallsCompare({ make1, model1, name1, make2, model2, na
 
   const count1 = recalls1?.length ?? 0;
   const count2 = recalls2?.length ?? 0;
+  const ilCount = (rs: Recall[] | null) => (rs ?? []).filter(r => r.source === 'il').length;
+  const il1 = ilCount(recalls1);
+  const il2 = ilCount(recalls2);
+  const withIl = il1 + il2 > 0;
   const fewerRecalls = count1 < count2 ? 'a' : count2 < count1 ? 'b' : 'tie';
 
   const isHe = locale === 'he';
@@ -182,6 +197,7 @@ export default function RecallsCompare({ make1, model1, name1, make2, model2, na
               {count1}
             </div>
             <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: 4 }}>{name1}</div>
+            {withIl && <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', marginTop: 2 }}>{il1} בישראל · {count1 - il1} בארה״ב</div>}
             {fewerRecalls === 'a' && count1 !== count2 && (
               <div style={{ fontSize: '0.7rem', color: '#16a34a', marginTop: 4, fontWeight: 700 }}>
                 🏆 {isHe ? 'פחות ריקולים' : 'Fewer recalls'}
@@ -197,6 +213,7 @@ export default function RecallsCompare({ make1, model1, name1, make2, model2, na
               {count2}
             </div>
             <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: 4 }}>{name2}</div>
+            {withIl && <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', marginTop: 2 }}>{il2} בישראל · {count2 - il2} בארה״ב</div>}
             {fewerRecalls === 'b' && count1 !== count2 && (
               <div style={{ fontSize: '0.7rem', color: '#16a34a', marginTop: 4, fontWeight: 700 }}>
                 🏆 {isHe ? 'פחות ריקולים' : 'Fewer recalls'}
@@ -229,9 +246,12 @@ export default function RecallsCompare({ make1, model1, name1, make2, model2, na
                         fontSize: '0.72rem', lineHeight: 1.4,
                       }}>
                         <div style={{ fontWeight: 700, color: 'var(--text)', marginBottom: 2 }}>
-                          {r.year ? `${r.year} · ` : ''}{r.component}
+                          {r.source === 'il' ? 'ישראל · ' : r.year ? `${r.year} · ` : ''}{r.source === 'il' && (!r.component || r.component === 'אחר') && r.summary
+                            // "אחר" (other) says nothing - show the start of the fault text instead
+                            ? (r.summary.length > 60 ? `${r.summary.slice(0, 60).replace(/\s+\S*$/, '')}…` : r.summary)
+                            : r.component || (isHe ? 'קריאת שירות' : 'Recall')}
                         </div>
-                        <div style={{ color: 'var(--text-muted)' }}>{r.date}</div>
+                        <div style={{ color: 'var(--text-muted)' }}>{r.source === 'il' ? (r.ilRecallYear ? `קריאת שירות משנת ${r.ilRecallYear}` : '') : r.date}</div>
                       </div>
                     ))}
                     {recalls.length > 4 && (
@@ -252,7 +272,11 @@ export default function RecallsCompare({ make1, model1, name1, make2, model2, na
         />
 
         <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)', marginTop: 16, borderTop: '1px solid var(--border)', paddingTop: 8 }}>
-          {isHe ? 'ריקולים בארה״ב · מוצגים ריקולים מ-6 שנים אחרונות' : 'US recalls · Showing recalls from the last 6 years'}
+          {isHe
+            ? (withIl
+              ? 'ריקולים בישראל (משרד התחבורה) ובארה״ב (NHTSA) לשנות הדגם 6 השנים האחרונות. קריאה ישראלית נספרת בכל שנת דגם שבטווח הייצור שלה.'
+              : 'ריקולים בארה״ב · מוצגים ריקולים מ-6 שנים אחרונות')
+            : 'US recalls · Showing recalls from the last 6 years'}
         </div>
       </div>
     </div>
