@@ -1,7 +1,8 @@
 /**
  * Recalls for a model, shaped like the /api/recalls response, loaded on the server so
  * the problems tab is part of the page HTML instead of being fetched after a click.
- * Israeli notices (Hebrew site only) come first, then the cached US recalls.
+ * Israeli notices (Hebrew site only) come first, then the cached US recalls. Both are
+ * limited to the model years the site covers.
  */
 import type { Recall } from '@/app/api/recalls/route';
 import { getIsraeliRecalls, buildWindowOverlaps } from './israeliRecallsDb';
@@ -44,7 +45,12 @@ export async function getRecallsForPage(
     recallType: r.recallType,
   }));
 
-  const usRows: Recall[] = us.map((c) => {
+  // Only recalls for model years the site covers; a recall with no recorded year is kept.
+  const usInRange = years.length
+    ? us.filter((c) => c.recall_year == null || (c.recall_year >= Math.min(...years) && c.recall_year <= Math.max(...years)))
+    : us;
+
+  const usRows: Recall[] = usInRange.map((c) => {
     const compEn = lastSegment(c.component_en);
     return {
       id: c.id,
