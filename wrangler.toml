@@ -44,5 +44,22 @@ database_name = "car-issues-db"
 database_id = "090762ad-b029-4883-b827-9376cdee1ed2"
 remote = true
 
+# OpenNext tag cache (revalidatePath/revalidateTag) — same D1 database, table `revalidations`
+[[d1_databases]]
+binding = "NEXT_TAG_CACHE_D1"
+database_name = "car-issues-db"
+database_id = "090762ad-b029-4883-b827-9376cdee1ed2"
+remote = true
+
+# OpenNext incremental cache: rendered pages, so `revalidate` actually caches (open-next.config.ts)
+[[r2_buckets]]
+binding = "NEXT_INC_CACHE_R2_BUCKET"
+bucket_name = "car-issues-next-cache"
+
+# memoryQueue re-renders stale pages by calling this Worker
+[[services]]
+binding = "WORKER_SELF_REFERENCE"
+service = "car-issues-il"
+
 [ai]
 binding = "AI"
