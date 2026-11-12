@@ -31,8 +31,49 @@ async function recordDispatch(env, cron, path, status, ok, note) {
 // Logs human HTML page views only: GET document requests, no /api, /_next, files or bots.
 // Written in ctx.waitUntil so it never delays the response; failures are swallowed.
 const VISIT_RETENTION_DAYS = 90;
-const VISIT_BOT_UA = /bot|crawl|spider|slurp|headless|lighthouse|pagespeed|preview|facebookexternalhit|whatsapp|telegram|curl|wget|python|go-http|axios|node-fetch|httpclient|java\/|monitor|uptime/i;
+const VISIT_BOT_UA = /bot|crawl|spider|slurp|headless|lighthouse|pagespeed|preview|facebookexternalhit|whatsapp|telegram|curl|wget|python|go-http|axios|node-fetch|httpclient|java\/|monitor|uptime|lightpanda|carissues-qa/i;
 const VISIT_HOSTS = /(^|\.)carissues\.(co\.il|net)$/;
+
+// Scrapers that send a normal-looking browser user agent (measured 2026-11-12: ~95% of
+// logged rows). Three signals, each checked against the rows already in page_visits:
+// 1. Hosting / proxy networks the swarm came from. Real visitors do not browse from these.
+//    Google's 15169 is deliberately absent: Israeli Chrome users arrive through it.
+const VISIT_BOT_ASNS = new Set([
+  214483, // RapidSeedbox
+  132203, // Tencent / Aceville ("6 Collyer Quay")
+  45090,  // Tencent Cloud
+  136907, 55990, // Huawei Cloud
+  45102,  // Alibaba Cloud
+  62610,  // MB Eisina / Pilo IP / Nuba IP
+  35758,  // Brander Group (proxy IPs that geolocate to Israel)
+  396982, // Google Cloud (our own QA browsers run here too)
+  14061, 51167, 24940, 16276, 63949, 20473, // DigitalOcean, Contabo, Hetzner, OVH, Linode, Vultr
+]);
+// 2. Desktop browsers auto-update, so a desktop Chrome/Firefox this old is a canned bot
+//    string. Floors are far behind current (Chrome 157 in Nov 2026); raise them once a year.
+//    Phones are exempt: old Android devices really do run old Chrome.
+const MIN_DESKTOP_CHROME = 135;
+const MIN_DESKTOP_FIREFOX = 128;
+// 3. One fixed iPhone string used by the swarm (iOS 13.2.3, released 2019).
+const VISIT_FAKE_UA = /iPhone OS 13_2_3 /;
+
+function isDisguisedBot(request, ua) {
+  const asn = request.cf && request.cf.asn;
+  if (asn && VISIT_BOT_ASNS.has(asn)) return true;
+  if (VISIT_FAKE_UA.test(ua)) return true;
+  // Every real browser sends Accept-Language on a page load
+  if (!request.headers.get("accept-language")) return true;
+  if (/Windows NT|Macintosh|X11/.test(ua)) {
+    const chrome = ua.match(/Chrome\/(\d+)/);
+    if (chrome && Number(chrome[1]) < MIN_DESKTOP_CHROME) return true;
+    const firefox = ua.match(/Firefox\/(\d+)/);
+    if (firefox && Number(firefox[1]) < MIN_DESKTOP_FIREFOX) return true;
+  }
+  // Chromium has sent Sec-Fetch-Dest on navigations since v80; HTTP libraries faking a
+  // Chrome user agent usually do not.
+  if (/Chrome\//.test(ua) && !request.headers.get("sec-fetch-dest")) return true;
+  return false;
+}
 
 function parseUa(ua) {
   const device = /ipad|tablet/i.test(ua) ? "tablet" : /mobi|iphone|android/i.test(ua) ? "mobile" : "desktop";
@@ -61,7 +102,7 @@ function shouldLogVisit(request, url, response) {
   if (!dest && !(request.headers.get("accept") || "").includes("text/html")) return false;
   if (request.headers.get("rsc") || request.headers.get("next-router-prefetch")) return false;
   const ua = request.headers.get("user-agent") || "";
-  if (!ua || VISIT_BOT_UA.test(ua)) return false;
+  if (!ua || VISIT_BOT_UA.test(ua) || isDisguisedBot(request, ua)) return false;
   // Redirects (www → apex, geo) would double-count; keep real pages and 404s
   return response.status < 300 || response.status === 404;
 }
