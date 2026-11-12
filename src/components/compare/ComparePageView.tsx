@@ -3,7 +3,7 @@
  * carissues.co.il (he) and carissues.net (en), and /ru/cars/compare/... (ru, only the pairs
  * in RU_COMPARE_PAIRS). Each route handles metadata, redirects and 404s, then renders this.
  *
- * Russian uses the English data (Latin names, English pros/cons, labelled) with Israeli ILS
+ * Russian uses the English data (Latin names; Russian pros/cons where translated, else English, labelled) with Israeli ILS
  * prices. The AI summary, recall list and owner-review highlights have Hebrew/English text
  * only, so they are not rendered on /ru; links to Hebrew-only pages say "(на иврите)".
  */
@@ -98,18 +98,26 @@ export default async function ComparePageView({ make1, model1, make2, model2, lo
   const hasHeb = (s: string) => /[\u0590-\u05FF]/.test(s);
   const cleanPros = (items: string[]) => items.filter(p => !/ציין שהדור החדש קטן מבפנים מקודמו/.test(p));
   const cleanCons = (items: string[]) => items.filter(p => !/ציין שהדור החדש קטן מבפנים מקודמו/.test(p));
+  // Russian: the translated lists (pros_ru/cons_ru) when a model has them, else the English ones
+  const ruOr = (ru: string[] | undefined, en: string[] | undefined) =>
+    (isRu && ru && ru.length > 0 ? ru : (en ?? []).filter(x => x && !hasHeb(x)));
+  const ruUsed = (ru: string[] | undefined, en: string[] | undefined) => !!(ru && ru.length > 0) || !(en && en.length > 0);
   const prosA = !isHe
-    ? (expertA[0]?.prosEn?.filter(p => p && !hasHeb(p)) ?? [])
+    ? ruOr(expertA[0]?.prosRu, expertA[0]?.prosEn)
     : cleanPros(expertA[0]?.pros ?? []).map(p => p.replace(/[—–]/g, '-'));
   const consA = !isHe
-    ? (expertA[0]?.consEn?.filter(c => c && !hasHeb(c)) ?? [])
+    ? ruOr(expertA[0]?.consRu, expertA[0]?.consEn)
     : cleanCons(expertA[0]?.cons ?? []).map(p => p.replace(/[—–]/g, '-'));
   const prosB = !isHe
-    ? (expertB[0]?.prosEn?.filter(p => p && !hasHeb(p)) ?? [])
+    ? ruOr(expertB[0]?.prosRu, expertB[0]?.prosEn)
     : cleanPros(expertB[0]?.pros ?? []).map(p => p.replace(/[—–]/g, '-'));
   const consB = !isHe
-    ? (expertB[0]?.consEn?.filter(c => c && !hasHeb(c)) ?? [])
+    ? ruOr(expertB[0]?.consRu, expertB[0]?.consEn)
     : cleanCons(expertB[0]?.cons ?? []).map(p => p.replace(/[—–]/g, '-'));
+  // Whether any list on the Russian page is still the English fallback (then it is labelled)
+  const ruHasEnglish = isRu && !(
+    ruUsed(expertA[0]?.prosRu, expertA[0]?.prosEn) && ruUsed(expertA[0]?.consRu, expertA[0]?.consEn)
+    && ruUsed(expertB[0]?.prosRu, expertB[0]?.prosEn) && ruUsed(expertB[0]?.consRu, expertB[0]?.consEn));
 
   // ── Performance data aggregation ─────────────────────────────────────────────
   const maxVal = (trims: TrimSpecWithYear[], key: keyof TrimSpecWithYear): number | null =>
@@ -757,8 +765,8 @@ export default async function ComparePageView({ make1, model1, make2, model2, lo
         {(prosA.length > 0 || prosB.length > 0 || consA.length > 0 || consB.length > 0) && (
           <div className="card" style={{ padding: '24px 28px', marginBottom: 28 }}>
             <h2 style={{ fontWeight: 800, fontSize: '1rem', marginBottom: isRu ? 4 : 20 }}>{sp.prosAndConsTitle}</h2>
-            {/* Pros/cons exist only in Hebrew and English: the Russian page shows the English ones, labelled */}
-            {isRu && <p style={{ margin: '0 0 16px', fontSize: '0.8rem', color: 'var(--text-muted)' }}>Из обзоров и отзывов владельцев; на английском языке.</p>}
+            {/* Russian: translated pros/cons where available; English fallback is labelled */}
+            {isRu && <p style={{ margin: '0 0 16px', fontSize: '0.8rem', color: 'var(--text-muted)' }}>{ruHasEnglish ? 'Из обзоров и отзывов владельцев; частично на английском языке.' : 'Из обзоров и отзывов владельцев.'}</p>}
             <div className="cmp-proscons-flex" style={{ display: 'flex', gap: 24, flexWrap: 'wrap' }}>
               <div style={{ flex: 1, minWidth: 200 }}>
                 <div style={{ fontWeight: 700, marginBottom: 12, fontSize: '0.9rem' }}>{nameA}</div>

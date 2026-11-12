@@ -50,6 +50,9 @@ export interface ExpertReview {
   cons: string[];
   prosEn: string[];
   consEn: string[];
+  /** Russian pros/cons (pros_ru/cons_ru); empty when not translated yet */
+  prosRu?: string[];
+  consRu?: string[];
   localSummaryEn: string | null;
   globalSummaryEn: string | null;
   summaryEn: string | null;
@@ -1213,6 +1216,8 @@ function mapRow(r: any): ExpertReview {
     cons: (() => { try { return Array.isArray(r.cons) ? r.cons : JSON.parse(String(r.cons || '[]')); } catch { return []; } })(),
     prosEn: (() => { try { const arr = Array.isArray(r.pros_en) ? r.pros_en : JSON.parse(String(r.pros_en || '[]')); return arr.map(stripIsraelEn); } catch { return []; } })(),
     consEn: (() => { try { const arr = Array.isArray(r.cons_en) ? r.cons_en : JSON.parse(String(r.cons_en || '[]')); return arr.map(stripIsraelEn); } catch { return []; } })(),
+    prosRu: (() => { try { const arr = Array.isArray(r.pros_ru) ? r.pros_ru : JSON.parse(String(r.pros_ru || '[]')); return Array.isArray(arr) ? arr.filter((x: unknown) => typeof x === 'string' && x) : []; } catch { return []; } })(),
+    consRu: (() => { try { const arr = Array.isArray(r.cons_ru) ? r.cons_ru : JSON.parse(String(r.cons_ru || '[]')); return Array.isArray(arr) ? arr.filter((x: unknown) => typeof x === 'string' && x) : []; } catch { return []; } })(),
     localSummaryEn: r.local_summary_en ? stripIsraelEn(r.local_summary_en) : null,
     globalSummaryEn: r.global_summary_en ? stripIsraelEn(r.global_summary_en) : null,
     summaryEn: r.summary_en ? stripIsraelEn(r.summary_en) : null,
