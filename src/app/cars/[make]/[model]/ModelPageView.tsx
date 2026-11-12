@@ -16,7 +16,7 @@ import ModelReviewsSection from './ModelReviewsSection';
 import SharePopup from '@/components/SharePopup';
 import CarSidebarLayout from './CarSidebarLayout';
 import { getRecallsForPage } from '@/lib/recallsForPage';
-import { realItems } from '@/lib/faqData';
+import { getArticleWeaknesses } from '@/lib/modelSynthesis';
 import { summarizeIlRecalls, buildIssuesIntro } from '@/lib/issuesSummary';
 import RepairCostsSection from '@/components/RepairCostsSection';
 import { getImagesForCar } from '@/lib/carImages';
@@ -78,7 +78,10 @@ export default async function ModelPageView({ makeSlug, modelSlug, initialTab, v
   // count and the tab count never drift apart.
   const recallCount = recalls.length + israeliRecalls.length;
   // Problems tab content, rendered on the server so it is part of the page HTML.
-  const pageRecalls = await getRecallsForPage(make.nameEn, model.nameEn, model.years, locale).catch(() => undefined);
+  const [pageRecalls, articleFindings] = await Promise.all([
+    getRecallsForPage(make.nameEn, model.nameEn, model.years, locale).catch(() => undefined),
+    getArticleWeaknesses(makeSlug, modelSlug, locale),
+  ]);
   const ilSummary = summarizeIlRecalls((pageRecalls ?? []).filter(r => r.source === 'il')
     .map(r => ({ year: r.ilRecallYear ?? null, faultType: r.component, recallType: r.recallType ?? null })));
   const usRecallCount = (pageRecalls ?? []).filter(r => r.source === 'us').length;
@@ -151,8 +154,8 @@ export default async function ModelPageView({ makeSlug, modelSlug, initialTab, v
       ? `${usRecallCount} US recall${usRecallCount === 1 ? '' : 's'}`
       : `${usRecallCount === 1 ? 'ריקול אחד' : `${usRecallCount} ריקולים`} בארה״ב`),
   ].filter(Boolean).join(' · ');
-  // Opening lines of the problems tab: recall counts only, all from official records.
-  const recallsIntro = issuesView && (ilSummary.total > 0 || usRecallCount > 0)
+  // Summary paragraph of the problems tab: recall counts only, all from official records.
+  const recallsIntro = (ilSummary.total > 0 || usRecallCount > 0)
     ? buildIssuesIntro({ makeName, modelName, il: ilSummary, usRecallCount, cons: [] }, locale)
     : undefined;
 
@@ -329,7 +332,7 @@ export default async function ModelPageView({ makeSlug, modelSlug, initialTab, v
         initialTab={issuesView ? 'recalls' : initialTab}
         initialRecalls={pageRecalls}
         recallsIntro={recallsIntro}
-        weaknesses={issuesView ? realItems(isEn ? expertReview?.consEn : expertReview?.cons).slice(0, 4) : undefined}
+        articleFindings={articleFindings}
         safetyHe={safetyHeForClient}
         techComfortHe={techComfortHeForClient}
       >

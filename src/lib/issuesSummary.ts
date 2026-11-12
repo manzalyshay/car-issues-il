@@ -81,6 +81,11 @@ export function buildIssuesIntro(f: IssuesFacts, locale: 'he' | 'en'): string {
     let s = `ל${name} פורסמו בישראל ${heRecallCount(f.il.total)} (ריקול) רשמיות במאגר משרד התחבורה`;
     if (f.il.latestYear) s += `, האחרונה בשנת ${f.il.latestYear}`;
     parts.push(`${s}.`);
+    if (f.il.safety > 0) {
+      parts.push(f.il.safety === f.il.total
+        ? (f.il.total === 1 ? 'היא סווגה כתקלה סדרתית בטיחותית.' : 'כולן סווגו כתקלה סדרתית בטיחותית.')
+        : `${f.il.safety} מהן סווגו כתקלה סדרתית בטיחותית.`);
+    }
     if (f.il.systems.length > 0) {
       const top = f.il.systems.slice(0, 3).map((x) => (f.il.total > 1 ? `${x.label} (${x.count})` : x.label));
       parts.push(`${f.il.systems.length === 1 ? 'המערכת שבה נמצאה התקלה' : 'המערכות שחזרו הכי הרבה'}: ${top.join(', ')}.`);

@@ -9,6 +9,7 @@ import Car3DViewer from '@/components/Car3DViewer';
 import TrimSpecsTab from '@/components/TrimSpecsTab';
 import RecallsSection from '@/components/RecallsSection';
 import type { Recall } from '@/app/api/recalls/route';
+import type { ArticleFinding } from '@/lib/modelSynthesis';
 import { useLocale } from '@/lib/localeContext';
 import type { CarVideo } from '@/lib/youtubeVideos';
 import type { CarImage } from '@/lib/carImages';
@@ -40,8 +41,8 @@ interface Props {
   initialRecalls?: Recall[];
   /** Opening lines shown above the recall list on the problems view. */
   recallsIntro?: string;
-  /** The model's main weaknesses, listed above the recalls on the problems view. */
-  weaknesses?: string[];
+  /** Weaknesses found in published road tests, each with its source. */
+  articleFindings?: ArticleFinding[];
   children: React.ReactNode;
 }
 
@@ -53,7 +54,7 @@ function resolveTab(raw?: string): Tab {
   return VALID_TABS.includes(raw as Tab) ? raw as Tab : 'reviews';
 }
 
-export default function CarSidebarLayout({ makeSlug, modelSlug, makeNameHe, modelNameHe, makeNameEn, modelNameEn, makeEn, modelEn, modelYears, defaultYear, hasSpecs = true, hasTrimEquipment = false, hasImages = true, hasVideos = true, hasRepairCosts = true, sketchfabModel, initialTab, year, safetyHe, techComfortHe, initialRecalls, recallsIntro, weaknesses, children }: Props) {
+export default function CarSidebarLayout({ makeSlug, modelSlug, makeNameHe, modelNameHe, makeNameEn, modelNameEn, makeEn, modelEn, modelYears, defaultYear, hasSpecs = true, hasTrimEquipment = false, hasImages = true, hasVideos = true, hasRepairCosts = true, sketchfabModel, initialTab, year, safetyHe, techComfortHe, initialRecalls, recallsIntro, articleFindings, children }: Props) {
   const hasSafety = hasTrimEquipment || !!(safetyHe || techComfortHe);
   const { t, locale } = useLocale();
   const s = t.sidebar;
@@ -269,7 +270,7 @@ export default function CarSidebarLayout({ makeSlug, modelSlug, makeNameHe, mode
           {/* Issues tab - recalls */}
           {tab === 'recalls' && makeEn && modelEn && (
             <div>
-              <RecallsSection makeEn={makeEn} modelEn={modelEn} years={modelYears} initialRecalls={initialRecalls} intro={recallsIntro} weaknesses={weaknesses} />
+              <RecallsSection makeEn={makeEn} modelEn={modelEn} years={modelYears} initialRecalls={initialRecalls} intro={recallsIntro} articleFindings={articleFindings} />
             </div>
           )}
         </div>

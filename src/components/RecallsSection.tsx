@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useMemo } from 'react';
 import Link from 'next/link';
+import type { ArticleFinding } from '@/lib/modelSynthesis';
 import type { Recall } from '@/app/api/recalls/route';
 import { useLocale } from '@/lib/localeContext';
 import CarDiagramRecalls, { classifyRecall, ZONE_LABELS, type ZoneId } from '@/components/CarDiagramRecalls';
@@ -15,11 +16,11 @@ interface Props {
   initialRecalls?: Recall[];
   /** Short summary shown under the heading. */
   intro?: string;
-  /** The model's main weaknesses, listed above the recalls. */
-  weaknesses?: string[];
+  /** Weaknesses found in published road tests, each with its source. */
+  articleFindings?: ArticleFinding[];
 }
 
-export default function RecallsSection({ makeEn, modelEn, year, years, initialRecalls, intro, weaknesses }: Props) {
+export default function RecallsSection({ makeEn, modelEn, year, years, initialRecalls, intro, articleFindings }: Props) {
   const { t, locale } = useLocale();
   const rc = t.recalls;
   const isHe = locale === 'he';
@@ -29,6 +30,7 @@ export default function RecallsSection({ makeEn, modelEn, year, years, initialRe
   const [loading, setLoading]     = useState(!initialRecalls);
   const [expanded, setExpanded]   = useState<string | null>(null);
   const [filterYear, setFilterYear] = useState<number | 'all'>('all');
+  const [filterSource, setFilterSource] = useState<'all' | 'il' | 'us'>('all');
 
   const yearsKey = years?.join(',') ?? '';
 
@@ -73,9 +75,10 @@ export default function RecallsSection({ makeEn, modelEn, year, years, initialRe
     return Array.from(ys).sort((a, b) => b - a);
   }, [recalls]);
 
-  const filtered = useMemo(() =>
-    filterYear === 'all' ? recalls : recalls.filter(r => r.year === filterYear),
-  [recalls, filterYear]);
+  const filtered = useMemo(() => recalls.filter(r =>
+    (filterYear === 'all' || r.year === filterYear)
+    && (filterSource === 'all' || (filterSource === 'il' ? r.source === 'il' : r.source !== 'il'))),
+  [recalls, filterYear, filterSource]);
 
   const ilCount = useMemo(() => recalls.filter(r => r.source === 'il').length, [recalls]);
   const usCount = useMemo(() => recalls.filter(r => r.source === 'us').length, [recalls]);
@@ -136,17 +139,6 @@ export default function RecallsSection({ makeEn, modelEn, year, years, initialRe
         </p>
       )}
 
-      {weaknesses && weaknesses.length > 0 && (
-        <div style={{ margin: '0 0 20px', padding: '12px 16px', border: '1px solid var(--border)', borderRadius: 12, background: 'var(--bg-muted)' }}>
-          <h3 style={{ margin: '0 0 8px', fontSize: '0.9rem', fontWeight: 800 }}>
-            {isHe ? 'חולשות עיקריות של הדגם' : 'Main weaknesses'}
-          </h3>
-          <ul style={{ margin: 0, paddingInlineStart: 18, display: 'flex', flexDirection: 'column', gap: 4, fontSize: '0.875rem', lineHeight: 1.6 }}>
-            {weaknesses.map((w) => <li key={w}>{w}</li>)}
-          </ul>
-        </div>
-      )}
-
       {/* Loading skeleton */}
       {loading && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
@@ -176,6 +168,50 @@ export default function RecallsSection({ makeEn, modelEn, year, years, initialRe
           <p style={{ margin: '8px 0 0', fontSize: '0.8125rem', color: 'var(--text-muted)' }}>
             {isHe ? 'אין ריקולים רשומים לרכב זה.' : 'No recalls on record for this vehicle.'}
           </p>
+        </div>
+      )}
+
+      {/* Source filter: Israeli notices vs recalls published abroad */}
+      {!loading && ilCount > 0 && usCount > 0 && (
+        <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 14 }}>
+          {([
+            ['all', isHe ? `הכול (${recalls.length})` : `All (${recalls.length})`],
+            ['il', isHe ? `בישראל (${ilCount})` : `Israel (${ilCount})`],
+            ['us', isHe ? `בחו״ל (${usCount})` : `Abroad (${usCount})`],
+          ] as const).map(([key, label]) => (
+            <button
+              key={key}
+              onClick={() => { setFilterSource(key); if (key === 'il') setFilterYear('all'); }}
+              aria-pressed={filterSource === key}
+              style={{
+                height: 30, padding: '0 14px', borderRadius: 9999, fontSize: '0.8rem', fontWeight: 700,
+                background: filterSource === key ? 'var(--accent)' : 'var(--bg-muted)',
+                color: filterSource === key ? '#fff' : 'var(--text-muted)',
+                border: 'none', cursor: 'pointer',
+              }}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+      )}
+
+      {/* Findings from published road tests, each credited to its article */}
+      {articleFindings && articleFindings.length > 0 && filterSource === 'all' && (
+        <div style={{ margin: '0 0 20px', padding: '12px 16px', border: '1px solid var(--border)', borderRadius: 12, background: 'var(--bg-muted)' }}>
+          <h3 style={{ margin: '0 0 8px', fontSize: '0.9rem', fontWeight: 800 }}>
+            {isHe ? 'חולשות שעלו במבחני דרכים' : 'Weaknesses found in road tests'}
+          </h3>
+          <ul style={{ margin: 0, paddingInlineStart: 18, display: 'flex', flexDirection: 'column', gap: 6, fontSize: '0.875rem', lineHeight: 1.6 }}>
+            {articleFindings.map((f) => (
+              <li key={f.text}>
+                {f.text}{' '}
+                {f.url
+                  ? <a href={f.url} target="_blank" rel="noopener noreferrer nofollow" style={{ color: 'var(--text-muted)', fontSize: '0.78rem', whiteSpace: 'nowrap' }}>({f.site})</a>
+                  : <span style={{ color: 'var(--text-muted)', fontSize: '0.78rem' }}>({f.site})</span>}
+              </li>
+            ))}
+          </ul>
         </div>
       )}
 
