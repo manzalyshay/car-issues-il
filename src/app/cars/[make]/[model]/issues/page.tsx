@@ -12,6 +12,7 @@ import { getIsraeliRecalls, buildWindowOverlaps, type IsraeliRecall } from '@/li
 import { getKnownIssues, knownIssueSourceLabel } from '@/lib/knownIssuesDb';
 import { comparePairsForModel } from '@/lib/comparePairs';
 import { realItems } from '@/lib/faqData';
+import { getProReviewScoreSets, scoreSetsForPageYear } from '@/lib/proReviewScores';
 import {
   summarizeIlRecalls, buildIssuesIntro, buildIssuesDescription, buildYearsLabel, faultLabel,
 } from '@/lib/issuesSummary';
@@ -38,14 +39,20 @@ const loadIssuesData = cache(async (makeSlug: string, modelSlug: string, locale:
   const [make, model] = await Promise.all([getMakeBySlug(makeSlug), getModelBySlug(makeSlug, modelSlug)]);
   if (!make || !model) return null;
   const isEn = locale === 'en';
-  const [expertReviewsList, allReviews, repairCosts, recalls, ilAll, knownRaw] = await Promise.all([
+  const [expertReviewsList, allReviews, repairCosts, recalls, ilAll, knownRaw, proSets] = await Promise.all([
     getExpertReviews(makeSlug, modelSlug).catch(() => []),
     getReviewsForModel(makeSlug, modelSlug).catch(() => []),
     getRepairCosts(model.category),
     getRecallsFromCache(make.nameEn, model.nameEn).catch(() => []),
     isEn ? Promise.resolve([] as IsraeliRecall[]) : getIsraeliRecalls(make.nameEn, model.nameEn).catch(() => []),
     getKnownIssues(makeSlug, modelSlug, 12),
+    getProReviewScoreSets(makeSlug, modelSlug).catch(() => []),
   ]);
+  // Professional road tests behind the model's score, for the generation the site's
+  // newest model year belongs to (same scoping as the model page).
+  const newest = model.years.length ? Math.max(...model.years) : null;
+  const relevantSets = (newest ? scoreSetsForPageYear(proSets, newest, newest) : proSets) ?? [];
+  const proTestCount = relevantSets.reduce((m, x) => Math.max(m, x.n ?? 0), 0);
   const ilRecalls = model.years.length
     ? ilAll.filter((r) => buildWindowOverlaps(r, Math.min(...model.years), Math.max(...model.years)))
     : ilAll;
@@ -67,7 +74,7 @@ const loadIssuesData = cache(async (makeSlug: string, modelSlug: string, locale:
     usRecallCount: recalls.length,
     cons,
   };
-  return { make, model, expertReview, allReviews, repairCosts, recalls, ilRecalls, knownIssues, cons, pros, facts };
+  return { make, model, expertReview, allReviews, repairCosts, recalls, ilRecalls, knownIssues, cons, pros, facts, proTestCount };
 });
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
@@ -126,7 +133,7 @@ export default async function IssuesPage({ params }: Props) {
   const locale = await getHostLocale();
   const data = await loadIssuesData(makeSlug, modelSlug, locale);
   if (!data) notFound();
-  const { make, model, expertReview, allReviews, repairCosts, recalls, ilRecalls, knownIssues, cons, pros, facts } = data;
+  const { make, model, expertReview, allReviews, repairCosts, recalls, ilRecalls, knownIssues, cons, pros, facts, proTestCount } = data;
   const ip = translations[locale].issuesPage;
   const cp = translations[locale].carsPage;
   const isEn = locale === 'en';
@@ -241,7 +248,12 @@ export default async function IssuesPage({ params }: Props) {
               {[
                 il.total > 0 && (il.total === 1 ? 'קריאת שירות אחת בישראל' : `${il.total} קריאות שירות בישראל`),
                 recalls.length > 0 && (isEn ? `${recalls.length} US recall${recalls.length === 1 ? '' : 's'}` : `${recalls.length === 1 ? 'ריקול אחד' : `${recalls.length} ריקולים`} בארה״ב`),
-                allReviews.length > 0 && `${ip.basedOn} ${allReviews.length} ${ip.ownerReviews}`,
+                proTestCount > 0 && (isEn
+                  ? `${proTestCount} professional road test${proTestCount === 1 ? '' : 's'}`
+                  : (proTestCount === 1 ? 'מבחן דרכים מקצועי אחד' : `${proTestCount} מבחני דרכים מקצועיים`)),
+                allReviews.length > 0 && (isEn
+                  ? `${allReviews.length} owner review${allReviews.length === 1 ? '' : 's'}`
+                  : (allReviews.length === 1 ? 'ביקורת בעלים אחת' : `${allReviews.length} ביקורות בעלים`)),
               ].filter(Boolean).join(' · ') || fullName}
             </p>
           </div>
