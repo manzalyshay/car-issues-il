@@ -6,6 +6,15 @@ import { getExpertReviews } from '@/lib/expertReviews';
 import { getReviewsForModel } from '@/lib/reviewsDb';
 import { getRepairCosts } from '@/lib/repairCostsDb';
 import { getRecallsFromCache } from '@/lib/recallsDb';
+import { cache } from 'react';
+import { getAllMakes } from '@/lib/carsDb';
+import { getIsraeliRecalls, buildWindowOverlaps, type IsraeliRecall } from '@/lib/israeliRecallsDb';
+import { getKnownIssues, knownIssueSourceLabel } from '@/lib/knownIssuesDb';
+import { comparePairsForModel } from '@/lib/comparePairs';
+import { realItems } from '@/lib/faqData';
+import {
+  summarizeIlRecalls, buildIssuesIntro, buildIssuesDescription, buildYearsLabel, faultLabel,
+} from '@/lib/issuesSummary';
 import MakeLogo from '@/components/MakeLogo';
 import { getHostLocale, getBaseUrl } from '@/lib/hostLocale';
 import { translations } from '@/lib/translations';
@@ -13,6 +22,53 @@ import { translations } from '@/lib/translations';
 export const revalidate = 86400;
 
 interface Props { params: Promise<{ make: string; model: string }> }
+
+/** Israeli notices shown in full before the rest collapse into a <details>. */
+const IL_RECALLS_OPEN = 8;
+
+/**
+ * Problem data for one model, shared by generateMetadata and the page (React cache
+ * de-duplicates the queries within a request).
+ *
+ * Israeli Ministry of Transport notices are Hebrew-only text, so they are loaded for
+ * the Hebrew site only, limited to notices whose production window overlaps the
+ * model years the site covers.
+ */
+const loadIssuesData = cache(async (makeSlug: string, modelSlug: string, locale: 'he' | 'en') => {
+  const [make, model] = await Promise.all([getMakeBySlug(makeSlug), getModelBySlug(makeSlug, modelSlug)]);
+  if (!make || !model) return null;
+  const isEn = locale === 'en';
+  const [expertReviewsList, allReviews, repairCosts, recalls, ilAll, knownRaw] = await Promise.all([
+    getExpertReviews(makeSlug, modelSlug).catch(() => []),
+    getReviewsForModel(makeSlug, modelSlug).catch(() => []),
+    getRepairCosts(model.category),
+    getRecallsFromCache(make.nameEn, model.nameEn).catch(() => []),
+    isEn ? Promise.resolve([] as IsraeliRecall[]) : getIsraeliRecalls(make.nameEn, model.nameEn).catch(() => []),
+    getKnownIssues(makeSlug, modelSlug, 12),
+  ]);
+  const ilRecalls = model.years.length
+    ? ilAll.filter((r) => buildWindowOverlaps(r, Math.min(...model.years), Math.max(...model.years)))
+    : ilAll;
+  // The same complaint is often listed once per generation - show each title once.
+  const seen = new Set<string>();
+  const knownIssues = knownRaw.filter((k) => {
+    const key = k.title.trim().toLowerCase();
+    if (!key || seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+  const expertReview = expertReviewsList[0] ?? null;
+  const cons = realItems(isEn ? expertReview?.consEn : expertReview?.cons);
+  const pros = realItems(isEn ? expertReview?.prosEn : expertReview?.pros);
+  const facts = {
+    makeName: isEn ? make.nameEn : make.nameHe,
+    modelName: isEn ? model.nameEn : model.nameHe,
+    il: summarizeIlRecalls(ilRecalls),
+    usRecallCount: recalls.length,
+    cons,
+  };
+  return { make, model, expertReview, allReviews, repairCosts, recalls, ilRecalls, knownIssues, cons, pros, facts };
+});
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { make: makeSlug, model: modelSlug } = await params;
@@ -27,24 +83,24 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const url = `${base}/cars/${make.slug}/${model.slug}/issues`;
   // carissues.net: an issues page with no English problem data (no expert-review cons or
   // summary, no owner reviews, no recalls) is a template shell - keep it out of the index.
+  const data = await loadIssuesData(make.slug, model.slug, locale);
   let thinEn = false;
-  if (isEn) {
-    const [er, reviews, recalls] = await Promise.all([
-      getExpertReviews(make.slug, model.slug).catch(() => []),
-      getReviewsForModel(make.slug, model.slug).catch(() => []),
-      getRecallsFromCache(make.nameEn, model.nameEn).catch(() => []),
-    ]);
-    const e = er[0];
-    thinEn = !(e?.consEn?.length || e?.localSummaryEn) && reviews.length === 0 && recalls.length === 0;
+  if (isEn && data) {
+    const e = data.expertReview;
+    thinEn = !(e?.consEn?.length || e?.localSummaryEn) && data.allReviews.length === 0 && data.recalls.length === 0;
   }
+  const dataDescription = data ? buildIssuesDescription(data.facts, locale) : null;
+  const hasIlRecalls = (data?.ilRecalls.length ?? 0) > 0;
   return {
     ...(thinEn ? { robots: { index: false, follow: true } } : {}),
     title: isEn
       ? `${make.nameEn} ${model.nameEn} - Common Problems & Issues`
-      : `${make.nameHe} ${model.nameHe} - בעיות נפוצות ותקלות`,
-    description: isEn
+      : hasIlRecalls
+        ? `${make.nameHe} ${model.nameHe} - תקלות נפוצות, ריקולים ובעיות`
+        : `${make.nameHe} ${model.nameHe} - בעיות נפוצות ותקלות`,
+    description: dataDescription ?? (isEn
       ? `What are the common problems with the ${make.nameEn} ${model.nameEn}? Reported issues, pros & cons, repair costs and real owner reviews.`
-      : `אילו בעיות נפוצות יש ל${make.nameHe} ${model.nameHe}? תקלות מדווחות, חסרונות, עלויות תיקון וחוות דעת אמיתיות מבעלים בישראל.`,
+      : `אילו בעיות נפוצות יש ל${make.nameHe} ${model.nameHe}? תקלות מדווחות, חסרונות, עלויות תיקון וחוות דעת אמיתיות מבעלים בישראל.`),
     alternates: {
       canonical: url,
       languages: {
@@ -67,28 +123,25 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
 export default async function IssuesPage({ params }: Props) {
   const { make: makeSlug, model: modelSlug } = await params;
-  const [locale, make, model] = await Promise.all([
-    getHostLocale(), getMakeBySlug(makeSlug), getModelBySlug(makeSlug, modelSlug),
-  ]);
-  if (!make) notFound();
-  if (!model) notFound();
+  const locale = await getHostLocale();
+  const data = await loadIssuesData(makeSlug, modelSlug, locale);
+  if (!data) notFound();
+  const { make, model, expertReview, allReviews, repairCosts, recalls, ilRecalls, knownIssues, cons, pros, facts } = data;
   const ip = translations[locale].issuesPage;
   const cp = translations[locale].carsPage;
   const isEn = locale === 'en';
   const makeName = isEn ? make.nameEn : make.nameHe;
   const modelName = isEn ? model.nameEn : model.nameHe;
 
-  const [expertReviewsList, allReviews, repairCosts, recalls] = await Promise.all([
-    getExpertReviews(makeSlug, modelSlug),
-    getReviewsForModel(makeSlug, modelSlug).catch(() => []),
-    getRepairCosts(model.category),
-    getRecallsFromCache(make.nameEn, model.nameEn),
-  ]);
-
-  const expertReview = expertReviewsList[0] ?? null;
   const base = getBaseUrl(locale);
-  const cons = isEn ? (expertReview?.consEn ?? []) : (expertReview?.cons ?? []);
-  const pros = isEn ? (expertReview?.prosEn ?? []) : (expertReview?.pros ?? []);
+  const intro = buildIssuesIntro(facts, locale);
+  const il = facts.il;
+  const fullName = `${makeName} ${modelName}`;
+  const importer = ilRecalls.find((r) => r.importer)?.importer ?? null;
+  const importerPhone = ilRecalls.find((r) => r.importer === importer && r.phone)?.phone ?? null;
+  const makes = await getAllMakes().catch(() => []);
+  const comparePairs = comparePairsForModel(makes, makeSlug, modelSlug, 4);
+  const siblings = make.models.filter((m) => m.slug !== model.slug).slice(0, 8);
   const aiSummary = isEn ? expertReview?.localSummaryEn : expertReview?.localSummaryHe;
 
   // Reviews mentioning problems. English pages show only reviews with an English
@@ -111,13 +164,21 @@ export default async function IssuesPage({ params }: Props) {
         : `מה היתרונות של ${make.nameHe} ${model.nameHe}?`,
       a: pros.join('. '),
     },
+    ilRecalls.length > 0 && {
+      q: `האם יש ריקול (קריאת שירות) ל${fullName} בישראל?`,
+      a: `כן. במאגר משרד התחבורה ${il.total === 1 ? 'רשומה קריאת שירות אחת' : `רשומות ${il.total} קריאות שירות`} ל${fullName}${il.latestYear ? `, האחרונה משנת ${il.latestYear}` : ''}.${il.systems.length ? ` מערכות מעורבות: ${il.systems.slice(0, 4).map((x) => x.label).join(', ')}.` : ''} התיקון מבוצע אצל היבואן${importer ? ` (${importer})` : ''}.`,
+    },
+    ilRecalls.length > 0 && {
+      q: `איך בודקים אם ל${fullName} מסוים יש ריקול פתוח?`,
+      a: `הדרך הוודאית היא לפנות למוקד היבואן${importer ? ` ${importer}` : ''}${importerPhone ? ` בטלפון ${importerPhone}` : ''} עם מספר הרישוי. בדיקת הרכב לפי מספר ב-CarIssues מציגה את נתוני הרכב הרשמיים ואת קריאות השירות של הדגם.`,
+    },
     recalls.length > 0 && {
       q: isEn
         ? `Have there been recalls for the ${make.nameEn} ${model.nameEn}?`
-        : `האם היו ריקולים ל${make.nameHe} ${model.nameHe}?`,
+        : `האם היו ריקולים ל${make.nameHe} ${model.nameHe} בארה״ב?`,
       a: isEn
         ? `Yes, ${recalls.length} recall${recalls.length !== 1 ? 's have' : ' has'} been recorded. Components involved: ${recalls.slice(0, 3).map(r => r.component_en ?? r.component_he ?? '').filter(Boolean).join(', ')}.`
-        : `כן, תועד ${recalls.length === 1 ? 'ריקול אחד' : `${recalls.length} ריקולים`}. רכיבים מעורבים: ${recalls.slice(0, 3).map(r => r.component_he ?? r.component_en ?? '').filter(Boolean).join(', ')}.`,
+        : `כן, ${recalls.length === 1 ? 'תועד ריקול אחד' : `תועדו ${recalls.length} ריקולים`} בארה״ב. רכיבים מעורבים: ${recalls.slice(0, 3).map(r => r.component_he ?? r.component_en ?? '').filter(Boolean).join(', ')}.`,
     },
     repairCosts.length > 0 && {
       q: isEn
@@ -177,10 +238,62 @@ export default async function IssuesPage({ params }: Props) {
               {makeName} {modelName} - {ip.titleSuffix}
             </h1>
             <p style={{ margin: '4px 0 0', fontSize: '0.875rem', color: 'var(--text-muted)' }}>
-              {isEn ? make.nameEn : make.nameHe} {isEn ? model.nameEn : model.nameHe} · {ip.basedOn} {allReviews.length} {ip.ownerReviews}
+              {[
+                il.total > 0 && (il.total === 1 ? 'קריאת שירות אחת בישראל' : `${il.total} קריאות שירות בישראל`),
+                recalls.length > 0 && (isEn ? `${recalls.length} US recall${recalls.length === 1 ? '' : 's'}` : `${recalls.length === 1 ? 'ריקול אחד' : `${recalls.length} ריקולים`} בארה״ב`),
+                allReviews.length > 0 && `${ip.basedOn} ${allReviews.length} ${ip.ownerReviews}`,
+              ].filter(Boolean).join(' · ') || fullName}
             </p>
           </div>
         </div>
+
+        {/* Data-driven summary */}
+        {intro && (
+          <p style={{ fontSize: '0.95rem', lineHeight: 1.8, margin: '0 0 28px' }}>{intro}</p>
+        )}
+
+        {/* Israeli Ministry of Transport recall notices (Hebrew site only) */}
+        {ilRecalls.length > 0 && (
+          <section style={{ marginBottom: 32 }}>
+            <h2 style={{ fontSize: '1.1rem', fontWeight: 700, marginBottom: 6 }}>
+              קריאות שירות (ריקול) ל{fullName} בישראל ({il.total})
+            </h2>
+            <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', margin: '0 0 12px', lineHeight: 1.6 }}>
+              הודעות רשמיות של היבואן, מתוך מאגר קריאות השירות של משרד התחבורה (data.gov.il).
+              {il.safety > 0 && ` ${il.safety === il.total ? 'כולן' : `${il.safety} מהן`} מסווגות כתקלה סדרתית בטיחותית.`}
+            </p>
+            {il.systems.length > 1 && (
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 14 }}>
+                {il.systems.map((x) => (
+                  <span key={x.label} style={{ fontSize: '0.78rem', background: 'var(--surface-2)', border: '1px solid var(--border)', borderRadius: 99, padding: '3px 10px' }}>
+                    {x.label} · {x.count}
+                  </span>
+                ))}
+              </div>
+            )}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+              {ilRecalls.slice(0, IL_RECALLS_OPEN).map((r) => <IlRecallCard key={r.id} r={r} />)}
+            </div>
+            {ilRecalls.length > IL_RECALLS_OPEN && (
+              <details style={{ marginTop: 10 }}>
+                <summary style={{ cursor: 'pointer', fontSize: '0.85rem', fontWeight: 700, color: 'var(--accent)', padding: '6px 0' }}>
+                  עוד {ilRecalls.length - IL_RECALLS_OPEN} קריאות שירות קודמות
+                </summary>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginTop: 10 }}>
+                  {ilRecalls.slice(IL_RECALLS_OPEN).map((r) => <IlRecallCard key={r.id} r={r} />)}
+                </div>
+              </details>
+            )}
+            <div style={{ marginTop: 14, background: 'var(--surface-2)', border: '1px solid var(--border)', borderRadius: 10, padding: '12px 16px', fontSize: '0.85rem', lineHeight: 1.7 }}>
+              <strong>רוצים לדעת מה חל על רכב מסוים?</strong>{' '}
+              <Link href="/vehicle-lookup" style={{ color: 'var(--accent)', fontWeight: 700 }}>בדיקת רכב לפי מספר רישוי</Link>
+              {' '}מציגה את נתוני הרכב הרשמיים: תוקף טסט, מספר בעלים וקילומטראז׳, לצד קריאות השירות של הדגם.
+              {importer && (
+                <> לתיאום תיקון: {importer}{importerPhone && <>, טלפון <span dir="ltr">{importerPhone}</span></>}.</>
+              )}
+            </div>
+          </section>
+        )}
 
         {/* Known issues from AI analysis */}
         {cons.length > 0 && (
@@ -232,6 +345,23 @@ export default async function IssuesPage({ params }: Props) {
           </section>
         )}
 
+        {/* Complaints catalogued abroad */}
+        {knownIssues.length > 0 && (
+          <section style={{ marginBottom: 32 }}>
+            <h2 style={{ fontSize: '1.1rem', fontWeight: 700, marginBottom: 6 }}>
+              {isEn ? `Most-reported ${fullName} complaints` : `תלונות נפוצות על ${fullName} בחו״ל`}
+            </h2>
+            <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', margin: '0 0 12px', lineHeight: 1.6 }}>
+              {isEn
+                ? `Ranked by number of owner complaints. Source: ${knownIssueSourceLabel(knownIssues[0].source)}.`
+                : `מדורגות לפי מספר תלונות הבעלים, בעיקר בשוק האמריקאי, ולכן לא כל תלונה רלוונטית לגרסה שנמכרת בישראל. מקור: ${knownIssueSourceLabel(knownIssues[0].source)}.`}
+            </p>
+            <ol dir="ltr" style={{ margin: 0, paddingInlineStart: 22, display: 'flex', flexDirection: 'column', gap: 6, fontSize: '0.9rem', lineHeight: 1.6, textAlign: 'left' }}>
+              {knownIssues.map((k) => <li key={k.id}>{k.title}</li>)}
+            </ol>
+          </section>
+        )}
+
         {/* Repair costs */}
         {repairCosts.length > 0 && (
           <section style={{ marginBottom: 32 }}>
@@ -261,7 +391,7 @@ export default async function IssuesPage({ params }: Props) {
         {recalls.length > 0 && (
           <section style={{ marginBottom: 32 }}>
             <h2 style={{ fontSize: '1.1rem', fontWeight: 700, marginBottom: 14, display: 'flex', alignItems: 'center', gap: 8 }}>
-              {isEn ? `⚠️ Recall${recalls.length === 1 ? '' : 's'} (${recalls.length})` : `⚠️ ${recalls.length === 1 ? 'ריקול' : 'ריקולים'} (${recalls.length})`}
+              {isEn ? `⚠️ Recall${recalls.length === 1 ? '' : 's'} (${recalls.length})` : `⚠️ ריקולים ל${fullName} בארה״ב (${recalls.length})`}
             </h2>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
               {recalls.slice(0, 8).map(r => {
@@ -291,7 +421,7 @@ export default async function IssuesPage({ params }: Props) {
               })}
             </div>
             <p style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginTop: 8 }}>
-              {isEn ? 'US recalls' : 'ריקולים בארה״ב'}
+              {isEn ? 'US recalls (NHTSA)' : 'ריקולים שפורסמו בארה״ב (NHTSA). לא כל ריקול אמריקאי חל על רכבים שנמכרו בישראל.'}
             </p>
           </section>
         )}
@@ -321,6 +451,76 @@ export default async function IssuesPage({ params }: Props) {
           </section>
         )}
 
+        {/* Pre-purchase checks (Hebrew site) */}
+        {!isEn && (
+          <section style={{ marginBottom: 32 }}>
+            <h2 style={{ fontSize: '1.1rem', fontWeight: 700, marginBottom: 12 }}>
+              מה לבדוק לפני שקונים {fullName} יד שנייה
+            </h2>
+            <ul style={{ margin: 0, paddingInlineStart: 20, display: 'flex', flexDirection: 'column', gap: 8, fontSize: '0.9rem', lineHeight: 1.7 }}>
+              {il.total > 0 && (
+                <li>
+                  בקשו מהמוכר אישור מהיבואן{importer ? ` (${importer})` : ''} שקריאות השירות שחלות על הרכב בוצעו
+                  {il.systems.length > 0 && <>, בדגש על {il.systems.slice(0, 2).map((x) => x.label).join(' ו')}</>}.
+                </li>
+              )}
+              <li>
+                הריצו <Link href="/vehicle-lookup" style={{ color: 'var(--accent)', fontWeight: 700 }}>בדיקת רכב לפי מספר רישוי</Link>:
+                תוקף טסט, מספר בעלים וקילומטראז׳ מדווח.
+              </li>
+              {cons.length > 0 && (
+                <li>בנסיעת המבחן שימו לב לנקודות שחוזרות בביקורות: {cons.slice(0, 2).join('; ')}.</li>
+              )}
+              <li>
+                עברו על <Link href="/checklist" style={{ color: 'var(--accent)', fontWeight: 700 }}>צ׳קליסט הקנייה</Link> ובצעו בדיקה במכון בדיקה מורשה לפני העברת בעלות.
+              </li>
+            </ul>
+          </section>
+        )}
+
+        {/* FAQ - same questions as the FAQPage structured data */}
+        {faqItems.length > 0 && (
+          <section style={{ marginBottom: 32 }}>
+            <h2 style={{ fontSize: '1.1rem', fontWeight: 700, marginBottom: 12 }}>
+              {isEn ? 'Frequently asked questions' : 'שאלות נפוצות'}
+            </h2>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+              {faqItems.map(({ q, a }) => (
+                <div key={q}>
+                  <h3 style={{ fontSize: '0.95rem', fontWeight: 700, margin: '0 0 4px' }}>{q}</h3>
+                  <p style={{ margin: 0, fontSize: '0.875rem', lineHeight: 1.7, color: 'var(--text-muted)' }}>{a}</p>
+                </div>
+              ))}
+            </div>
+          </section>
+        )}
+
+        {/* Related pages */}
+        <section style={{ marginBottom: 32 }}>
+          <h2 style={{ fontSize: '1.1rem', fontWeight: 700, marginBottom: 12 }}>
+            {isEn ? 'Related' : 'עוד על הדגם והמתחרים'}
+          </h2>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+            {[
+              { href: `/cars/${make.slug}/${model.slug}`, label: isEn ? `${fullName} reviews & prices` : `${fullName}: חוות דעת ומחירים` },
+              { href: `/cars/${make.slug}/problems`, label: isEn ? `All ${makeName} problems & recalls` : `כל הבעיות והריקולים של ${makeName}` },
+              ...comparePairs.map((p) => {
+                const other = p.a.key === `${make.slug}/${model.slug}` ? p.b : p.a;
+                const otherName = isEn ? `${other.make.nameEn} ${other.model.nameEn}` : `${other.make.nameHe} ${other.model.nameHe}`;
+                return { href: p.path, label: isEn ? `${modelName} vs ${otherName}` : `${modelName} מול ${otherName}` };
+              }),
+              ...siblings.map((m) => ({
+                href: `/cars/${make.slug}/${m.slug}/issues`,
+                label: isEn ? `${make.nameEn} ${m.nameEn} problems` : `תקלות ${make.nameHe} ${m.nameHe}`,
+              })),
+            ].map((l) => (
+              <Link key={l.href} href={l.href} style={{ fontSize: '0.82rem', color: 'var(--text)', textDecoration: 'none', background: 'var(--surface-2)', border: '1px solid var(--border)', borderRadius: 99, padding: '5px 12px' }}>
+                {l.label}
+              </Link>
+            ))}
+          </div>
+        </section>
+
         {/* CTA back + write review */}
         <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', marginTop: 8 }}>
           <Link
@@ -339,6 +539,41 @@ export default async function IssuesPage({ params }: Props) {
           </Link>
         </div>
       </div>
+    </div>
+  );
+}
+
+/** One Israeli recall notice: system, notice year, affected production years, fault and fix. */
+function IlRecallCard({ r }: { r: IsraeliRecall }) {
+  const built = buildYearsLabel(r);
+  const system = faultLabel(r.faultType);
+  const isCampaign = !!r.recallType && !r.recallType.includes('בטיחות');
+  return (
+    <div style={{ background: 'rgba(234,179,8,0.06)', border: '1px solid rgba(234,179,8,0.25)', borderRadius: 10, padding: '12px 16px' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6, flexWrap: 'wrap' }}>
+        {system && <h3 style={{ fontWeight: 700, fontSize: '0.88rem', margin: 0 }}>{system}</h3>}
+        {r.year && (
+          <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', background: 'var(--surface-2)', padding: '1px 8px', borderRadius: 99, border: '1px solid var(--border)' }}>
+            פורסם {r.year}
+          </span>
+        )}
+        {built && (
+          <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', background: 'var(--surface-2)', padding: '1px 8px', borderRadius: 99, border: '1px solid var(--border)' }}>
+            שנות ייצור {built}
+          </span>
+        )}
+        {isCampaign && (
+          <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{r.recallType}</span>
+        )}
+      </div>
+      {r.faultDescription && (
+        <p style={{ margin: '0 0 6px', fontSize: '0.85rem', lineHeight: 1.6 }}>{r.faultDescription}</p>
+      )}
+      {r.fixMethod && (
+        <p style={{ margin: 0, fontSize: '0.8rem', lineHeight: 1.5, color: 'var(--text-muted)' }}>
+          <strong style={{ color: 'var(--text)' }}>אופן הטיפול: </strong>{r.fixMethod}
+        </p>
+      )}
     </div>
   );
 }
