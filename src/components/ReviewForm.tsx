@@ -44,6 +44,12 @@ async function uploadToCloudinary(file: File): Promise<string> {
   return data.secure_url as string;
 }
 
+function newSubmitKey(): string {
+  // randomUUID needs a secure context; the fallback still gives a 32-hex-char key.
+  if (typeof crypto.randomUUID === 'function') return crypto.randomUUID();
+  return Array.from(crypto.getRandomValues(new Uint8Array(16)), (b) => b.toString(16).padStart(2, '0')).join('');
+}
+
 export default function ReviewForm({ makeSlug, modelSlug, year: yearProp, years, trims, initialRating, onSuccess }: Props) {
   const { user } = useAuth();
   const { t, locale } = useLocale();
@@ -66,6 +72,9 @@ export default function ReviewForm({ makeSlug, modelSlug, year: yearProp, years,
   const captchaRef                  = useRef<HTMLDivElement>(null);
   const captchaWidgetId             = useRef<string | null>(null);
   const captchaToken                = useRef<string>('');
+  // One key per fill, sent with every attempt: if a submit was saved but its response
+  // failed, the retry gets the saved review back instead of publishing a second one.
+  const submitKey                   = useRef<string>('');
 
   // Load Turnstile widget (only for guests; logged-in users are trusted)
   useEffect(() => {
@@ -138,6 +147,7 @@ export default function ReviewForm({ makeSlug, modelSlug, year: yearProp, years,
 
     setLoading(true);
     setError('');
+    if (!submitKey.current) submitKey.current = newSubmitKey();
 
     try {
       const resp = await fetch('/api/reviews', {
@@ -155,11 +165,13 @@ export default function ReviewForm({ makeSlug, modelSlug, year: yearProp, years,
           mileage: mileage ? parseInt(mileage) : undefined,
           images,
           captchaToken: captchaToken.current || undefined,
+          clientKey: submitKey.current,
         }),
       });
 
       if (!resp.ok) throw new Error(locale === 'en' ? 'Error saving review' : 'שגיאה בשמירת הביקורת');
       const data = await resp.json();
+      submitKey.current = ''; // the next review from this form is a new submission
       setSuccess(true);
       onSuccess(data.review);
       setAuthorName(''); setTitle(''); setBody(''); setMileage(''); setSubModel('');
@@ -167,6 +179,11 @@ export default function ReviewForm({ makeSlug, modelSlug, year: yearProp, years,
       if (!yearProp) setSelectedYear('');
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : (locale === 'en' ? 'Unknown error' : 'שגיאה לא ידועה'));
+      // Turnstile tokens are single-use: get a fresh one so the retry isn't rejected.
+      if (captchaWidgetId.current && window.turnstile) {
+        captchaToken.current = '';
+        window.turnstile.reset(captchaWidgetId.current);
+      }
     } finally {
       setLoading(false);
     }

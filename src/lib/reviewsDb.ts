@@ -39,16 +39,29 @@ export async function getAverageRating(makeSlug: string, modelSlug: string): Pro
 
 // ── Write ─────────────────────────────────────────────────────────────────────
 
+/** The review already saved under this submission key, if any (see addReview). */
+export async function getReviewByClientKey(clientKey: string): Promise<Review | null> {
+  const row = await dbFirst('SELECT * FROM reviews WHERE client_key = ?', clientKey);
+  return row ? dbToReview(row) : null;
+}
+
+/**
+ * Insert a review. `clientKey` is the idempotency key the form generates once per fill:
+ * a second insert with the same key writes nothing and returns the review saved the first
+ * time (`created: false`), so a retried submission never publishes twice.
+ */
 export async function addReview(
   review: Omit<Review, 'id' | 'helpful' | 'createdAt'>,
-): Promise<Review> {
+  clientKey?: string,
+): Promise<{ review: Review; created: boolean }> {
   const id = randomUUID();
   const now = new Date().toISOString();
   await dbRun(
     `INSERT INTO reviews
       (id, make_slug, model_slug, year, rating, title, body, category,
-       sub_model, mileage, author, user_id, images, created_at)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+       sub_model, mileage, author, user_id, images, created_at, client_key)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+     ON CONFLICT(client_key) DO NOTHING`,
     id,
     review.makeSlug,
     review.modelSlug,
@@ -63,15 +76,24 @@ export async function addReview(
     review.userId ?? null,
     JSON.stringify(review.images ?? []),
     now,
+    clientKey ?? null,
   );
+  if (clientKey) {
+    // Read back by key: if a concurrent or earlier attempt won, this is its row, not ours.
+    const saved = await getReviewByClientKey(clientKey);
+    if (saved && saved.id !== id) return { review: saved, created: false };
+  }
   return {
-    ...review,
-    id,
-    helpful: 0,
-    dislikes: 0,
-    createdAt: now,
-    images: review.images ?? [],
-  } as Review;
+    review: {
+      ...review,
+      id,
+      helpful: 0,
+      dislikes: 0,
+      createdAt: now,
+      images: review.images ?? [],
+    } as Review,
+    created: true,
+  };
 }
 
 export async function getReviewsByUser(userId: string): Promise<Review[]> {
