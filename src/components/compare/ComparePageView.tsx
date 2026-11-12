@@ -17,7 +17,7 @@ import { getTrimSpecs } from '@/lib/trimSpecsDb';
 import { getRecallsFromCache } from '@/lib/recallsDb';
 import { realItems } from '@/lib/faqData';
 import type { TrimSpecWithYear } from '@/lib/trimSpecsDb';
-import { normEngine } from '@/lib/specSummary';
+import { consumptionOf, useCaseWinners, MIN_REVIEWS_TO_QUOTE } from '@/lib/compareFacts';
 import { getBaseUrl } from '@/lib/hostLocale';
 import { RU_COMPARE_PAIRS } from '@/data/ru-compare-pairs';
 import { resolvePairs } from '@/lib/comparePairs';
@@ -133,26 +133,8 @@ export default async function ComparePageView({ make1, model1, make2, model2, lo
       return best === null || v < best ? v : best;
     }, null);
 
-  // Match the model page: exclude PHEV's electric-range WLTP figure from km/L and
-  // show every plausible combustion/electric figure in that model's own units.
-  const getConsumption = (trims: TrimSpecWithYear[]) => {
-    const electric = trims.filter(t => normEngine(t.engineType) === 'electric' && typeof t.fuelConsumption === 'number' && t.fuelConsumption > 0 && t.fuelConsumption <= 50);
-    const combustion = trims.filter(t => {
-      const engine = normEngine(t.engineType);
-      return (engine === 'petrol' || engine === 'hybrid' || engine === 'diesel') && typeof t.fuelConsumption === 'number' && t.fuelConsumption >= 3 && t.fuelConsumption <= 20;
-    });
-    if (combustion.length) {
-      const values = combustion.map(t => 100 / t.fuelConsumption!);
-      return { kind: 'fuel' as const, score: values.reduce((sum, value) => sum + value, 0) / values.length, min: Math.min(...values), max: Math.max(...values) };
-    }
-    if (electric.length) {
-      const values = electric.map(t => t.fuelConsumption!);
-      return { kind: 'electric' as const, score: values.reduce((sum, value) => sum + value, 0) / values.length, min: Math.min(...values), max: Math.max(...values) };
-    }
-    return null;
-  };
-  const consumptionA = getConsumption(trimsA);
-  const consumptionB = getConsumption(trimsB);
+  const consumptionA = consumptionOf(trimsA);
+  const consumptionB = consumptionOf(trimsB);
   const fuelComparable = consumptionA !== null && consumptionB !== null && consumptionA.kind === consumptionB.kind;
   const fuelLowerBetter = consumptionA?.kind === 'electric' && consumptionB?.kind === 'electric';
   const formatConsumption = (value: NonNullable<typeof consumptionA>) => dec(value.min === value.max
@@ -239,7 +221,8 @@ export default async function ComparePageView({ make1, model1, make2, model2, lo
   const verdictWinner = better(scoreA, scoreB) ?? better(avgA, avgB);
   const winnerName = verdictWinner === 'a' ? nameA : verdictWinner === 'b' ? nameB : null;
   const loserName  = verdictWinner === 'a' ? nameB : verdictWinner === 'b' ? nameA : null;
-  const hasOwnerReviews = reviewsA.length > 0 || reviewsB.length > 0;
+  // "Based on owner reviews" only when there are enough of them to mean something
+  const hasOwnerReviews = reviewsA.length >= MIN_REVIEWS_TO_QUOTE || reviewsB.length >= MIN_REVIEWS_TO_QUOTE;
   const verdictBasis = hasOwnerReviews
     ? sp.verdictWinnerPre
     : tr({ he: 'על בסיס מבחנים ונתונים רשמיים,', en: 'Based on tests and official data,', ru: 'По тестам и официальным данным' });
@@ -372,6 +355,45 @@ export default async function ComparePageView({ make1, model1, make2, model2, lo
     : tr({ he: 'שני הדגמים מקבלים ציון כולל דומה מאוד.', en: 'Both models score very similarly overall.', ru: 'Обе модели получают очень близкие общие оценки.' });
   const shortVerdictFacts = [priceFact, fuelFact, spaceFact].filter((f): f is Fact => !!f).slice(0, 2).map(f => f.sentence);
   const showShortVerdict = shortVerdictLead !== null || shortVerdictFacts.length >= 2;
+
+  // ── "Who is better?" by use case: answers the question searchers actually ask
+  // (cheaper, better in the city, roomier, more reliable) from the same real data.
+  const wins = useCaseWinners(
+    { name: nameA, trims: trimsA, recalls: recallsA.length, reviewCount: reviewsA.length, reviewAvg: avgA },
+    { name: nameB, trims: trimsB, recalls: recallsB.length, reviewCount: reviewsB.length, reviewAvg: avgB },
+  );
+  const winName = (s: 'a' | 'b') => (s === 'a' ? nameA : nameB);
+  const money = (v: number) => (isEn ? `$${Math.round(v / 3700)}K` : ils(v));
+  const useCases: { icon: string; label: string; name: string; why: string }[] = [];
+  if (wins.budget) useCases.push({
+    icon: '💰', label: tr({ he: 'לתקציב מוגבל', en: 'On a budget', ru: 'При ограниченном бюджете' }), name: winName(wins.budget.win),
+    why: tr({ he: `זול ב-${money(wins.budget.dear - wins.budget.cheap)} (מ-${money(wins.budget.cheap)})`, en: `${money(wins.budget.dear - wins.budget.cheap)} cheaper (from ${money(wins.budget.cheap)})`, ru: `дешевле на ${money(wins.budget.dear - wins.budget.cheap)} (от ${money(wins.budget.cheap)})` }),
+  });
+  if (wins.economy) {
+    const v = dec(wins.economy.best.toFixed(1));
+    useCases.push({
+      icon: '⛽', label: tr({ he: 'לנסיעות יומיות ועיר', en: 'Daily and city driving', ru: 'Для города и ежедневных поездок' }), name: winName(wins.economy.win),
+      why: wins.economy.kind === 'electric'
+        ? tr({ he: `צורך פחות חשמל (מ-${v} קוט"ש/100 ק"מ)`, en: `uses less energy (from ${v} kWh/100km)`, ru: `расходует меньше энергии (от ${v} кВт·ч/100 км)` })
+        : tr({ he: `חסכוני יותר בדלק (עד ${v} ק"מ/ל)`, en: `more fuel efficient (up to ${v} km/L)`, ru: `экономичнее (до ${v} км/л)` }),
+    });
+  }
+  if (wins.space) useCases.push({
+    icon: '🧳', label: tr({ he: 'למשפחה ולמטען', en: 'Family and luggage', ru: 'Для семьи и багажа' }), name: winName(wins.space.win),
+    why: tr({ he: `תא מטען גדול יותר (${Math.round(wins.space.big)} לעומת ${Math.round(wins.space.small)} ליטר)`, en: `bigger trunk (${Math.round(wins.space.big)} vs ${Math.round(wins.space.small)} L)`, ru: `багажник больше (${Math.round(wins.space.big)} против ${Math.round(wins.space.small)} л)` }),
+  });
+  if (wins.power) useCases.push({
+    icon: '🏁', label: tr({ he: 'לביצועים', en: 'Performance', ru: 'Для динамики' }), name: winName(wins.power.win),
+    why: tr({ he: `עד ${Math.round(wins.power.hp)} כ"ס לעומת ${Math.round(wins.power.otherHp)}`, en: `up to ${Math.round(wins.power.hp)} hp vs ${Math.round(wins.power.otherHp)}`, ru: `до ${Math.round(wins.power.hp)} л.с. против ${Math.round(wins.power.otherHp)}` }),
+  });
+  if (wins.recalls) useCases.push({
+    icon: '🛠️', label: tr({ he: 'פחות ריקולים', en: 'Fewer recalls', ru: 'Меньше отзывных кампаний' }), name: winName(wins.recalls.win),
+    why: tr({ he: `${wins.recalls.few} ריקולים לעומת ${wins.recalls.many} (מאגר NHTSA האמריקאי)`, en: `${wins.recalls.few} recalls vs ${wins.recalls.many} (US NHTSA database)`, ru: `${wins.recalls.few} против ${wins.recalls.many} (база NHTSA, США)` }),
+  });
+  if (wins.owners) useCases.push({
+    icon: '⭐', label: tr({ he: 'דירוג בעלי הרכב', en: 'Owner ratings', ru: 'Оценки владельцев' }), name: winName(wins.owners.win),
+    why: tr({ he: `${dec(wins.owners.avg.toFixed(1))}★ מ-${wins.owners.count} ביקורות`, en: `${wins.owners.avg.toFixed(1)}★ from ${wins.owners.count} reviews`, ru: `${dec(wins.owners.avg.toFixed(1))}★ по ${wins.owners.count} отзывам` }),
+  });
 
   // Related comparisons per car. Russian: only pairs that have a Russian page (/ru URLs).
   type Rel = { key: string; href: string; name: string };
@@ -814,12 +836,26 @@ export default async function ComparePageView({ make1, model1, make2, model2, lo
         )}
 
         {/* Verdict */}
-        {hasVerdict && (() => {
+        {(hasVerdict || useCases.length > 0) && (() => {
           const winner = verdictWinner;
           return (
             <div className="card" style={{ padding: '24px 28px', marginBottom: 28, borderInlineStart: '4px solid var(--accent)' }}>
               <h2 style={{ fontWeight: 800, fontSize: '1rem', marginBottom: 12 }}>{sp.verdictTitle}</h2>
-              {winner && winner !== 'tie' ? (
+              {useCases.length > 0 && (
+                <ul style={{ listStyle: 'none', padding: 0, margin: '0 0 16px', display: 'flex', flexDirection: 'column', gap: 10 }}>
+                  {useCases.map((u) => (
+                    <li key={u.label} style={{ display: 'flex', gap: 10, alignItems: 'baseline', fontSize: '0.9375rem', lineHeight: 1.6 }}>
+                      <span aria-hidden="true">{u.icon}</span>
+                      <span>
+                        <span style={{ color: 'var(--text-muted)' }}>{u.label}: </span>
+                        <strong>{u.name}</strong>
+                        <span style={{ color: 'var(--text-muted)' }}> - {u.why}</span>
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              )}
+              {!hasVerdict ? null : winner && winner !== 'tie' ? (
                 <p style={{ margin: 0, fontSize: '0.9375rem', lineHeight: 1.7, color: 'var(--text-muted)' }}>
                   {verdictBasis} <strong>{winnerName}</strong> {sp.verdictWinnerMid} {loserName}.
                   {(expertA[0]?.pros?.length ?? 0) > 0 || (expertB[0]?.pros?.length ?? 0) > 0 ? ` ${sp.verdictHasPros}` : ''}

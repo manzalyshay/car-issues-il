@@ -2,7 +2,9 @@ import type { Metadata } from 'next';
 import { redirect } from 'next/navigation';
 import { getMakeBySlug, getModelBySlug } from '@/lib/carsDb';
 import { getReviewsForModel } from '@/lib/reviewsDb';
-import { getExpertReviews } from '@/lib/expertReviews';
+import { getTrimSpecs } from '@/lib/trimSpecsDb';
+import { getRecallsFromCache } from '@/lib/recallsDb';
+import { compareSnippet } from '@/lib/compareFacts';
 import { getHostLocale, getBaseUrl } from '@/lib/hostLocale';
 import { getComparePolicy } from '@/lib/seoIndexing';
 import { RU_COMPARE_PATHS } from '@/data/ru-compare-pairs';
@@ -23,38 +25,28 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const nameA = isEn ? `${mA.nameEn} ${modA.nameEn}` : `${mA.nameHe} ${modA.nameHe}`;
   const nameB = isEn ? `${mB.nameEn} ${modB.nameEn}` : `${mB.nameHe} ${modB.nameHe}`;
 
-  // Pull real ratings into the snippet - matches the Product/AggregateRating schema
-  // on the page itself, and gives the SERP something concrete instead of generic copy.
-  const [reviewsA, reviewsB, expertA, expertB, indexable] = await Promise.all([
+  // Snippet = the page's own concrete differences (price, fuel, recalls), not star ratings
+  // from one or two reviews (see lib/compareFacts). Same data the page body renders.
+  const [reviewsA, reviewsB, trimsA, trimsB, recallsA, recallsB, indexable] = await Promise.all([
     getReviewsForModel(make1, model1).catch(() => []),
     getReviewsForModel(make2, model2).catch(() => []),
-    getExpertReviews(make1, model1).catch(() => []),
-    getExpertReviews(make2, model2).catch(() => []),
+    getTrimSpecs(make1, model1).catch(() => []),
+    getTrimSpecs(make2, model2).catch(() => []),
+    getRecallsFromCache(mA.nameEn, modA.nameEn).catch(() => []),
+    getRecallsFromCache(mB.nameEn, modB.nameEn).catch(() => []),
     // Pairs outside the sitemap are noindex (same rule, see lib/seoIndexing).
     // Fail open so a D1 error never caches a stray noindex.
     getComparePolicy().then(p => p.isIndexable(c1, c2)).catch(() => true),
   ]);
-  const avgA = reviewsA.length ? reviewsA.reduce((s, r) => s + r.rating, 0) / reviewsA.length : null;
-  const avgB = reviewsB.length ? reviewsB.reduce((s, r) => s + r.rating, 0) / reviewsB.length : null;
-  const scoreA = expertA[0]?.topScore ?? null;
-  const scoreB = expertB[0]?.topScore ?? null;
-  const hasStats = avgA !== null || avgB !== null;
-
-  const statTag = (avg: number | null, count: number, score: number | null) =>
-    avg !== null ? `${avg.toFixed(1)}★ (${count})` : score !== null ? (isEn ? `AI ${score.toFixed(1)}/10` : `ציון AI ${score.toFixed(1)}/10`) : null;
-  const tagA = statTag(avgA, reviewsA.length, scoreA);
-  const tagB = statTag(avgB, reviewsB.length, scoreB);
+  const side = (name: string, trims: typeof trimsA, recalls: unknown[], reviews: { rating: number }[]) => ({
+    name, trims, recalls: recalls.length, reviewCount: reviews.length,
+    reviewAvg: reviews.length ? reviews.reduce((s, r) => s + r.rating, 0) / reviews.length : null,
+  });
 
   const title = isEn
     ? `${nameA} vs ${nameB}: Which Is Better? (2026)`
     : `${nameA} מול ${nameB} - מי עדיף? השוואה 2026`;
-  const description = hasStats
-    ? isEn
-      ? `${nameA}${tagA ? ` (${tagA})` : ''} vs ${nameB}${tagB ? ` (${tagB})` : ''} - full comparison: pros & cons, reliability, price history 2016-2026. See who wins.`
-      : `${nameA}${tagA ? ` (${tagA})` : ''} מול ${nameB}${tagB ? ` (${tagB})` : ''} - השוואה מלאה: יתרונות וחסרונות, אמינות, היסטוריית מחיר 2016-2026. מי מנצח?`
-    : isEn
-      ? `${nameA} or ${nameB}? Full comparison: AI scores, owner reviews, pros & cons, price history 2016-2026 - CarIssues`
-      : `${nameA} או ${nameB}? השוואה מלאה: ציונים, ביקורות בעלי רכב, יתרונות וחסרונות, היסטוריית מחיר 2016-2026 - CarIssues IL`;
+  const description = compareSnippet(side(nameA, trimsA, recallsA, reviewsA), side(nameB, trimsB, recallsB, reviewsB), isEn);
   return {
     title,
     description,

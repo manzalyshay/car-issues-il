@@ -1,0 +1,791 @@
+{
+ "captured": "2026-11-12",
+ "window": "2026-08-14..2026-11-12 (90d)",
+ "note": "Baseline before snippet + verdict change on compare pages",
+ "pages": [
+  {
+   "page": "https://carissues.co.il/cars/compare/kia/sorento/mitsubishi/outlander",
+   "clicks": 31,
+   "impressions": 442,
+   "ctr": 0.0701,
+   "position": 4.9
+  },
+  {
+   "page": "https://carissues.co.il/cars/compare/kia/sportage/toyota/corolla-cross",
+   "clicks": 31,
+   "impressions": 421,
+   "ctr": 0.0736,
+   "position": 4.2
+  },
+  {
+   "page": "https://carissues.co.il/cars/compare/toyota/chr/toyota/yaris-cross",
+   "clicks": 29,
+   "impressions": 539,
+   "ctr": 0.0538,
+   "position": 5.6
+  },
+  {
+   "page": "https://carissues.co.il/cars/compare/hyundai/tucson/toyota/corolla-cross",
+   "clicks": 22,
+   "impressions": 277,
+   "ctr": 0.0794,
+   "position": 6.1
+  },
+  {
+   "page": "https://carissues.co.il/cars/compare/kia/niro/kia/seltos",
+   "clicks": 22,
+   "impressions": 302,
+   "ctr": 0.0728,
+   "position": 4.0
+  },
+  {
+   "page": "https://carissues.co.il/cars/compare/subaru/forester/subaru/outback",
+   "clicks": 22,
+   "impressions": 278,
+   "ctr": 0.0791,
+   "position": 4.3
+  },
+  {
+   "page": "https://carissues.co.il/cars/compare/hyundai/kona/toyota/corolla-cross",
+   "clicks": 20,
+   "impressions": 614,
+   "ctr": 0.0326,
+   "position": 7.1
+  },
+  {
+   "page": "https://carissues.co.il/cars/compare/toyota/chr/toyota/corolla-cross",
+   "clicks": 20,
+   "impressions": 377,
+   "ctr": 0.0531,
+   "position": 5.4
+  },
+  {
+   "page": "https://carissues.co.il/cars/compare/chery/tiggo8/mitsubishi/outlander",
+   "clicks": 19,
+   "impressions": 216,
+   "ctr": 0.088,
+   "position": 5.9
+  },
+  {
+   "page": "https://carissues.co.il/cars/compare/kia/seltos/kia/sportage",
+   "clicks": 18,
+   "impressions": 432,
+   "ctr": 0.0417,
+   "position": 3.8
+  },
+  {
+   "page": "https://carissues.co.il/cars/compare/seat/arona/skoda/kamiq",
+   "clicks": 18,
+   "impressions": 406,
+   "ctr": 0.0443,
+   "position": 5.9
+  },
+  {
+   "page": "https://carissues.co.il/cars/compare/kia/niro/toyota/corolla-cross",
+   "clicks": 17,
+   "impressions": 357,
+   "ctr": 0.0476,
+   "position": 6.5
+  },
+  {
+   "page": "https://carissues.co.il/cars/compare/hyundai/kona/kia/seltos",
+   "clicks": 16,
+   "impressions": 248,
+   "ctr": 0.0645,
+   "position": 5.3
+  },
+  {
+   "page": "https://carissues.co.il/cars/compare/seat/arona/skoda/fabia",
+   "clicks": 15,
+   "impressions": 93,
+   "ctr": 0.1613,
+   "position": 3.5
+  },
+  {
+   "page": "https://carissues.co.il/cars/compare/skoda/kamiq/skoda/karoq",
+   "clicks": 15,
+   "impressions": 342,
+   "ctr": 0.0439,
+   "position": 6.0
+  },
+  {
+   "page": "https://carissues.co.il/cars/compare/kia/stonic/skoda/fabia",
+   "clicks": 14,
+   "impressions": 131,
+   "ctr": 0.1069,
+   "position": 3.7
+  },
+  {
+   "page": "https://carissues.co.il/cars/compare/skoda/karoq/skoda/octavia",
+   "clicks": 14,
+   "impressions": 143,
+   "ctr": 0.0979,
+   "position": 3.9
+  },
+  {
+   "page": "https://carissues.co.il/cars/compare/hyundai/i20/kia/stonic",
+   "clicks": 12,
+   "impressions": 169,
+   "ctr": 0.071,
+   "position": 4.1
+  },
+  {
+   "page": "https://carissues.co.il/cars/compare/hyundai/tucson/subaru/forester",
+   "clicks": 12,
+   "impressions": 108,
+   "ctr": 0.1111,
+   "position": 3.8
+  },
+  {
+   "page": "https://carissues.co.il/cars/compare/kia/seltos/suzuki/scross",
+   "clicks": 12,
+   "impressions": 124,
+   "ctr": 0.0968,
+   "position": 3.9
+  },
+  {
+   "page": "https://carissues.co.il/cars/compare/mg/hs/mg/mg-zs",
+   "clicks": 12,
+   "impressions": 125,
+   "ctr": 0.096,
+   "position": 7.3
+  },
+  {
+   "page": "https://carissues.co.il/cars/compare/suzuki/scross/toyota/yaris-cross",
+   "clicks": 12,
+   "impressions": 180,
+   "ctr": 0.0667,
+   "position": 5.1
+  },
+  {
+   "page": "https://carissues.co.il/cars/compare/hyundai/kona/hyundai/tucson",
+   "clicks": 11,
+   "impressions": 387,
+   "ctr": 0.0284,
+   "position": 5.4
+  },
+  {
+   "page": "https://carissues.co.il/cars/compare/nissan/qashqai/toyota/corolla-cross",
+   "clicks": 11,
+   "impressions": 120,
+   "ctr": 0.0917,
+   "position": 4.8
+  },
+  {
+   "page": "https://carissues.co.il/cars/compare/toyota/corolla/toyota/prius",
+   "clicks": 11,
+   "impressions": 193,
+   "ctr": 0.057,
+   "position": 3.8
+  },
+  {
+   "page": "https://carissues.co.il/cars/compare/hyundai/elantra/hyundai/kona",
+   "clicks": 10,
+   "impressions": 146,
+   "ctr": 0.0685,
+   "position": 4.1
+  },
+  {
+   "page": "https://carissues.co.il/cars/compare/hyundai/venue/toyota/yaris-cross",
+   "clicks": 10,
+   "impressions": 154,
+   "ctr": 0.0649,
+   "position": 4.7
+  },
+  {
+   "page": "https://carissues.co.il/cars/compare/kia/sorento/skoda/kodiaq",
+   "clicks": 10,
+   "impressions": 212,
+   "ctr": 0.0472,
+   "position": 5.1
+  },
+  {
+   "page": "https://carissues.co.il/cars/compare/suzuki/scross/toyota/corolla-cross",
+   "clicks": 10,
+   "impressions": 164,
+   "ctr": 0.061,
+   "position": 4.5
+  },
+  {
+   "page": "https://carissues.co.il/cars/compare/hyundai/kona/skoda/octavia",
+   "clicks": 9,
+   "impressions": 81,
+   "ctr": 0.1111,
+   "position": 4.8
+  },
+  {
+   "page": "https://carissues.co.il/cars/compare/kia/sportage/mitsubishi/outlander",
+   "clicks": 9,
+   "impressions": 143,
+   "ctr": 0.0629,
+   "position": 4.0
+  },
+  {
+   "page": "https://carissues.co.il/cars/compare/lexus/nx/lexus/rx",
+   "clicks": 9,
+   "impressions": 160,
+   "ctr": 0.0563,
+   "position": 6.5
+  },
+  {
+   "page": "https://carissues.co.il/cars/compare/lexus/nx/toyota/rav4",
+   "clicks": 9,
+   "impressions": 214,
+   "ctr": 0.0421,
+   "position": 5.4
+  },
+  {
+   "page": "https://carissues.co.il/cars/compare/toyota/camry/toyota/corolla",
+   "clicks": 9,
+   "impressions": 169,
+   "ctr": 0.0533,
+   "position": 3.5
+  },
+  {
+   "page": "https://carissues.co.il/cars/compare/kia/stonic/toyota/yaris",
+   "clicks": 8,
+   "impressions": 159,
+   "ctr": 0.0503,
+   "position": 5.4
+  },
+  {
+   "page": "https://carissues.co.il/cars/compare/skoda/fabia/toyota/yaris",
+   "clicks": 8,
+   "impressions": 130,
+   "ctr": 0.0615,
+   "position": 4.6
+  },
+  {
+   "page": "https://carissues.co.il/cars/compare/subaru/forester/toyota/rav4",
+   "clicks": 8,
+   "impressions": 337,
+   "ctr": 0.0237,
+   "position": 6.0
+  },
+  {
+   "page": "https://carissues.co.il/cars/compare/suzuki/vitara/toyota/yaris-cross",
+   "clicks": 8,
+   "impressions": 171,
+   "ctr": 0.0468,
+   "position": 5.7
+  },
+  {
+   "page": "https://carissues.co.il/cars/compare/byd/atto3/mg/mg4",
+   "clicks": 7,
+   "impressions": 151,
+   "ctr": 0.0464,
+   "position": 8.5
+  },
+  {
+   "page": "https://carissues.co.il/cars/compare/chery/tiggo7/kia/sportage",
+   "clicks": 7,
+   "impressions": 85,
+   "ctr": 0.0824,
+   "position": 5.5
+  },
+  {
+   "page": "https://carissues.co.il/cars/compare/hyundai/kona/kia/sportage",
+   "clicks": 7,
+   "impressions": 136,
+   "ctr": 0.0515,
+   "position": 5.8
+  },
+  {
+   "page": "https://carissues.co.il/cars/compare/hyundai/tucson/skoda/karoq",
+   "clicks": 7,
+   "impressions": 85,
+   "ctr": 0.0824,
+   "position": 4.9
+  },
+  {
+   "page": "https://carissues.co.il/cars/compare/kia/niro/kia/stonic",
+   "clicks": 7,
+   "impressions": 189,
+   "ctr": 0.037,
+   "position": 3.7
+  },
+  {
+   "page": "https://carissues.co.il/cars/compare/kia/niro/toyota/corolla",
+   "clicks": 7,
+   "impressions": 244,
+   "ctr": 0.0287,
+   "position": 5.5
+  },
+  {
+   "page": "https://carissues.co.il/cars/compare/kia/seltos/toyota/corolla-cross",
+   "clicks": 7,
+   "impressions": 85,
+   "ctr": 0.0824,
+   "position": 4.3
+  },
+  {
+   "page": "https://carissues.co.il/cars/compare/skoda/karoq/skoda/kodiaq",
+   "clicks": 7,
+   "impressions": 281,
+   "ctr": 0.0249,
+   "position": 3.9
+  },
+  {
+   "page": "https://carissues.co.il/cars/compare/skoda/karoq/toyota/corolla-cross",
+   "clicks": 7,
+   "impressions": 95,
+   "ctr": 0.0737,
+   "position": 6.4
+  },
+  {
+   "page": "https://carissues.co.il/cars/compare/skoda/kodiaq/toyota/rav4",
+   "clicks": 7,
+   "impressions": 171,
+   "ctr": 0.0409,
+   "position": 5.5
+  },
+  {
+   "page": "https://carissues.co.il/cars/compare/toyota/camry/toyota/rav4",
+   "clicks": 7,
+   "impressions": 112,
+   "ctr": 0.0625,
+   "position": 4.8
+  },
+  {
+   "page": "https://carissues.co.il/cars/compare/volkswagen/golf/volkswagen/polo",
+   "clicks": 7,
+   "impressions": 166,
+   "ctr": 0.0422,
+   "position": 7.1
+  },
+  {
+   "page": "https://carissues.co.il/cars/compare/hyundai/bayon/kia/stonic",
+   "clicks": 6,
+   "impressions": 88,
+   "ctr": 0.0682,
+   "position": 5
+  },
+  {
+   "page": "https://carissues.co.il/cars/compare/hyundai/kona/kia/niro",
+   "clicks": 6,
+   "impressions": 121,
+   "ctr": 0.0496,
+   "position": 7.5
+  },
+  {
+   "page": "https://carissues.co.il/cars/compare/hyundai/kona/skoda/kamiq",
+   "clicks": 6,
+   "impressions": 98,
+   "ctr": 0.0612,
+   "position": 5.5
+  },
+  {
+   "page": "https://carissues.co.il/cars/compare/seat/ateca/skoda/karoq",
+   "clicks": 6,
+   "impressions": 263,
+   "ctr": 0.0228,
+   "position": 6.0
+  },
+  {
+   "page": "https://carissues.co.il/cars/compare/suzuki/scross/suzuki/vitara",
+   "clicks": 6,
+   "impressions": 338,
+   "ctr": 0.0178,
+   "position": 6.5
+  },
+  {
+   "page": "https://carissues.co.il/cars/compare/tesla/model-3/tesla/model-y",
+   "clicks": 6,
+   "impressions": 294,
+   "ctr": 0.0204,
+   "position": 6.9
+  },
+  {
+   "page": "https://carissues.co.il/cars/compare/toyota/corolla/toyota/corolla-cross",
+   "clicks": 6,
+   "impressions": 117,
+   "ctr": 0.0513,
+   "position": 7.8
+  },
+  {
+   "page": "https://carissues.co.il/cars/compare/chery/tiggo7/hyundai/kona",
+   "clicks": 5,
+   "impressions": 86,
+   "ctr": 0.0581,
+   "position": 4.9
+  },
+  {
+   "page": "https://carissues.co.il/cars/compare/hyundai/santa-fe/kia/sorento",
+   "clicks": 5,
+   "impressions": 202,
+   "ctr": 0.0248,
+   "position": 6.8
+  },
+  {
+   "page": "https://carissues.co.il/cars/compare/kia/niro/kia/sportage",
+   "clicks": 5,
+   "impressions": 133,
+   "ctr": 0.0376,
+   "position": 8.3
+  },
+  {
+   "page": "https://carissues.co.il/cars/compare/kia/sportage/nissan/qashqai",
+   "clicks": 5,
+   "impressions": 121,
+   "ctr": 0.0413,
+   "position": 6.5
+  },
+  {
+   "page": "https://carissues.co.il/cars/compare/kia/stonic/toyota/yaris-cross",
+   "clicks": 5,
+   "impressions": 155,
+   "ctr": 0.0323,
+   "position": 5.8
+  },
+  {
+   "page": "https://carissues.co.il/cars/compare/mazda/cx5/toyota/rav4",
+   "clicks": 5,
+   "impressions": 146,
+   "ctr": 0.0342,
+   "position": 9.0
+  },
+  {
+   "page": "https://carissues.co.il/cars/compare/peugeot/2008/peugeot/3008",
+   "clicks": 5,
+   "impressions": 151,
+   "ctr": 0.0331,
+   "position": 6.4
+  },
+  {
+   "page": "https://carissues.co.il/cars/compare/skoda/octavia/toyota/corolla",
+   "clicks": 5,
+   "impressions": 121,
+   "ctr": 0.0413,
+   "position": 5.1
+  },
+  {
+   "page": "https://carissues.co.il/cars/compare/suzuki/swift/toyota/yaris",
+   "clicks": 5,
+   "impressions": 192,
+   "ctr": 0.026,
+   "position": 6.5
+  },
+  {
+   "page": "https://carissues.co.il/cars/compare/byd/atto3/byd/seal",
+   "clicks": 4,
+   "impressions": 96,
+   "ctr": 0.0417,
+   "position": 12.5
+  },
+  {
+   "page": "https://carissues.co.il/cars/compare/byd/atto3/hyundai/kona",
+   "clicks": 4,
+   "impressions": 91,
+   "ctr": 0.044,
+   "position": 6.1
+  },
+  {
+   "page": "https://carissues.co.il/cars/compare/hyundai/elantra/hyundai/sonata",
+   "clicks": 4,
+   "impressions": 223,
+   "ctr": 0.0179,
+   "position": 5.7
+  },
+  {
+   "page": "https://carissues.co.il/cars/compare/hyundai/ioniq-5/tesla/model-y",
+   "clicks": 4,
+   "impressions": 126,
+   "ctr": 0.0317,
+   "position": 7.0
+  },
+  {
+   "page": "https://carissues.co.il/cars/compare/hyundai/kona/suzuki/vitara",
+   "clicks": 4,
+   "impressions": 108,
+   "ctr": 0.037,
+   "position": 5.7
+  },
+  {
+   "page": "https://carissues.co.il/cars/compare/hyundai/kona/toyota/chr",
+   "clicks": 4,
+   "impressions": 123,
+   "ctr": 0.0325,
+   "position": 6.3
+  },
+  {
+   "page": "https://carissues.co.il/cars/compare/hyundai/tucson/mazda/cx5",
+   "clicks": 4,
+   "impressions": 94,
+   "ctr": 0.0426,
+   "position": 7.0
+  },
+  {
+   "page": "https://carissues.co.il/cars/compare/hyundai/tucson/mitsubishi/outlander",
+   "clicks": 4,
+   "impressions": 123,
+   "ctr": 0.0325,
+   "position": 5.3
+  },
+  {
+   "page": "https://carissues.co.il/cars/compare/kia/picanto/suzuki/swift",
+   "clicks": 4,
+   "impressions": 127,
+   "ctr": 0.0315,
+   "position": 5.5
+  },
+  {
+   "page": "https://carissues.co.il/cars/compare/kia/sportage/mazda/cx5",
+   "clicks": 4,
+   "impressions": 193,
+   "ctr": 0.0207,
+   "position": 7.2
+  },
+  {
+   "page": "https://carissues.co.il/cars/compare/mazda/cx30/mazda/mazda3",
+   "clicks": 4,
+   "impressions": 104,
+   "ctr": 0.0385,
+   "position": 7.2
+  },
+  {
+   "page": "https://carissues.co.il/cars/compare/mitsubishi/asx/mitsubishi/eclipse-cross",
+   "clicks": 4,
+   "impressions": 217,
+   "ctr": 0.0184,
+   "position": 12.4
+  },
+  {
+   "page": "https://carissues.co.il/cars/compare/mitsubishi/eclipse-cross/mitsubishi/outlander",
+   "clicks": 4,
+   "impressions": 95,
+   "ctr": 0.0421,
+   "position": 7.8
+  },
+  {
+   "page": "https://carissues.co.il/cars/compare/skoda/fabia/skoda/kamiq",
+   "clicks": 4,
+   "impressions": 89,
+   "ctr": 0.0449,
+   "position": 5.2
+  },
+  {
+   "page": "https://carissues.co.il/cars/compare/skoda/fabia/skoda/scala",
+   "clicks": 4,
+   "impressions": 91,
+   "ctr": 0.044,
+   "position": 6
+  },
+  {
+   "page": "https://carissues.co.il/cars/compare/skoda/kamiq/skoda/scala",
+   "clicks": 4,
+   "impressions": 180,
+   "ctr": 0.0222,
+   "position": 6.3
+  },
+  {
+   "page": "https://carissues.co.il/cars/compare/toyota/corolla-cross/toyota/yaris-cross",
+   "clicks": 4,
+   "impressions": 555,
+   "ctr": 0.0072,
+   "position": 7.0
+  },
+  {
+   "page": "https://carissues.co.il/cars/compare/dacia/duster/subaru/xv",
+   "clicks": 3,
+   "impressions": 83,
+   "ctr": 0.0361,
+   "position": 6.9
+  },
+  {
+   "page": "https://carissues.co.il/cars/compare/honda/hrv/toyota/corolla-cross",
+   "clicks": 3,
+   "impressions": 87,
+   "ctr": 0.0345,
+   "position": 5.6
+  },
+  {
+   "page": "https://carissues.co.il/cars/compare/hyundai/ioniq-5/hyundai/kona",
+   "clicks": 3,
+   "impressions": 121,
+   "ctr": 0.0248,
+   "position": 5.7
+  },
+  {
+   "page": "https://carissues.co.il/cars/compare/hyundai/kona/mazda/cx5",
+   "clicks": 3,
+   "impressions": 81,
+   "ctr": 0.037,
+   "position": 4.4
+  },
+  {
+   "page": "https://carissues.co.il/cars/compare/hyundai/kona/suzuki/scross",
+   "clicks": 3,
+   "impressions": 98,
+   "ctr": 0.0306,
+   "position": 4.2
+  },
+  {
+   "page": "https://carissues.co.il/cars/compare/kia/niro/toyota/yaris-cross",
+   "clicks": 3,
+   "impressions": 186,
+   "ctr": 0.0161,
+   "position": 5.1
+  },
+  {
+   "page": "https://carissues.co.il/cars/compare/kia/picanto/toyota/yaris",
+   "clicks": 3,
+   "impressions": 188,
+   "ctr": 0.016,
+   "position": 5.2
+  },
+  {
+   "page": "https://carissues.co.il/cars/compare/kia/stonic/skoda/kamiq",
+   "clicks": 3,
+   "impressions": 88,
+   "ctr": 0.0341,
+   "position": 5.7
+  },
+  {
+   "page": "https://carissues.co.il/cars/compare/mitsubishi/asx/mitsubishi/outlander",
+   "clicks": 3,
+   "impressions": 88,
+   "ctr": 0.0341,
+   "position": 5.7
+  },
+  {
+   "page": "https://carissues.co.il/cars/compare/mitsubishi/outlander/peugeot/5008",
+   "clicks": 3,
+   "impressions": 91,
+   "ctr": 0.033,
+   "position": 7.8
+  },
+  {
+   "page": "https://carissues.co.il/cars/compare/mitsubishi/outlander/skoda/kodiaq",
+   "clicks": 3,
+   "impressions": 81,
+   "ctr": 0.037,
+   "position": 7.0
+  },
+  {
+   "page": "https://carissues.co.il/cars/compare/nissan/juke/nissan/qashqai",
+   "clicks": 3,
+   "impressions": 129,
+   "ctr": 0.0233,
+   "position": 5.1
+  },
+  {
+   "page": "https://carissues.co.il/cars/compare/seat/arona/seat/ibiza",
+   "clicks": 3,
+   "impressions": 85,
+   "ctr": 0.0353,
+   "position": 6.2
+  },
+  {
+   "page": "https://carissues.co.il/cars/compare/seat/arona/toyota/yaris-cross",
+   "clicks": 3,
+   "impressions": 99,
+   "ctr": 0.0303,
+   "position": 5.5
+  },
+  {
+   "page": "https://carissues.co.il/cars/compare/seat/ibiza/toyota/yaris",
+   "clicks": 3,
+   "impressions": 80,
+   "ctr": 0.0375,
+   "position": 4.4
+  },
+  {
+   "page": "https://carissues.co.il/cars/compare/skoda/kamiq/toyota/yaris-cross",
+   "clicks": 3,
+   "impressions": 117,
+   "ctr": 0.0256,
+   "position": 5.7
+  },
+  {
+   "page": "https://carissues.co.il/cars/compare/subaru/forester/subaru/xv",
+   "clicks": 3,
+   "impressions": 128,
+   "ctr": 0.0234,
+   "position": 7.0
+  },
+  {
+   "page": "https://carissues.co.il/cars/compare/toyota/chr/toyota/corolla",
+   "clicks": 3,
+   "impressions": 93,
+   "ctr": 0.0323,
+   "position": 4.7
+  },
+  {
+   "page": "https://carissues.co.il/cars/compare/toyota/corolla/toyota/yaris-cross",
+   "clicks": 3,
+   "impressions": 221,
+   "ctr": 0.0136,
+   "position": 7.4
+  },
+  {
+   "page": "https://carissues.co.il/cars/compare/honda/crv/honda/hrv",
+   "clicks": 2,
+   "impressions": 99,
+   "ctr": 0.0202,
+   "position": 5.4
+  },
+  {
+   "page": "https://carissues.co.il/cars/compare/hyundai/elantra/mazda/mazda3",
+   "clicks": 2,
+   "impressions": 83,
+   "ctr": 0.0241,
+   "position": 6.0
+  },
+  {
+   "page": "https://carissues.co.il/cars/compare/hyundai/i20/suzuki/swift",
+   "clicks": 2,
+   "impressions": 154,
+   "ctr": 0.013,
+   "position": 6.2
+  },
+  {
+   "page": "https://carissues.co.il/cars/compare/hyundai/kona/kia/stonic",
+   "clicks": 2,
+   "impressions": 126,
+   "ctr": 0.0159,
+   "position": 6.5
+  },
+  {
+   "page": "https://carissues.co.il/cars/compare/hyundai/kona/toyota/yaris-cross",
+   "clicks": 2,
+   "impressions": 194,
+   "ctr": 0.0103,
+   "position": 6.0
+  },
+  {
+   "page": "https://carissues.co.il/cars/compare/hyundai/tucson/kia/seltos",
+   "clicks": 2,
+   "impressions": 110,
+   "ctr": 0.0182,
+   "position": 4.1
+  },
+  {
+   "page": "https://carissues.co.il/cars/compare/hyundai/venue/kia/stonic",
+   "clicks": 2,
+   "impressions": 152,
+   "ctr": 0.0132,
+   "position": 7.5
+  },
+  {
+   "page": "https://carissues.co.il/cars/compare/kia/sportage/toyota/rav4",
+   "clicks": 2,
+   "impressions": 154,
+   "ctr": 0.013,
+   "position": 7.8
+  },
+  {
+   "page": "https://carissues.co.il/cars/compare/land-rover/defender/toyota/land-cruiser",
+   "clicks": 2,
+   "impressions": 112,
+   "ctr": 0.0179,
+   "position": 6.6
+  },
+  {
+   "page": "https://carissues.co.il/cars/compare/mitsubishi/outlander/subaru/forester",
+   "clicks": 2,
+   "impressions": 86,
+   "ctr": 0.0233,
+   "position": 4.8
+  }
+ ]
+}

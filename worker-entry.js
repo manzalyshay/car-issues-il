@@ -145,7 +145,7 @@ async function logVisit(env, request, url) {
 // Only plain document GETs on the canonical hosts with no query string are cached, and
 // requests that middleware would treat differently bypass it: the `clang` preference
 // cookie (cross-host redirects) and carissues.net/ (geo redirect for Israel).
-// Trade-off: a page can be up to EDGE_HTML_TTL_SEC stale (e.g. a new review).
+// Trade-off: a page can be up to EDGE_HTML_TTL_SEC stale (e.g. a new review); deploys start fresh.
 const EDGE_HTML_TTL_SEC = 3 * 60 * 60;
 const EDGE_CACHE_HOSTS = new Set(["carissues.co.il", "carissues.net"]);
 
@@ -165,7 +165,10 @@ function isEdgeCacheable(request, url) {
 
 async function renderWithEdgeCache(request, env, ctx, url) {
   const cache = caches.default;
-  const key = new Request(`https://${url.hostname}${url.pathname}`, { method: "GET" });
+  // Versioned by deploy (CF_VERSION_METADATA in wrangler.toml), so a new deploy never
+  // serves HTML rendered by the previous one; old entries just expire.
+  const version = env.CF_VERSION_METADATA?.id || "unversioned";
+  const key = new Request(`https://${url.hostname}${url.pathname}?__v=${version}`, { method: "GET" });
   const hit = await cache.match(key);
   if (hit) {
     const res = new Response(hit.body, hit);
