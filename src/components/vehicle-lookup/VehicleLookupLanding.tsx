@@ -2,7 +2,6 @@
  * Plate-lookup landing page for all three languages: /vehicle-lookup on carissues.co.il (he)
  * and carissues.net (en), and /ru/vehicle-lookup (ru). Each route sets its own metadata.
  */
-import Link from 'next/link';
 import { getBaseUrl } from '@/lib/hostLocale';
 import PlateSearch from '@/components/PlateSearch';
 import { pick, type Locale, type Tri } from '@/lib/i18n';
@@ -194,11 +193,6 @@ export default function VehicleLookupLanding({ locale }: { locale: Locale }) {
               ru: 'Введите номер израильского автомобиля и сразу получите данные Министерства транспорта: техосмотр, историю владения, пробег, повреждения и технические данные.',
             })}
           </p>
-          {isHe && (
-            <p style={{ margin: '12px 0 0', fontSize: '0.85rem' }}>
-              <Link href="/ru/vehicle-lookup" lang="ru" hrefLang="ru" style={{ color: "#93c5fd", fontWeight: 600, textDecoration: "none" }}>Проверка авто по номеру на русском →</Link>
-            </p>
-          )}
           <p style={{ color: '#475569', fontSize: '0.72rem', marginTop: 14 }}>
             {tr({ he: 'מקור: משרד התחבורה (data.gov.il)', en: 'Source: Israel Ministry of Transport (data.gov.il)', ru: 'Источник: Министерство транспорта Израиля (data.gov.il)' })}
           </p>
