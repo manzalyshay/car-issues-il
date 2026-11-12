@@ -20,6 +20,14 @@ interface Props {
   articleFindings?: ArticleFinding[];
 }
 
+/** Recall cards shown per page. */
+const PAGE_SIZE = 10;
+
+const pageBtn: React.CSSProperties = {
+  height: 32, padding: '0 12px', borderRadius: 9999, fontSize: '0.8rem', fontWeight: 700,
+  background: 'var(--bg-muted)', color: 'var(--text-muted)', border: 'none', cursor: 'pointer',
+};
+
 export default function RecallsSection({ makeEn, modelEn, year, years, initialRecalls, intro, articleFindings }: Props) {
   const { t, locale } = useLocale();
   const rc = t.recalls;
@@ -31,6 +39,7 @@ export default function RecallsSection({ makeEn, modelEn, year, years, initialRe
   const [expanded, setExpanded]   = useState<string | null>(null);
   const [filterYear, setFilterYear] = useState<number | 'all'>('all');
   const [filterSource, setFilterSource] = useState<'all' | 'il' | 'us'>('all');
+  const [page, setPage] = useState(1);
 
   const yearsKey = years?.join(',') ?? '';
 
@@ -79,6 +88,16 @@ export default function RecallsSection({ makeEn, modelEn, year, years, initialRe
     (filterYear === 'all' || r.year === filterYear)
     && (filterSource === 'all' || (filterSource === 'il' ? r.source === 'il' : r.source !== 'il'))),
   [recalls, filterYear, filterSource]);
+
+  // Paging: every card stays in the HTML (search engines read the whole list); only
+  // the current page is displayed.
+  const pageCount = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+  const currentPage = Math.min(page, pageCount);
+  const goToPage = (n: number) => {
+    setPage(n);
+    setExpanded(null);
+    document.getElementById('recall-list')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  };
 
   const ilCount = useMemo(() => recalls.filter(r => r.source === 'il').length, [recalls]);
   const usCount = useMemo(() => recalls.filter(r => r.source === 'us').length, [recalls]);
@@ -181,7 +200,7 @@ export default function RecallsSection({ makeEn, modelEn, year, years, initialRe
           ] as const).map(([key, label]) => (
             <button
               key={key}
-              onClick={() => { setFilterSource(key); if (key === 'il') setFilterYear('all'); }}
+              onClick={() => { setFilterSource(key); setPage(1); if (key === 'il') setFilterYear('all'); }}
               aria-pressed={filterSource === key}
               style={{
                 height: 30, padding: '0 14px', borderRadius: 9999, fontSize: '0.8rem', fontWeight: 700,
@@ -246,7 +265,7 @@ export default function RecallsSection({ makeEn, modelEn, year, years, initialRe
           {!year && availableYears.length > 1 && (
             <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 14, marginTop: 16 }}>
               <button
-                onClick={() => setFilterYear('all')}
+                onClick={() => { setFilterYear('all'); setPage(1); }}
                 style={{
                   height: 30, padding: '0 14px', borderRadius: 9999, fontSize: '0.8rem', fontWeight: 600,
                   background: filterYear === 'all' ? '#dc2626' : 'var(--bg-muted)',
@@ -259,7 +278,7 @@ export default function RecallsSection({ makeEn, modelEn, year, years, initialRe
               {availableYears.map(y => (
                 <button
                   key={y}
-                  onClick={() => setFilterYear(y)}
+                  onClick={() => { setFilterYear(y); setPage(1); }}
                   style={{
                     height: 30, padding: '0 14px', borderRadius: 9999, fontSize: '0.8rem', fontWeight: 600,
                     background: filterYear === y ? '#dc2626' : 'var(--bg-muted)',
@@ -274,11 +293,12 @@ export default function RecallsSection({ makeEn, modelEn, year, years, initialRe
           )}
 
           {/* Recall cards */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+          <div id="recall-list" style={{ display: 'flex', flexDirection: 'column', gap: 8, scrollMarginTop: 120 }}>
             {filtered.map((r, idx) => (
               <div
                 key={r.id}
                 style={{
+                  display: Math.floor(idx / PAGE_SIZE) + 1 === currentPage ? 'block' : 'none',
                   borderRadius: 12, border: '1px solid var(--border)',
                   background: '#fff', overflow: 'hidden',
                   boxShadow: expanded === r.id ? '0 4px 16px rgba(0,0,0,0.07)' : 'none',
@@ -426,6 +446,41 @@ export default function RecallsSection({ makeEn, modelEn, year, years, initialRe
               </div>
             ))}
           </div>
+
+          {/* Pages */}
+          {pageCount > 1 && (
+            <nav aria-label={isHe ? 'עמודי ריקולים' : 'Recall pages'} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, flexWrap: 'wrap', marginTop: 16 }}>
+              <button
+                onClick={() => goToPage(currentPage - 1)}
+                disabled={currentPage === 1}
+                style={{ ...pageBtn, opacity: currentPage === 1 ? 0.4 : 1, cursor: currentPage === 1 ? 'default' : 'pointer' }}
+              >
+                {isHe ? 'הקודם' : 'Previous'}
+              </button>
+              {Array.from({ length: pageCount }, (_, i) => i + 1).map(n => (
+                <button
+                  key={n}
+                  onClick={() => goToPage(n)}
+                  aria-current={n === currentPage ? 'page' : undefined}
+                  style={{ ...pageBtn, minWidth: 34, background: n === currentPage ? 'var(--accent)' : 'var(--bg-muted)', color: n === currentPage ? '#fff' : 'var(--text-muted)' }}
+                >
+                  {n}
+                </button>
+              ))}
+              <button
+                onClick={() => goToPage(currentPage + 1)}
+                disabled={currentPage === pageCount}
+                style={{ ...pageBtn, opacity: currentPage === pageCount ? 0.4 : 1, cursor: currentPage === pageCount ? 'default' : 'pointer' }}
+              >
+                {isHe ? 'הבא' : 'Next'}
+              </button>
+              <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginInlineStart: 6 }}>
+                {isHe
+                  ? `${(currentPage - 1) * PAGE_SIZE + 1}–${Math.min(currentPage * PAGE_SIZE, filtered.length)} מתוך ${filtered.length}`
+                  : `${(currentPage - 1) * PAGE_SIZE + 1}–${Math.min(currentPage * PAGE_SIZE, filtered.length)} of ${filtered.length}`}
+              </span>
+            </nav>
+          )}
         </>
       )}
 
