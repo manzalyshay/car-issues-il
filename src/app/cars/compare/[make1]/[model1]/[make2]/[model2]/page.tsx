@@ -44,8 +44,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   });
 
   const title = isEn
-    ? `${nameA} vs ${nameB}: Which Is Better? (2026)`
-    : `${nameA} מול ${nameB} - מי עדיף? השוואה 2026`;
+    ? `${nameA} vs ${nameB}: Price, Fuel Economy & Problems (2026)`
+    : `${nameA} מול ${nameB}: מחיר, צריכה ותקלות (2026)`;
   const description = compareSnippet(side(nameA, trimsA, recallsA, reviewsA), side(nameB, trimsB, recallsB, reviewsB), isEn);
   return {
     title,
