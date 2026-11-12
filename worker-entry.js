@@ -138,9 +138,65 @@ async function logVisit(env, request, url) {
   }
 }
 
+// ── Edge HTML cache ──────────────────────────────────────────────────────────
+// The root layout reads headers() (host -> he/en), so Next renders every page on every
+// request and `revalidate` never applies. Rendered HTML depends only on host + path, so
+// cache it here in the per-colo Cache API, keyed by the full URL (host included).
+// Only plain document GETs on the canonical hosts with no query string are cached, and
+// requests that middleware would treat differently bypass it: the `clang` preference
+// cookie (cross-host redirects) and carissues.net/ (geo redirect for Israel).
+// Trade-off: a page can be up to EDGE_HTML_TTL_SEC stale (e.g. a new review).
+const EDGE_HTML_TTL_SEC = 3 * 60 * 60;
+const EDGE_CACHE_HOSTS = new Set(["carissues.co.il", "carissues.net"]);
+
+function isEdgeCacheable(request, url) {
+  if (request.method !== "GET") return false;
+  if (!EDGE_CACHE_HOSTS.has(url.hostname)) return false;
+  if (url.search) return false;
+  const p = url.pathname;
+  if (p.startsWith("/api/") || p.startsWith("/_next/") || p.startsWith("/admin") || p.startsWith("/cdn-cgi/")) return false;
+  if (url.hostname === "carissues.net" && p === "/") return false;
+  if (!(request.headers.get("accept") || "").includes("text/html")) return false;
+  if (request.headers.get("rsc") || request.headers.get("next-router-prefetch") || request.headers.get("next-router-state-tree")) return false;
+  if (request.headers.get("authorization")) return false;
+  if (/(^|;\s*)clang=/.test(request.headers.get("cookie") || "")) return false;
+  return true;
+}
+
+async function renderWithEdgeCache(request, env, ctx, url) {
+  const cache = caches.default;
+  const key = new Request(`https://${url.hostname}${url.pathname}`, { method: "GET" });
+  const hit = await cache.match(key);
+  if (hit) {
+    const res = new Response(hit.body, hit);
+    res.headers.set("cache-control", "private, no-cache, no-store, max-age=0, must-revalidate");
+    res.headers.set("x-edge-cache", "HIT");
+    return res;
+  }
+  const response = await openNextWorker.fetch(request, env, ctx);
+  const type = response.headers.get("content-type") || "";
+  if (response.status === 200 && type.includes("text/html") && !response.headers.has("set-cookie")) {
+    const toStore = new Response(response.clone().body, response);
+    toStore.headers.set("cache-control", `public, s-maxage=${EDGE_HTML_TTL_SEC}`);
+    ctx.waitUntil(cache.put(key, toStore).catch((err) => console.error("[edge cache] put failed", err)));
+  }
+  const res = new Response(response.body, response);
+  res.headers.set("x-edge-cache", "MISS");
+  return res;
+}
+
 export default {
   async fetch(request, env, ctx) {
-    const response = await openNextWorker.fetch(request, env, ctx);
+    let response;
+    try {
+      const url = new URL(request.url);
+      response = isEdgeCacheable(request, url)
+        ? await renderWithEdgeCache(request, env, ctx, url)
+        : await openNextWorker.fetch(request, env, ctx);
+    } catch (err) {
+      console.error("[edge cache] falling back to direct render", err);
+      response = await openNextWorker.fetch(request, env, ctx);
+    }
     try {
       const url = new URL(request.url);
       if (shouldLogVisit(request, url, response)) ctx.waitUntil(logVisit(env, request, url));
