@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
+import Link from 'next/link';
 import type { Recall } from '@/app/api/recalls/route';
 import { useLocale } from '@/lib/localeContext';
 import CarDiagramRecalls, { classifyRecall, ZONE_LABELS, type ZoneId } from '@/components/CarDiagramRecalls';
@@ -10,22 +11,29 @@ interface Props {
   modelEn: string;
   year?: number;
   years?: number[]; // all model years to query
+  /** Recalls already loaded on the server; when given, nothing is fetched in the browser. */
+  initialRecalls?: Recall[];
+  /** Short summary shown under the heading. */
+  intro?: string;
+  /** The model's main weaknesses, listed above the recalls. */
+  weaknesses?: string[];
 }
 
-export default function RecallsSection({ makeEn, modelEn, year, years }: Props) {
+export default function RecallsSection({ makeEn, modelEn, year, years, initialRecalls, intro, weaknesses }: Props) {
   const { t, locale } = useLocale();
   const rc = t.recalls;
   const isHe = locale === 'he';
 
-  const [recalls, setRecalls]     = useState<Recall[]>([]);
+  const [recalls, setRecalls]     = useState<Recall[]>(initialRecalls ?? []);
   // Start in loading state so SSR / first paint never shows a false "no recalls" message
-  const [loading, setLoading]     = useState(true);
+  const [loading, setLoading]     = useState(!initialRecalls);
   const [expanded, setExpanded]   = useState<string | null>(null);
   const [filterYear, setFilterYear] = useState<number | 'all'>('all');
 
   const yearsKey = years?.join(',') ?? '';
 
   useEffect(() => {
+    if (initialRecalls) return;
     let cancelled = false;
     setLoading(true);
 
@@ -56,7 +64,7 @@ export default function RecallsSection({ makeEn, modelEn, year, years }: Props) 
     })();
 
     return () => { cancelled = true; };
-  }, [makeEn, modelEn, year, yearsKey, locale]);
+  }, [makeEn, modelEn, year, yearsKey, locale, initialRecalls]);
 
   // Collect unique years for the filter
   const availableYears = useMemo(() => {
@@ -116,6 +124,28 @@ export default function RecallsSection({ makeEn, modelEn, year, years }: Props) 
           </a>
         )}
       </div>
+
+      {intro && (
+        <p style={{ margin: '0 0 18px', fontSize: '0.92rem', lineHeight: 1.75 }}>
+          {intro}{' '}
+          {isHe && (
+            <Link href="/vehicle-lookup" style={{ color: 'var(--accent)', fontWeight: 700, whiteSpace: 'nowrap' }}>
+              בדיקת רכב לפי מספר רישוי ←
+            </Link>
+          )}
+        </p>
+      )}
+
+      {weaknesses && weaknesses.length > 0 && (
+        <div style={{ margin: '0 0 20px', padding: '12px 16px', border: '1px solid var(--border)', borderRadius: 12, background: 'var(--bg-muted)' }}>
+          <h3 style={{ margin: '0 0 8px', fontSize: '0.9rem', fontWeight: 800 }}>
+            {isHe ? 'חולשות עיקריות של הדגם' : 'Main weaknesses'}
+          </h3>
+          <ul style={{ margin: 0, paddingInlineStart: 18, display: 'flex', flexDirection: 'column', gap: 4, fontSize: '0.875rem', lineHeight: 1.6 }}>
+            {weaknesses.map((w) => <li key={w}>{w}</li>)}
+          </ul>
+        </div>
+      )}
 
       {/* Loading skeleton */}
       {loading && (
