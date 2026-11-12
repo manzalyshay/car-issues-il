@@ -19,7 +19,7 @@ import { realItems } from '@/lib/faqData';
 import type { TrimSpecWithYear } from '@/lib/trimSpecsDb';
 import { normEngine } from '@/lib/specSummary';
 import { getBaseUrl } from '@/lib/hostLocale';
-import { RU_COMPARE_PAIRS, RU_COMPARE_PATHS } from '@/data/ru-compare-pairs';
+import { RU_COMPARE_PAIRS } from '@/data/ru-compare-pairs';
 import { resolvePairs } from '@/lib/comparePairs';
 import { translations } from '@/lib/translations';
 import { ru, ruCount, ruPluralIndex } from '@/lib/translations.ru';
@@ -47,7 +47,6 @@ function Score({ label, value, best }: { label: string; value: number | null; be
 interface ViewProps { make1: string; model1: string; make2: string; model2: string; locale: Locale }
 
 export default async function ComparePageView({ make1, model1, make2, model2, locale }: ViewProps) {
-  const [c1, c2] = [`${make1}/${model1}`, `${make2}/${model2}`].sort();
   const [mA, mB] = await Promise.all([getMakeBySlug(make1), getMakeBySlug(make2)]);
   if (!mA || !mB) notFound();
   const [modA, modB] = await Promise.all([getModelBySlug(make1, model1), getModelBySlug(make2, model2)]);
@@ -432,12 +431,6 @@ export default async function ComparePageView({ make1, model1, make2, model2, lo
               {shortVerdictFacts.map((f, i) => <span key={i}> {f}</span>)}
             </p>
           </div>
-        )}
-
-        {isHe && RU_COMPARE_PATHS.has(`/cars/compare/${c1}/${c2}`) && (
-          <p style={{ margin: '-14px 0 24px', fontSize: '0.85rem' }}>
-            <Link href={`/ru/cars/compare/${c1}/${c2}`} lang="ru" hrefLang="ru" style={{ fontWeight: 600, textDecoration: 'none' }}>Сравнение на русском →</Link>
-          </p>
         )}
 
         {/* Header card */}
