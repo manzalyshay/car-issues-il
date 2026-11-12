@@ -1,3 +1,4 @@
+import { trimNameEn } from '@/lib/trimLabels';
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
@@ -358,8 +359,8 @@ export default async function CarYearPage({ params }: Props) {
                 <div>
                   <h2 style={h2}>{isEn ? `What changed vs ${ch.prevYear}` : `מה השתנה לעומת ${ch.prevYear}`}</h2>
                   <ul style={{ margin: 0, paddingInlineStart: 18, fontSize: '0.86rem', lineHeight: 1.7 }}>
-                    {ch.added.length > 0 && <li>{isEn ? 'New trims: ' : 'גרסאות חדשות: '}{ch.added.join(', ')}</li>}
-                    {ch.dropped.length > 0 && <li>{isEn ? 'Trims no longer listed: ' : 'גרסאות שירדו מהמחירון: '}{ch.dropped.join(', ')}</li>}
+                    {ch.added.length > 0 && <li>{isEn ? 'New trims: ' : 'גרסאות חדשות: '}{ch.added.map((n) => (isEn ? trimNameEn(n) : n)).join(', ')}</li>}
+                    {ch.dropped.length > 0 && <li>{isEn ? 'Trims no longer listed: ' : 'גרסאות שירדו מהמחירון: '}{ch.dropped.map((n) => (isEn ? trimNameEn(n) : n)).join(', ')}</li>}
                     {!isEn && ch.priceChanges.map(pc => (
                       <li key={pc.name}>{`${pc.name}: ${ils(pc.from)} ← ${ils(pc.to)} (${pc.to > pc.from ? 'עלייה' : 'ירידה'} של ${ils(Math.abs(pc.to - pc.from))})`}</li>
                     ))}

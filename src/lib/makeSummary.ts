@@ -21,6 +21,8 @@ export interface MakeStats {
   recallTotal: number;
   recallTopModels: { slug: string; count: number }[];
   recallComponents: string[];
+  /** Same, from the English (NHTSA) component names: what English pages show. */
+  recallComponentsEn: string[];
   knownIssues: { slug: string; title: string }[];
   hpRange: [number, number] | null;
   bestFuel: { slug: string; lPer100: number } | null;
@@ -34,10 +36,10 @@ export async function getMakeStats(make: CarMake): Promise<MakeStats> {
       'SELECT model_slug, COUNT(*) AS n, AVG(rating) AS avg FROM reviews WHERE make_slug = ? GROUP BY model_slug', make.slug,
     ).catch(() => []),
     getAllDisplayScores().catch(() => new Map<string, { score: number }>()),
-    dbAll<{ model: string; component_he: string | null }>(
-      `SELECT l.id AS id, l.model AS model, c.component_he AS component_he FROM recalls_cache_models l
+    dbAll<{ model: string; component_he: string | null; component_en: string | null }>(
+      `SELECT l.id AS id, l.model AS model, c.component_he AS component_he, c.component_en AS component_en FROM recalls_cache_models l
        JOIN recalls_cache c ON c.id = l.id WHERE l.make = ?
-       UNION SELECT id, model, component_he FROM recalls_cache WHERE make = ?`,
+       UNION SELECT id, model, component_he, component_en FROM recalls_cache WHERE make = ?`,
       make.nameEn.toLowerCase(), make.nameEn.toLowerCase(),
     ).catch(() => []),
     dbAll<{ model_slug: string; title: string; rank: number | null }>(
@@ -56,6 +58,12 @@ export async function getMakeStats(make: CarMake): Promise<MakeStats> {
 
   const recallByModel = new Map<string, number>();
   const compCount = new Map<string, number>();
+  const compCountEn = new Map<string, number>();
+  // English component name (component_en, e.g. "Instrument Cluster/Panel"); never Hebrew
+  const enComp = (c: string | null) => {
+    const first = (c ?? '').split(':')[0].split(',')[0].trim();
+    return first && !/[\u0590-\u05FF]/.test(first) ? first : '';
+  };
   let recallTotal = 0;
   for (const r of recalls) {
     const slug = byEnName.get(r.model);
@@ -64,6 +72,8 @@ export async function getMakeStats(make: CarMake): Promise<MakeStats> {
     recallByModel.set(slug, (recallByModel.get(slug) ?? 0) + 1);
     const comp = (r.component_he ?? '').split(':')[0].split(',')[0].trim();
     if (comp) compCount.set(comp, (compCount.get(comp) ?? 0) + 1);
+    const compEn = enComp(r.component_en);
+    if (compEn) compCountEn.set(compEn, (compCountEn.get(compEn) ?? 0) + 1);
   }
 
   const seenIssueModel = new Set<string>();
@@ -110,6 +120,7 @@ export async function getMakeStats(make: CarMake): Promise<MakeStats> {
     recallTotal,
     recallTopModels: [...recallByModel.entries()].map(([slug, count]) => ({ slug, count })).sort((a, b) => b.count - a.count).slice(0, 3),
     recallComponents: [...compCount.entries()].sort((a, b) => b[1] - a[1]).slice(0, 3).map(([c]) => c),
+    recallComponentsEn: [...compCountEn.entries()].sort((a, b) => b[1] - a[1]).slice(0, 3).map(([c]) => c),
     knownIssues: knownIssues.slice(0, 3),
   };
 }
@@ -190,7 +201,9 @@ export function buildMakeIntro(make: CarMake, st: MakeStats, locale: 'he' | 'en'
   // 5. Reported issues: recalls + complaint sites
   if (st.recallTotal > 0) {
     const top = st.recallTopModels.map((m) => (en ? `${name(m.slug)} (${m.count})` : `${name(m.slug)} (${m.count})`));
-    const comps = st.recallComponents.length ? (en ? ` The components recalled most often: ${list(st.recallComponents)}.` : ` הרכיבים שחוזרים הכי הרבה בקריאות: ${list(st.recallComponents)}.`) : '';
+    const comps = en
+      ? (st.recallComponentsEn.length ? ` The components recalled most often: ${list(st.recallComponentsEn)}.` : '')
+      : (st.recallComponents.length ? ` הרכיבים שחוזרים הכי הרבה בקריאות: ${list(st.recallComponents)}.` : '');
     out.push(en
       ? `US recall records show ${st.recallTotal} recalls for the ${make.nameEn} models covered here; the most recalled are ${list(top)}.${comps}`
       : `במאגר הריקולים בארה"ב מתועדות ${st.recallTotal} קריאות ריקול לדגמי ${make.nameHe} שבאתר; הכי הרבה קריאות היו ${hp('ל', list(top))}.${comps}`);
