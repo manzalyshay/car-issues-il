@@ -76,7 +76,7 @@ export default async function ModelPageView({ makeSlug, modelSlug, initialTab, v
   ]);
   // Same combined source (Israeli + US-cached) the recalls tab uses, so the FAQ
   // count and the tab count never drift apart.
-  const recallCount = recalls.length + israeliRecalls.length;
+  const unfilteredRecallCount = recalls.length + israeliRecalls.length;
   // Problems tab content, rendered on the server so it is part of the page HTML.
   const [pageRecalls, articleFindings] = await Promise.all([
     getRecallsForPage(make.nameEn, model.nameEn, model.years, locale).catch(() => undefined),
@@ -85,6 +85,8 @@ export default async function ModelPageView({ makeSlug, modelSlug, initialTab, v
   const ilSummary = summarizeIlRecalls((pageRecalls ?? []).filter(r => r.source === 'il')
     .map(r => ({ year: r.ilRecallYear ?? null, faultType: r.component, recallType: r.recallType ?? null })));
   const usRecallCount = (pageRecalls ?? []).filter(r => r.source === 'us').length;
+  // One number everywhere (FAQ, verdict card, tab): recalls for the model years the site covers.
+  const recallCount = pageRecalls ? pageRecalls.length : unfilteredRecallCount;
   // A model's professional-review sets can include a leftover score for an
   // older generation of the same nameplate - restrict to whichever generation
   // this page's own years actually cover, the same way year pages already do
