@@ -16,6 +16,9 @@ import { resolvePairs } from '@/lib/comparePairs';
 import { TOP_COMPARE_PAIRS } from '@/data/top-compare-pairs';
 import { RU_COMPARE_PAIRS } from '@/data/ru-compare-pairs';
 import { getValidatedRepairReports } from '@/lib/repairReports';
+import { getHomeIssues } from '@/lib/homeIssues';
+import { getImagesForCar } from '@/lib/carImages';
+import { sizedImageUrl } from '@/lib/imageSizing';
 import type { Locale } from '@/lib/i18n';
 
 // Models sold only under an Israel-specific badge (not a globally-marketed car) -
@@ -79,7 +82,13 @@ async function getTopRanked(limit = 3, isEn = false) {
     const j = Math.floor(Math.random() * (i + 1));
     [ranked[i], ranked[j]] = [ranked[j], ranked[i]];
   }
-  return ranked.slice(0, limit);
+  // Small photo for the hero ranking: the model page's own main photo.
+  const top = ranked.slice(0, limit);
+  await Promise.all(top.map(async (c) => {
+    const img = (await getImagesForCar(c.makeSlug, c.modelSlug).catch(() => []))[0];
+    c.imageUrl = img ? sizedImageUrl(img.thumbnail_url ?? img.url, 120) ?? img.url : null;
+  }));
+  return top;
 }
 
 async function getRecentReviews(limit = 3, locale?: string) {
@@ -196,7 +205,7 @@ async function getTickerItems(): Promise<TickerItem[]> {
 
 export default async function HomePage({ locale }: { locale: Locale }) {
   if (locale === 'ru') return <RuHome />;
-  const [allMakes, topRanked, recentReviews, tickerItems, news, reviewTotal, recallTotal] = await Promise.all([
+  const [allMakes, topRanked, recentReviews, tickerItems, news, reviewTotal, recallTotal, homeIssues] = await Promise.all([
     getAllMakes().catch(() => []),
     getTopRanked(3, locale === 'en').catch(() => []),
     getRecentReviews(3, locale).catch(() => []),
@@ -204,6 +213,7 @@ export default async function HomePage({ locale }: { locale: Locale }) {
     getLatestNews(12, 0, locale).catch(() => []),
     dbFirst<{ count: number }>('SELECT COUNT(*) AS count FROM reviews').then(r => r?.count ?? 0).catch(() => 0),
     dbFirst<{ count: number }>('SELECT COUNT(*) AS count FROM recalls_cache').then(r => r?.count ?? 0).catch(() => 0),
+    getHomeIssues(locale === 'en' ? 'en' : 'he').catch(() => []),
   ]);
 
   // Client component props get serialized into the page HTML - strip the other
@@ -255,6 +265,7 @@ export default async function HomePage({ locale }: { locale: Locale }) {
         topPairs={topPairs}
         reviewTotal={reviewTotal}
         recallTotal={recallTotal}
+        homeIssues={homeIssues}
       />
     </>
   );
