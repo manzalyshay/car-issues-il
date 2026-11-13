@@ -9,6 +9,7 @@ import { newsPath } from '@/lib/newsSlug';
 import NewsImage from '@/components/NewsImage';
 import { sizedImageUrl } from '@/lib/imageSizing';
 import { pick, localHref } from '@/lib/i18n';
+import type { HomeIssue } from '@/lib/homeIssues';
 
 /* ── Types ──────────────────────────────────────────────── */
 interface Make { slug: string; nameHe: string; nameEn: string; logoUrl: string; country: string; models: { slug: string; nameHe: string; nameEn: string }[]; }
@@ -21,7 +22,7 @@ interface NewsItem { id: string; title_he: string | null; title_en: string | nul
 function isLicensedNewsImage(url: string | null): url is string {
   return !!url && !url.includes('motor1.com') && !url.includes('hearstapps.com');
 }
-interface Props { allMakes: Make[]; topRanked: TopCar[]; recentReviews: Review[]; tickerItems?: TickerItem[]; initialNews?: NewsItem[]; topPairs?: ComparePair[]; reviewTotal: number; recallTotal: number; }
+interface Props { allMakes: Make[]; topRanked: TopCar[]; recentReviews: Review[]; tickerItems?: TickerItem[]; initialNews?: NewsItem[]; topPairs?: ComparePair[]; reviewTotal: number; recallTotal: number; homeIssues?: HomeIssue[]; }
 
 /* ── Helpers ─────────────────────────────────────────────── */
 function timeAgo(dateStr: string, isHe: boolean) {
@@ -115,7 +116,7 @@ function useCountUp(ref: React.RefObject<HTMLElement | null>, to: number, decima
 /* ═══════════════════════════════════════════════════════════
    Main component
    ═══════════════════════════════════════════════════════════ */
-export default function HomeClient({ allMakes, topRanked, recentReviews, tickerItems: tickerProp, initialNews, topPairs = [], reviewTotal, recallTotal }: Props) {
+export default function HomeClient({ allMakes, topRanked, recentReviews, tickerItems: tickerProp, initialNews, topPairs = [], reviewTotal, recallTotal, homeIssues = [] }: Props) {
   const { locale } = useLocale();
   // isHe = Hebrew data + RTL. UI text goes through tr() so each language has its own string.
   // The Russian page (/ru) gets no news, model, review or ticker data (none exists in
@@ -346,6 +347,7 @@ export default function HomeClient({ allMakes, topRanked, recentReviews, tickerI
                 return (
                   <Link key={`${car.makeSlug}/${car.modelSlug}`} href={`/cars/${car.makeSlug}/${car.modelSlug}`} className="ci-trend-row" style={{ display: 'flex', alignItems: 'center', gap: 14, padding: 12, borderRadius: 14, textDecoration: 'none', color: '#fff' }}>
                     <span style={{ width: 28, fontSize: 15, fontWeight: 700, color: '#8fb3ff', textAlign: 'center' }}>{i + 1}</span>
+                    <CarAvatar src={car.imageUrl ?? null} logoUrl={car.logoUrl} size={44} ring={good ? 'linear-gradient(135deg,#22c55e,#16a34a)' : 'linear-gradient(135deg,#fcd34d,#f5b301)'} border="#1b2b4d" />
                     <span style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: 6 }}>
                       <span style={{ fontSize: 16, fontWeight: 700 }}>{isHe ? `${car.makeHe} ${car.modelHe}` : `${car.makeEn} ${car.modelEn}`}</span>
                       <span style={{ height: 6, background: '#2a3c63', borderRadius: 3, overflow: 'hidden', display: 'block' }}>
@@ -357,7 +359,7 @@ export default function HomeClient({ allMakes, topRanked, recentReviews, tickerI
                 );
               })}
               <p style={{ margin: '8px 0 0', fontSize: 13, color: '#aab6cf' }}>
-                {isHe ? 'ציון AI מתוך 10, לפי בעיות מדווחות וריקולים' : 'AI score out of 10, based on reported issues and recalls'}
+                {isHe ? 'ציון מתוך 10, לפי מבחני דרכים מקצועיים והמוניטין של הדגם' : 'Score out of 10, from professional road tests and the model\'s reputation'}
               </p>
             </aside>
           )}
@@ -382,6 +384,8 @@ export default function HomeClient({ allMakes, topRanked, recentReviews, tickerI
 
       {/* ── Sections wrapper ─────────────────────────────── */}
       <div style={{ maxWidth: MAXW, margin: '0 auto' }}>
+
+        {!isRu && homeIssues.length > 0 && <HomeIssues issues={homeIssues} isHe={isHe} gutter={GUTTER} />}
 
         {/* ── News ─────────────────────────────────────── */}
         {news.length > 0 && (
@@ -610,5 +614,108 @@ export default function HomeClient({ allMakes, topRanked, recentReviews, tickerI
         }
       `}</style>
     </div>
+  );
+}
+
+/* ── Car photo in a score ring (hero ranking, problem cards) ─────────── */
+function CarAvatar({ src: photo, logoUrl, size, ring, border }: { src: string | null; logoUrl: string; size: number; ring?: string; border?: string }) {
+  const inner = ring ? size - 4 : size;
+  // A photo that fails to load falls back to the make's logo.
+  const [failed, setFailed] = useState(false);
+  const src = failed ? null : photo;
+  return (
+    <span style={{ flex: 'none', width: size, height: size, borderRadius: '50%', padding: ring ? 2 : 0, background: ring ?? 'transparent', display: 'block', boxSizing: 'border-box' }}>
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img
+        src={src ?? logoUrl}
+        onError={() => setFailed(true)}
+        alt=""
+        loading="lazy"
+        width={inner}
+        height={inner}
+        style={{ display: 'block', width: inner, height: inner, borderRadius: '50%', objectFit: src ? 'cover' : 'contain', background: src ? '#24365f' : '#fff', border: border ? `2px solid ${border}` : undefined, boxSizing: 'border-box' }}
+      />
+    </span>
+  );
+}
+
+/* ── בעיות וריקולים: random mix of Israeli recalls and road-test findings ─ */
+const ISSUES_SHOWN = 3;
+
+function mixIssues(all: HomeIssue[]): HomeIssue[] {
+  const shuffled = (a: HomeIssue[]) => {
+    const b = [...a];
+    for (let i = b.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [b[i], b[j]] = [b[j], b[i]]; }
+    return b;
+  };
+  const r = shuffled(all.filter(i => i.kind === 'recall'));
+  const t = shuffled(all.filter(i => i.kind === 'test'));
+  const recallFirst = Math.random() < 0.5;
+  const out: HomeIssue[] = [];
+  while (out.length < all.length && (r.length || t.length)) {
+    const wantRecall = (out.length % 2 === 0) === recallFirst;
+    const from = wantRecall ? (r.length ? r : t) : (t.length ? t : r);
+    out.push(from.shift()!);
+  }
+  return out;
+}
+
+function HomeIssues({ issues, isHe, gutter }: { issues: HomeIssue[]; isHe: boolean; gutter: string }) {
+  // First render uses the server's order (already mixed) so it matches the HTML; the
+  // button reshuffles in the browser.
+  const [list, setList] = useState(issues);
+  const hasRecalls = issues.some(i => i.kind === 'recall');
+  return (
+    <section id="issues" style={{ padding: `clamp(34px,3.6vw,52px) ${gutter} 0` }}>
+      <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: 12, marginBottom: 14 }}>
+        <div>
+          <h2 style={{ fontFamily: 'var(--font-display)', fontWeight: 900, fontSize: 'clamp(22px,2.4vw,30px)', letterSpacing: '-.03em', margin: 0 }}>
+            {isHe ? (hasRecalls ? 'בעיות וריקולים' : 'בעיות שעלו במבחנים') : 'Problems found in road tests'}
+          </h2>
+          <div style={{ fontSize: 14, color: '#55647d', marginTop: 2 }}>
+            {isHe ? (hasRecalls ? 'מדגם אקראי מריקולים רשמיים וממבחני דרכים' : 'מדגם אקראי ממבחני דרכים מקצועיים') : 'A random sample from professional road tests'}
+          </div>
+        </div>
+        <button
+          type="button"
+          onClick={() => setList(mixIssues(issues))}
+          style={{ flex: 'none', background: '#e6ecf7', color: '#17408f', border: '1px solid #cfdaf0', borderRadius: 999, fontWeight: 700, fontSize: 14, padding: '8px 14px', cursor: 'pointer' }}
+        >
+          {isHe ? '↻ ערבב' : '↻ Shuffle'}
+        </button>
+      </div>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(280px,1fr))', gap: 14 }}>
+        {list.slice(0, ISSUES_SHOWN).map((it, idx) => {
+          const recall = it.kind === 'recall';
+          return (
+            <Link key={`${it.href}-${idx}-${it.title}`} href={it.href} className="ci-card-hover" style={{ background: '#fff', border: '1px solid #e2e8f2', borderRadius: 18, padding: 16, display: 'flex', flexDirection: 'column', gap: 12, color: '#0f1b33', textDecoration: 'none' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                <CarAvatar src={it.imageUrl} logoUrl={it.logoUrl} size={40} />
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontSize: 15, fontWeight: 700 }}>{it.carName}</div>
+                  {it.years && <div style={{ fontSize: 13, color: '#55647d' }}>{it.years}</div>}
+                </div>
+                <span style={{ flex: 'none', fontSize: 12, fontWeight: 700, padding: '3px 10px', borderRadius: 999, background: recall ? '#e6ecf7' : '#eef1f6', color: recall ? '#1b3f94' : '#3b4a63' }}>
+                  {recall ? 'ריקול' : (isHe ? 'מבחן דרכים' : 'Road test')}
+                </span>
+              </div>
+              <div style={{ fontSize: 17, fontWeight: 700, lineHeight: 1.35, textWrap: 'pretty', display: '-webkit-box', WebkitLineClamp: 3, WebkitBoxOrient: 'vertical', overflow: 'hidden' } as React.CSSProperties}>
+                {it.title}
+              </div>
+              <div style={{ display: 'flex', gap: 12, fontSize: 13, color: '#55647d', borderTop: '1px solid #eef2f8', paddingTop: 10, marginTop: 'auto', flexWrap: 'wrap' }}>
+                {recall ? (
+                  <>
+                    <span>משרד התחבורה · <strong style={{ color: '#0f1b33' }}>הודעה {it.noticeYear}</strong></span>
+                    <span style={{ marginInlineStart: 'auto' }}>התיקון ללא עלות אצל היבואן</span>
+                  </>
+                ) : (
+                  <span>{isHe ? 'מקור:' : 'Source:'} <strong style={{ color: '#0f1b33' }}>{it.source}</strong></span>
+                )}
+              </div>
+            </Link>
+          );
+        })}
+      </div>
+    </section>
   );
 }
