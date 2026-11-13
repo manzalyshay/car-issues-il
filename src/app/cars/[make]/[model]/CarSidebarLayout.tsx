@@ -8,6 +8,8 @@ import CarImagesTab from '@/components/CarImagesTab';
 import Car3DViewer from '@/components/Car3DViewer';
 import TrimSpecsTab from '@/components/TrimSpecsTab';
 import RecallsSection from '@/components/RecallsSection';
+import type { Recall } from '@/app/api/recalls/route';
+import type { ArticleFinding } from '@/lib/modelSynthesis';
 import { useLocale } from '@/lib/localeContext';
 import type { CarVideo } from '@/lib/youtubeVideos';
 import type { CarImage } from '@/lib/carImages';
@@ -35,6 +37,12 @@ interface Props {
   year?: number;
   safetyHe?: string | null;
   techComfortHe?: string | null;
+  /** Server-loaded recalls for the problems tab (skips the client fetch). */
+  initialRecalls?: Recall[];
+  /** Opening lines shown above the recall list on the problems view. */
+  recallsIntro?: string;
+  /** Weaknesses found in published road tests, each with its source. */
+  articleFindings?: ArticleFinding[];
   children: React.ReactNode;
 }
 
@@ -46,7 +54,7 @@ function resolveTab(raw?: string): Tab {
   return VALID_TABS.includes(raw as Tab) ? raw as Tab : 'reviews';
 }
 
-export default function CarSidebarLayout({ makeSlug, modelSlug, makeNameHe, modelNameHe, makeNameEn, modelNameEn, makeEn, modelEn, modelYears, defaultYear, hasSpecs = true, hasTrimEquipment = false, hasImages = true, hasVideos = true, hasRepairCosts = true, sketchfabModel, initialTab, year, safetyHe, techComfortHe, children }: Props) {
+export default function CarSidebarLayout({ makeSlug, modelSlug, makeNameHe, modelNameHe, makeNameEn, modelNameEn, makeEn, modelEn, modelYears, defaultYear, hasSpecs = true, hasTrimEquipment = false, hasImages = true, hasVideos = true, hasRepairCosts = true, sketchfabModel, initialTab, year, safetyHe, techComfortHe, initialRecalls, recallsIntro, articleFindings, children }: Props) {
   const hasSafety = hasTrimEquipment || !!(safetyHe || techComfortHe);
   const { t, locale } = useLocale();
   const s = t.sidebar;
@@ -121,11 +129,15 @@ export default function CarSidebarLayout({ makeSlug, modelSlug, makeNameHe, mode
     setTab(next);
     // Sync tab to URL (shallow replace - no navigation)
     if (typeof window !== 'undefined') {
+      // The problems tab has its own address (<model>/issues); every other tab is a
+      // ?tab= on the model page.
+      const basePath = pathname.replace(/\/issues\/?$/, '');
       const params = new URLSearchParams(window.location.search);
-      if (next === 'reviews') params.delete('tab');
+      if (next === 'reviews' || next === 'recalls') params.delete('tab');
       else params.set('tab', next);
       const query = params.toString();
-      window.history.replaceState(null, '', query ? `${pathname}?${query}` : pathname);
+      const path = next === 'recalls' ? `${basePath}/issues` : basePath;
+      window.history.replaceState(null, '', query ? `${path}?${query}` : path);
     }
     if (next === 'videos' && videos === null && !videosLoading) {
       setVideosLoading(true);
@@ -182,7 +194,7 @@ export default function CarSidebarLayout({ makeSlug, modelSlug, makeNameHe, mode
                   if (item.isTab) { handleTabClick(item.isTab); }
                   if (item.isAnchor) {
                     if (tab !== 'reviews') {
-                      setTab('reviews');
+                      handleTabClick('reviews');
                       setTimeout(() => scrollToSection(item.id), 50);
                     } else {
                       scrollToSection(item.id);
@@ -258,7 +270,7 @@ export default function CarSidebarLayout({ makeSlug, modelSlug, makeNameHe, mode
           {/* Issues tab - recalls */}
           {tab === 'recalls' && makeEn && modelEn && (
             <div>
-              <RecallsSection makeEn={makeEn} modelEn={modelEn} years={modelYears} />
+              <RecallsSection makeEn={makeEn} modelEn={modelEn} years={modelYears} initialRecalls={initialRecalls} intro={recallsIntro} articleFindings={articleFindings} />
             </div>
           )}
         </div>

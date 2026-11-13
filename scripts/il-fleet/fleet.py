@@ -12,7 +12,8 @@ Usage: python3 -I scripts/il-fleet/fleet.py models.json makes.json out_dir
    or: python3 -I scripts/il-fleet/fleet.py --d1 out_dir [--apply]
        (reads the two tables from D1 over the REST API with CLOUDFLARE_API_TOKEN, and with --apply
         writes the new counts and today's date to car_models; this is what the GitHub workflow runs)
-Writes out_dir/counts.json, out_dir/unmatched.txt (biggest registry names not matched to any model),
+Writes out_dir/counts.json, out_dir/years.json (active vehicles per model and production year),
+out_dir/unmatched.txt (biggest registry names not matched to any model),
 out_dir/update.sql (one UPDATE of car_models.active_vehicles_il for every model) and out_dir/rollback.sql.
 
 Matching: the registry make (tozar, Hebrew) maps to a site make; the commercial name (kinuy_mishari),
@@ -38,7 +39,7 @@ def fetch_registry():
     out, off = [], 0
     while True:
         q = urllib.parse.urlencode({'resource_id': RESOURCE, 'limit': 32000, 'offset': off,
-                                    'fields': 'sug_degem,tozar,tozeret_nm,kinuy_mishari,mispar_rechavim_pailim'})
+                                    'fields': 'sug_degem,tozar,tozeret_nm,kinuy_mishari,shnat_yitzur,mispar_rechavim_pailim'})
         for attempt in range(4):
             try:
                 req = urllib.request.Request(f'{API}?{q}', headers={'User-Agent': 'carissues-bot/1.0 (https://carissues.co.il)'})
@@ -134,6 +135,7 @@ def main(models_path, makes_path, out_dir, apply=False):
 
     reg, total = fetch_registry()
     counts = collections.Counter()
+    by_year = collections.defaultdict(collections.Counter)  # 'make/slug' -> {production year: active vehicles}
     unmatched = collections.Counter()
     matched_total = 0
     for x in reg:
@@ -144,12 +146,15 @@ def main(models_path, makes_path, out_dir, apply=False):
         hit = match(mk, x['kinuy_mishari']) if mk else None
         if hit:
             counts[hit] += n; matched_total += n
+            if x.get('shnat_yitzur'): by_year[hit][int(x['shnat_yitzur'])] += n
         else:
             unmatched[f'{mkh} | {x["kinuy_mishari"]}'] += n
 
     os.makedirs(out_dir, exist_ok=True)
     old = {f"{m['make_slug']}/{m['slug']}": m.get('active_vehicles_il') for m in models}
     json.dump(dict(counts), open(os.path.join(out_dir, 'counts.json'), 'w'), indent=1, ensure_ascii=False)
+    json.dump({c: dict(sorted(y.items())) for c, y in sorted(by_year.items())},
+              open(os.path.join(out_dir, 'years.json'), 'w'), indent=1)
     with open(os.path.join(out_dir, 'unmatched.txt'), 'w') as f:
         for k, n in unmatched.most_common(300): f.write(f'{n}\t{k}\n')
     def case_sql(values):
