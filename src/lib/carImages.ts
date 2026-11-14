@@ -94,7 +94,7 @@ function withMainEligibleFirst(images: CarImage[], mainCap = 20, demotedBudget =
 // Names and phrases that legitimately contain "&" / "and" without meaning a
 // second car in the frame (brand, trim levels, colours, event names). Stripped
 // before the multi-car check below.
-const SINGLE_CAR_AMPERSAND = /lynk\s*&\s*co|laurin\s*&\s*klement|\bl&k\b|\bc&s\b|start\s*&\s*stop|\ba&w\b|cool\s*&\s*bright|coffee\s*&\s*cars|\bs&company\b|heckler\s*&\s*koch|\b(?:red|black|white|blue|grey|gray|silver)\s+(?:&|and)\s+(?:red|black|white|blue|grey|gray|silver)\b|bosnia\s+and\s+herzegovina|front\s+and\s+rear|left\s+and\s+above/gi;
+const SINGLE_CAR_AMPERSAND = /lynk\s*&\s*co|laurin\s*&\s*klement|\bl&k\b|\bc&s\b|start\s*&\s*stop|\ba&w\b|cool\s*&\s*bright|coffee\s*&\s*cars|\bs&company\b|heckler\s*&\s*koch|elantra\s*&\s*avante|\b(?:red|black|white|blue|grey|gray|silver)\s+(?:&|and)\s+(?:red|black|white|blue|grey|gray|silver)\b|bosnia\s+and\s+herzegovina|front\s+and\s+rear|left\s+and\s+above/gi;
 
 // Commons titles like "Hyundai IONIQ 5 & 6 N", "Genesis G80 & GV80" or
 // "Peugeot 3008 and Peugeot 5008" are group shots with two or more cars in the
