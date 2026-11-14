@@ -19,13 +19,14 @@ const PAGE_SIZE = 5; // cars on each side of current
 
 export default function FuelComparisonChart({ makeSlug, modelSlug, isEn }: Props) {
   const [data, setData] = useState<FuelEntry[]>([]);
+  const [electric, setElectric] = useState(false);
   const [loading, setLoading] = useState(true);
   const [offset, setOffset] = useState(0); // how many to shift the window
 
   useEffect(() => {
     fetch(`/api/fuel-comparison?make=${makeSlug}&model=${modelSlug}&locale=${isEn ? 'en' : 'he'}`)
       .then(r => r.json())
-      .then(d => { setData(d.data ?? []); setLoading(false); })
+      .then(d => { setData(d.data ?? []); setElectric(!!d.electric); setLoading(false); })
       .catch(() => setLoading(false));
   }, [makeSlug, modelSlug, isEn]);
 
@@ -47,7 +48,13 @@ export default function FuelComparisonChart({ makeSlug, modelSlug, isEn }: Props
   const start = Math.max(0, Math.min(center - PAGE_SIZE, total - PAGE_SIZE * 2 - 1));
   const end = Math.min(total, start + PAGE_SIZE * 2 + 1);
   const visible = data.slice(start, end);
-  const maxFuel = Math.max(...data.map(d => d.fuel));
+  // Stored values are L/100km (fuel) or kWh/100km (electric). In Israel fuel economy is
+  // quoted in km per litre (higher = better), so convert for display; EVs stay in kWh/100km.
+  const display = (v: number) => (electric ? v : 100 / v);
+  const maxVal = Math.max(...data.map(d => display(d.fuel)));
+  const unit = electric
+    ? (isEn ? 'kWh/100km' : 'קוט״ש/100 ק"מ')
+    : (isEn ? 'km/L' : 'ק"מ לליטר');
 
   const canUp = start > 0;
   const canDown = end < total;
@@ -71,10 +78,12 @@ export default function FuelComparisonChart({ makeSlug, modelSlug, isEn }: Props
       {/* Header */}
       <div style={{ padding: '12px 16px 10px', background: '#f8fafc', borderBottom: '1px solid #e3e8ee', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
         <span style={{ fontSize: 13, fontWeight: 700, color: '#1c2733' }}>
-          {isEn ? 'Fuel vs. Category' : 'צריכת דלק לעומת קטגוריה'}
+          {electric
+            ? (isEn ? 'Energy use vs. Category' : 'צריכת חשמל לעומת קטגוריה')
+            : (isEn ? 'Fuel economy vs. Category' : 'צריכת דלק לעומת קטגוריה')}
         </span>
         <span style={{ fontSize: 11, color: '#8595a6' }}>
-          {isEn ? `#${rank} of ${total} · L/100km` : `דירוג ${rank} מתוך ${total} · ל/100ק"מ`}
+          {isEn ? `#${rank} of ${total} · ${unit}` : `דירוג ${rank} מתוך ${total} · ${unit}`}
         </span>
       </div>
 
@@ -82,7 +91,8 @@ export default function FuelComparisonChart({ makeSlug, modelSlug, isEn }: Props
       <div style={{ padding: '10px 16px 6px' }}>
         {visible.map(entry => {
           const isCurrent = entry.makeSlug === makeSlug && entry.modelSlug === modelSlug;
-          const barPct = (entry.fuel / maxFuel) * 100;
+          const value = display(entry.fuel);
+          const barPct = (value / maxVal) * 100;
           const name = isEn ? entry.nameEn : entry.nameHe;
           return (
             <div key={`${entry.makeSlug}/${entry.modelSlug}`} style={{
@@ -100,7 +110,7 @@ export default function FuelComparisonChart({ makeSlug, modelSlug, isEn }: Props
                 <div style={{ width: `${barPct}%`, height: '100%', background: isCurrent ? '#2f6fb0' : '#c8d4e8', borderRadius: 4 }} />
               </div>
               <span style={{ fontSize: 12, fontWeight: 700, color: isCurrent ? '#2f6fb0' : '#8595a6', minWidth: 30, textAlign: 'end' }}>
-                {entry.fuel.toFixed(1)}
+                {value.toFixed(1)}
               </span>
             </div>
           );
