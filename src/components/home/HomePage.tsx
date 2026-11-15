@@ -25,6 +25,9 @@ import type { Locale } from '@/lib/i18n';
 // excluded from the English homepage's "Top Model" spotlight.
 const ISRAEL_ONLY_MODELS = new Set(['hyundai/i25']);
 
+const HERO_MIN_IMAGES = 3;
+const HERO_REAR_TITLE = /\b(?:rear|back|heck)\b/i;
+
 async function getTopRanked(limit = 3, isEn = false) {
   const makes = await getAllMakes();
   const lookup = new Map<string, { makeHe: string; modelHe: string; makeEn: string; modelEn: string; logoUrl: string; leadingImageUrl: string | null }>();
@@ -82,12 +85,23 @@ async function getTopRanked(limit = 3, isEn = false) {
     const j = Math.floor(Math.random() * (i + 1));
     [ranked[i], ranked[j]] = [ranked[j], ranked[i]];
   }
-  // Small photo for the hero ranking: the model page's own main photo.
-  const top = ranked.slice(0, limit);
-  await Promise.all(top.map(async (c) => {
-    const img = (await getImagesForCar(c.makeSlug, c.modelSlug).catch(() => []))[0];
-    c.imageUrl = img ? sizedImageUrl(img.thumbnail_url ?? img.url, 120) ?? img.url : null;
-  }));
+  // Small photo for the hero ranking: the model page's own main photo. Only
+  // cars with a real gallery qualify - at least HERO_MIN_IMAGES photos and a
+  // main photo that isn't a rear view - so a car with one poor photo never
+  // headlines the homepage. Candidates are checked in batches in shuffled
+  // order until `limit` qualify.
+  const top: typeof ranked = [];
+  for (let i = 0; i < ranked.length && top.length < limit; i += limit * 2) {
+    const batch = ranked.slice(i, i + limit * 2);
+    const checked = await Promise.all(batch.map(async (c) => {
+      const imgs = await getImagesForCar(c.makeSlug, c.modelSlug).catch(() => []);
+      const main = imgs[0];
+      if (!main || imgs.length < HERO_MIN_IMAGES || HERO_REAR_TITLE.test(main.title ?? '')) return null;
+      c.imageUrl = sizedImageUrl(main.thumbnail_url ?? main.url, 120) ?? main.url;
+      return c;
+    }));
+    for (const c of checked) if (c && top.length < limit) top.push(c);
+  }
   return top;
 }
 
