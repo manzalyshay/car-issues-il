@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getAllMakes } from './lib/carsDb';
 import { RU_COMPARE_PATHS } from './data/ru-compare-pairs';
+import { legacyHostRedirect } from './lib/legacyHost';
 
 const HE_HOST = 'carissues.co.il';
 const EN_HOST = 'carissues.net';
@@ -61,6 +62,11 @@ export async function middleware(req: NextRequest) {
   const host = req.headers.get('host') ?? '';
   const isHeHost = host === HE_HOST || host === `www.${HE_HOST}`;
   const isEnHost = host === EN_HOST || host === `www.${EN_HOST}`;
+
+  // ── Legacy English host: en.carissues.co.il -> carissues.net (same path) ──
+  // Runs first so every path, /embed and /api included, moves in one hop.
+  const legacyTarget = legacyHostRedirect(host, pathname, req.nextUrl.search);
+  if (legacyTarget) return NextResponse.redirect(legacyTarget, { status: 301 });
 
   // The embed tool is an English-only utility for carissues.net.
   if (pathname.startsWith('/embed')) {
