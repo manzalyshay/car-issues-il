@@ -22,7 +22,10 @@ interface CarSpec {
 
 interface Props {
   cars: CarSpec[];
+  /** USD prices from the US market (carissues.net); otherwise ILS from the Israeli market. */
   isEn: boolean;
+  /** UI language; defaults to en/he from isEn. 'ru' = Russian labels with Israeli (ILS) prices. */
+  lang?: 'he' | 'en' | 'ru';
   compact?: boolean;
   withCard?: string; // When set, renders its own card with this title; returns null when no data
 }
@@ -219,7 +222,14 @@ function ChartSVG({ series, allYears, isEn, hoveredYear, setHoveredYear, height,
 }
 
 // ── Main exported component ────────────────────────────────────────────────────
-export default function PriceHistoryChart({ cars, isEn, compact, withCard }: Props) {
+const LABELS = {
+  he: { noData: 'אין נתוני מחיר זמינים עדיין.', source: 'שווי שוק ממוצע יד שניה לפי שנת ייצור', expand: 'הגדל תרשים', title: 'היסטוריית מחירים', reset: 'אפס זום', hint: 'גלגל לזום · גרור להזזה · Esc' },
+  en: { noData: 'No pricing data available yet.', source: 'Average used car market value per model year', expand: 'Expand chart', title: 'Price History', reset: 'Reset zoom', hint: 'Scroll to zoom · Drag to pan · Esc' },
+  ru: { noData: 'Данных о ценах пока нет.', source: 'Средняя рыночная стоимость подержанного автомобиля по году выпуска', expand: 'Увеличить график', title: 'История цен', reset: 'Сбросить масштаб', hint: 'Колёсико — масштаб · Перетаскивание — сдвиг · Esc' },
+};
+
+export default function PriceHistoryChart({ cars, isEn, lang, compact, withCard }: Props) {
+  const L = LABELS[lang ?? (isEn ? 'en' : 'he')];
   const [series, setSeries] = useState<{ car: CarSpec; rows: PriceRow[] }[]>([]);
   const [loading, setLoading] = useState(true);
   const [hoveredYear, setHoveredYear] = useState<number | null>(null);
@@ -332,7 +342,7 @@ export default function PriceHistoryChart({ cars, isEn, compact, withCard }: Pro
     if (withCard) return null;
     return (
       <div style={{ textAlign: 'center', color: 'var(--text-muted)', fontSize: '0.875rem', padding: '32px 0' }}>
-        {isEn ? 'No pricing data available yet.' : 'אין נתוני מחיר זמינים עדיין.'}
+        {L.noData}
       </div>
     );
   }
@@ -351,16 +361,14 @@ export default function PriceHistoryChart({ cars, isEn, compact, withCard }: Pro
 
   const sourceNote = (
     <div style={{ textAlign: 'center', fontSize: '0.68rem', color: 'var(--text-muted)', marginTop: 8 }}>
-      {isEn
-        ? 'Average used car market value per model year'
-        : 'שווי שוק ממוצע יד שניה לפי שנת ייצור'}
+      {L.source}
     </div>
   );
 
   const expandBtn = (
     <button
       onClick={() => setExpanded(true)}
-      title={isEn ? 'Expand chart' : 'הגדל תרשים'}
+      title={L.expand}
       style={{
         background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.2)',
         borderRadius: 6, color: '#cbd5e1', cursor: 'pointer',
@@ -397,18 +405,18 @@ export default function PriceHistoryChart({ cars, isEn, compact, withCard }: Pro
         }}>
           <span style={{ fontSize: '1.1rem' }}>💰</span>
           <span style={{ color: '#f1f5f9', fontWeight: 800, fontSize: '1rem', flex: 1 }}>
-            {withCard ?? (isEn ? 'Price History' : 'היסטוריית מחירים')}
+            {withCard ?? L.title}
           </span>
           {panState.scale > 1 && (
             <button onClick={resetZoom} style={{
               background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.2)',
               borderRadius: 6, color: '#94a3b8', cursor: 'pointer', padding: '3px 10px', fontSize: '0.75rem',
             }}>
-              {isEn ? 'Reset zoom' : 'אפס זום'}
+              {L.reset}
             </button>
           )}
           <span style={{ color: '#475569', fontSize: '0.65rem', whiteSpace: 'nowrap' }}>
-            {isEn ? 'Scroll to zoom · Drag to pan · Esc' : 'גלגל לזום · גרור להזזה · Esc'}
+            {L.hint}
           </span>
           <button
             onClick={() => { setExpanded(false); resetZoom(); }}

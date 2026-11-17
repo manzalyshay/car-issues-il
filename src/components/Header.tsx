@@ -5,7 +5,8 @@ import { useState, useEffect } from 'react';
 import { usePathname } from 'next/navigation';
 import AuthModal from './AuthModal';
 import { useAuth, displayName } from '@/lib/authContext';
-import { useLocale, EN_SITE, HE_SITE } from '@/lib/localeContext';
+import { useLocale } from '@/lib/localeContext';
+import { pick, localHref } from '@/lib/i18n';
 
 /* ── Real brand logo ── */
 function Logo() {
@@ -91,7 +92,14 @@ export default function Header() {
     return () => window.removeEventListener('scroll', handler);
   }, []);
 
-  const NAV_LINKS = locale === 'he' ? [
+  const tr = (v: { he: string; en: string; ru: string }) => pick(locale, v);
+  const isRu = locale === 'ru';
+
+  // The Russian site has only the pilot pages, so its nav lists those (with /ru URLs).
+  const NAV_LINKS = isRu ? [
+    { href: '/ru/vehicle-lookup', label: 'Проверка по номеру', title: 'Проверка авто по номеру' },
+    { href: '/ru#compare',        label: 'Сравнения', title: 'Сравнение автомобилей' },
+  ] : locale === 'he' ? [
     { href: '/vehicle-lookup', label: 'בדיקת רכב לפי מספר', title: 'בדיקת רכב לפי מספר רישוי' },
     { href: '/cars/compare',   label: 'השוואה' },
     { href: '/cars',           label: 'ביקורות' },
@@ -108,7 +116,7 @@ export default function Header() {
   ];
 
   const logoEl = (
-    <Link href="/" style={{ textDecoration: 'none', display: 'flex', alignItems: 'center', flexShrink: 0 }}>
+    <Link href={localHref(locale, '/')} aria-label={isRu ? 'CarIssues: главная на русском' : undefined} style={{ textDecoration: 'none', display: 'flex', alignItems: 'center', flexShrink: 0 }}>
       <Logo />
     </Link>
   );
@@ -158,7 +166,14 @@ export default function Header() {
 
           {/* Left: CTA + avatar/login */}
           <div className="desktop-auth" style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
-            <Link href="/cars" className="btn-check-model" style={{
+            {/* Russian site: switch to the Hebrew site (the he/en switch lives in the footer) */}
+            {isRu && (
+              <Link href="/" lang="he" hrefLang="he" className="login-btn" style={{
+                padding: '8px 14px', fontSize: '0.875rem', fontWeight: 700, color: 'var(--text-muted)',
+                textDecoration: 'none', border: '1px solid var(--border)', borderRadius: 10, whiteSpace: 'nowrap',
+              }}>עברית</Link>
+            )}
+            <Link href={isRu ? '/ru/vehicle-lookup' : '/cars'} className="btn-check-model" style={{
               display: 'flex', alignItems: 'center',
               padding: '10px 18px', fontSize: '0.875rem', fontWeight: 700,
               background: 'var(--accent)', color: '#fff',
@@ -166,10 +181,10 @@ export default function Header() {
               transition: 'background 0.15s',
               whiteSpace: 'nowrap',
             }}>
-              {locale === 'he' ? 'בדקו דגם' : 'Check Model'}
+              {tr({ he: 'בדקו דגם', en: 'Check Model', ru: 'Проверить авто' })}
             </Link>
-            {/* Login button when logged out */}
-            {!loading && !user && (
+            {/* Login button when logged out (the Russian pilot has no account pages) */}
+            {!isRu && !loading && !user && (
               <button
                 onClick={() => setAuthOpen(true)}
                 style={{
@@ -180,11 +195,11 @@ export default function Header() {
                 }}
                 className="login-btn"
               >
-                {locale === 'he' ? 'התחברות' : 'Login'}
+                {tr({ he: 'התחברות', en: 'Login', ru: 'Войти' })}
               </button>
             )}
             {/* Avatar (only when logged in) */}
-            {!loading && user && (
+            {!isRu && !loading && user && (
               <div
                 style={{ position: 'relative' }}
                 onMouseEnter={() => setProfileOpen(true)}
@@ -209,7 +224,7 @@ export default function Header() {
                   <div style={{ position: 'absolute', top: '100%', insetInlineEnd: 0, paddingTop: 8, zIndex: 200 }}>
                     <div style={{ background: '#fff', border: '1px solid var(--border)', borderRadius: 10, boxShadow: '0 8px 28px rgba(0,0,0,0.1)', minWidth: 160, overflow: 'hidden' }}>
                       <Link href="/profile" style={{ display: 'block', padding: '10px 16px', fontSize: '0.82rem', color: 'var(--text-muted)', textDecoration: 'none', borderBottom: '1px solid var(--border)' }}>
-                        {locale === 'he' ? '👤 פרופיל' : '👤 Profile'}
+                        {tr({ he: '👤 פרופיל', en: '👤 Profile', ru: '👤 Профиль' })}
                       </Link>
                       <button onClick={signOut} style={{ display: 'block', width: '100%', textAlign: 'start', padding: '10px 16px', fontSize: '0.82rem', color: 'var(--text-muted)', background: 'none', border: 'none', cursor: 'pointer' }}>
                         {t.nav.logout}
@@ -223,15 +238,20 @@ export default function Header() {
 
           {/* Mobile: login/avatar + hamburger */}
           <div className="mobile-menu-btn" style={{ display: 'none', alignItems: 'center', gap: 8 }}>
-            {!loading && !user && (
+            {isRu && (
+              <Link href="/ru/vehicle-lookup" style={{ height: 34, padding: '0 14px', fontSize: '0.8rem', fontWeight: 700, background: 'var(--accent)', color: '#fff', borderRadius: 9, whiteSpace: 'nowrap', display: 'flex', alignItems: 'center', textDecoration: 'none' }}>
+                Проверить авто
+              </Link>
+            )}
+            {!isRu && !loading && !user && (
               <button
                 onClick={() => setAuthOpen(true)}
                 style={{ height: 34, padding: '0 14px', fontSize: '0.8rem', fontWeight: 700, background: 'var(--accent)', color: '#fff', border: 'none', borderRadius: 9, cursor: 'pointer', whiteSpace: 'nowrap' }}
               >
-                {locale === 'he' ? 'התחברות' : 'Login'}
+                {tr({ he: 'התחברות', en: 'Login', ru: 'Войти' })}
               </button>
             )}
-            {!loading && user && (
+            {!isRu && !loading && user && (
               <Link href="/profile" style={{ display: 'flex', alignItems: 'center', textDecoration: 'none' }}>
                 <div style={{ width: 32, height: 32, borderRadius: '50%', background: 'var(--accent)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.8rem', fontWeight: 800, color: '#fff' }}>
                   {displayName(user).charAt(0).toUpperCase()}
@@ -249,7 +269,7 @@ export default function Header() {
 
         {/* Category bar (home + /cars only) */}
         {showCategoryBar && (
-          <CategoryBar locale={locale as 'he' | 'en'} />
+          <CategoryBar locale={locale === 'he' ? 'he' : 'en'} />
         )}
 
         {/* Mobile menu */}
@@ -263,7 +283,11 @@ export default function Header() {
               </Link>
             ))}
             <div style={{ marginTop: 16 }}>
-              {user ? (
+              {isRu ? (
+                <Link href="/" lang="he" hrefLang="he" onClick={() => setMobileOpen(false)} style={{ display: 'block', padding: '13px 0', color: 'var(--text-muted)', textDecoration: 'none', fontWeight: 600, fontSize: '0.9375rem' }}>
+                  Сайт на иврите (עברית)
+                </Link>
+              ) : user ? (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     <Link href="/profile" onClick={() => setMobileOpen(false)} style={{ fontSize: '0.875rem', fontWeight: 600, color: 'var(--text-muted)', textDecoration: 'none' }}>

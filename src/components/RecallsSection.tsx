@@ -1,6 +1,8 @@
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
+import Link from 'next/link';
+import type { ArticleFinding } from '@/lib/modelSynthesis';
 import type { Recall } from '@/app/api/recalls/route';
 import { useLocale } from '@/lib/localeContext';
 import CarDiagramRecalls, { classifyRecall, ZONE_LABELS, type ZoneId } from '@/components/CarDiagramRecalls';
@@ -10,22 +12,39 @@ interface Props {
   modelEn: string;
   year?: number;
   years?: number[]; // all model years to query
+  /** Recalls already loaded on the server; when given, nothing is fetched in the browser. */
+  initialRecalls?: Recall[];
+  /** Short summary shown under the heading. */
+  intro?: string;
+  /** Weaknesses found in published road tests, each with its source. */
+  articleFindings?: ArticleFinding[];
 }
 
-export default function RecallsSection({ makeEn, modelEn, year, years }: Props) {
+/** Recall cards shown per page. */
+const PAGE_SIZE = 10;
+
+const pageBtn: React.CSSProperties = {
+  height: 32, padding: '0 12px', borderRadius: 9999, fontSize: '0.8rem', fontWeight: 700,
+  background: 'var(--bg-muted)', color: 'var(--text-muted)', border: 'none', cursor: 'pointer',
+};
+
+export default function RecallsSection({ makeEn, modelEn, year, years, initialRecalls, intro, articleFindings }: Props) {
   const { t, locale } = useLocale();
   const rc = t.recalls;
   const isHe = locale === 'he';
 
-  const [recalls, setRecalls]     = useState<Recall[]>([]);
+  const [recalls, setRecalls]     = useState<Recall[]>(initialRecalls ?? []);
   // Start in loading state so SSR / first paint never shows a false "no recalls" message
-  const [loading, setLoading]     = useState(true);
+  const [loading, setLoading]     = useState(!initialRecalls);
   const [expanded, setExpanded]   = useState<string | null>(null);
   const [filterYear, setFilterYear] = useState<number | 'all'>('all');
+  const [filterSource, setFilterSource] = useState<'all' | 'il' | 'us'>('all');
+  const [page, setPage] = useState(1);
 
   const yearsKey = years?.join(',') ?? '';
 
   useEffect(() => {
+    if (initialRecalls) return;
     let cancelled = false;
     setLoading(true);
 
@@ -56,7 +75,7 @@ export default function RecallsSection({ makeEn, modelEn, year, years }: Props) 
     })();
 
     return () => { cancelled = true; };
-  }, [makeEn, modelEn, year, yearsKey, locale]);
+  }, [makeEn, modelEn, year, yearsKey, locale, initialRecalls]);
 
   // Collect unique years for the filter
   const availableYears = useMemo(() => {
@@ -65,9 +84,20 @@ export default function RecallsSection({ makeEn, modelEn, year, years }: Props) 
     return Array.from(ys).sort((a, b) => b - a);
   }, [recalls]);
 
-  const filtered = useMemo(() =>
-    filterYear === 'all' ? recalls : recalls.filter(r => r.year === filterYear),
-  [recalls, filterYear]);
+  const filtered = useMemo(() => recalls.filter(r =>
+    (filterYear === 'all' || r.year === filterYear)
+    && (filterSource === 'all' || (filterSource === 'il' ? r.source === 'il' : r.source !== 'il'))),
+  [recalls, filterYear, filterSource]);
+
+  // Paging: every card stays in the HTML (search engines read the whole list); only
+  // the current page is displayed.
+  const pageCount = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+  const currentPage = Math.min(page, pageCount);
+  const goToPage = (n: number) => {
+    setPage(n);
+    setExpanded(null);
+    document.getElementById('recall-list')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  };
 
   const ilCount = useMemo(() => recalls.filter(r => r.source === 'il').length, [recalls]);
   const usCount = useMemo(() => recalls.filter(r => r.source === 'us').length, [recalls]);
@@ -117,6 +147,17 @@ export default function RecallsSection({ makeEn, modelEn, year, years }: Props) 
         )}
       </div>
 
+      {intro && (
+        <p style={{ margin: '0 0 18px', fontSize: '0.92rem', lineHeight: 1.75 }}>
+          {intro}{' '}
+          {isHe && (
+            <Link href="/vehicle-lookup" style={{ color: 'var(--accent)', fontWeight: 700, whiteSpace: 'nowrap' }}>
+              בדיקת רכב לפי מספר רישוי ←
+            </Link>
+          )}
+        </p>
+      )}
+
       {/* Loading skeleton */}
       {loading && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
@@ -146,6 +187,50 @@ export default function RecallsSection({ makeEn, modelEn, year, years }: Props) 
           <p style={{ margin: '8px 0 0', fontSize: '0.8125rem', color: 'var(--text-muted)' }}>
             {isHe ? 'אין ריקולים רשומים לרכב זה.' : 'No recalls on record for this vehicle.'}
           </p>
+        </div>
+      )}
+
+      {/* Source filter: Israeli notices vs recalls published abroad */}
+      {!loading && ilCount > 0 && usCount > 0 && (
+        <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 14 }}>
+          {([
+            ['all', isHe ? `הכול (${recalls.length})` : `All (${recalls.length})`],
+            ['il', isHe ? `בישראל (${ilCount})` : `Israel (${ilCount})`],
+            ['us', isHe ? `בחו״ל (${usCount})` : `Abroad (${usCount})`],
+          ] as const).map(([key, label]) => (
+            <button
+              key={key}
+              onClick={() => { setFilterSource(key); setPage(1); if (key === 'il') setFilterYear('all'); }}
+              aria-pressed={filterSource === key}
+              style={{
+                height: 30, padding: '0 14px', borderRadius: 9999, fontSize: '0.8rem', fontWeight: 700,
+                background: filterSource === key ? 'var(--accent)' : 'var(--bg-muted)',
+                color: filterSource === key ? '#fff' : 'var(--text-muted)',
+                border: 'none', cursor: 'pointer',
+              }}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+      )}
+
+      {/* Findings from published road tests, each credited to its article */}
+      {articleFindings && articleFindings.length > 0 && filterSource === 'all' && (
+        <div style={{ margin: '0 0 20px', padding: '12px 16px', border: '1px solid var(--border)', borderRadius: 12, background: 'var(--bg-muted)' }}>
+          <h3 style={{ margin: '0 0 8px', fontSize: '0.9rem', fontWeight: 800 }}>
+            {isHe ? 'חולשות שעלו במבחני דרכים' : 'Weaknesses found in road tests'}
+          </h3>
+          <ul style={{ margin: 0, paddingInlineStart: 18, display: 'flex', flexDirection: 'column', gap: 6, fontSize: '0.875rem', lineHeight: 1.6 }}>
+            {articleFindings.map((f) => (
+              <li key={f.text}>
+                {f.text}{' '}
+                {f.url
+                  ? <a href={f.url} target="_blank" rel="noopener noreferrer nofollow" style={{ color: 'var(--text-muted)', fontSize: '0.78rem', whiteSpace: 'nowrap' }}>({f.site})</a>
+                  : <span style={{ color: 'var(--text-muted)', fontSize: '0.78rem' }}>({f.site})</span>}
+              </li>
+            ))}
+          </ul>
         </div>
       )}
 
@@ -180,7 +265,7 @@ export default function RecallsSection({ makeEn, modelEn, year, years }: Props) 
           {!year && availableYears.length > 1 && (
             <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 14, marginTop: 16 }}>
               <button
-                onClick={() => setFilterYear('all')}
+                onClick={() => { setFilterYear('all'); setPage(1); }}
                 style={{
                   height: 30, padding: '0 14px', borderRadius: 9999, fontSize: '0.8rem', fontWeight: 600,
                   background: filterYear === 'all' ? '#dc2626' : 'var(--bg-muted)',
@@ -193,7 +278,7 @@ export default function RecallsSection({ makeEn, modelEn, year, years }: Props) 
               {availableYears.map(y => (
                 <button
                   key={y}
-                  onClick={() => setFilterYear(y)}
+                  onClick={() => { setFilterYear(y); setPage(1); }}
                   style={{
                     height: 30, padding: '0 14px', borderRadius: 9999, fontSize: '0.8rem', fontWeight: 600,
                     background: filterYear === y ? '#dc2626' : 'var(--bg-muted)',
@@ -208,11 +293,12 @@ export default function RecallsSection({ makeEn, modelEn, year, years }: Props) 
           )}
 
           {/* Recall cards */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+          <div id="recall-list" style={{ display: 'flex', flexDirection: 'column', gap: 8, scrollMarginTop: 120 }}>
             {filtered.map((r, idx) => (
               <div
                 key={r.id}
                 style={{
+                  display: Math.floor(idx / PAGE_SIZE) + 1 === currentPage ? 'block' : 'none',
                   borderRadius: 12, border: '1px solid var(--border)',
                   background: '#fff', overflow: 'hidden',
                   boxShadow: expanded === r.id ? '0 4px 16px rgba(0,0,0,0.07)' : 'none',
@@ -360,6 +446,41 @@ export default function RecallsSection({ makeEn, modelEn, year, years }: Props) 
               </div>
             ))}
           </div>
+
+          {/* Pages */}
+          {pageCount > 1 && (
+            <nav aria-label={isHe ? 'עמודי ריקולים' : 'Recall pages'} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, flexWrap: 'wrap', marginTop: 16 }}>
+              <button
+                onClick={() => goToPage(currentPage - 1)}
+                disabled={currentPage === 1}
+                style={{ ...pageBtn, opacity: currentPage === 1 ? 0.4 : 1, cursor: currentPage === 1 ? 'default' : 'pointer' }}
+              >
+                {isHe ? 'הקודם' : 'Previous'}
+              </button>
+              {Array.from({ length: pageCount }, (_, i) => i + 1).map(n => (
+                <button
+                  key={n}
+                  onClick={() => goToPage(n)}
+                  aria-current={n === currentPage ? 'page' : undefined}
+                  style={{ ...pageBtn, minWidth: 34, background: n === currentPage ? 'var(--accent)' : 'var(--bg-muted)', color: n === currentPage ? '#fff' : 'var(--text-muted)' }}
+                >
+                  {n}
+                </button>
+              ))}
+              <button
+                onClick={() => goToPage(currentPage + 1)}
+                disabled={currentPage === pageCount}
+                style={{ ...pageBtn, opacity: currentPage === pageCount ? 0.4 : 1, cursor: currentPage === pageCount ? 'default' : 'pointer' }}
+              >
+                {isHe ? 'הבא' : 'Next'}
+              </button>
+              <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginInlineStart: 6 }}>
+                {isHe
+                  ? `${(currentPage - 1) * PAGE_SIZE + 1}–${Math.min(currentPage * PAGE_SIZE, filtered.length)} מתוך ${filtered.length}`
+                  : `${(currentPage - 1) * PAGE_SIZE + 1}–${Math.min(currentPage * PAGE_SIZE, filtered.length)} of ${filtered.length}`}
+              </span>
+            </nav>
+          )}
         </>
       )}
 

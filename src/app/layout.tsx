@@ -5,8 +5,6 @@ import { Heebo, Rubik, Assistant } from 'next/font/google';
 import './globals.css';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
-import RuHeader from '@/components/ru/RuHeader';
-import RuFooter from '@/components/ru/RuFooter';
 import LangBoundary from '@/components/ru/LangBoundary';
 import { AuthProvider } from '@/lib/authContext';
 import { LocaleProvider } from '@/lib/localeContext';
@@ -167,7 +165,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
             `}</Script>
           </>
         )}
-        <LocaleProvider initialLocale={isRu ? 'ru' : isEn ? 'en' : 'he'} documentLang={isRu ? { lang: 'ru', dir: 'ltr' } : undefined}>
+        <LocaleProvider initialLocale={isEn ? 'en' : isRu ? 'ru' : 'he'}>
           <AuthProvider>
             {!isEmbed && !isEn && <LangBoundary serverIsRu={isRu} />}
             {!isEmbed && <NavigationProgress />}
@@ -175,10 +173,10 @@ export default async function RootLayout({ children }: { children: React.ReactNo
             {!isEmbed && (
               <a href="#main-content" className="skip-link">{isEn ? 'Skip to main content' : isRu ? 'Перейти к содержанию' : 'דלגו לתוכן הראשי'}</a>
             )}
-            {!isEmbed && (isRu ? <RuHeader /> : <Header />)}
+            {!isEmbed && <Header />}
             <main id="main-content" tabIndex={-1} className={isEmbed ? '' : 'flex-1'}>{children}</main>
             {!isEmbed && <CollapsibleCards />}
-            {!isEmbed && (isRu ? <RuFooter /> : <Footer />)}
+            {!isEmbed && <Footer />}
           </AuthProvider>
         </LocaleProvider>
       </body>

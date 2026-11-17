@@ -1,4 +1,6 @@
 'use client';
+
+import { localHref } from '@/lib/i18n';
 import { useState, useRef, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
@@ -6,7 +8,51 @@ import type { Vehicle } from '@/lib/vehicleLookup';
 import { detectCountry } from '@/lib/vehicleLookup';
 import { COLOR_EN, FUEL_EN, ORIGIN_EN, translateValue, normalizeOwnership } from '@/lib/vehicleLookupLabels';
 
-interface Props { isHe: boolean; navigateOnSearch?: boolean; initialVehicle?: Vehicle | null; initialPlate?: string; }
+interface Props {
+  isHe: boolean;
+  /** UI language when it isn't Hebrew/English: 'ru' on carissues.co.il/ru (isHe is false there). */
+  lang?: 'he' | 'en' | 'ru';
+  navigateOnSearch?: boolean;
+  initialVehicle?: Vehicle | null;
+  initialPlate?: string;
+}
+
+const RU_STRINGS = {
+  placeholder: 'Введите номер авто',
+  btn: 'Проверить',
+  loading: 'Ищем...',
+  notFound: 'Автомобиль с таким номером не найден',
+  apiError: 'Ошибка проверки, попробуйте ещё раз',
+  invalidInput: 'Введите номер из 7 или 8 цифр',
+  testValid: 'Техосмотр действителен до',
+  testExpired: 'Техосмотр просрочен',
+  validUntil: 'Лицензия действительна до',
+  expired: 'Лицензия просрочена',
+  firstRoad: 'Первая регистрация',
+  fuel: 'Топливо',
+  color: 'Цвет',
+  ownership: 'Владение',
+  tires: 'Шины',
+  vin: 'VIN',
+  viewModel: 'Отзывы и типичные проблемы (на иврите) →',
+  viewMake: 'Все модели',
+  yearPage: 'Год',
+  source: 'Данные обновляются раз в сутки',
+  sourceUk: 'Данные обновляются раз в сутки',
+  odometer: 'Пробег на последнем техосмотре',
+  accident: 'Повреждения',
+  accidentYes: '⚠ Зарегистрировано повреждение',
+  accidentNo: '✓ Повреждений не зарегистрировано',
+  repaint: 'Цвет',
+  repaintYes: 'Автомобиль перекрашен',
+  origin: 'Происхождение',
+  hint: 'Например: 1234567 или 12-345-67',
+  motValid: 'MOT valid until',
+  motExpired: 'MOT expired',
+  taxValid: 'Road tax paid',
+  taxExpired: 'Tax not paid',
+  engine: 'Двигатель',
+};
 
 function fmtDate(raw: string, locale?: string) {
   if (!raw) return '-';
@@ -30,7 +76,8 @@ function slugToDisplay(slug: string): string {
   return slug.split('-').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
 }
 
-export default function PlateSearch({ isHe, navigateOnSearch, initialVehicle, initialPlate }: Props) {
+export default function PlateSearch({ isHe, lang, navigateOnSearch, initialVehicle, initialPlate }: Props) {
+  const locale = lang ?? (isHe ? 'he' : 'en');
   const router                  = useRouter();
   const [plate, setPlate]       = useState(initialPlate ?? '');
   const [loading, setLoading]   = useState(false);
@@ -41,7 +88,7 @@ export default function PlateSearch({ isHe, navigateOnSearch, initialVehicle, in
   // Auto-focus on mount
   useEffect(() => { inputRef.current?.focus(); }, []);
 
-  const t = isHe ? {
+  const t = locale === 'ru' ? RU_STRINGS : isHe ? {
     placeholder: 'הזן מספר רכב',
     btn: 'בדוק רכב',
     loading: 'מחפש...',
@@ -129,7 +176,7 @@ export default function PlateSearch({ isHe, navigateOnSearch, initialVehicle, in
       // data loads, and handles not-found itself (no double wait).
       setLoading(true);
       window.dispatchEvent(new Event('carissues:nav-start'));
-      router.push(`/vehicle-lookup/${encodeURIComponent(cleaned)}`);
+      router.push(localHref(locale, `/vehicle-lookup/${encodeURIComponent(cleaned)}`));
       return;
     }
     setLoading(true);
@@ -142,7 +189,7 @@ export default function PlateSearch({ isHe, navigateOnSearch, initialVehicle, in
         setError(res.status === 404 ? t.notFound : res.status === 400 ? t.invalidInput : t.apiError);
       } else if (d.vehicle) {
         if (navigateOnSearch) {
-          router.push(`/vehicle-lookup/${encodeURIComponent(cleaned)}`);
+          router.push(localHref(locale, `/vehicle-lookup/${encodeURIComponent(cleaned)}`));
         } else {
           setVehicle(d.vehicle);
         }

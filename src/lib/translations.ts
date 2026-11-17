@@ -1,5 +1,4 @@
-import { ru } from './translations.ru';
-
+/** he = carissues.co.il, en = carissues.net, ru = carissues.co.il/ru (Russian pilot). */
 export type Locale = 'he' | 'en' | 'ru';
 
 export const translations = {
@@ -1111,7 +1110,6 @@ export const translations = {
       foundHelpful: 'found helpful',
     },
   },
-  ru,
 } as const;
 
 // Structural type - works for both locales

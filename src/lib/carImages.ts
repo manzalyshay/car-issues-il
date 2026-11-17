@@ -91,10 +91,25 @@ function withMainEligibleFirst(images: CarImage[], mainCap = 20, demotedBudget =
   return [...eligible.slice(0, mainCap), ...demoted.slice(0, demotedBudget)];
 }
 
+// Names and phrases that legitimately contain "&" / "and" without meaning a
+// second car in the frame (brand, trim levels, colours, event names). Stripped
+// before the multi-car check below.
+const SINGLE_CAR_AMPERSAND = /lynk\s*&\s*co|laurin\s*&\s*klement|\bl&k\b|\bc&s\b|start\s*&\s*stop|\ba&w\b|cool\s*&\s*bright|coffee\s*&\s*cars|\bs&company\b|heckler\s*&\s*koch|elantra\s*&\s*avante|\b(?:red|black|white|blue|grey|gray|silver)\s+(?:&|and)\s+(?:red|black|white|blue|grey|gray|silver)\b|bosnia\s+and\s+herzegovina|front\s+and\s+rear|left\s+and\s+above/gi;
+
+// Commons titles like "Hyundai IONIQ 5 & 6 N", "Genesis G80 & GV80" or
+// "Peugeot 3008 and Peugeot 5008" are group shots with two or more cars in the
+// frame - not usable as a photo of a single model.
+const MULTI_CAR_TITLE = /&|\band\b|\bvs\.?\b|\bversus\b|side[- ]by[- ]side|\bline-?up\b|\btrio\b|\bcomparison\b/i;
+
+function isMultiCarTitle(title: string): boolean {
+  return MULTI_CAR_TITLE.test(title.replace(SINGLE_CAR_AMPERSAND, ' '));
+}
+
 function isUnsuitableImage(makeSlug: string, modelSlug: string, title: string | null): boolean {
   if (!title) return false;
   // These are law-enforcement vehicles rather than ordinary consumer examples.
   if (/\b(?:police|polizia|polizei|carabinieri)\b/i.test(title)) return true;
+  if (isMultiCarTitle(title)) return true;
   return (MISASSIGNED_IMAGE_TITLES[`${makeSlug}/${modelSlug}`] ?? []).some(pattern => pattern.test(title));
 }
 
