@@ -3,10 +3,12 @@ import Link from 'next/link';
 import { notFound, redirect } from 'next/navigation';
 import { getMakeBySlug, getModelBySlug, getAllMakes, getSimilarModels } from '@/lib/carsDb';
 import { getReviewsForModel } from '@/lib/reviewsDb';
+import { ownerAggregateRating } from '@/lib/ownerRating';
 import { getExpertReviews } from '@/lib/expertReviews';
 import { findCarModel } from '@/lib/sketchfab';
 import { getTrimSpecs } from '@/lib/trimSpecsDb';
 import { getRecallsFromCache } from '@/lib/recallsDb';
+import { getIsraeliRecalls } from '@/lib/israeliRecallsDb';
 import { realItems } from '@/lib/faqData';
 import type { TrimSpecWithYear } from '@/lib/trimSpecsDb';
 import { normEngine } from '@/lib/specSummary';
@@ -21,6 +23,8 @@ import PriceHistoryChart from '@/components/PriceHistoryChart';
 import CarComparisonAI from '@/components/CarComparisonAI';
 import RecallsCompare from '@/components/RecallsCompare';
 import ReviewsCompare from '@/components/ReviewsCompare';
+import DragRaceLazy from '@/components/DragRaceLazy';
+import { pickRaceCar, raceSummary, RACE_DISTANCE_M } from '@/lib/dragRace';
 
 interface Props { params: Promise<{ make1: string; model1: string; make2: string; model2: string }> }
 
@@ -37,38 +41,31 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const nameA = isEn ? `${mA.nameEn} ${modA.nameEn}` : `${mA.nameHe} ${modA.nameHe}`;
   const nameB = isEn ? `${mB.nameEn} ${modB.nameEn}` : `${mB.nameHe} ${modB.nameHe}`;
 
-  // Pull real ratings into the snippet - matches the Product/AggregateRating schema
-  // on the page itself, and gives the SERP something concrete instead of generic copy.
-  const [reviewsA, reviewsB, expertA, expertB, indexable] = await Promise.all([
-    getReviewsForModel(make1, model1).catch(() => []),
-    getReviewsForModel(make2, model2).catch(() => []),
-    getExpertReviews(make1, model1).catch(() => []),
-    getExpertReviews(make2, model2).catch(() => []),
+  // Snippet leads with the two starting list prices (the same numbers the page shows
+  // in its price row and FAQ) - concrete data instead of rating tags.
+  const [trimsA, trimsB, indexable] = await Promise.all([
+    getTrimSpecs(make1, model1).catch(() => [] as TrimSpecWithYear[]),
+    getTrimSpecs(make2, model2).catch(() => [] as TrimSpecWithYear[]),
     // Pairs outside the sitemap are noindex (same rule, see lib/seoIndexing).
     // Fail open so a D1 error never caches a stray noindex.
     getComparePolicy().then(p => p.isIndexable(c1, c2)).catch(() => true),
   ]);
-  const avgA = reviewsA.length ? reviewsA.reduce((s, r) => s + r.rating, 0) / reviewsA.length : null;
-  const avgB = reviewsB.length ? reviewsB.reduce((s, r) => s + r.rating, 0) / reviewsB.length : null;
-  const scoreA = expertA[0]?.topScore ?? null;
-  const scoreB = expertB[0]?.topScore ?? null;
-  const hasStats = avgA !== null || avgB !== null;
-
-  const statTag = (avg: number | null, count: number, score: number | null) =>
-    avg !== null ? `${avg.toFixed(1)}★ (${count})` : score !== null ? (isEn ? `AI ${score.toFixed(1)}/10` : `ציון AI ${score.toFixed(1)}/10`) : null;
-  const tagA = statTag(avgA, reviewsA.length, scoreA);
-  const tagB = statTag(avgB, reviewsB.length, scoreB);
+  const startPrice = (trims: TrimSpecWithYear[]) => {
+    const prices = trims.map(t => t.priceIls).filter((v): v is number => typeof v === 'number' && v > 0);
+    return prices.length ? Math.min(...prices) : null;
+  };
+  const priceA = startPrice(trimsA);
+  const priceB = startPrice(trimsB);
+  const ils = (v: number) => `₪${Math.round(v).toLocaleString('en-US')}`;
 
   const title = isEn
     ? `${nameA} vs ${nameB}: Which Is Better? (2026)`
     : `${nameA} מול ${nameB} - מי עדיף? השוואה 2026`;
-  const description = hasStats
-    ? isEn
-      ? `${nameA}${tagA ? ` (${tagA})` : ''} vs ${nameB}${tagB ? ` (${tagB})` : ''} - full comparison: pros & cons, reliability, price history 2016-2026. See who wins.`
-      : `${nameA}${tagA ? ` (${tagA})` : ''} מול ${nameB}${tagB ? ` (${tagB})` : ''} - השוואה מלאה: יתרונות וחסרונות, אמינות, היסטוריית מחיר 2016-2026. מי מנצח?`
-    : isEn
-      ? `${nameA} or ${nameB}? Full comparison: AI scores, owner reviews, pros & cons, price history 2016-2026 - CarIssues`
-      : `${nameA} או ${nameB}? השוואה מלאה: ציונים, ביקורות בעלי רכב, יתרונות וחסרונות, היסטוריית מחיר 2016-2026 - CarIssues IL`;
+  const description = isEn
+    ? `${nameA} or ${nameB}? Full comparison: owner reviews, pros & cons, reliability, recalls and price history 2016-2026. See which one fits you.`
+    : priceA !== null && priceB !== null
+      ? `${nameA} (החל מ-${ils(priceA)}) או ${nameB} (החל מ-${ils(priceB)})? השוואה מלאה: מחירון, צריכת דלק, תא מטען, אמינות וריקולים - ומי עדיף למי.`
+      : `${nameA} או ${nameB}? השוואה מלאה: מחיר, צריכת דלק, תא מטען, אמינות, ריקולים וחוות דעת בעלים - ומי עדיף למי.`;
   return {
     title,
     description,
@@ -121,7 +118,7 @@ export default async function ComparePage({ params }: Props) {
   const [modA, modB] = await Promise.all([getModelBySlug(make1, model1), getModelBySlug(make2, model2)]);
   if (!modA || !modB) notFound();
 
-  const [reviewsA, reviewsB, expertA, expertB, carModelA, carModelB, similarA, similarB, trimsA, trimsB, recallsA, recallsB] = await Promise.all([
+  const [reviewsA, reviewsB, expertA, expertB, carModelA, carModelB, similarA, similarB, trimsA, trimsB, recallsA, recallsB, ilRecallsA, ilRecallsB] = await Promise.all([
     getReviewsForModel(make1, model1).catch(() => []),
     getReviewsForModel(make2, model2).catch(() => []),
     getExpertReviews(make1, model1).catch(() => []),
@@ -134,6 +131,8 @@ export default async function ComparePage({ params }: Props) {
     getTrimSpecs(make2, model2).catch(() => [] as TrimSpecWithYear[]),
     getRecallsFromCache(mA.nameEn, modA.nameEn).catch(() => []),
     getRecallsFromCache(mB.nameEn, modB.nameEn).catch(() => []),
+    locale === 'en' ? Promise.resolve([]) : getIsraeliRecalls(mA.nameEn, modA.nameEn).catch(() => []),
+    locale === 'en' ? Promise.resolve([]) : getIsraeliRecalls(mB.nameEn, modB.nameEn).catch(() => []),
   ]);
 
   const isEn = locale === 'en';
@@ -232,6 +231,11 @@ export default async function ComparePage({ params }: Props) {
     weight:   minVal(trimsB, 'curbWeightKg'),
     price:    minVal(trimsB, 'priceIls'),
   };
+
+  // 400 m drag race: each model sends its quickest trim
+  const raceA = pickRaceCar(nameA, trimsA, { body: modA.category, logoUrl: mA.logoUrl });
+  const raceB = pickRaceCar(nameB, trimsB, { body: modB.category, logoUrl: mB.logoUrl });
+  const race = raceA && raceB ? raceSummary(raceA, raceB) : null;
 
   type PerfKey = keyof typeof perfA;
   type PerfStat = {
@@ -381,6 +385,9 @@ export default async function ComparePage({ params }: Props) {
     const parts: string[] = [];
     if (realConsA.length > 0) parts.push(isEn ? `Common complaints about the ${nameA}: ${top(realConsA)}.` : `תלונות נפוצות על ${nameA}: ${top(realConsA)}.`);
     if (realConsB.length > 0) parts.push(isEn ? `Common complaints about the ${nameB}: ${top(realConsB)}.` : `תלונות נפוצות על ${nameB}: ${top(realConsB)}.`);
+    if (!isEn && (ilRecallsA.length > 0 || ilRecallsB.length > 0)) {
+      parts.push(`במאגר משרד התחבורה רשומות ${ilRecallsA.length} קריאות שירות ל${nameA} ו-${ilRecallsB.length} ל${nameB}.`);
+    }
     if (recallsA.length > 0 && recallsB.length > 0) {
       parts.push(isEn
         ? `The US recall database (NHTSA) lists ${recallsA.length} recalls for the ${nameA} and ${recallsB.length} for the ${nameB}.`
@@ -451,12 +458,6 @@ export default async function ComparePage({ params }: Props) {
           </div>
         )}
 
-        {!isEn && RU_COMPARE_PATHS.has(`/cars/compare/${c1}/${c2}`) && (
-          <p style={{ margin: '-14px 0 24px', fontSize: '0.85rem' }}>
-            <Link href={`/ru/cars/compare/${c1}/${c2}`} lang="ru" hrefLang="ru" style={{ fontWeight: 600, textDecoration: 'none' }}>Сравнение на русском →</Link>
-          </p>
-        )}
-
         {/* Header card */}
         <div className="card cmp-header-card" style={{ padding: '24px 28px', marginBottom: 28, display: 'flex', gap: 16, alignItems: 'center' }}>
           <div style={{ ...col }}>
@@ -471,6 +472,11 @@ export default async function ComparePage({ params }: Props) {
             <Link href={`/cars/${make1}/${model1}/issues`} style={{ fontSize: '0.8125rem', color: 'var(--accent)', textDecoration: 'none', display: 'block', marginTop: 4 }}>
               {sp.issuesLink}
             </Link>
+            {modA.years.length > 0 && (
+              <Link href={`/cars/${make1}/${model1}/${Math.max(...modA.years)}`} style={{ fontSize: '0.8125rem', color: 'var(--accent)', textDecoration: 'none', display: 'block', marginTop: 4 }}>
+                {isEn ? `${Math.max(...modA.years)} price & specs` : `מחיר ומפרט ${Math.max(...modA.years)}`}
+              </Link>
+            )}
           </div>
           <div style={{ fontWeight: 900, fontSize: '1.2rem', color: 'var(--text-muted)', flexShrink: 0 }}>VS</div>
           <div style={{ ...col }}>
@@ -485,6 +491,11 @@ export default async function ComparePage({ params }: Props) {
             <Link href={`/cars/${make2}/${model2}/issues`} style={{ fontSize: '0.8125rem', color: 'var(--accent)', textDecoration: 'none', display: 'block', marginTop: 4 }}>
               {sp.issuesLink}
             </Link>
+            {modB.years.length > 0 && (
+              <Link href={`/cars/${make2}/${model2}/${Math.max(...modB.years)}`} style={{ fontSize: '0.8125rem', color: 'var(--accent)', textDecoration: 'none', display: 'block', marginTop: 4 }}>
+                {isEn ? `${Math.max(...modB.years)} price & specs` : `מחיר ומפרט ${Math.max(...modB.years)}`}
+              </Link>
+            )}
           </div>
         </div>
 
@@ -513,6 +524,34 @@ export default async function ComparePage({ params }: Props) {
               </div>
             </div>
           </div>
+        )}
+
+        {/* 400 m drag race - the visitor launches one of the two cars */}
+        {raceA && raceB && race && (
+          <section id="drag-race" className="card" style={{ padding: '20px', marginBottom: 28, scrollMarginTop: 90 }}>
+            <h2 style={{ fontWeight: 800, fontSize: '1rem', marginBottom: 6 }}>
+              {isEn ? `${nameA} vs ${nameB}: ${RACE_DISTANCE_M} m drag race` : `${nameA} מול ${nameB}: מרוץ ${RACE_DISTANCE_M} מטר`}
+            </h2>
+            <p style={{ margin: '0 0 14px', fontSize: '0.9rem', lineHeight: 1.65, color: 'var(--text-muted)' }}>
+              {(() => {
+                const [w, l, tw, tl] = race.winner === 'b' ? [raceB, raceA, race.timeB, race.timeA] : [raceA, raceB, race.timeA, race.timeB];
+                if (race.winner === 'tie') {
+                  return isEn
+                    ? `On paper it is a dead heat: both cover ${RACE_DISTANCE_M} m in about ${tw.toFixed(1)} s (${raceA.name} ${raceA.trim}, 0-100 in ${raceA.accel} s; ${raceB.name} ${raceB.trim}, ${raceB.accel} s). Your launch decides it.`
+                    : `על הנייר זה תיקו: שתיהן עוברות ${RACE_DISTANCE_M} מטר בכ-${tw.toFixed(1)} שניות (${raceA.name} ${raceA.trim}, 0-100 ב-${raceA.accel} שנ׳; ${raceB.name} ${raceB.trim}, ${raceB.accel} שנ׳). הזינוק שלכם יכריע.`;
+                }
+                return isEn
+                  ? `From a standing start the ${w.name} (${w.trim}, 0-100 in ${w.accel} s) covers ${RACE_DISTANCE_M} m in about ${tw.toFixed(1)} s, against ${tl.toFixed(1)} s for the ${l.name} (${l.trim}, ${l.accel} s) - roughly ${Math.round(race.gapM)} m ahead at the line. Pick a car and see if your launch changes that.`
+                  : `בזינוק מהמקום ${w.name} (${w.trim}, 0-100 ב-${w.accel} שנ׳) עוברת ${RACE_DISTANCE_M} מטר בכ-${tw.toFixed(1)} שניות, מול ${tl.toFixed(1)} שניות ל${l.name} (${l.trim}, ${l.accel} שנ׳) - פער של כ-${Math.round(race.gapM)} מטר בקו הסיום. בחרו מכונית ובדקו אם הזינוק שלכם משנה את התוצאה.`;
+              })()}
+            </p>
+            <DragRaceLazy a={raceA} b={raceB} isEn={isEn} />
+            <p style={{ margin: '12px 0 0', fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+              {isEn
+                ? 'A simulation built from each trim\'s published 0-100 km/h time and top speed. It is an estimate, not a measured run.'
+                : 'סימולציה על בסיס נתוני היצרן של כל גרסה: זמן 0-100 קמ"ש ומהירות מרבית. זו הערכה, לא מדידה במסלול.'}
+            </p>
+          </section>
         )}
 
         {/* Scores */}
@@ -950,8 +989,22 @@ export default async function ComparePage({ params }: Props) {
           const base = getBaseUrl(locale);
           const pageUrl = `${base}/cars/compare/${make1}/${model1}/${make2}/${model2}`;
 
-          // No Product / aggregateRating here: owner ratings are marked up only on each
-          // model's own page, not repeated on comparison pages.
+          // Stars only from real owner reviews (D1 `reviews`) - the same numbers shown
+          // in the "user rating" row above. A side with no owner reviews gets no
+          // Product node; AI scores and external test scores are never marked up.
+          const ratedProducts = ([
+            [mA, modA, reviewsA],
+            [mB, modB, reviewsB],
+          ] as const).flatMap(([mk, md, revs]) => {
+            const aggregateRating = ownerAggregateRating(revs);
+            return aggregateRating ? [{
+              '@type': 'Product',
+              name: `${mk.nameEn} ${md.nameEn}`,
+              brand: { '@type': 'Brand', name: mk.nameEn },
+              url: `${base}/cars/${mk.slug}/${md.slug}`,
+              aggregateRating,
+            }] : [];
+          });
           return {
             '@context': 'https://schema.org',
             '@graph': [
@@ -961,6 +1014,7 @@ export default async function ComparePage({ params }: Props) {
                 url: pageUrl,
                 description: `${nameA} ${sp.vsWord} ${nameB}`,
               },
+              ...ratedProducts,
               {
                 '@type': 'BreadcrumbList',
                 itemListElement: [

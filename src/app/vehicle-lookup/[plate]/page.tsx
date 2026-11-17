@@ -55,8 +55,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
   return {
     title: isHe
-      ? `${name}${yearStr} - בדיקת רכב ${displayPlate} | CarIssues`
-      : `${name}${yearStr} - Vehicle Check ${displayPlate} | CarIssues`,
+      ? `${name}${yearStr} - בדיקת רכב ${displayPlate}`
+      : `${name}${yearStr} - Vehicle Check ${displayPlate}`,
     description: isHe
       ? `פרטי הרכב ${displayPlate}: ${name}${yearStr}. דלק: ${v.fuel}. צבע: ${v.color}.${kmStr}${damageStr} תוקף טסט ועוד.`
       : `Vehicle ${displayPlate}: ${name}${yearStr}. Fuel: ${v.fuel}. Color: ${v.color}.${kmStr}${damageStr} MOT status and more.`,

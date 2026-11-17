@@ -6,6 +6,7 @@ import Link from 'next/link';
  * and the Hebrew site.
  */
 const LINKS = [
+  { href: '/ru/cars', label: 'Марки и модели', title: 'Все марки и модели автомобилей' },
   { href: '/ru/vehicle-lookup', label: 'Проверка по номеру', title: 'Проверка авто по номеру' },
   { href: '/ru#compare', label: 'Сравнения', title: 'Сравнение автомобилей' },
 ];

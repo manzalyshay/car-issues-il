@@ -48,10 +48,17 @@ const STATIC_PAGES: { path: string; changeFrequency: 'daily' | 'weekly' | 'month
   { path: '/checklist', changeFrequency: 'monthly', priority: 0.7 },
   { path: '/tco', changeFrequency: 'monthly', priority: 0.75 },
   { path: '/vehicle-lookup', changeFrequency: 'monthly', priority: 0.8 },
+  { path: '/recall-check', changeFrequency: 'monthly', priority: 0.8 },
+  { path: '/motorcycle-check', changeFrequency: 'monthly', priority: 0.7 },
+  { path: '/disabled-tag-check', changeFrequency: 'monthly', priority: 0.7 },
+  { path: '/israel-car-stats', changeFrequency: 'monthly', priority: 0.8 },
   { path: '/contact', changeFrequency: 'monthly', priority: 0.3 },
   { path: '/terms', changeFrequency: 'monthly', priority: 0.2 },
   { path: '/privacy', changeFrequency: 'monthly', priority: 0.2 },
 ];
+
+/** Israeli-plate tools: Hebrew site only. */
+const IL_PLATE_PATHS = ['/vehicle-lookup', '/recall-check', '/motorcycle-check', '/disabled-tag-check'];
 
 // ── XML ──────────────────────────────────────────────────────────────────────────────
 
@@ -225,8 +232,8 @@ function enEntries(d: EnData): Record<EnChildSitemap, MetadataRoute.Sitemap> {
   const datedStatic: Record<string, string | undefined> = {
     '': catalogueLatest, '/cars': catalogueLatest, '/cars/compare': catalogueLatest, '/rankings': catalogueLatest, '/news': d.newsLatest,
   };
-  // /vehicle-lookup is Israeli-license-plate-only and hidden on the English site.
-  const statics: MetadataRoute.Sitemap = [...STATIC_PAGES.filter((s) => s.path !== '/vehicle-lookup'), { path: '/embed', changeFrequency: 'monthly' as const, priority: 0.6 }].map((s) => ({
+  // The Israeli-license-plate checks are hidden on the English site.
+  const statics: MetadataRoute.Sitemap = [...STATIC_PAGES.filter((s) => !IL_PLATE_PATHS.some((p) => s.path.startsWith(p))), { path: '/embed', changeFrequency: 'monthly' as const, priority: 0.6 }].map((s) => ({
     url: `${BASE}${s.path}`, lastModified: datedStatic[s.path], changeFrequency: s.changeFrequency, priority: s.priority,
   }));
 

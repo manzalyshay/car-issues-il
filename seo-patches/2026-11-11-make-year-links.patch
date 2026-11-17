@@ -1,0 +1,98 @@
+From 10b4ea86f4dc4d5ebcb8ca544c967e8dc6bc5814 Mon Sep 17 00:00:00 2001
+From: Claude <noreply@anthropic.com>
+Date: Wed, 11 Nov 2026 07:04:02 +0000
+Subject: [PATCH] SEO: link each current model's newest year page from the make
+ page
+
+Make pages linked only to model pages; year pages (/cars/<make>/<model>/<year>)
+got links from their own model page alone. Adds a 'New <make> models: prices
+and trims' row of links to each current model's newest (always indexable) year.
+
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_01Nsy2TuJcTAX6CBt4cjDMeK
+---
+ src/app/cars/[make]/page.tsx           |  4 +++
+ src/components/MakeNewestYearLinks.tsx | 49 ++++++++++++++++++++++++++
+ 2 files changed, 53 insertions(+)
+ create mode 100644 src/components/MakeNewestYearLinks.tsx
+
+diff --git a/src/app/cars/[make]/page.tsx b/src/app/cars/[make]/page.tsx
+index 6544afe..c1d3753 100644
+--- a/src/app/cars/[make]/page.tsx
++++ b/src/app/cars/[make]/page.tsx
+@@ -3,6 +3,7 @@ import Link from 'next/link';
+ import { notFound } from 'next/navigation';
+ import { getAllMakes, getMakeBySlug, getCategoryLabel } from '@/lib/carsDb';
+ import MakeLogo from '@/components/MakeLogo';
++import MakeNewestYearLinks from '@/components/MakeNewestYearLinks';
+ import { getHostLocale, getBaseUrl } from '@/lib/hostLocale';
+ import { translations } from '@/lib/translations';
+ import { getMakeStats, buildMakeIntro } from '@/lib/makeSummary';
+@@ -135,6 +136,9 @@ export default async function MakePage({ params }: Props) {
+           </section>
+         )}
+ 
++        {/* Links to each current model's newest year page (prices and trims) */}
++        <MakeNewestYearLinks make={make} locale={locale} />
++
+         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20, flexWrap: 'wrap', gap: 8 }}>
+           <h2 style={{ fontSize: '1.1rem', fontWeight: 700, color: 'var(--text)' }}>
+             {mp.selectModel}
+diff --git a/src/components/MakeNewestYearLinks.tsx b/src/components/MakeNewestYearLinks.tsx
+new file mode 100644
+index 0000000..d62d6b2
+--- /dev/null
++++ b/src/components/MakeNewestYearLinks.tsx
+@@ -0,0 +1,49 @@
++/**
++ * Make page: plain links to each current model's newest year page
++ * (/cars/<make>/<model>/<year>), e.g. "קיה ספורטאז' 2026".
++ *
++ * The newest model year is always indexable (isModelYearIndexable in
++ * src/lib/seoIndexing.ts), so every link here points at an indexable page.
++ * Models whose newest year is older than last year are left out: they are
++ * no longer sold new and their model page already covers them.
++ */
++import Link from 'next/link';
++import type { CarMake } from '@/lib/carsDb';
++
++interface Props {
++  make: CarMake;
++  locale: string;
++}
++
++export default function MakeNewestYearLinks({ make, locale }: Props) {
++  const isEn = locale === 'en';
++  const minYear = new Date().getFullYear() - 1;
++
++  const items = make.models
++    .filter((m) => m.years.length > 0)
++    .map((m) => ({ model: m, year: Math.max(...m.years) }))
++    .filter((x) => x.year >= minYear)
++    .sort((a, b) => b.year - a.year || (b.model.activeVehiclesIl ?? 0) - (a.model.activeVehiclesIl ?? 0));
++
++  if (items.length === 0) return null;
++
++  const chip: React.CSSProperties = {
++    padding: '5px 11px', borderRadius: 20, fontSize: '0.8rem', color: 'var(--accent)',
++    textDecoration: 'none', border: '1px solid var(--accent)', whiteSpace: 'nowrap',
++  };
++
++  return (
++    <nav aria-label={isEn ? `New ${make.nameEn} models` : `דגמי ${make.nameHe} חדשים`} style={{ marginBottom: 28 }}>
++      <h2 style={{ fontSize: '1.1rem', fontWeight: 700, color: 'var(--text)', marginBottom: 10 }}>
++        {isEn ? `New ${make.nameEn} models: prices and trims` : `דגמי ${make.nameHe} חדשים: מחיר וגרסאות`}
++      </h2>
++      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
++        {items.map(({ model, year }) => (
++          <Link key={model.slug} href={`/cars/${make.slug}/${model.slug}/${year}`} style={chip}>
++            {isEn ? `${make.nameEn} ${model.nameEn} ${year}` : `${make.nameHe} ${model.nameHe} ${year}`}
++          </Link>
++        ))}
++      </div>
++    </nav>
++  );
++}
+-- 
+2.43.0
+

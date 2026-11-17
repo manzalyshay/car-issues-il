@@ -19,13 +19,14 @@ const PAGE_SIZE = 5; // cars on each side of current
 
 export default function FuelComparisonChart({ makeSlug, modelSlug, isEn }: Props) {
   const [data, setData] = useState<FuelEntry[]>([]);
+  const [unit, setUnit] = useState<'kml' | 'l100' | 'kwh'>(isEn ? 'l100' : 'kml');
   const [loading, setLoading] = useState(true);
   const [offset, setOffset] = useState(0); // how many to shift the window
 
   useEffect(() => {
     fetch(`/api/fuel-comparison?make=${makeSlug}&model=${modelSlug}&locale=${isEn ? 'en' : 'he'}`)
       .then(r => r.json())
-      .then(d => { setData(d.data ?? []); setLoading(false); })
+      .then(d => { setData(d.data ?? []); if (d.unit) setUnit(d.unit); setLoading(false); })
       .catch(() => setLoading(false));
   }, [makeSlug, modelSlug, isEn]);
 
@@ -71,10 +72,14 @@ export default function FuelComparisonChart({ makeSlug, modelSlug, isEn }: Props
       {/* Header */}
       <div style={{ padding: '12px 16px 10px', background: '#f8fafc', borderBottom: '1px solid #e3e8ee', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
         <span style={{ fontSize: 13, fontWeight: 700, color: '#1c2733' }}>
-          {isEn ? 'Fuel vs. Category' : 'צריכת דלק לעומת קטגוריה'}
+          {unit === 'kwh'
+            ? (isEn ? 'Energy use vs. Category' : 'צריכת חשמל לעומת קטגוריה')
+            : (isEn ? 'Fuel vs. Category' : 'צריכת דלק לעומת קטגוריה')}
         </span>
         <span style={{ fontSize: 11, color: '#8595a6' }}>
-          {isEn ? `#${rank} of ${total} · L/100km` : `דירוג ${rank} מתוך ${total} · ל/100ק"מ`}
+          {isEn
+            ? `#${rank} of ${total} · ${unit === 'kwh' ? 'kWh/100km' : 'L/100km'}`
+            : `דירוג ${rank} מתוך ${total} · ${unit === 'kwh' ? 'קוט״ש ל-100 ק״מ' : 'ק״מ לליטר'}`}
         </span>
       </div>
 

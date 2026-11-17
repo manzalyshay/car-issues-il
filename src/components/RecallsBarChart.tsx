@@ -1,6 +1,7 @@
 'use client';
 import { useState, useEffect, useRef } from 'react';
 import type { Recall } from '@/app/api/recalls/route';
+import { ilRecallYears } from '@/lib/recallYears';
 
 interface Props {
   makeEn: string;
@@ -9,7 +10,8 @@ interface Props {
   isEn: boolean;
 }
 
-const BAR_COLOR = '#f97316';
+const IL_COLOR = '#2563eb';
+const US_COLOR = '#f97316';
 
 function barColor(count: number) {
   if (count === 0) return 'transparent';
@@ -38,7 +40,9 @@ export default function RecallsBarChart({ makeEn, modelEn, years, isEn }: Props)
   useEffect(() => {
     let cancelled = false;
     setLoading(true);
-    const params = new URLSearchParams({ make: makeEn, model: modelEn, locale: 'en' });
+    const params = new URLSearchParams({ make: makeEn, model: modelEn, locale: isEn ? 'en' : 'he' });
+    // Hebrew site: add the Israeli notices (data.gov.il) to the US ones
+    if (!isEn) params.set('il', '1');
     if (years?.length) params.set('years', years.join(','));
     fetch(`/api/recalls?${params}`)
       .then(r => r.json())
@@ -63,11 +67,28 @@ export default function RecallsBarChart({ makeEn, modelEn, years, isEn }: Props)
     );
   }
 
-  // Group by model year
-  const countByYear = new Map<number, number>();
+  // Group by model year, US and Israeli notices counted separately
+  const covered = years?.length ? years : [];
+  const usByYear = new Map<number, number>();
+  const ilByYear = new Map<number, number>();
+  let ilTotal = 0;
+  let usTotal = 0;
+  let ilUnplaced = 0;
   for (const r of recalls) {
-    if (r.year) countByYear.set(r.year, (countByYear.get(r.year) ?? 0) + 1);
+    if (r.source === 'il') {
+      ilTotal++;
+      const ys = ilRecallYears(r, covered);
+      if (ys.length === 0) ilUnplaced++;
+      for (const y of ys) ilByYear.set(y, (ilByYear.get(y) ?? 0) + 1);
+    } else if (r.year) {
+      usTotal++;
+      usByYear.set(r.year, (usByYear.get(r.year) ?? 0) + 1);
+    }
   }
+  const hasIl = ilByYear.size > 0;
+  const countByYear = new Map<number, number>();
+  for (const [y, n] of usByYear) countByYear.set(y, n);
+  for (const [y, n] of ilByYear) countByYear.set(y, (countByYear.get(y) ?? 0) + n);
 
   if (countByYear.size === 0) return null;
 
@@ -101,7 +122,7 @@ export default function RecallsBarChart({ makeEn, modelEn, years, isEn }: Props)
 
   return (
     <div ref={containerRef} style={{ overflow: 'hidden', borderRadius: 16, border: '1px solid #e4e9f2', background: '#fff', width: '100%', height: '100%' }}>
-      {header(isEn)}
+      {header(isEn, hasIl)}
 
       <div style={{ padding: '16px 20px 12px' }}>
         <svg viewBox={`0 0 ${W} ${H}`} style={{ width: '100%', display: 'block', overflow: 'visible', direction: 'ltr' }}>
@@ -129,15 +150,19 @@ export default function RecallsBarChart({ makeEn, modelEn, years, isEn }: Props)
               const y = yOf(count);
               const bH = cH - y;
               const isHovered = hoveredYear === year;
-              const color = barColor(count);
+              const color = hasIl ? 'var(--text)' : barColor(count);
+              const ilH = hasIl ? ((ilByYear.get(year) ?? 0) / (maxCount || 1)) * cH : 0;
               return (
-                <g key={year}>
-                  <rect
-                    x={x} y={y} width={barW} height={bH}
-                    fill={color} rx={3}
-                    opacity={hoveredYear !== null && !isHovered ? 0.4 : 1}
-                    style={{ transition: 'opacity 0.1s' }}
-                  />
+                <g key={year} opacity={hoveredYear !== null && !isHovered ? 0.4 : 1} style={{ transition: 'opacity 0.1s' }}>
+                  {hasIl ? (
+                    <>
+                      {/* US on top, Israel at the base */}
+                      {bH - ilH > 0 && <rect x={x} y={y} width={barW} height={bH - ilH} fill={US_COLOR} rx={3} />}
+                      {ilH > 0 && <rect x={x} y={cH - ilH} width={barW} height={ilH} fill={IL_COLOR} rx={3} />}
+                    </>
+                  ) : (
+                    <rect x={x} y={y} width={barW} height={bH} fill={color} rx={3} />
+                  )}
                   {/* Count label on top of bar when hovered or bar is tall enough */}
                   {(isHovered || bH > 20) && (
                     <text
@@ -191,8 +216,8 @@ export default function RecallsBarChart({ makeEn, modelEn, years, isEn }: Props)
               const count = countByYear.get(hoveredYear) ?? 0;
               const idx = allYears.indexOf(hoveredYear);
               const bx = xOf(idx) + barW / 2;
-              const ttW = 90;
-              const ttH = 44;
+              const ttW = hasIl ? 120 : 90;
+              const ttH = hasIl ? 62 : 44;
               const ttX = Math.max(0, Math.min(cW - ttW, bx - ttW / 2));
               const ttY = Math.max(4, yOf(count) - ttH - 6);
               return (
@@ -203,10 +228,21 @@ export default function RecallsBarChart({ makeEn, modelEn, years, isEn }: Props)
                     fontSize={12} fontWeight={700} fill="#f1f5f9" fontFamily="system-ui,sans-serif">
                     {hoveredYear}
                   </text>
-                  <text x={ttX + ttW / 2} y={ttY + 33} textAnchor="middle"
-                    fontSize={11} fill={barColor(count)} fontWeight={700} fontFamily="system-ui,sans-serif">
-                    {count} {isEn ? (count === 1 ? 'recall' : 'recalls') : count === 1 ? 'ריקול' : 'ריקולים'}
-                  </text>
+                  {hasIl ? (
+                    <>
+                      <text x={ttX + ttW / 2} y={ttY + 33} textAnchor="middle" fontSize={11} fill="#93c5fd" fontWeight={700} fontFamily="system-ui,sans-serif">
+                        {`ישראל: ${ilByYear.get(hoveredYear) ?? 0}`}
+                      </text>
+                      <text x={ttX + ttW / 2} y={ttY + 50} textAnchor="middle" fontSize={11} fill="#fdba74" fontWeight={700} fontFamily="system-ui,sans-serif">
+                        {`ארה״ב: ${usByYear.get(hoveredYear) ?? 0}`}
+                      </text>
+                    </>
+                  ) : (
+                    <text x={ttX + ttW / 2} y={ttY + 33} textAnchor="middle"
+                      fontSize={11} fill={barColor(count)} fontWeight={700} fontFamily="system-ui,sans-serif">
+                      {count} {isEn ? (count === 1 ? 'recall' : 'recalls') : count === 1 ? 'ריקול' : 'ריקולים'}
+                    </text>
+                  )}
                 </g>
               );
             })()}
@@ -215,11 +251,14 @@ export default function RecallsBarChart({ makeEn, modelEn, years, isEn }: Props)
 
         {/* Legend */}
         <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap', marginTop: 10, fontSize: 11.5, color: '#5b6a86' }}>
-          {[
+          {(hasIl ? [
+            { color: IL_COLOR, label: 'ישראל (משרד התחבורה)' },
+            { color: US_COLOR, label: 'ארה״ב (NHTSA)' },
+          ] : [
             { color: '#f59e0b', label: isEn ? '1–2 recalls' : '1–2 ריקולים' },
             { color: '#f97316', label: isEn ? '3–4' : '3–4' },
             { color: '#dc2626', label: isEn ? '5+' : '5+' },
-          ].map(({ color, label }) => (
+          ]).map(({ color, label }) => (
             <div key={label} style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
               <div style={{ width: 10, height: 10, background: color, borderRadius: 3 }} />
               <span>{label}</span>
@@ -235,14 +274,22 @@ export default function RecallsBarChart({ makeEn, modelEn, years, isEn }: Props)
         }}>
           {isEn
             ? `${totalRecalls} total recall${totalRecalls !== 1 ? 's' : ''} · most in ${worstYear} (${countByYear.get(worstYear)})`
-            : `סה"כ ${totalRecalls === 1 ? 'ריקול אחד' : `${totalRecalls} ריקולים`} · שנה עם הכי הרבה: ${worstYear} (${countByYear.get(worstYear)})`}
+            : hasIl || ilTotal > 0
+              ? `${ilTotal} קריאות שירות בישראל ו-${usTotal} בארה״ב · שנת הדגם עם הכי הרבה: ${worstYear} (${countByYear.get(worstYear)})`
+              : `סה"כ ${totalRecalls === 1 ? 'ריקול אחד' : `${totalRecalls} ריקולים`} · שנה עם הכי הרבה: ${worstYear} (${countByYear.get(worstYear)})`}
+          {!isEn && hasIl && (
+            <div style={{ marginTop: 6, fontSize: 11.5, color: '#5b6a86', lineHeight: 1.5 }}>
+              קריאת שירות ישראלית נספרת בכל שנת דגם שבטווח הייצור שלה, ולכן אותה קריאה יכולה להופיע בכמה שנים.
+              {ilUnplaced > 0 ? ` ${ilUnplaced === 1 ? 'קריאה אחת' : `${ilUnplaced} קריאות`} עם טווח ייצור רחב או לא ידוע לא מוצגות בגרף.` : ''}
+            </div>
+          )}
         </div>
       </div>
     </div>
   );
 }
 
-function header(isEn: boolean) {
+function header(isEn: boolean, withIl = false) {
   return (
     <div style={{
       padding: '16px 18px',
@@ -252,7 +299,7 @@ function header(isEn: boolean) {
       <span style={{ fontSize: 15, fontWeight: 700, color: '#0d1b2f' }}>
         {isEn ? 'Recalls by Model Year' : 'ריקולים לפי שנת דגם'}
       </span>
-      <span style={{ fontSize: 12, color: '#5b6a86' }}>{isEn ? 'US' : 'ארה״ב'}</span>
+      <span style={{ fontSize: 12, color: '#5b6a86' }}>{isEn ? 'US' : withIl ? 'ישראל וארה״ב' : 'ארה״ב'}</span>
     </div>
   );
 }

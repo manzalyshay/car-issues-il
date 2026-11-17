@@ -1,12 +1,11 @@
 /**
- * Data-built intro for make pages: every sentence is filled from the catalogue, trim prices,
+ * Data-built intro for make pages: every sentence is filled from the catalogue,
  * owner reviews, AI scores (labelled), NHTSA recalls and CarComplaints - and dropped when
  * the data behind it is missing.
  */
 import { dbAll } from './db';
 import { staticHebrewTitle } from './translateCache';
 import { getAllDisplayScores } from './displayScore';
-import { getModelPriceMins } from './trimSpecsDb';
 import { getCategoryLabel, type CarMake } from '@/data/cars';
 import { fmtIls, kmPerL, summarizeTrims, type TrimLike } from './specSummary';
 
@@ -14,7 +13,6 @@ export interface MakeStats {
   categories: { cat: string; count: number }[];
   yearMin: number | null;
   yearMax: number | null;
-  prices: { slug: string; price: number }[];          // cheapest first
   rated: { slug: string; avg: number; count: number }[]; // owner reviews, best first
   reviewTotal: number;
   aiScores: { slug: string; score: number }[];        // best first
@@ -28,8 +26,7 @@ export interface MakeStats {
 }
 
 export async function getMakeStats(make: CarMake): Promise<MakeStats> {
-  const [priceMins, reviews, scores, recalls, issues, trims] = await Promise.all([
-    getModelPriceMins().catch(() => new Map<string, number>()),
+  const [reviews, scores, recalls, issues, trims] = await Promise.all([
     dbAll<{ model_slug: string; n: number; avg: number }>(
       'SELECT model_slug, COUNT(*) AS n, AVG(rating) AS avg FROM reviews WHERE make_slug = ? GROUP BY model_slug', make.slug,
     ).catch(() => []),
@@ -95,10 +92,6 @@ export async function getMakeStats(make: CarMake): Promise<MakeStats> {
     categories: [...catCount.entries()].map(([cat, count]) => ({ cat, count })).sort((a, b) => b.count - a.count),
     yearMin: years.length ? Math.min(...years) : null,
     yearMax: years.length ? Math.max(...years) : null,
-    prices: make.models.flatMap((m) => {
-      const p = priceMins.get(`${make.slug}/${m.slug}`);
-      return p ? [{ slug: m.slug, price: p }] : [];
-    }).sort((a, b) => a.price - b.price),
     rated: reviews.filter((r) => slugs.has(r.model_slug)).map((r) => ({ slug: r.model_slug, avg: r.avg, count: r.n }))
       .sort((a, b) => b.avg - a.avg || b.count - a.count),
     reviewTotal: reviews.filter((r) => slugs.has(r.model_slug)).reduce((s, r) => s + r.n, 0),
@@ -133,8 +126,8 @@ export function buildMakeIntro(make: CarMake, st: MakeStats, locale: 'he' | 'en'
   const cats = st.categories.map((c) => `${c.count} ${getCategoryLabel(c.cat as never, locale)}`);
   const years = st.yearMin && st.yearMax ? (en ? `, model years ${st.yearMin}–${st.yearMax}` : `, משנתון ${st.yearMin} ועד ${st.yearMax}`) : '';
   out.push(en
-    ? `CarIssues covers ${make.models.length} ${make.nameEn} models (${list(cats)})${years}. Each model page brings together owner reviews, common problems, safety recalls, trim prices and specs.`
-    : `ב-CarIssues יש מידע על ${make.models.length} דגמים של ${make.nameHe} (${make.nameEn}) - ${list(cats)}${years}. בכל דף דגם מרוכזים ביקורות בעלים, בעיות נפוצות, ריקולים, מחירון גרסאות ומפרט.`);
+    ? `CarIssues covers ${make.models.length} ${make.nameEn} models (${list(cats)})${years}. Each model page brings together owner reviews, common problems, safety recalls and specifications.`
+    : `ב-CarIssues יש מידע על ${make.models.length} דגמים של ${make.nameHe} (${make.nameEn}) - ${list(cats)}${years}. בכל דף דגם מרוכזים ביקורות בעלים, בעיות נפוצות, ריקולים ומפרט.`);
 
   // 1b. Models by body type
   const byCat = st.categories.map((c) => {
@@ -143,19 +136,7 @@ export function buildMakeIntro(make: CarMake, st: MakeStats, locale: 'he' | 'en'
   });
   if (byCat.length) out.push(en ? `Models by body type - ${byCat.join('; ')}.` : `הדגמים לפי סוג מרכב - ${byCat.join('; ')}.`);
 
-  // 2. Prices in Israel
-  if (st.prices.length >= 2) {
-    const lo = st.prices[0], hi = st.prices[st.prices.length - 1];
-    out.push(en
-      ? `The trim price list on CarIssues has Israeli prices for ${st.prices.length} ${make.nameEn} models: the most affordable is the ${name(lo.slug)} from ${fmtIls(lo.price)}, and the most expensive the ${name(hi.slug)} from ${fmtIls(hi.price)}.`
-      : `במחירון הגרסאות באתר יש מחירים בישראל ל-${st.prices.length} דגמים של ${make.nameHe}: הנגיש ביותר הוא ${name(lo.slug)} החל מ-${fmtIls(lo.price)}, והיקר ביותר ${name(hi.slug)} החל מ-${fmtIls(hi.price)}.`);
-  } else if (st.prices.length === 1) {
-    out.push(en
-      ? `Israeli trim prices are on file for one ${make.nameEn} model so far: the ${name(st.prices[0].slug)}, from ${fmtIls(st.prices[0].price)}.`
-      : `בינתיים יש במחירון האתר מחיר לדגם אחד של ${make.nameHe}: ${name(st.prices[0].slug)}, החל מ-${fmtIls(st.prices[0].price)}.`);
-  }
-
-  // 2b. Specs across the range
+  // Specs across the range
   const specParts: string[] = [];
   if (st.hpRange && st.hpRange[0] !== st.hpRange[1]) specParts.push(en ? `power ranges from ${st.hpRange[0]} to ${st.hpRange[1]} hp` : `ההספק נע בין ${st.hpRange[0]} ל-${st.hpRange[1]} כ"ס`);
   if (st.bestFuel) specParts.push(en ? `the most fuel-efficient is the ${name(st.bestFuel.slug)} (up to ${kmPerL(st.bestFuel.lPer100)} km/L, manufacturer figure)` : `הדגם החסכוני ביותר בדלק הוא ${name(st.bestFuel.slug)} (עד ${kmPerL(st.bestFuel.lPer100)} ק"מ לליטר לפי נתון היצרן)`);

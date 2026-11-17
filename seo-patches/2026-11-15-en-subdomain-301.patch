@@ -1,0 +1,116 @@
+From 494ffa95cba8d3c459556ef63292e8ac9e6425e6 Mon Sep 17 00:00:00 2001
+From: Shay Manzaly <manzaly.shay@gmail.com>
+Date: Sun, 15 Nov 2026 08:05:30 +0000
+Subject: [PATCH] SEO: 301 the legacy en.carissues.co.il host to carissues.net
+
+en.carissues.co.il still served full English pages (200, canonical to
+carissues.net). Google indexed them anyway: 335 URLs, 1,151 impressions,
+2 clicks in the 28 days to 2026-11-12 (0 the 28 days before). Every path
+now 301s to the same path on carissues.net (/ru goes to carissues.co.il).
+
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_01Nsy2TxM5NNA8YGeo111h3T
+---
+ src/lib/legacyHost.ts     | 18 ++++++++++++++++++
+ src/middleware.ts         |  6 ++++++
+ tests/legacyHost.test.mjs | 39 +++++++++++++++++++++++++++++++++++++++
+ 3 files changed, 63 insertions(+)
+ create mode 100644 src/lib/legacyHost.ts
+ create mode 100644 tests/legacyHost.test.mjs
+
+diff --git a/src/lib/legacyHost.ts b/src/lib/legacyHost.ts
+new file mode 100644
+index 0000000..6fc7b04
+--- /dev/null
++++ b/src/lib/legacyHost.ts
+@@ -0,0 +1,18 @@
++// en.carissues.co.il is the old English host. carissues.net replaced it, but the
++// subdomain still served full English pages (200, canonical -> carissues.net), and
++// Google started indexing them anyway: 335 en.carissues.co.il URLs, 1,151 impressions
++// and 2 clicks in the 28 days to 2026-11-12 (0 the 28 days before). A 301 to the same
++// path on carissues.net folds those URLs into the real English pages.
++
++const LEGACY_EN_HOSTS = new Set(['en.carissues.co.il', 'www.en.carissues.co.il']);
++
++/**
++ * Where a request on a legacy host should go, or null if the host is not legacy.
++ * /ru lives only on carissues.co.il, so it goes there directly (no double redirect).
++ */
++export function legacyHostRedirect(host: string, pathname: string, search: string): string | null {
++  const h = host.toLowerCase().replace(/:\d+$/, '').replace(/\.$/, '');
++  if (!LEGACY_EN_HOSTS.has(h)) return null;
++  const target = pathname === '/ru' || pathname.startsWith('/ru/') ? 'carissues.co.il' : 'carissues.net';
++  return `https://${target}${pathname}${search}`;
++}
+diff --git a/src/middleware.ts b/src/middleware.ts
+index 5410666..9bf3814 100644
+--- a/src/middleware.ts
++++ b/src/middleware.ts
+@@ -1,6 +1,7 @@
+ import { NextRequest, NextResponse } from 'next/server';
+ import { getAllMakes } from './lib/carsDb';
+ import { RU_COMPARE_PATHS } from './data/ru-compare-pairs';
++import { legacyHostRedirect } from './lib/legacyHost';
+ 
+ const HE_HOST = 'carissues.co.il';
+ const EN_HOST = 'carissues.net';
+@@ -62,6 +63,11 @@ export async function middleware(req: NextRequest) {
+   const isHeHost = host === HE_HOST || host === `www.${HE_HOST}`;
+   const isEnHost = host === EN_HOST || host === `www.${EN_HOST}`;
+ 
++  // ── Legacy English host: en.carissues.co.il -> carissues.net (same path) ──
++  // Runs first so every path, /embed and /api included, moves in one hop.
++  const legacyTarget = legacyHostRedirect(host, pathname, req.nextUrl.search);
++  if (legacyTarget) return NextResponse.redirect(legacyTarget, { status: 301 });
++
+   // The embed tool is an English-only utility for carissues.net.
+   if (pathname.startsWith('/embed')) {
+     if (isHeHost) return NextResponse.redirect(`https://${EN_HOST}${pathname}${req.nextUrl.search}`, { status: 308 });
+diff --git a/tests/legacyHost.test.mjs b/tests/legacyHost.test.mjs
+new file mode 100644
+index 0000000..b093aaa
+--- /dev/null
++++ b/tests/legacyHost.test.mjs
+@@ -0,0 +1,39 @@
++// en.carissues.co.il must 301 to the same path on carissues.net; real hosts are untouched.
++// Run: npm test
++import { test } from 'node:test';
++import assert from 'node:assert/strict';
++import { legacyHostRedirect } from '../src/lib/legacyHost.ts';
++
++test('en.carissues.co.il pages go to the same path on carissues.net', () => {
++  assert.equal(legacyHostRedirect('en.carissues.co.il', '/', ''), 'https://carissues.net/');
++  assert.equal(
++    legacyHostRedirect('en.carissues.co.il', '/cars/volkswagen/arteon/2026', ''),
++    'https://carissues.net/cars/volkswagen/arteon/2026',
++  );
++  assert.equal(
++    legacyHostRedirect('en.carissues.co.il', '/cars/compare/honda/jazz/toyota/aygo', '?a=1'),
++    'https://carissues.net/cars/compare/honda/jazz/toyota/aygo?a=1',
++  );
++});
++
++test('host matching ignores case, port and trailing dot; www.en is legacy too', () => {
++  assert.equal(legacyHostRedirect('EN.CarIssues.co.il', '/tco', ''), 'https://carissues.net/tco');
++  assert.equal(legacyHostRedirect('en.carissues.co.il:443', '/news', ''), 'https://carissues.net/news');
++  assert.equal(legacyHostRedirect('en.carissues.co.il.', '/news', ''), 'https://carissues.net/news');
++  assert.equal(legacyHostRedirect('www.en.carissues.co.il', '/cars', ''), 'https://carissues.net/cars');
++});
++
++test('/ru on the legacy host goes straight to carissues.co.il', () => {
++  assert.equal(legacyHostRedirect('en.carissues.co.il', '/ru', ''), 'https://carissues.co.il/ru');
++  assert.equal(
++    legacyHostRedirect('en.carissues.co.il', '/ru/vehicle-lookup', ''),
++    'https://carissues.co.il/ru/vehicle-lookup',
++  );
++  assert.equal(legacyHostRedirect('en.carissues.co.il', '/rules', ''), 'https://carissues.net/rules');
++});
++
++test('canonical hosts are not redirected', () => {
++  for (const h of ['carissues.co.il', 'www.carissues.co.il', 'carissues.net', 'www.carissues.net', 'localhost:7000', 'ru.carissues.co.il', 'xen.carissues.co.il']) {
++    assert.equal(legacyHostRedirect(h, '/cars', ''), null, h);
++  }
++});
+-- 
+2.43.0
+

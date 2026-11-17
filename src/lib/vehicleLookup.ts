@@ -4,6 +4,22 @@ const DATA_GOV_URL       = 'https://data.gov.il/api/3/action/datastore_search';
 const RESOURCE_ID        = '053cea08-09bc-40ec-8f7a-156f0677aff3';
 const EXTRA_RESOURCE     = '56063a99-8a3e-4ff4-912e-5966c0279bad';
 const OWNERSHIP_RESOURCE = 'bb2355dc-9ec7-4f06-9c3f-3344672171da';
+// Checked for every plate: recalls this exact vehicle has not had done, and the disabled parking tag list.
+const OPEN_RECALLS_RESOURCE = '36bf1404-0be4-49d2-82dc-2f1ead4a8b93';
+const DISABLED_TAG_RESOURCE = 'c8b9f9c8-4612-4068-934f-d4acd2e3c06e';
+// Checked only when the plate is not in the active private/commercial registry.
+// Order = priority when a plate appears in more than one.
+const FALLBACK_RESOURCES: { id: string; kind: RegistryKind; status: RegistryStatus }[] = [
+  { id: 'bf9df4e2-d90d-4c0a-a400-19e15af8e95f', kind: 'motorcycle', status: 'active' },    // two-wheelers
+  { id: 'cf29862d-ca25-4691-84f6-1be60dcb4a1e', kind: 'public',     status: 'active' },    // buses, taxis
+  { id: '03adc637-b6fe-402b-9937-7c3d3afc9140', kind: 'import',     status: 'active' },    // personal import
+  { id: 'cd3acc5c-03c3-4c89-9c54-d40f93c0d790', kind: 'heavy',      status: 'active' },    // over 3.5t / no model code
+  { id: '851ecab1-0622-4dbe-a6c7-f950cf82abf9', kind: 'car',        status: 'cancelled' }, // off the road, 2017+
+  { id: '4e6b9724-4c1e-43f0-909a-154d4cc4e046', kind: 'car',        status: 'cancelled' }, // off the road, 2010-2016
+  { id: 'ec8cbc34-72e1-4b69-9c48-22821ba0bd6c', kind: 'car',        status: 'cancelled' }, // off the road, 2000-2009
+  { id: 'f6efe89a-fb3d-43a4-bb61-9bf12a9b9099', kind: 'car',        status: 'inactive' },  // inactive, with model code
+  { id: '6f6acd03-f351-4a8f-8ecf-df792f4f573a', kind: 'car',        status: 'inactive' },  // inactive, no model code
+];
 
 const CACHE_TTL_MS = 24 * 60 * 60 * 1000; // 24 hours
 
@@ -117,8 +133,37 @@ export interface OwnershipAnalysis {
   currentType: string;
 }
 
+/** Which Ministry of Transport registry the plate was found in. */
+export type RegistryKind = 'car' | 'motorcycle' | 'heavy' | 'public' | 'import';
+/** active = on the road; inactive = licence lapsed; cancelled = taken off the road for good. */
+export type RegistryStatus = 'active' | 'inactive' | 'cancelled';
+
+/** A recall campaign this specific vehicle has not had done yet. */
+export interface OpenRecall {
+  id: number;
+  /** e.g. "תקלה סידרתית בטיחותית" */
+  kind: string;
+  /** Fault area, e.g. "מנוע ומערכותיו" */
+  category: string;
+  description: string;
+  /** YYYY-MM-DD */
+  openedAt: string;
+}
+
 export interface Vehicle {
   country?: 'il' | 'uk';
+  /** Israeli plates only. Absent = 'car'. */
+  kind?: RegistryKind;
+  /** Israeli plates only. Absent = 'active'. */
+  registryStatus?: RegistryStatus;
+  /** YYYY-MM-DD the registration was cancelled, when registryStatus is 'cancelled'. */
+  cancelledDate?: string | null;
+  /** Recalls not yet done on this exact vehicle. [] = none open; null = the check failed. */
+  openRecalls?: OpenRecall[] | null;
+  /** Disabled parking tag registered to this plate. null = none; undefined = the check failed. */
+  disabledTag?: { issuedAt: string } | null;
+  /** Vehicle type as the registry names it, e.g. "אופנוע", "אוטובוס צבורי עירוני". */
+  vehicleTypeHe?: string | null;
   plate: number;
   displayPlate: string;
   name: string;
@@ -365,6 +410,106 @@ function analyseOwnership(history: OwnershipRecord[], currentType: string): Owne
   };
 }
 
+type GovRecord = Record<string, unknown>;
+
+/** One data.gov.il datastore query. Returns null when the request fails, [] when nothing matched. */
+async function govSearch(resource: string, filters: Record<string, number>, limit = 1, timeoutMs = 7000): Promise<GovRecord[] | null> {
+  try {
+    const url = `${DATA_GOV_URL}?resource_id=${resource}&filters=${encodeURIComponent(JSON.stringify(filters))}&limit=${limit}`;
+    const res = await fetch(url, { signal: AbortSignal.timeout(timeoutMs) });
+    if (!res.ok) return null;
+    const data = await res.json() as { success?: boolean; result?: { records?: GovRecord[] } };
+    return data?.result?.records ?? [];
+  } catch {
+    return null;
+  }
+}
+
+const str = (v: unknown) => (v == null ? '' : String(v).trim());
+
+async function fetchOpenRecalls(plateNum: number): Promise<OpenRecall[] | null> {
+  const rows = await govSearch(OPEN_RECALLS_RESOURCE, { MISPAR_RECHEV: plateNum }, 20, 6000);
+  if (!rows) return null;
+  return rows
+    .map(r => ({
+      id: Number(r.RECALL_ID),
+      kind: str(r.SUG_RECALL),
+      category: str(r.SUG_TAKALA),
+      description: str(r.TEUR_TAKALA).replace(/\s+/g, ' '),
+      openedAt: str(r.TAARICH_PTICHA).split(' ')[0],
+    }))
+    .sort((a, b) => b.openedAt.localeCompare(a.openedAt));
+}
+
+async function fetchDisabledTag(plateNum: number): Promise<{ issuedAt: string } | null | undefined> {
+  const rows = await govSearch(DISABLED_TAG_RESOURCE, { 'MISPAR RECHEV': plateNum }, 1, 6000);
+  if (!rows) return undefined;
+  if (rows.length === 0) return null;
+  const raw = str(rows[0]['TAARICH HAFAKAT TAG']); // 20230419
+  const issuedAt = /^\d{8}$/.test(raw) ? `${raw.slice(0, 4)}-${raw.slice(4, 6)}-${raw.slice(6)}` : '';
+  return { issuedAt };
+}
+
+/** A plate that is not in the active private/commercial registry: look in the other registries. */
+async function lookupFallback(plate: string, plateNum: number): Promise<Vehicle | null> {
+  const results = await Promise.all(
+    FALLBACK_RESOURCES.map(r => govSearch(r.id, { mispar_rechev: plateNum })),
+  );
+  const idx = results.findIndex(rows => rows && rows.length > 0);
+  if (idx === -1) return null;
+  const record = results[idx]![0];
+  const { status } = FALLBACK_RESOURCES[idx];
+  // The "over 3.5t" registry also holds old private cars that have no model code
+  const kind: RegistryKind = FALLBACK_RESOURCES[idx].kind === 'heavy' && str(record.kvutzat_sug_rechev).includes('פרטי')
+    ? 'car'
+    : FALLBACK_RESOURCES[idx].kind;
+
+  const tozet = str(record.tozeret_nm);
+  const kinuy = str(record.kinuy_mishari);
+  const shnat = record.shnat_yitzur ? Number(record.shnat_yitzur) : null;
+  // Only passenger cars can match a model page; a registry "kinuy" exists only for those.
+  const dbMatch = kind === 'car' && kinuy ? await matchToDb(tozet, kinuy, shnat).catch(() => null) : null;
+  // Public vehicles carry their own cancellation fields
+  const cancelled = status === 'cancelled' || (str(record.bitul_dt) !== '' && str(record.bitul_cd) !== '0');
+  const color = str(record.tzeva_rechev);
+  const cc = Number(record.nefach_manoa);
+
+  return {
+    country:       'il',
+    kind,
+    registryStatus: cancelled ? 'cancelled' : status,
+    cancelledDate: cancelled ? str(record.bitul_dt).split(' ')[0] || null : null,
+    vehicleTypeHe: str(record.sug_rechev_nm) || str(record.kvutzat_sug_rechev) || null,
+    plate:         plateNum,
+    displayPlate:  fmtPlate(plate),
+    name:          kinuy || str(record.degem_nm),
+    makeHe:        tozet,
+    year:          shnat,
+    color:         color === 'לא ידוע' ? '' : color,
+    fuel:          str(record.sug_delek_nm),
+    ownership:     str(record.baalut),
+    vin:           str(record.misgeret) || str(record.mispar_shilda) || str(record.shilda),
+    lastTestDate:  str(record.mivchan_acharon_dt),
+    validUntil:    cancelled ? '' : str(record.tokef_dt),
+    firstRoad:     str(record.moed_aliya_lakvish),
+    frontTire:     str(record.zmig_kidmi) || str(record.mida_zmig_kidmi),
+    rearTire:      str(record.zmig_ahori) || str(record.mida_zmig_ahori),
+    emissionsGroup: record.kvutzat_zihum ? Number(record.kvutzat_zihum) : null,
+    odometer:      null,
+    hasAccident:   null,
+    wasRepainted:  null,
+    origin:        str(record.tozeret_eretz_nm) || null,
+    structuralChange: null,
+    tireChange:       null,
+    firstRegistrationDate: null,
+    ownershipHistory: [],
+    ownershipAnalysis: null,
+    dataAvailability: { extraData: false, ownershipHistory: false },
+    engineCapacity: Number.isFinite(cc) && cc > 0 ? cc : null,
+    dbMatch,
+  };
+}
+
 export async function lookupVehicle(rawPlate: string): Promise<LookupResult> {
   const plate = rawPlate.replace(/\D/g, '');
   if (plate.length < 5 || plate.length > 8) return { status: 'not_found' };
@@ -373,18 +518,25 @@ export async function lookupVehicle(rawPlate: string): Promise<LookupResult> {
     const plateNum = parseInt(plate, 10);
     const filters = encodeURIComponent(JSON.stringify({ mispar_rechev: plateNum }));
 
-    // Fetch primary + extra + ownership in parallel
-    const [mainRes, extraRes, ownershipResult] = await Promise.all([
+    // Fetch primary + extra + ownership + per-plate recalls and disabled tag in parallel
+    const [mainRes, extraRes, ownershipResult, openRecalls, disabledTag] = await Promise.all([
       fetch(`${DATA_GOV_URL}?resource_id=${RESOURCE_ID}&filters=${filters}&limit=1`, { signal: AbortSignal.timeout(8000) }),
       fetch(`${DATA_GOV_URL}?resource_id=${EXTRA_RESOURCE}&filters=${filters}&limit=1`, { signal: AbortSignal.timeout(6000) }).catch(() => null),
       fetchOwnershipHistory(plateNum).catch(() => ({ records: [], fromCache: false })),
+      fetchOpenRecalls(plateNum),
+      fetchDisabledTag(plateNum),
     ]);
 
     if (!mainRes.ok) return { status: 'error' };
 
     const data = await mainRes.json() as { success: boolean; result: { records: Record<string, unknown>[] } };
     const record = data?.result?.records?.[0];
-    if (!record) return { status: 'not_found' };
+    if (!record) {
+      // Motorcycles, trucks, buses, personal imports and cars that left the road live in other registries
+      const fallback = await lookupFallback(plate, plateNum);
+      if (!fallback) return { status: 'not_found' };
+      return { status: 'found', vehicle: { ...fallback, openRecalls, disabledTag } };
+    }
 
     const kinuy  = String(record.kinuy_mishari ?? '');
     const tozet  = String(record.tozeret_nm ?? '');
@@ -402,6 +554,10 @@ export async function lookupVehicle(rawPlate: string): Promise<LookupResult> {
       status: 'found',
       vehicle: {
         country:       'il',
+        kind:          'car',
+        registryStatus: 'active',
+        openRecalls,
+        disabledTag,
         plate:         plateNum,
         displayPlate:  fmtPlate(plate),
         name:          kinuy,

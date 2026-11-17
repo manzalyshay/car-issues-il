@@ -1,4 +1,6 @@
-export type Locale = 'he' | 'en';
+import { ru } from './translations.ru';
+
+export type Locale = 'he' | 'en' | 'ru';
 
 export const translations = {
   he: {
@@ -1109,6 +1111,7 @@ export const translations = {
       foundHelpful: 'found helpful',
     },
   },
+  ru,
 } as const;
 
 // Structural type - works for both locales

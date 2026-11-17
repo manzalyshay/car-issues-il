@@ -1,0 +1,195 @@
+From c8788d04edbcb6c9409468e00fef8fb410e4939e Mon Sep 17 00:00:00 2001
+From: Shay Manzaly <manzaly.shay@gmail.com>
+Date: Thu, 12 Nov 2026 08:20:51 +0000
+Subject: [PATCH] Compare pages: title/meta lead with starting price and km/L
+ from car_trims
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Compare pages hold position ~6.8 but CTR is 3.6% (prev 3.8%). New snippet:
+"X מול Y: מחיר, צריכה ותקלות (2026)" + description opening with each car's
+starting price and best km/L from the same trims the page shows. Drops the
+star / "ציון AI" tags from the meta description. Adds tests.
+
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_01Nsy2TtK6TaiFQ6y8MEHVUt
+---
+ .../[model1]/[make2]/[model2]/page.tsx        | 43 +++++----------
+ src/lib/compareSnippet.ts                     | 53 +++++++++++++++++++
+ tests/compareSnippet.test.mjs                 | 38 +++++++++++++
+ 3 files changed, 104 insertions(+), 30 deletions(-)
+ create mode 100644 src/lib/compareSnippet.ts
+ create mode 100644 tests/compareSnippet.test.mjs
+
+diff --git a/src/app/cars/compare/[make1]/[model1]/[make2]/[model2]/page.tsx b/src/app/cars/compare/[make1]/[model1]/[make2]/[model2]/page.tsx
+index 5f6420e..6127d4e 100644
+--- a/src/app/cars/compare/[make1]/[model1]/[make2]/[model2]/page.tsx
++++ b/src/app/cars/compare/[make1]/[model1]/[make2]/[model2]/page.tsx
+@@ -1,8 +1,9 @@
+ import type { Metadata } from 'next';
+ import { redirect } from 'next/navigation';
+ import { getMakeBySlug, getModelBySlug } from '@/lib/carsDb';
+-import { getReviewsForModel } from '@/lib/reviewsDb';
+-import { getExpertReviews } from '@/lib/expertReviews';
++import { getTrimSpecs } from '@/lib/trimSpecsDb';
++import { compareSnippet } from '@/lib/compareSnippet';
++import { summarizeTrims } from '@/lib/specSummary';
+ import { getHostLocale, getBaseUrl } from '@/lib/hostLocale';
+ import { getComparePolicy } from '@/lib/seoIndexing';
+ import { RU_COMPARE_PATHS } from '@/data/ru-compare-pairs';
+@@ -23,38 +24,20 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
+   const nameA = isEn ? `${mA.nameEn} ${modA.nameEn}` : `${mA.nameHe} ${modA.nameHe}`;
+   const nameB = isEn ? `${mB.nameEn} ${modB.nameEn}` : `${mB.nameHe} ${modB.nameHe}`;
+ 
+-  // Pull real ratings into the snippet - matches the Product/AggregateRating schema
+-  // on the page itself, and gives the SERP something concrete instead of generic copy.
+-  const [reviewsA, reviewsB, expertA, expertB, indexable] = await Promise.all([
+-    getReviewsForModel(make1, model1).catch(() => []),
+-    getReviewsForModel(make2, model2).catch(() => []),
+-    getExpertReviews(make1, model1).catch(() => []),
+-    getExpertReviews(make2, model2).catch(() => []),
++  // Title/description lead with starting price and fuel use from the same car_trims
++  // rows the page shows (lib/compareSnippet). No ratings in the snippet.
++  const [trimsA, trimsB, indexable] = await Promise.all([
++    getTrimSpecs(make1, model1).catch(() => []),
++    getTrimSpecs(make2, model2).catch(() => []),
+     // Pairs outside the sitemap are noindex (same rule, see lib/seoIndexing).
+     // Fail open so a D1 error never caches a stray noindex.
+     getComparePolicy().then(p => p.isIndexable(c1, c2)).catch(() => true),
+   ]);
+-  const avgA = reviewsA.length ? reviewsA.reduce((s, r) => s + r.rating, 0) / reviewsA.length : null;
+-  const avgB = reviewsB.length ? reviewsB.reduce((s, r) => s + r.rating, 0) / reviewsB.length : null;
+-  const scoreA = expertA[0]?.topScore ?? null;
+-  const scoreB = expertB[0]?.topScore ?? null;
+-  const hasStats = avgA !== null || avgB !== null;
+-
+-  const statTag = (avg: number | null, count: number, score: number | null) =>
+-    avg !== null ? `${avg.toFixed(1)}★ (${count})` : score !== null ? (isEn ? `AI ${score.toFixed(1)}/10` : `ציון AI ${score.toFixed(1)}/10`) : null;
+-  const tagA = statTag(avgA, reviewsA.length, scoreA);
+-  const tagB = statTag(avgB, reviewsB.length, scoreB);
+-
+-  const title = isEn
+-    ? `${nameA} vs ${nameB}: Which Is Better? (2026)`
+-    : `${nameA} מול ${nameB} - מי עדיף? השוואה 2026`;
+-  const description = hasStats
+-    ? isEn
+-      ? `${nameA}${tagA ? ` (${tagA})` : ''} vs ${nameB}${tagB ? ` (${tagB})` : ''} - full comparison: pros & cons, reliability, price history 2016-2026. See who wins.`
+-      : `${nameA}${tagA ? ` (${tagA})` : ''} מול ${nameB}${tagB ? ` (${tagB})` : ''} - השוואה מלאה: יתרונות וחסרונות, אמינות, היסטוריית מחיר 2016-2026. מי מנצח?`
+-    : isEn
+-      ? `${nameA} or ${nameB}? Full comparison: AI scores, owner reviews, pros & cons, price history 2016-2026 - CarIssues`
+-      : `${nameA} או ${nameB}? השוואה מלאה: ציונים, ביקורות בעלי רכב, יתרונות וחסרונות, היסטוריית מחיר 2016-2026 - CarIssues IL`;
++  const { title, description } = compareSnippet(
++    { name: nameA, summary: summarizeTrims(trimsA) },
++    { name: nameB, summary: summarizeTrims(trimsB) },
++    isEn ? 'en' : 'he',
++  );
+   return {
+     title,
+     description,
+diff --git a/src/lib/compareSnippet.ts b/src/lib/compareSnippet.ts
+new file mode 100644
+index 0000000..740e59e
+--- /dev/null
++++ b/src/lib/compareSnippet.ts
+@@ -0,0 +1,53 @@
++/**
++ * Title + meta description for /cars/compare/<a>/<b> pages.
++ *
++ * Compare pages hold position ~6-7 in Google but their CTR slid (3.8% -> 3.6%,
++ * some pairs 13% -> 4%). The old snippet was generic ("מי עדיף? השוואה 2026") and
++ * leaned on star/AI-score tags from tiny samples. This leads with the facts people
++ * compare on - starting price and fuel use - taken from the same car_trims rows the
++ * page itself shows (via summarizeTrims, which drops implausible values and ignores EV/PHEV figures for km/L), so the
++ * snippet always matches visible content. No ratings are put in the snippet.
++ */
++import type { SpecSummary } from './specSummary';
++
++// Same formatting as specSummary's fmtIls/kmPerL; kept local (type-only import) so
++// this file runs under plain `node --test` without path resolution.
++const fmtIls = (v: number) => `₪${Math.round(v).toLocaleString('en-US')}`;
++const kmPerL = (lPer100: number) => (100 / lPer100).toFixed(1);
++
++export type SnippetLocale = 'he' | 'en';
++
++/** summary = summarizeTrims(trims) from lib/specSummary (drops implausible values). */
++interface Side { name: string; summary: Pick<SpecSummary, 'priceMin' | 'fuelBest' | 'allElectric'> }
++
++function facts(side: Side, locale: SnippetLocale): string | null {
++  const s = side.summary;
++  const parts: string[] = [];
++  if (s.priceMin !== null) parts.push(locale === 'en' ? `from ${fmtIls(s.priceMin)}` : `מ-${fmtIls(s.priceMin)}`);
++  if (s.fuelBest !== null && !s.allElectric) {
++    parts.push(locale === 'en' ? `up to ${kmPerL(s.fuelBest)} km/L` : `עד ${kmPerL(s.fuelBest)} ק"מ לליטר`);
++  } else if (s.allElectric) {
++    parts.push(locale === 'en' ? 'electric' : 'חשמלי');
++  }
++  return parts.length ? `${side.name} ${parts.join(', ')}` : null;
++}
++
++export function compareSnippet(a: Side, b: Side, locale: SnippetLocale): { title: string; description: string } {
++  const title = locale === 'en'
++    ? `${a.name} vs ${b.name}: Price, Fuel Economy & Problems (2026)`
++    : `${a.name} מול ${b.name}: מחיר, צריכה ותקלות (2026)`;
++
++  const fa = facts(a, locale);
++  const fb = facts(b, locale);
++  let description: string;
++  if (fa && fb) {
++    description = locale === 'en'
++      ? `${fa}; ${fb}. Compare Israeli prices, fuel economy, reliability and common problems reported by owners. Which one to buy?`
++      : `${fa}; ${fb}. השוואת מחיר בישראל, צריכת דלק, אמינות ותקלות נפוצות לפי בעלי רכב. איזה כדאי לקנות?`;
++  } else {
++    description = locale === 'en'
++      ? `${a.name} or ${b.name}? Compare Israeli prices, fuel economy, reliability, common problems and owner reviews side by side. Which one to buy?`
++      : `${a.name} או ${b.name}? השוואת מחיר בישראל, צריכת דלק, אמינות, תקלות נפוצות וביקורות בעלי רכב, זה מול זה. איזה כדאי לקנות?`;
++  }
++  return { title, description };
++}
+diff --git a/tests/compareSnippet.test.mjs b/tests/compareSnippet.test.mjs
+new file mode 100644
+index 0000000..f4de13a
+--- /dev/null
++++ b/tests/compareSnippet.test.mjs
+@@ -0,0 +1,38 @@
++// Compare-page title/description: built from car_trims facts, never from ratings.
++// Run: npm test
++import { test } from 'node:test';
++import assert from 'node:assert/strict';
++import { compareSnippet as cs } from '../src/lib/compareSnippet.ts';
++import { summarizeTrims } from '../src/lib/specSummary.ts';
++const compareSnippet = (a, b, loc) => cs({ name: a.name, summary: summarizeTrims(a.trims) }, { name: b.name, summary: summarizeTrims(b.trims) }, loc);
++
++const sportage = { name: "קיה ספורטז'", trims: [
++  { priceIls: 169900, engineType: 'hybrid', fuelConsumption: 5.6 },
++  { priceIls: 189900, engineType: 'petrol', fuelConsumption: 7.1 },
++] };
++const cc = { name: 'טויוטה קורולה קרוס', trims: [{ priceIls: 154900, engineType: 'hybrid', fuelConsumption: 5.0 }] };
++const ev = { name: 'BYD Atto 3', trims: [{ priceIls: 149990, engineType: 'electric', fuelConsumption: 15.6 }] };
++
++test('Hebrew snippet leads with price and km/L from trims', () => {
++  const s = compareSnippet(sportage, cc, 'he');
++  assert.equal(s.title, "קיה ספורטז' מול טויוטה קורולה קרוס: מחיר, צריכה ותקלות (2026)");
++  assert.match(s.description, /^קיה ספורטז' מ-₪169,900, עד 17\.9 ק"מ לליטר; טויוטה קורולה קרוס מ-₪154,900, עד 20\.0 ק"מ לליטר\./);
++});
++
++test('EV side shows "electric", never kWh as km/L', () => {
++  const s = compareSnippet(ev, cc, 'en');
++  assert.match(s.description, /^BYD Atto 3 from ₪149,990, electric; /);
++  assert.doesNotMatch(s.description, /6\.4 km\/L/);
++});
++
++test('no ratings, stars or AI scores in the snippet', () => {
++  for (const loc of ['he', 'en']) {
++    const s = compareSnippet(sportage, cc, loc);
++    assert.doesNotMatch(s.title + s.description, /★|AI|\/10/);
++  }
++});
++
++test('falls back to generic copy when a side has no usable data', () => {
++  const s = compareSnippet({ name: 'A', trims: [{ priceIls: 5 }] }, cc, 'he');
++  assert.match(s.description, /^A או טויוטה קורולה קרוס\? /);
++});
+-- 
+2.43.0
+

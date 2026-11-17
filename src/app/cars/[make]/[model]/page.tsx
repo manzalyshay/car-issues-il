@@ -31,6 +31,7 @@ import { getRecallsFromCache } from '@/lib/recallsDb';
 import { getIsraeliRecalls } from '@/lib/israeliRecallsDb';
 import { getAiScore } from '@/lib/aiScore';
 import { getProReviewScoreSets, scoreSetsForPageYear } from '@/lib/proReviewScores';
+import { ownerAggregateRating } from '@/lib/ownerRating';
 
 
 export const revalidate = 900; // cache 15 minutes
@@ -587,7 +588,7 @@ export default async function ModelPage({ params, searchParams }: Props) {
             __html: JSON.stringify((() => {
               const base = getBaseUrl(locale);
               // aggregateRating only from owner reviews submitted on our site (never site/AI-authored)
-              const schemaOwnerReviews = allReviews.filter(r => !/carissues/i.test(r.authorName ?? ''));
+              const ownerRating = ownerAggregateRating(allReviews);
               // Same FAQ list the visible ModelFaq accordion renders - keeps the
               // FAQPage schema in sync with on-page content (Google requires a match).
               const faqs = buildFaqs({
@@ -609,19 +610,12 @@ export default async function ModelPage({ params, searchParams }: Props) {
                   // Only emit Product schema when real owner reviews give us an aggregateRating.
                   // The AI expert score is not marked up as a Review: Google's review-snippet
                   // policy disallows self-authored/AI ratings.
-                  ...(schemaOwnerReviews.length > 0 ? [{
+                  ...(ownerRating ? [{
                     '@type': 'Product',
                     name: `${make.nameEn} ${model.nameEn}`,
                     brand: { '@type': 'Brand', name: make.nameEn },
                     url: `${base}/cars/${make.slug}/${model.slug}`,
-                    aggregateRating: {
-                      '@type': 'AggregateRating',
-                      ratingValue: (schemaOwnerReviews.reduce((sum, r) => sum + r.rating, 0) / schemaOwnerReviews.length).toFixed(1),
-                      ratingCount: schemaOwnerReviews.length,
-                      reviewCount: schemaOwnerReviews.length,
-                      bestRating: 5,
-                      worstRating: 1,
-                    },
+                    aggregateRating: ownerRating,
                   }] : []),
                   {
                     '@type': 'BreadcrumbList',

@@ -45,6 +45,7 @@ export async function GET() {
 - [Car comparison](${base}/cars/compare): compare any two models side by side
 - [All brands](${base}/cars)
 - [Rankings](${base}/rankings): models ranked by owner and AI scores
+- [Israel car fleet statistics](${base}/israel-car-stats): full counts from the Ministry of Transport registry - cars on the road by make, model, colour, powertrain (EV / plug-in), ownership, age and country of manufacture
 - [Repair costs](${base}/repairs)
 
 ## Most-Read Comparisons
@@ -65,6 +66,11 @@ ${brandLines.join('\n')}
 - [השוואת רכבים / Car comparison](${base}/cars/compare): compare any two models side by side
 - [כל היצרנים / All brands](${base}/cars)
 - [דירוג רכבים / Rankings](${base}/rankings): models ranked by owner and AI scores
+- [נתוני צי הרכב בישראל / Israel car fleet statistics](${base}/israel-car-stats): how many cars are in Israel - full registry counts by make, model, colour, EV / plug-in share, ownership, age and country of manufacture
+- [בדיקת ריקול לפי מספר רכב / Open recall check by plate](${base}/recall-check): recalls not yet done on a specific vehicle, from the Ministry of Transport open-recalls dataset
+- [בדיקת אופנוע לפי מספר רישוי / Motorcycle check by plate](${base}/motorcycle-check): make, model, year, engine size and frame number for two-wheelers
+- [בדיקת תו נכה לפי מספר רכב / Disabled parking tag check](${base}/disabled-tag-check): whether a plate is listed in the Ministry of Transport disabled-tag dataset
+- [Проверка автомобиля по номеру / Vehicle lookup in Russian](${base}/ru/vehicle-lookup)
 - [עלויות תיקון / Repair costs](${base}/repairs): repair cost data reported by owners
 
 ## Most-Read Comparisons

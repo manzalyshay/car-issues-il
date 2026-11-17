@@ -9,6 +9,7 @@ const LANGS = {
   he: 'https://carissues.co.il/vehicle-lookup',
   'ru-IL': 'https://carissues.co.il/ru/vehicle-lookup',
   en: 'https://carissues.net/vehicle-lookup',
+  ru: 'https://carissues.co.il/ru/vehicle-lookup',
   'x-default': 'https://carissues.net/vehicle-lookup',
 };
 
@@ -23,16 +24,18 @@ export async function generateMetadata(): Promise<Metadata> {
       title: 'Israeli License Plate Lookup | CarIssues',
       description: 'Instant vehicle history by Israeli license plate. Test date, damage history, odometer and more.',
       url: `${base}/vehicle-lookup`,
+      images: [{ url: '/og-default.png', width: 1200, height: 630 }],
     },
   } : {
     // The root layout's title template appends " | CarIssues"
     title: 'בדיקת רכב לפי מספר רישוי - חינם, היסטוריית רכב מלאה',
-    description: 'בדוק כל רכב ישראלי לפי מספר לוחית רישוי: תוקף טסט, בעלות, קילומטראז׳, היסטוריית נזק, VIN, צבע, סוג דלק ועוד - נתונים חיים ממשרד התחבורה.',
+    description: 'בדיקה אחת לכל רכב ישראלי, כולל אופנועים: תוקף טסט, בעלות, קילומטראז׳, היסטוריית נזק, ריקולים פתוחים, תג חניה לנכה ורכב שירד מהכביש - נתונים חיים ממשרד התחבורה.',
     alternates: { canonical: `${base}/vehicle-lookup`, languages: LANGS },
     openGraph: {
       title: 'בדיקת רכב לפי מספר רישוי | CarIssues',
       description: 'בדיקת רכב מהירה לפי לוחית רישוי - טסט, נזק, קילומטראז׳ ועוד.',
       url: `${base}/vehicle-lookup`,
+      images: [{ url: '/og-default.png', width: 1200, height: 630 }],
     },
   };
 }
@@ -49,7 +52,9 @@ export default async function VehicleLookupPage() {
     { icon: '🔢', title: 'קילומטראז׳', desc: 'מד-האוץ בטסט האחרון - כשקיים במאגר משרד התחבורה' },
     { icon: '🪪', title: 'מספר שלדה ובעלות', desc: 'מספר שלדה (VIN) וסוג הבעלות (פרטי / עסקי)' },
     { icon: '🌍', title: 'מקור הרכב', desc: 'רכב מקורי, מיובא מאירופה, ארה"ב או אחר - כשקיים' },
-    { icon: '📢', title: 'ריקולים לדגם', desc: 'קריאות שירות (ריקולים) שפורסמו לדגם, בישראל ובארה"ב' },
+    { icon: '📢', title: 'ריקול פתוח לרכב הזה', desc: 'האם לרכב עצמו רשום ריקול שלא בוצע - ובנוסף כל הריקולים שפורסמו לדגם' },
+    { icon: '🏍️', title: 'גם אופנועים ומשאיות', desc: 'דו-גלגליים, רכב כבד, רכב ציבורי ויבוא אישי - לא רק רכב פרטי' },
+    { icon: '🚫', title: 'רכב שירד מהכביש', desc: 'אם הרישום בוטל או שהרכב לא פעיל, תראו את זה מיד - כולל תאריך הביטול' },
     { icon: '⭐', title: 'בעיות נפוצות וביקורות', desc: 'הבעיות הנפוצות בדגם, ביקורות בעלים ומחיר מחירון - כשקיימים באתר' },
   ] : [
     { icon: '📋', title: 'Full Vehicle Details', desc: 'Make, model, year, color, fuel type' },
@@ -96,6 +101,14 @@ export default async function VehicleLookupPage() {
     {
       q: 'מה ההבדל בין בדיקה כאן לבין אתרים אחרים?',
       a: 'רוב האתרים גובים תשלום, דורשים הרשמה, או מציגים פרסומות מסיחות. CarIssues מציג את אותו המידע - ישירות ממשרד התחבורה - בחינם, ללא פרסומות וללא הרשמה, בממשק נקי וברור.',
+    },
+    {
+      q: 'אפשר לבדוק גם אופנוע, משאית או רכב שירד מהכביש?',
+      a: 'כן. אם המספר לא נמצא במאגר הרכב הפרטי, הבדיקה ממשיכה למאגרי הדו-גלגליים, הרכב הכבד, הרכב הציבורי, היבוא האישי והרכבים שירדו מהכביש. לרכב שירד מהכביש מוצג תאריך ביטול הרישום.',
+    },
+    {
+      q: 'האם רואים ריקול פתוח לרכב עצמו?',
+      a: 'כן. הדו"ח מציג קריאות שירות שלפי משרד התחבורה עדיין לא בוצעו ברכב המסוים הזה, עם תיאור התקלה, וגם אם לרכב רשום תג חניה לנכה.',
     },
     {
       q: 'מאיפה המידע?',
@@ -181,14 +194,9 @@ export default async function VehicleLookupPage() {
           <PlateSearch isHe={isHe} navigateOnSearch />
           <p style={{ color: '#94a3b8', fontSize: '1rem', lineHeight: 1.7, marginTop: 20, marginBottom: 0, maxWidth: 560 }}>
             {isHe
-              ? 'הזן מספר לוחית רישוי וקבל מיד את כל הפרטים - תוקף טסט, היסטוריית נזק, קילומטראז׳ ועוד, ישירות ממשרד התחבורה.'
+              ? 'רכב, אופנוע, משאית או רכב שירד מהכביש - בדיקה אחת מציגה הכל: תוקף טסט ורישיון, היסטוריית נזק ובעלות, קילומטראז׳, ריקולים פתוחים לרכב ותג חניה לנכה, ישירות ממשרד התחבורה.'
               : 'Enter any Israeli license plate and instantly get full vehicle details - MOT status, damage history, odometer reading and more, live from Israel\'s Ministry of Transport.'}
           </p>
-          {isHe && (
-            <p style={{ margin: '12px 0 0', fontSize: '0.85rem' }}>
-              <Link href="/ru/vehicle-lookup" lang="ru" hrefLang="ru" style={{ color: "#93c5fd", fontWeight: 600, textDecoration: "none" }}>Проверка авто по номеру на русском →</Link>
-            </p>
-          )}
           <p style={{ color: '#475569', fontSize: '0.72rem', marginTop: 14 }}>
             {isHe
               ? 'מקור: משרד התחבורה (data.gov.il)'
@@ -281,7 +289,7 @@ export default async function VehicleLookupPage() {
       </div>
 
       {/* ── FAQ ── */}
-      <div className="container" style={{ maxWidth: 760, padding: '48px 16px 64px' }}>
+      <div className="container" style={{ maxWidth: 760, padding: isHe ? '48px 16px 40px' : '48px 16px 64px' }}>
         <h2 style={{ fontSize: '1.25rem', fontWeight: 800, marginBottom: 28 }}>
           {isHe ? 'שאלות נפוצות' : 'Frequently Asked Questions'}
         </h2>
@@ -294,6 +302,18 @@ export default async function VehicleLookupPage() {
           ))}
         </div>
       </div>
+
+      {/* ── More checks (Hebrew): the same search, explained for one specific need ── */}
+      {isHe && (
+        <nav aria-label="בדיקות נוספות" className="container" style={{ maxWidth: 760, padding: '0 16px 64px' }}>
+          <h2 style={{ fontSize: '1rem', fontWeight: 800, marginBottom: 12 }}>מדריכים לבדיקות לפי מספר רישוי</h2>
+          <ul style={{ listStyle: 'none', margin: 0, padding: 0, display: 'flex', flexWrap: 'wrap', gap: '10px 22px', fontSize: '0.9rem', fontWeight: 600 }}>
+            <li><Link href="/recall-check" style={{ color: 'var(--accent)', textDecoration: 'none' }}>בדיקת ריקול לפי מספר רכב</Link></li>
+            <li><Link href="/motorcycle-check" style={{ color: 'var(--accent)', textDecoration: 'none' }}>בדיקת אופנוע לפי מספר רישוי</Link></li>
+            <li><Link href="/disabled-tag-check" style={{ color: 'var(--accent)', textDecoration: 'none' }}>בדיקת תו נכה לפי מספר רכב</Link></li>
+          </ul>
+        </nav>
+      )}
     </div>
   );
 }

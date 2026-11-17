@@ -25,6 +25,7 @@ import RepairCostsSection from '@/components/RepairCostsSection';
 import SellerPriceChart from '@/components/SellerPriceChart';
 import RecallsBarChart from '@/components/RecallsBarChart';
 import FollowButton from '@/components/FollowButton';
+import { ownerAggregateRating, ownerReviewsOnly } from '@/lib/ownerRating';
 
 export const revalidate = 86400;
 
@@ -153,6 +154,9 @@ export default async function CarYearPage({ params }: Props) {
   const avgRating = yearReviews.length
     ? yearReviews.reduce((s, r) => s + r.rating, 0) / yearReviews.length
     : null;
+  // JSON-LD stars: real owner reviews of this year only
+  const schemaYearReviews = ownerReviewsOnly(yearReviews);
+  const schemaYearRating = ownerAggregateRating(yearReviews);
   // All-time avg for VerdictCard (consistent with model page)
   const allAvgRating = allReviews.length
     ? allReviews.reduce((s, r) => s + r.rating, 0) / allReviews.length
@@ -498,7 +502,7 @@ export default async function CarYearPage({ params }: Props) {
               '@context': 'https://schema.org',
               '@graph': [
                 // Google rejects Product without offers, review or aggregateRating
-                ...((!isEn && schemaMinPrice !== null || yearReviews.length > 0) ? [{
+                ...((!isEn && schemaMinPrice !== null || schemaYearRating !== null) ? [{
                   '@type': 'Product',
                   name: `${make.nameEn} ${model.nameEn} ${year}`,
                   brand: { '@type': 'Brand', name: make.nameEn },
@@ -512,16 +516,9 @@ export default async function CarYearPage({ params }: Props) {
                       offerCount: trimSpecs.filter(t => (t.priceIls ?? 0) >= MIN_PLAUSIBLE_PRICE_ILS).length,
                     },
                   }),
-                  ...(avgRating !== null && {
-                    aggregateRating: {
-                      '@type': 'AggregateRating',
-                      ratingValue: avgRating.toFixed(1),
-                      reviewCount: yearReviews.length,
-                      bestRating: 5,
-                      worstRating: 1,
-                    },
-                  }),
-                  review: yearReviews.slice(0, 5).map(r => ({
+                  // Owner reviews only (D1 `reviews`), never site/AI/test scores
+                  ...(schemaYearRating && { aggregateRating: schemaYearRating }),
+                  review: schemaYearReviews.slice(0, 5).map(r => ({
                     '@type': 'Review',
                     reviewRating: { '@type': 'Rating', ratingValue: r.rating, bestRating: 5 },
                     name: isEn ? (r.titleEn ?? r.title) : r.title,

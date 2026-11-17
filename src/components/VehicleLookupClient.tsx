@@ -315,6 +315,15 @@ export default function VehicleLookupClient({ initialPlate, initialVehicle, init
   const isVehicleUk = v?.country === 'uk';
   const motExpired  = v?.validUntil ? new Date(v.validUntil) < new Date() : false;
   const taxOk       = v?.taxStatus?.toLowerCase() === 'taxed';
+  const tr = (he: string, en: string, ru: string) => (isRu ? ru : isHe ? he : en);
+  const kind = v?.kind ?? 'car';
+  const regStatus = v?.registryStatus ?? 'active';
+  const openRecalls = v?.openRecalls ?? null;
+  const kindLabel = kind === 'motorcycle' ? tr('דו-גלגלי', 'Two-wheeler', 'Мототранспорт')
+    : kind === 'heavy' ? tr('רכב כבד / מסחרי', 'Heavy / commercial vehicle', 'Грузовой / коммерческий')
+    : kind === 'public' ? tr('רכב ציבורי', 'Public vehicle', 'Общественный транспорт')
+    : kind === 'import' ? tr('יבוא אישי', 'Personal import', 'Личный импорт')
+    : '';
 
   return (
     <>
@@ -492,8 +501,15 @@ export default function VehicleLookupClient({ initialPlate, initialVehicle, init
                     ) : (
                       <>
                         {v.lastTestDate && <StatusChip ok={!motExpired} label={`${L.lastTest}: ${fd(v.lastTestDate)}`} />}
-                        <StatusChip ok={!motExpired} label={motExpired ? L.licExpired : `${L.licValid} ${v.validUntil ? fd(v.validUntil) : ''}`} />
+                        {regStatus === 'cancelled' && <StatusChip ok={false} label={`${tr('ירד מהכביש', 'Off the road', 'Снят с учёта')}${v.cancelledDate ? ` ${fd(v.cancelledDate)}` : ''}`} />}
+                        {regStatus === 'inactive' && <StatusChip ok={false} label={tr('ללא רישיון בתוקף', 'No valid licence', 'Нет действующей лицензии')} />}
+                        {regStatus !== 'cancelled' && v.validUntil && <StatusChip ok={!motExpired} label={motExpired ? L.licExpired : `${L.licValid} ${fd(v.validUntil)}`} />}
                         {v.hasAccident !== null && <StatusChip ok={!v.hasAccident} label={v.hasAccident ? L.damageYes : L.damageNo} warn={v.hasAccident ?? false} />}
+                        {openRecalls && (openRecalls.length > 0
+                          ? <a href="#open-recalls" style={{ textDecoration: 'none' }}><StatusChip ok={false} label={tr(`${openRecalls.length === 1 ? 'ריקול פתוח אחד' : `${openRecalls.length} ריקולים פתוחים`} לרכב הזה`, `${openRecalls.length} open recall${openRecalls.length === 1 ? '' : 's'} on this vehicle`, `Невыполненных отзывов: ${openRecalls.length}`)} /></a>
+                          : regStatus === 'active' && <StatusChip ok label={tr('אין ריקול פתוח לרכב הזה', 'No open recall on this vehicle', 'Нет невыполненных отзывов')} />)}
+                        {kindLabel && <div style={{ padding: '5px 12px', borderRadius: 20, background: 'var(--surface)', border: '1px solid var(--border)', fontSize: '0.78rem', fontWeight: 700 }}>{kindLabel}</div>}
+                        {v.disabledTag && <div style={{ padding: '5px 12px', borderRadius: 20, background: 'rgba(96,165,250,0.12)', border: '1px solid rgba(96,165,250,0.3)', fontSize: '0.78rem', fontWeight: 700, color: '#60a5fa' }}>♿ {tr('תג חניה לנכה רשום', 'Disabled parking tag registered', 'Зарегистрирован знак инвалида')}</div>}
                       </>
                     )}
                     {modelInfo && modelInfo.recallCount > 0 && (
@@ -648,6 +664,49 @@ export default function VehicleLookupClient({ initialPlate, initialVehicle, init
                     </section>
                   )}
 
+                  {/* Registry status + recalls open on this exact vehicle (Ministry of Transport, by plate) */}
+                  {!isVehicleUk && (regStatus !== 'active' || (openRecalls && openRecalls.length > 0) || v.disabledTag) && (
+                    <section id="open-recalls" className="card" style={{ padding: 'clamp(18px,4vw,28px)', display: 'flex', flexDirection: 'column', gap: 16, scrollMarginTop: 90 }}>
+                      {regStatus === 'cancelled' && (
+                        <div style={{ padding: '14px 18px', borderRadius: 12, background: 'rgba(220,38,38,0.07)', border: '1px solid rgba(220,38,38,0.25)' }}>
+                          <div style={{ fontWeight: 800, color: '#dc2626', marginBottom: 4 }}>⚠ {tr('הרכב ירד מהכביש', 'This vehicle was taken off the road', 'Автомобиль снят с учёта')}{v.cancelledDate ? ` - ${fd(v.cancelledDate)}` : ''}</div>
+                          <div style={{ fontSize: 14, lineHeight: 1.6, color: 'var(--text-muted)' }}>{tr('הרישום בוטל סופית במשרד התחבורה. רכב כזה לא אמור להימכר כרכב נוסע - אם מציעים לכם אותו, בדקו היטב.', 'Its registration was cancelled for good by the Ministry of Transport. It should not be offered for sale as a road car.', 'Регистрация окончательно аннулирована Министерством транспорта. Такой автомобиль не должен продаваться как пригодный к эксплуатации.')}</div>
+                        </div>
+                      )}
+                      {regStatus === 'inactive' && (
+                        <div style={{ padding: '14px 18px', borderRadius: 12, background: 'rgba(234,179,8,0.07)', border: '1px solid rgba(234,179,8,0.25)' }}>
+                          <div style={{ fontWeight: 800, color: '#ca8a04', marginBottom: 4 }}>⚠ {tr('הרכב רשום כלא פעיל', 'This vehicle is registered as inactive', 'Автомобиль числится неактивным')}</div>
+                          <div style={{ fontSize: 14, lineHeight: 1.6, color: 'var(--text-muted)' }}>{tr('הרכב מופיע במאגר הרכבים הלא פעילים של משרד התחבורה - כלומר אין לו כרגע רישיון רכב בתוקף. זה יכול להיות רכב חדש שעוד לא עלה לכביש, או רכב שהרישיון שלו לא חודש. לפני קנייה בקשו לראות רישיון רכב בתוקף.', 'The vehicle is listed in the Ministry of Transport inactive registry, so it has no valid licence right now. It may be a new vehicle not yet on the road, or one whose licence was not renewed. Ask to see a valid licence before buying.', 'Автомобиль числится в реестре неактивных: действующей лицензии сейчас нет. Это может быть новый автомобиль, ещё не вышедший на дорогу, или автомобиль с непродлённой лицензией. Перед покупкой попросите показать действующую лицензию.')}</div>
+                        </div>
+                      )}
+                      {openRecalls && openRecalls.length > 0 && (
+                        <div>
+                          <h2 style={{ margin: '0 0 4px', fontSize: 20, fontWeight: 800 }}>{tr('ריקולים פתוחים לרכב הזה', 'Open recalls on this vehicle', 'Невыполненные отзывные кампании')}</h2>
+                          <p style={{ margin: '0 0 14px', fontSize: 13, color: 'var(--text-muted)' }}>{tr('קריאות שירות שלפי משרד התחבורה עדיין לא בוצעו ברכב הזה. התיקון במוסך היבואן - בחינם.', 'Recall campaigns the Ministry of Transport lists as not yet done on this exact vehicle. The importer fixes them free of charge.', 'Кампании, которые, по данным Министерства транспорта, ещё не выполнены на этом автомобиле. Импортёр устраняет их бесплатно.')}</p>
+                          <ul style={{ listStyle: 'none', margin: 0, padding: 0, display: 'flex', flexDirection: 'column', gap: 10 }}>
+                            {openRecalls.map(r => (
+                              <li key={r.id} style={{ padding: '12px 16px', borderRadius: 10, background: 'var(--bad-bg)', border: '1px solid rgba(220,38,38,0.2)' }}>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap', fontSize: 13, fontWeight: 700, color: 'var(--bad)' }}>
+                                  <span>{isHe ? (r.category || r.kind) : tr('', `Recall #${r.id}`, `Отзыв № ${r.id}`)}</span>
+                                  {r.openedAt && <span style={{ fontWeight: 600 }}>{tr('נפתח', 'Opened', 'Открыт')} {fd(r.openedAt)}</span>}
+                                </div>
+                                {/* The Ministry publishes the fault text in Hebrew only */}
+                                <p dir="rtl" lang="he" style={{ margin: '6px 0 0', fontSize: 14, lineHeight: 1.6 }}>{r.description}</p>
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
+                      {v.disabledTag && (
+                        <div style={{ fontSize: 14, lineHeight: 1.6 }}>
+                          <strong>♿ {tr('תג חניה לנכה', 'Disabled parking tag', 'Знак парковки для инвалидов')}:</strong>{' '}
+                          {tr('לרכב רשום תג חניה לנכה במאגר משרד התחבורה', 'a disabled parking tag is registered to this plate with the Ministry of Transport', 'на этот номер зарегистрирован знак в базе Министерства транспорта')}
+                          {v.disabledTag.issuedAt ? ` (${tr('הונפק', 'issued', 'выдан')} ${fd(v.disabledTag.issuedAt)})` : ''}.
+                        </div>
+                      )}
+                    </section>
+                  )}
+
                   {/* o4: full registry details */}
                   <section className="vl-o4 card" style={{ padding: 'clamp(18px,4vw,28px)' }}>
                     <h2 style={{ margin: '0 0 20px', fontSize: 22, fontWeight: 800 }}>{L.fullRegistry}</h2>
@@ -658,7 +717,8 @@ export default function VehicleLookupClient({ initialPlate, initialVehicle, init
                         v.year && { label: L.year, value: String(v.year) },
                         !isVehicleUk && v.frontTire && { label: L.tires, value: v.frontTire },
                         !isVehicleUk && v.vin && { label: L.frame, value: v.vin.slice(-8) },
-                        isVehicleUk && v.engineCapacity && { label: L.engine, value: `${v.engineCapacity}cc` },
+                        v.engineCapacity && { label: L.engine, value: `${v.engineCapacity}cc` },
+                        !isVehicleUk && v.vehicleTypeHe && isHe && { label: 'סוג רכב', value: v.vehicleTypeHe },
                         !isVehicleUk && v.firstRegistrationDate && { label: L.firstReg, value: fd(v.firstRegistrationDate) },
                       ].filter(Boolean).filter((r): r is { label: string; value: string } => !!r && !!(r as { value: string }).value).map(({ label, value }) => (
                         <div key={label}>
@@ -690,7 +750,7 @@ export default function VehicleLookupClient({ initialPlate, initialVehicle, init
                     )}
 
                     {/* Ownership History */}
-                    {!isVehicleUk && (
+                    {!isVehicleUk && kind === 'car' && (
                       <div style={{ marginTop: 24, borderTop: '1px solid var(--border)', paddingTop: 20 }}>
                         <h3 style={{ margin: 0, fontSize: 16, fontWeight: 700 }}>{L.ownershipHistory}</h3>
                         <p style={{ margin: '4px 0 14px', fontSize: 13, color: 'var(--text-muted)' }}>{L.ownershipNote}</p>

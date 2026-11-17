@@ -60,6 +60,7 @@ export default function Footer() {
         { href: '/cars',         label: isEn ? 'All Makes'    : 'כל היצרנים' },
         { href: '/rankings',     label: isEn ? 'Rankings'     : 'דירוגי דגמים' },
         { href: '/cars/compare', label: isEn ? 'Compare'      : 'השוואות' },
+        { href: '/israel-car-stats', label: isEn ? 'Israel car statistics' : 'נתוני צי הרכב בישראל' },
       ],
     },
     {
@@ -68,6 +69,11 @@ export default function Footer() {
         { href: '/tco',            label: isEn ? 'TCO Calculator'  : 'מחשבון TCO' },
         { href: '/checklist',      label: isEn ? 'Buying checklist' : 'צ׳קליסט קנייה' },
         { href: '/repairs',        label: isEn ? 'Repair Costs'     : 'עלויות תיקון' },
+              ...(isEn ? [] : [
+          { href: '/recall-check', label: 'בדיקת ריקול לפי מספר רכב' },
+          { href: '/motorcycle-check', label: 'בדיקת אופנוע לפי מספר' },
+          { href: '/disabled-tag-check', label: 'בדיקת תו נכה' },
+        ]),
       ],
     },
     {

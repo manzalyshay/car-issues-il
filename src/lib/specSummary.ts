@@ -70,3 +70,23 @@ export function summarizeTrims(trims: TrimLike[]): SpecSummary {
 export const fmtIls = (v: number) => `₪${Math.round(v).toLocaleString('en-US')}`;
 /** L/100km → km/L, one decimal. */
 export const kmPerL = (lPer100: number) => (100 / lPer100).toFixed(1);
+
+/**
+ * Rewrites litres-per-100-km figures in Hebrew text as km per litre, the unit Israeli
+ * drivers use: "5.5-6.5 ל/100 ק"מ" → "15.4-18.2 ק"מ לליטר". Handles the spellings the
+ * AI summaries use (ל/100 ק"מ, ל׳/100ק״מ, ליטר ל-100 ק"מ). Figures outside a plausible
+ * fuel range are left alone.
+ */
+const L100_HE = /(\d+(?:\.\d+)?)(?:\s*[-–—]\s*(\d+(?:\.\d+)?))?\s*(?:ליטר|ל['׳]?)\s*(?:\/|ל-?)\s*100\s*ק\\?["״'׳]{1,2}מ/g;
+export function litresPer100ToKmPerLitreHe(text: string): string {
+  if (!text.includes('100')) return text;
+  return text.replace(L100_HE, (whole, a: string, b?: string) => {
+    const lo = parseFloat(a);
+    const hi = b ? parseFloat(b) : lo;
+    const ok = (v: number) => v >= 2.5 && v <= 25;
+    if (!ok(lo) || !ok(hi)) return whole;
+    const fast = kmPerL(Math.max(lo, hi));
+    const slow = kmPerL(Math.min(lo, hi));
+    return `${fast === slow ? fast : `${fast}-${slow}`} ק"מ לליטר`;
+  });
+}

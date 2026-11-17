@@ -19,6 +19,7 @@ import { randomUUID as _uuid } from 'crypto';
 
 import { cache } from 'react';
 import { dbAll, dbFirst, dbRun } from './db';
+import { kmPerL, litresPer100ToKmPerLitreHe } from './specSummary';
 import { getMakeBySlug, getModelBySlug } from '@/lib/carsDb';
 import { getCloudflareContext } from '@opennextjs/cloudflare';
 
@@ -1063,7 +1064,7 @@ async function buildPerfContext(makeSlug: string, modelSlug: string): Promise<st
         const delta = (m.fuel - seg.fuel) / seg.fuel;
         tag = delta < -0.10 ? ' - חסכוני מהממוצע' : delta > 0.10 ? ' - גבוה מהממוצע' : ' - ממוצע לקטגוריה';
       }
-      parts.push(`צריכת דלק: ${m.fuel.toFixed(1)} ל/100ק"מ${seg?.fuel ? ` (ממוצע: ${seg.fuel.toFixed(1)}${tag})` : tag}`);
+      parts.push(`צריכת דלק: ${kmPerL(m.fuel)} ק"מ לליטר${seg?.fuel ? ` (ממוצע: ${kmPerL(seg.fuel)}${tag})` : tag}`);
     }
     if (m.torque) parts.push(`מומנט: ${Math.round(m.torque)} Nm`);
     if (m.weight) parts.push(`משקל: ${Math.round(m.weight)} ק"ג`);
@@ -1178,7 +1179,9 @@ function normalizeVisiblePunctuation<T>(value: T, key = ''): T {
     if (key === 'sourceUrl' || key === 'url' || key === 'sourcesList') return value;
     // Only normalize actual em/en dashes (site rule: no em dashes) - the ASCII
     // hyphen "-" must survive untouched (plug-in, rear-wheel, four-door, etc.).
-    return value.replace(/\s*[—–]\s*/g, ', ') as T;
+    // Fuel figures in litres/100 km are shown as km per litre (the Israeli norm) - before
+    // the dash rule, which would otherwise split a "5.5–6.5" range.
+    return litresPer100ToKmPerLitreHe(value).replace(/\s*[—–]\s*/g, ', ') as T;
   }
   if (Array.isArray(value)) {
     return value.map(item => normalizeVisiblePunctuation(item)) as T;

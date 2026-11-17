@@ -12,6 +12,7 @@ import { AuthProvider } from '@/lib/authContext';
 import { LocaleProvider } from '@/lib/localeContext';
 import NavigationProgress from '@/components/NavigationProgress';
 import PageViewTracker from '@/components/PageViewTracker';
+import CollapsibleCards from '@/components/CollapsibleCards';
 
 const heebo = Heebo({
   subsets: ['latin', 'hebrew'],
@@ -55,7 +56,7 @@ export async function generateMetadata(): Promise<Metadata> {
 
   return {
     title: {
-      default: isEn ? 'CarIssues - Car Reviews, Problems & Reliability' : 'CarIssues IL - בעיות רכב וביקורות',
+      default: isEn ? 'CarIssues - Car Reviews, Problems & Reliability' : 'CarIssues - השוואת רכבים, חוות דעת ובעיות נפוצות',
       template: '%s | CarIssues',
     },
     metadataBase: new URL(baseUrl),
@@ -70,7 +71,7 @@ export async function generateMetadata(): Promise<Metadata> {
     manifest: '/manifest.webmanifest',
     description: isEn
       ? 'Real car owner reviews, common problems, recalls and reliability data - by make, model and year.'
-      : 'מידע על דגמי רכב בישראל, כולל ביקורות בעלים, בעיות נפוצות, ריקולים ועלויות תיקון.',
+      : 'השוואת רכבים, מחירון וחוות דעת בעלים על כל דגם בישראל - בעיות נפוצות, ריקולים, עלויות תיקון ובדיקת רכב לפי מספר רישוי, בחינם.',
     keywords: isEn
       ? ['car reviews', 'car problems', 'car reliability', 'car recalls', 'car issues', 'owner reviews']
       : ['car issues israel', 'israel car reviews', 'car problems', 'recall israel', 'בעיות רכב', 'ביקורות רכב', 'ישראל'],
@@ -166,7 +167,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
             `}</Script>
           </>
         )}
-        <LocaleProvider initialLocale={isEn ? 'en' : 'he'} documentLang={isRu ? { lang: 'ru', dir: 'ltr' } : undefined}>
+        <LocaleProvider initialLocale={isRu ? 'ru' : isEn ? 'en' : 'he'} documentLang={isRu ? { lang: 'ru', dir: 'ltr' } : undefined}>
           <AuthProvider>
             {!isEmbed && !isEn && <LangBoundary serverIsRu={isRu} />}
             {!isEmbed && <NavigationProgress />}
@@ -176,6 +177,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
             )}
             {!isEmbed && (isRu ? <RuHeader /> : <Header />)}
             <main id="main-content" tabIndex={-1} className={isEmbed ? '' : 'flex-1'}>{children}</main>
+            {!isEmbed && <CollapsibleCards />}
             {!isEmbed && (isRu ? <RuFooter /> : <Footer />)}
           </AuthProvider>
         </LocaleProvider>

@@ -90,8 +90,8 @@ export async function middleware(req: NextRequest) {
     if (isEnHost) {
       return NextResponse.redirect(`https://${HE_HOST}${pathname}${req.nextUrl.search}`, { status: 301 });
     }
-    // Only the pilot pages exist under /ru: the landing page, the plate lookup and the 50
-    // compare pairs in RU_COMPARE_PAIRS. Anything else is a real 404 in Russian.
+    // Russian pages share the Israeli car catalogue; comparisons remain curated to the
+    // reviewed pairs in RU_COMPARE_PAIRS.
     const ruCompare = pathname.match(/^\/ru\/cars\/compare\/([^/]+)\/([^/]+)\/([^/]+)\/([^/]+)\/?$/);
     if (ruCompare) {
       const pairA = `${ruCompare[1]}/${ruCompare[2]}`;
@@ -103,7 +103,11 @@ export async function middleware(req: NextRequest) {
         url.pathname = `/ru/cars/compare/${c1}/${c2}`;
         return NextResponse.redirect(url, { status: 301 });
       }
-    } else if (!/^\/ru\/?$/.test(pathname) && !/^\/ru\/vehicle-lookup(\/[^/]+)?\/?$/.test(pathname)) {
+    } else if (!/^\/ru\/?$/.test(pathname)
+      && !/^\/ru\/cars\/?$/.test(pathname)
+      && !/^\/ru\/cars\/[^/]+\/?$/.test(pathname)
+      && !/^\/ru\/cars\/[^/]+\/[^/]+\/?$/.test(pathname)
+      && !/^\/ru\/vehicle-lookup(\/[^/]+)?\/?$/.test(pathname)) {
       return ruNotFoundResponse();
     }
     const requestHeaders = new Headers(req.headers);
@@ -134,6 +138,34 @@ export async function middleware(req: NextRequest) {
         }
       } catch { /* fail open - fall through to existing (soft-404) page rendering */ }
     }
+  }
+
+  // ── Make existence check ────────────────────────────────────────────────────
+  // Same streaming/200-status issue: /cars/loading.tsx wraps the make page, so its
+  // notFound() rendered the 404 UI with HTTP 200 and two conflicting robots tags.
+  const makeMatch = pathname.match(/^\/cars\/([^/]+)$/);
+  if (makeMatch && !['category', 'compare'].includes(makeMatch[1])) {
+    try {
+      const makes = await getAllMakes();
+      if (!makes.some((m) => m.slug === makeMatch[1])) return notFoundResponse(isEnHost);
+    } catch { /* fail open */ }
+  }
+
+  // ── Model-year existence check ──────────────────────────────────────────────
+  // Same issue for /cars/[make]/[model]/[year]. Only the year segment is checked here;
+  // the sibling static routes (issues, trim) are left alone.
+  const yearMatch = pathname.match(/^\/cars\/([^/]+)\/([^/]+)\/([^/]+)$/);
+  if (yearMatch && yearMatch[1] !== 'compare' && yearMatch[1] !== 'category'
+      && !['issues', 'trim'].includes(yearMatch[3])) {
+    const [, makeSlug, modelSlug, yearSeg] = yearMatch;
+    try {
+      const makes = await getAllMakes();
+      const model = makes.find((m) => m.slug === makeSlug)?.models.find((m) => m.slug === modelSlug);
+      const yearNum = Number(yearSeg);
+      if (!model || !/^\d{4}$/.test(yearSeg) || !model.years.includes(yearNum)) {
+        return notFoundResponse(isEnHost);
+      }
+    } catch { /* fail open */ }
   }
 
   // ── Compare pair existence check ────────────────────────────────────────────
