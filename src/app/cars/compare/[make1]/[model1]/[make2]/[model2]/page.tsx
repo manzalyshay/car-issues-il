@@ -61,7 +61,10 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
         'x-default': `https://carissues.net/cars/compare/${c1}/${c2}`,
       },
     },
-    openGraph: { title, description, url: canonical, images: [{ url: '/og-default.png', width: 1200, height: 630 }] },
+    // Share preview with both cars (./opengraph-image.tsx). Set explicitly: an `openGraph.images`
+    // here would otherwise win over the file convention, and the layout's twitter image is generic.
+    openGraph: { title, description, url: canonical, images: [{ url: `${canonical}/opengraph-image`, width: 720, height: 378, alt: title }] },
+    twitter: { card: 'summary_large_image', title, description, images: [{ url: `${canonical}/opengraph-image`, alt: title }] },
   };
 }
 
