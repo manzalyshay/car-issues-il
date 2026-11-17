@@ -940,6 +940,21 @@ export default async function ComparePageView({ make1, model1, make2, model2, lo
           make2={make2} model2={model2} name2={nameB}
           locale={isEn ? 'en' : 'he'}
         />}
+        {/* Buying a used one? Point to the plate check (Israeli plates, so not on the English site) */}
+        {!isEn && (
+          <div className="card" style={{ padding: '16px 24px', marginBottom: 28, fontSize: '0.9rem', lineHeight: 1.7 }}>
+            {isRu ? (
+              <>Смотрите подержанный {nameA} или {nameB}?{' '}
+                <Link href="/ru/vehicle-lookup" style={{ color: 'var(--accent)', fontWeight: 700 }}>Проверьте историю авто по номеру →</Link>
+              </>
+            ) : (
+              <>שוקלים {nameA} או {nameB} יד שנייה?{' '}
+                <Link href="/vehicle-lookup" style={{ color: 'var(--accent)', fontWeight: 700 }}>בדיקת לוחית רישוי</Link>
+                {' '}מציגה תוקף טסט, קילומטר והיסטוריית תאונות רשומה - בחינם.
+              </>
+            )}
+          </div>
+        )}
         {/* FAQ - built only from data shown on this page; mirrored exactly in FAQPage JSON-LD */}
         {faqItems.length > 0 && (
           <section className="card" style={{ padding: '24px 28px', marginBottom: 28 }}>

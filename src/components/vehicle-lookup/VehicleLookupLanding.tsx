@@ -7,6 +7,19 @@ import { getBaseUrl } from '@/lib/hostLocale';
 import PlateSearch from '@/components/PlateSearch';
 import { pick, type Locale, type Tri } from '@/lib/i18n';
 
+/**
+ * hreflang map shared by /vehicle-lookup (he + en) and /ru/vehicle-lookup so every version
+ * lists the same set and points back to the others. 'ru' (no region) is listed too: Russian
+ * searches like "как проверить историю авто в израиле" were landing on the Hebrew page.
+ */
+export const VEHICLE_LOOKUP_LANGS = {
+  he: 'https://carissues.co.il/vehicle-lookup',
+  ru: 'https://carissues.co.il/ru/vehicle-lookup',
+  'ru-IL': 'https://carissues.co.il/ru/vehicle-lookup',
+  en: 'https://carissues.net/vehicle-lookup',
+  'x-default': 'https://carissues.net/vehicle-lookup',
+};
+
 const RU = {
   features: [
     { icon: '📋', title: 'Данные автомобиля', desc: 'Марка, модель, год выпуска, цвет, тип топлива' },
@@ -31,6 +44,7 @@ const RU = {
   ],
   faqs: [
     { q: 'Как проверить автомобиль по номеру в Израиле?', a: 'Введите номер автомобиля (7 или 8 цифр) в поле выше и нажмите «Проверить». Вы сразу увидите данные из базы Министерства транспорта: модель и год, техосмотр, тип владения, пробег на последнем техосмотре и зарегистрированные повреждения.' },
+    { q: 'Как проверить историю авто в Израиле?', a: 'Историю автомобиля проверяют по израильскому номеру: введите его в поле выше. Отчёт покажет историю владения (частное, лизинг, прокат), пробег на последнем техосмотре, зарегистрированные повреждения, срок техосмотра и открытые отзывные кампании по данным Министерства транспорта.' },
     { q: 'Проверка бесплатная?', a: 'Да. Проверка по номеру на CarIssues полностью бесплатная, без регистрации и без подписки.' },
     { q: 'Откуда берутся данные?', a: 'Из открытой базы data.gov.il, которую ведёт Министерство транспорта Израиля. Данные обновляются раз в сутки.' },
     { q: 'Можно ли узнать, был ли автомобиль в аварии?', a: 'Если в базе Министерства транспорта зарегистрировано повреждение, оно будет показано в отчёте. Отсутствие записи не гарантирует, что аварий не было, поэтому перед покупкой стоит проверить автомобиль в гараже или в институте проверки.' },
@@ -48,9 +62,9 @@ export default function VehicleLookupLanding({ locale }: { locale: Locale }) {
 
   const features = pick(locale, { he: [
     { icon: '📋', title: 'פרטי רכב מלאים', desc: 'יצרן, דגם, שנת ייצור, צבע, סוג דלק' },
-    { icon: '🔧', title: 'תוקף טסט ורישיון', desc: 'תאריך הטסט האחרון ותאריך פקיעת הרישיון' },
-    { icon: '⚠️', title: 'נזק וצביעה', desc: 'האם נרשמה תאונה? האם הרכב צובע מחדש? (כשהמידע קיים ברשומות)' },
-    { icon: '🔢', title: 'קילומטראז׳', desc: 'מד-האוץ בטסט האחרון - כשקיים במאגר משרד התחבורה' },
+    { icon: '🔧', title: 'בדיקת תוקף טסט ורישיון', desc: 'תאריך הטסט האחרון ותאריך פקיעת הרישיון לפי מספר הרכב' },
+    { icon: '⚠️', title: 'היסטוריית תאונות ונזק', desc: 'האם נרשמה תאונה או נזק? האם הרכב נצבע מחדש? (כשהמידע קיים ברשומות)' },
+    { icon: '🔢', title: 'בדיקת קילומטר (קילומטראז׳)', desc: 'הקילומטר שנרשם בטסט האחרון - כשקיים במאגר משרד התחבורה' },
     { icon: '🪪', title: 'מספר שלדה ובעלות', desc: 'מספר שלדה (VIN) וסוג הבעלות (פרטי / עסקי)' },
     { icon: '🌍', title: 'מקור הרכב', desc: 'רכב מקורי, מיובא מאירופה, ארה"ב או אחר - כשקיים' },
     { icon: '📢', title: 'ריקול פתוח לרכב הזה', desc: 'האם לרכב עצמו רשום ריקול שלא בוצע - ובנוסף כל הריקולים שפורסמו לדגם' },
@@ -92,7 +106,7 @@ export default function VehicleLookupLanding({ locale }: { locale: Locale }) {
       a: 'לפני רכישת רכב יד שנייה מומלץ לבדוק: כמה בעלים היו לרכב, האם נרשם נזק בתאונה, מה הקילומטראז׳ בטסט האחרון, והאם תוקף הטסט תקף. הכניסו את מספר הרישוי בשדה למעלה וכל המידע יוצג מיד.',
     },
     {
-      q: 'איך בודקים תאונות לפי מספר רכב?',
+      q: 'איך בודקים תאונות והיסטוריית תאונות לפי מספר רכב?',
       a: 'הזינו את מספר הרכב בשדה למעלה. אם במאגר משרד התחבורה נרשם נזק לרכב, הוא יופיע בדו"ח. היעדר רישום לא מוכיח שהרכב לא עבר תאונה, ולכן לפני קנייה כדאי לבדוק אותו גם במכון בדיקה.',
     },
     {
@@ -110,6 +124,18 @@ export default function VehicleLookupLanding({ locale }: { locale: Locale }) {
     {
       q: 'האם רואים ריקול פתוח לרכב עצמו?',
       a: 'כן. הדו"ח מציג קריאות שירות שלפי משרד התחבורה עדיין לא בוצעו ברכב המסוים הזה, עם תיאור התקלה, וגם אם לרכב רשום תג חניה לנכה.',
+    },
+    {
+      q: 'איך מאתרים רכב לפי מספר רישוי?',
+      a: 'איתור רכב לפי מספר רישוי פשוט: מקלידים את המספר מלוחית הרישוי (7 או 8 ספרות) בשדה למעלה. החיפוש מזהה את הרכב במאגר משרד התחבורה ומציג יצרן, דגם, שנה, צבע וסוג דלק, יחד עם תוקף הטסט, הבעלות וההיסטוריה הרשומה.',
+    },
+    {
+      q: 'איך בודקים תוקף טסט לפי מספר רכב?',
+      a: 'מזינים את מספר הרכב בשדה למעלה. הדו"ח מציג את תאריך הטסט האחרון ואת תאריך פקיעת רישיון הרכב, כך שרואים מיד אם לרכב יש טסט בתוקף.',
+    },
+    {
+      q: 'האם אפשר לבדוק עיקול או שעבוד על רכב?',
+      a: 'לא כאן. מאגר משרד התחבורה לא כולל עיקולים ושעבודים, ולכן הבדיקה שלנו לא מציגה אותם. עיקול בודקים מול רשות האכיפה והגבייה, ושעבוד בודקים ברשם המשכונות. לפני קנייה כדאי לבדוק את שניהם, יחד עם בדיקת הרכב לפי מספר רישוי.',
     },
     {
       q: 'מאיפה המידע?',
@@ -193,13 +219,13 @@ export default function VehicleLookupLanding({ locale }: { locale: Locale }) {
             {tr({ he: 'כלי חינמי', en: 'Free Tool', ru: 'Бесплатно · без регистрации' })}
           </div>
           <h1 style={{ fontSize: 'clamp(1.6rem, 4vw, 2.4rem)', fontWeight: 900, color: '#f1f5f9', lineHeight: 1.2, marginBottom: 20 }}>
-            {tr({ he: 'בדיקת רכב לפי מספר רישוי', en: 'Israeli License Plate Lookup', ru: 'Проверка авто по номеру' })}
+            {tr({ he: 'בדיקת רכב לפי מספר רישוי', en: 'Israeli License Plate Lookup', ru: 'Проверка авто по номеру и истории в Израиле' })}
           </h1>
           {/* Plate input first - it's what visitors come here for */}
           <PlateSearch isHe={isHe} lang={locale} navigateOnSearch />
           <p style={{ color: '#94a3b8', fontSize: '1rem', lineHeight: 1.7, marginTop: 20, marginBottom: 0, maxWidth: 560 }}>
             {tr({
-              he: 'רכב, אופנוע, משאית או רכב שירד מהכביש - בדיקה אחת מציגה הכל: תוקף טסט ורישיון, היסטוריית נזק ובעלות, קילומטראז׳, ריקולים פתוחים לרכב ותג חניה לנכה, ישירות ממשרד התחבורה.',
+              he: 'חיפוש רכב לפי מספר רישוי - רכב, אופנוע, משאית או רכב שירד מהכביש. בדיקה אחת מציגה הכל: תוקף טסט ורישיון, היסטוריית נזק ובעלות, קילומטראז׳, ריקולים פתוחים לרכב ותג חניה לנכה, ישירות ממשרד התחבורה.',
               en: 'Enter any Israeli license plate and instantly get full vehicle details - MOT status, damage history, odometer reading and more, live from Israel\'s Ministry of Transport.',
               ru: 'Введите номер израильского автомобиля и сразу получите данные Министерства транспорта: техосмотр, историю владения, пробег, повреждения и технические данные.',
             })}
@@ -207,6 +233,17 @@ export default function VehicleLookupLanding({ locale }: { locale: Locale }) {
           <p style={{ color: '#475569', fontSize: '0.72rem', marginTop: 14 }}>
             {tr({ he: 'מקור: משרד התחבורה (data.gov.il)', en: 'Source: Israel Ministry of Transport (data.gov.il)', ru: 'Источник: Министерство транспорта Израиля (data.gov.il)' })}
           </p>
+          {/* The Hebrew and Russian versions link to each other (alongside hreflang) */}
+          {isHe && (
+            <p style={{ fontSize: '0.8rem', marginTop: 6 }}>
+              <Link href="/ru/vehicle-lookup" hrefLang="ru" lang="ru" style={{ color: '#93c5fd', textDecoration: 'none' }}>Проверка авто по номеру на русском ←</Link>
+            </p>
+          )}
+          {isRu && (
+            <p style={{ fontSize: '0.8rem', marginTop: 6 }}>
+              <Link href="/vehicle-lookup" hrefLang="he" lang="he" dir="rtl" style={{ color: '#93c5fd', textDecoration: 'none' }}>בדיקת רכב לפי מספר רישוי בעברית</Link>
+            </p>
+          )}
         </div>
       </div>
 
@@ -223,7 +260,7 @@ export default function VehicleLookupLanding({ locale }: { locale: Locale }) {
           })}
         </p>
         <h2 style={{ fontSize: '1.25rem', fontWeight: 800, marginBottom: 6 }}>
-          {tr({ he: 'מה תקבל בבדיקה?', en: 'What does the check include?', ru: 'Что показывает проверка' })}
+          {tr({ he: 'מה מראה בדיקת לוחית רישוי?', en: 'What does the check include?', ru: 'Что показывает проверка' })}
         </h2>
         <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', marginBottom: 28 }}>
           {tr({ he: 'כל הנתונים מגיעים ישירות ממאגרי ממשלת ישראל בזמן אמת', en: 'All data is pulled in real time from official Israeli government databases', ru: 'Все данные берутся из официальных баз правительства Израиля' })}

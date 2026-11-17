@@ -1,15 +1,9 @@
 import type { Metadata } from 'next';
 import { getHostLocale, getBaseUrl } from '@/lib/hostLocale';
-import VehicleLookupLanding from '@/components/vehicle-lookup/VehicleLookupLanding';
+import VehicleLookupLanding, { VEHICLE_LOOKUP_LANGS as LANGS } from '@/components/vehicle-lookup/VehicleLookupLanding';
 
 export const revalidate = 3600;
 
-const LANGS = {
-  he: 'https://carissues.co.il/vehicle-lookup',
-  'ru-IL': 'https://carissues.co.il/ru/vehicle-lookup',
-  en: 'https://carissues.net/vehicle-lookup',
-  'x-default': 'https://carissues.net/vehicle-lookup',
-};
 
 export async function generateMetadata(): Promise<Metadata> {
   const locale = await getHostLocale();
@@ -26,8 +20,8 @@ export async function generateMetadata(): Promise<Metadata> {
     },
   } : {
     // The root layout's title template appends " | CarIssues"
-    title: 'בדיקת רכב לפי מספר רישוי - חינם, היסטוריית רכב מלאה',
-    description: 'בדיקה אחת לכל רכב ישראלי, כולל אופנועים: תוקף טסט, בעלות, קילומטראז׳, היסטוריית נזק, ריקולים פתוחים, תג חניה לנכה ורכב שירד מהכביש - נתונים חיים ממשרד התחבורה.',
+    title: 'בדיקת רכב לפי מספר רישוי חינם - היסטוריה, תאונות וטסט',
+    description: 'בדיקת לוחית רישוי חינם: הזינו מספר רכב וקבלו היסטוריית רכב ותאונות רשומות, תוקף טסט ורישיון, קילומטר בטסט האחרון, בעלויות קודמות וריקולים פתוחים - ישירות ממשרד התחבורה.',
     alternates: { canonical: `${base}/vehicle-lookup`, languages: LANGS },
     openGraph: {
       title: 'בדיקת רכב לפי מספר רישוי | CarIssues',
