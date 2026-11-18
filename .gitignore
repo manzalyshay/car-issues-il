@@ -54,3 +54,4 @@ scripts/gsc-token.json
 *.sqlite
 .cache/
 __pycache__/
+.price-sync/
