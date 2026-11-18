@@ -12,7 +12,8 @@
  * It only UPDATEs existing rows, never inserts trims:
  *   1. Rows linked to auto.co.il (auto_co_il_id = a current version id) get that price.
  *   2. Other rows (hand-entered trims) get a price when their name matches exactly one
- *      current version's trim name (the last comma part, e.g. "..., Active" = "ACTIVE").
+ *      current version's trim name (the last comma part, e.g. "..., Active" = "ACTIVE")
+ *      with the same powertrain (petrol / hybrid / plug-in / electric / diesel).
  *      Several current versions with that trim name and different prices = skipped.
  * Rows with no match keep their old price and get no price_source, so verified prices
  * can be told apart from the old estimates.
@@ -82,12 +83,37 @@ async function currentVersions(path) {
   return { status: 200, versions };
 }
 
+// Powertrain class, so a trim-name match can't pair e.g. a diesel "SE" with the plug-in "SE"
+function ourEngine(t) {
+  const e = String(t || '').toLowerCase();
+  if (!e) return null;
+  if (/phev|תקע|פלאג/.test(e)) return 'phev';
+  if (/electric|חשמלי/.test(e)) return 'electric';
+  if (/hybrid|היברידי/.test(e)) return 'hybrid';
+  if (/diesel|דיזל/.test(e)) return 'diesel';
+  if (/petrol|gasoline|בנזין/.test(e)) return 'petrol';
+  return null;
+}
+function versionEngine(name) {
+  if (/פלאג|PHEV|plug/i.test(name)) return 'phev';
+  if (/חשמלי|EV\b/i.test(name)) return 'electric';
+  if (/מתון|MHEV|mild/i.test(name)) return 'mild';
+  if (/היברידי|HEV|hybrid/i.test(name)) return 'hybrid';
+  if (/דיזל|diesel/i.test(name)) return 'diesel';
+  return 'petrol';
+}
+const enginesAgree = (ours, version) => ours != null && (ours === version || (version === 'mild' && (ours === 'petrol' || ours === 'hybrid')));
+// Trim-name matches checked by hand and found to be a different car (dry run 2026-11-18)
+const EXCLUDE = new Set([
+  'dacia/sandero|EXPRESSION', // only the Sandero Stepway is on sale; its price isn't the plain Sandero's
+]);
+
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 const q = v => v == null ? 'NULL' : typeof v === 'number' ? String(v) : `'${String(v).replace(/'/g, "''")}'`;
 
 async function main() {
   mkdirSync(OUT, { recursive: true });
-  const rows = d1(`SELECT id, make_slug, model_slug, name, model_year, price_ils, auto_co_il_id FROM car_trims WHERE is_israel = 1`);
+  const rows = d1(`SELECT id, make_slug, model_slug, name, model_year, price_ils, auto_co_il_id, engine_type FROM car_trims WHERE is_israel = 1`);
   const byModel = new Map();
   for (const r of rows) {
     const k = `${r.make_slug}/${r.model_slug}`;
@@ -112,8 +138,11 @@ async function main() {
     for (const t of trims) {
       let v = null, how = null, note = '';
       if (t.auto_co_il_id && byId.has(String(t.auto_co_il_id))) { v = byId.get(String(t.auto_co_il_id)); how = 'version-id'; }
+      else if (!t.auto_co_il_id && EXCLUDE.has(`${key}|${t.name}`)) note = 'excluded: checked by hand, different car';
       else if (!t.auto_co_il_id) {
-        const cands = byToken.get(norm(t.name)) || [];
+        const named = byToken.get(norm(t.name)) || [];
+        const cands = named.filter(c => enginesAgree(ourEngine(t.engine_type), versionEngine(c.name)));
+        if (named.length && !cands.length) note = `engine mismatch: ours ${t.engine_type || 'unknown'} vs ${named.map(c => c.name).join(' | ')}`;
         const distinct = [...new Set(cands.map(c => c.price))];
         if (cands.length && distinct.length === 1) { v = cands[0]; how = 'trim-name'; }
         else if (cands.length) note = `ambiguous: ${cands.map(c => `${c.name} ₪${c.price}`).join(' | ')}`;
@@ -138,6 +167,8 @@ async function main() {
     byVersionId: all.filter(t => t.match === 'version-id').length,
     byTrimName: all.filter(t => t.match === 'trim-name').length,
     ambiguous: all.filter(t => t.note.startsWith('ambiguous')).length,
+    engineMismatch: all.filter(t => t.note.startsWith('engine mismatch')).length,
+    excluded: all.filter(t => t.note.startsWith('excluded')).length,
     estimatesLeft: all.filter(t => !t.newPrice && t.oldPrice).length,
   };
   console.log(sum);
