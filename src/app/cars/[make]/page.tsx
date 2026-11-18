@@ -8,6 +8,8 @@ import { translations } from '@/lib/translations';
 
 interface Props { params: Promise<{ make: string }> }
 
+const sameName = (a: string, b: string) => a.trim().toLowerCase() === b.trim().toLowerCase();
+
 export const revalidate = 3600; // cache 1 hour
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
@@ -17,10 +19,13 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const base = getBaseUrl(locale);
   const url = `${base}/cars/${make.slug}`;
   const isEn = locale === 'en';
+  // Many Israelis search brands in Latin letters ("jaecoo", "audi", "byd"), so the Hebrew
+  // title also carries the English name, unless both names are the same.
+  const heName = sameName(make.nameHe, make.nameEn) ? make.nameHe : `${make.nameHe} (${make.nameEn})`;
   return {
     title: isEn
       ? `${make.nameEn} - Models & Common Issues`
-      : `${make.nameHe} - בעיות ודגמים`,
+      : `${heName} - כל הדגמים, בעיות נפוצות וביקורות`,
     description: isEn
       ? `All ${make.nameEn} models with owner reviews and common problems reported by real car owners.`
       : `כל דגמי ${make.nameHe} (${make.nameEn}) עם ביקורות בעברית ובעיות נפוצות שדיווחו בעלי רכב בישראל.`,
@@ -86,6 +91,11 @@ export default async function MakePage({ params }: Props) {
               </p>
               <h1 style={{ fontFamily: "var(--font-display)", fontSize: 'clamp(1.8rem,4vw,3rem)', fontWeight: 800, lineHeight: 1.05, letterSpacing: '-0.02em', color: 'var(--text)', marginBottom: 8 }}>
                 {isEn ? make.nameEn : make.nameHe}
+                {!isEn && !sameName(make.nameHe, make.nameEn) && (
+                  <span lang="en" dir="ltr" style={{ fontSize: '0.5em', fontWeight: 700, color: 'var(--text-muted)', marginInlineStart: 12, letterSpacing: 0 }}>
+                    {make.nameEn}
+                  </span>
+                )}
               </h1>
               {/* Pills */}
               <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', alignItems: 'center' }}>
