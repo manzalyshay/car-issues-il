@@ -7,6 +7,7 @@
  *    current generation's start year and known_issues has dated rows before it.
  * Every part is null/empty when the data is missing - nothing is estimated.
  */
+import { VERIFIED_PRICE_SQL } from '@/lib/trimSpecsDb';
 import { dbAll } from './db';
 import { staticHebrewTitle } from './translateCache';
 
@@ -64,7 +65,7 @@ export async function getYearPageData(
 ): Promise<YearPageData> {
   const [rows, gens] = await Promise.all([
     dbAll<{ model_year: number; name: string; engine_hp: number | null; engine_type: string | null; price_ils: number | null }>(
-      `SELECT model_year, name, engine_hp, engine_type, price_ils FROM car_trims
+      `SELECT model_year, name, engine_hp, engine_type, ${VERIFIED_PRICE_SQL} AS price_ils FROM car_trims
        WHERE make_slug = ? AND model_slug = ? AND is_israel = 1 AND (model_year IN (?, ?) OR model_year IS NULL)
        ORDER BY sort_order`,
       makeSlug, modelSlug, year, year - 1,

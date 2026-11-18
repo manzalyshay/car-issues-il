@@ -1,6 +1,13 @@
 import { dbAll, dbFirst } from './db';
 import type { TrimSpec } from '@/data/cars';
 
+/**
+ * Only prices with a known source are shown: auto.co.il list prices or the Ministry of
+ * Transport importer price list (scripts/sync-*-prices.mjs set price_source). Older
+ * hand-entered estimates stay in price_ils but read as "no price".
+ */
+export const VERIFIED_PRICE_SQL = 'CASE WHEN price_source IS NOT NULL THEN price_ils END';
+
 export interface TrimSpecWithYear extends TrimSpec {
   modelYear: number | null;
   isIsrael: boolean;
@@ -28,7 +35,7 @@ function rowToTrimSpec(row: Record<string, unknown>): TrimSpecWithYear {
         return Array.isArray(parsed) ? parsed : [];
       } catch { return []; }
     })(),
-    priceIls: (row.price_ils as number) ?? undefined,
+    priceIls: row.price_source != null ? ((row.price_ils as number) ?? undefined) : undefined,
     acceleration: (row.acceleration_0_100 as number) ?? undefined,
     topSpeedKmh: (row.top_speed_kmh as number) ?? undefined,
     torqueNm: (row.torque_nm as number) ?? undefined,
@@ -46,7 +53,7 @@ export async function getModelPriceMins(): Promise<Map<string, number>> {
     const rows = await dbAll<{ k: string; min_price: number }>(
       `SELECT make_slug || '/' || model_slug AS k, MIN(price_ils) AS min_price
        FROM car_trims
-       WHERE price_ils IS NOT NULL AND price_ils >= 20000 AND is_israel = 1
+       WHERE price_ils IS NOT NULL AND price_ils >= 20000 AND is_israel = 1 AND price_source IS NOT NULL
        GROUP BY make_slug, model_slug`,
     );
     return new Map(rows.map((r) => [r.k, r.min_price]));

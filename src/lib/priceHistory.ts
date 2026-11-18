@@ -32,7 +32,7 @@ const ILS_TO_USD = 3.7;
 export async function getPriceHistory(makeSlug: string, modelSlug: string): Promise<PricePoint[]> {
   const [trimRow, modelRow] = await Promise.all([
     dbFirst<{ price_ils: number }>(
-      'SELECT MIN(price_ils) as price_ils FROM car_trims WHERE make_slug = ? AND model_slug = ? AND price_ils IS NOT NULL',
+      'SELECT MIN(price_ils) as price_ils FROM car_trims WHERE make_slug = ? AND model_slug = ? AND price_ils IS NOT NULL AND price_source IS NOT NULL',
       makeSlug, modelSlug,
     ).catch(() => null),
     dbFirst<{ years: string }>(

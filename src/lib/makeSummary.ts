@@ -3,6 +3,7 @@
  * owner reviews, AI scores (labelled), NHTSA recalls and CarComplaints - and dropped when
  * the data behind it is missing.
  */
+import { VERIFIED_PRICE_SQL } from '@/lib/trimSpecsDb';
 import { dbAll } from './db';
 import { staticHebrewTitle } from './translateCache';
 import { getAllDisplayScores } from './displayScore';
@@ -43,7 +44,7 @@ export async function getMakeStats(make: CarMake): Promise<MakeStats> {
       'SELECT model_slug, title, MIN(rank) AS rank FROM known_issues WHERE make_slug = ? GROUP BY model_slug, title ORDER BY rank IS NULL, rank', make.slug,
     ).catch(() => []),
     dbAll<{ model_slug: string; engine_hp: number | null; fuel_consumption: number | null; cargo_liters: number | null; engine_type: string | null; price_ils: number | null }>(
-      'SELECT model_slug, engine_hp, fuel_consumption, cargo_liters, engine_type, price_ils FROM car_trims WHERE make_slug = ? AND is_israel = 1', make.slug,
+      `SELECT model_slug, engine_hp, fuel_consumption, cargo_liters, engine_type, ${VERIFIED_PRICE_SQL} AS price_ils FROM car_trims WHERE make_slug = ? AND is_israel = 1`, make.slug,
     ).catch(() => []),
   ]);
   const slugs = new Set(make.models.map((m) => m.slug));
