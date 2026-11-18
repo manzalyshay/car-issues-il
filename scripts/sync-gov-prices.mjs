@@ -18,8 +18,8 @@
  * 0.8x or above 1.6x the model's median trim price is rejected as an outlier.
  *
  * Only UPDATEs rows without an auto.co.il link (auto_co_il_id empty); never inserts.
- * Run it before scripts/sync-autocoil-prices.mjs: where both have a price, auto.co.il's
- * current version price is the one the site keeps.
+ * Rows already priced by scripts/sync-autocoil-prices.mjs (price_source = 'auto.co.il') are
+ * skipped: auto.co.il's price is for the exact current version, so it wins.
  *
  * Usage:
  *   node scripts/sync-gov-prices.mjs            # dry run: report + SQL in .price-sync/
@@ -73,7 +73,7 @@ async function main() {
     console.log(`${y}: ${p.length} prices, ${w.length} WLTP models`);
   }
 
-  const rows = d1(`SELECT id, make_slug, model_slug, name, price_ils, auto_co_il_id FROM car_trims WHERE is_israel = 1 AND (auto_co_il_id IS NULL OR auto_co_il_id = '')`);
+  const rows = d1(`SELECT id, make_slug, model_slug, name, price_ils, auto_co_il_id FROM car_trims WHERE is_israel = 1 AND (auto_co_il_id IS NULL OR auto_co_il_id = '') AND COALESCE(price_source, '') <> 'auto.co.il'`);
   const ours = new Map();
   for (const r of rows) { const k = `${r.make_slug}/${r.model_slug}`; (ours.get(k) || ours.set(k, []).get(k)).push(r); }
 
