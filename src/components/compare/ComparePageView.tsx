@@ -84,10 +84,9 @@ export default async function ComparePageView({ make1, model1, make2, model2, lo
   const nameB = isHe ? `${mB.nameHe} ${modB.nameHe}` : `${mB.nameEn} ${modB.nameEn}`;
   // Descriptive anchor text for the links back to each model's pages (model hubs rank far
   // below the compare pages, which pass them most of their internal-link weight). Model name
-  // only - the full make + model is printed right above, and the header columns are narrow on
-  // mobile - except very short names (Mazda "3"). Hebrew "ב" before a Latin name gets a hyphen.
-  // Hebrew links have no arrow: the column fits ~20 characters on a phone. No-break spaces keep
-  // the English arrow and "מאזדה 3" from wrapping apart.
+  // only - the full make + model heads each column - except very short names (Mazda "3").
+  // Hebrew "ב" before a Latin name gets a hyphen. Hebrew links have no arrow: the columns fit
+  // ~20 characters on a phone. No-break spaces keep the English arrow and "מאזדה 3" together.
   const shortHe = (ma: typeof mA, mo: typeof modA) => (mo.nameHe.length >= 3 ? mo.nameHe : `${ma.nameHe}\u00A0${mo.nameHe}`);
   const withBet = (name: string) => `ב${/^[A-Za-z0-9]/.test(name) ? '-' : ''}${name}`;
   const hubLinkText = (ma: typeof mA, mo: typeof modA) => heLink(tr({ he: `חוות דעת על ${shortHe(ma, mo)}`, en: `${mo.nameEn} reviews\u00A0→`, ru: `Отзывы о ${mo.nameEn}\u00A0→` }));
@@ -489,17 +488,6 @@ export default async function ComparePageView({ make1, model1, make2, model2, lo
             </div>
             <div className="cmp-car-name" style={{ fontWeight: 900, fontSize: '1.15rem', textAlign: 'center' }}>{nameA}</div>
             {isHe && <div style={{ color: 'var(--text-muted)', fontSize: '0.875rem', textAlign: 'center' }}>{mA.nameEn} {modA.nameEn}</div>}
-            <Link href={`/cars/${make1}/${model1}`} style={{ fontSize: '0.8125rem', color: 'var(--accent)', textDecoration: 'none', display: 'block', marginTop: 8 }}>
-              {hubLinkText(mA, modA)}
-            </Link>
-            <Link href={`/cars/${make1}/${model1}/issues`} style={{ fontSize: '0.8125rem', color: 'var(--accent)', textDecoration: 'none', display: 'block', marginTop: 4 }}>
-              {issuesLinkText(mA, modA)}
-            </Link>
-            {!isRu && modA.years.length > 0 && (
-              <Link href={`/cars/${make1}/${model1}/${Math.max(...modA.years)}`} style={{ fontSize: '0.8125rem', color: 'var(--accent)', textDecoration: 'none', display: 'block', marginTop: 4 }}>
-                {isEn ? `${Math.max(...modA.years)} price & specs` : `מחיר ומפרט ${Math.max(...modA.years)}`}
-              </Link>
-            )}
           </div>
           <div style={{ fontWeight: 900, fontSize: '1.2rem', color: 'var(--text-muted)', flexShrink: 0 }}>VS</div>
           <div style={{ ...col }}>
@@ -508,17 +496,6 @@ export default async function ComparePageView({ make1, model1, make2, model2, lo
             </div>
             <div className="cmp-car-name" style={{ fontWeight: 900, fontSize: '1.15rem', textAlign: 'center' }}>{nameB}</div>
             {isHe && <div style={{ color: 'var(--text-muted)', fontSize: '0.875rem', textAlign: 'center' }}>{mB.nameEn} {modB.nameEn}</div>}
-            <Link href={`/cars/${make2}/${model2}`} style={{ fontSize: '0.8125rem', color: 'var(--accent)', textDecoration: 'none', display: 'block', marginTop: 8 }}>
-              {hubLinkText(mB, modB)}
-            </Link>
-            <Link href={`/cars/${make2}/${model2}/issues`} style={{ fontSize: '0.8125rem', color: 'var(--accent)', textDecoration: 'none', display: 'block', marginTop: 4 }}>
-              {issuesLinkText(mB, modB)}
-            </Link>
-            {!isRu && modB.years.length > 0 && (
-              <Link href={`/cars/${make2}/${model2}/${Math.max(...modB.years)}`} style={{ fontSize: '0.8125rem', color: 'var(--accent)', textDecoration: 'none', display: 'block', marginTop: 4 }}>
-                {isEn ? `${Math.max(...modB.years)} price & specs` : `מחיר ומפרט ${Math.max(...modB.years)}`}
-              </Link>
-            )}
           </div>
         </div>
 
@@ -989,6 +966,29 @@ export default async function ComparePageView({ make1, model1, make2, model2, lo
           <Link href={isRu ? '/ru#compare' : `/cars/compare?car1=${make1}/${model1}&car2=${make2}/${model2}`} className="btn btn-primary" style={{ height: 40, padding: '0 20px', textDecoration: 'none', display: 'inline-flex', alignItems: 'center' }}>
             {isRu ? 'Все сравнения →' : sp.ctaButton}
           </Link>
+        </div>
+
+        {/* More about each model: hub, common problems, current-year page. Kept at the bottom so
+            the top of the page stays on the comparison itself; descriptive anchors pass weight to
+            the model hubs, which rank far below the compare pages. */}
+        <div style={{ marginTop: 8, marginBottom: 32 }}>
+          <h2 style={{ fontWeight: 800, fontSize: '1rem', marginBottom: 16 }}>{tr({ he: 'עוד על הדגמים', en: 'More about these models', ru: 'Подробнее о моделях' })}</h2>
+          <div className="cmp-related-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
+            {([[make1, model1, mA, modA, nameA], [make2, model2, mB, modB, nameB]] as const).map(([mk, mo, ma, mod, name]) => (
+              <div key={`${mk}/${mo}`}>
+                <div style={{ fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-muted)', marginBottom: 10 }}>{name}</div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 6, fontSize: '0.875rem' }}>
+                  <Link href={`/cars/${mk}/${mo}`} style={{ color: 'var(--accent)', textDecoration: 'none' }}>{hubLinkText(ma, mod)}</Link>
+                  <Link href={`/cars/${mk}/${mo}/issues`} style={{ color: 'var(--accent)', textDecoration: 'none' }}>{issuesLinkText(ma, mod)}</Link>
+                  {!isRu && mod.years.length > 0 && (
+                    <Link href={`/cars/${mk}/${mo}/${Math.max(...mod.years)}`} style={{ color: 'var(--accent)', textDecoration: 'none' }}>
+                      {isEn ? `${Math.max(...mod.years)} price & specs` : `מחיר ומפרט ${Math.max(...mod.years)}`}
+                    </Link>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
 
         {/* Related comparisons */}
