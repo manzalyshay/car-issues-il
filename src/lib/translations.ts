@@ -492,7 +492,7 @@ export const translations = {
     },
     repairsPage: {
       title: 'עלויות תיקון ותחזוקה לרכב בישראל',
-      subtitle: 'מחירים ריאליים ממוסכים ישראליים - מדרג, פורום רכב ישראל, ודיווחי בעלי רכב. עדכון שוטף.',
+      subtitle: 'כמה באמת שילמו על תיקונים וטיפולים: ממוצע וטווח לפי דיווחי לקוחות במידרג, כולל מע״מ.',
       home: 'בית',
       breadcrumb: 'עלויות תיקון',
       commonTitle: 'תיקונים נפוצים - מחירון מהיר',
@@ -1048,7 +1048,7 @@ export const translations = {
     },
     repairsPage: {
       title: 'Car Repair & Maintenance Costs',
-      subtitle: 'Real prices from car owners - based on forum data and owner reports. Updated regularly.',
+      subtitle: 'What people actually paid for repairs and servicing in Israel: averages and ranges from customer reports on Midrag, incl. VAT.',
       home: 'Home',
       breadcrumb: 'Repair Costs',
       commonTitle: 'Common Repairs - Quick Reference',

@@ -5,6 +5,7 @@ import { getAllMakes } from '@/lib/carsDb';
 import { getHostLocale, getBaseUrl } from '@/lib/hostLocale';
 import { translations } from '@/lib/translations';
 import { getValidatedRepairReports } from '@/lib/repairReports';
+import { MIDRAG_PRICES, MIDRAG_GROUPS, MIDRAG_GARAGE_RATES, MIDRAG_CHECKED_ON } from '@/data/midrag-repair-prices';
 
 export const revalidate = 3600; // cache 1 hour
 
@@ -27,20 +28,6 @@ interface RepairCostRow {
   repair_key: string; repair_name_he: string; repair_name_en?: string; cost_min_ils: number; cost_max_ils: number;
   category: string; applies_to: string; notes?: string;
 }
-
-// Common issues per category - known Israeli market pain points
-const COMMON_ISSUES = [
-  { issue: 'ממיר קטליטי (קטליזטור)', issueEn: 'Catalytic Converter', minIls: 1400, maxIls: 7000, category: 'engine', note: 'שחזור: ₪1,400-1,800. מקורי: ₪4,000-7,000', noteEn: 'Rebuilt: $380-$490. OEM: $1,100-$1,920' },
-  { issue: 'רצועת תזמון', issueEn: 'Timing Belt', minIls: 1100, maxIls: 2800, category: 'engine', note: 'חובה להחליף כל 60-80K ק"מ. כולל פומפת מים', noteEn: 'Replace every 60-80K km. Includes water pump' },
-  { issue: 'בלמים קדמיים', issueEn: 'Front Brakes', minIls: 500, maxIls: 1400, category: 'brakes', note: 'רפידות + צלחות. SUV יקר יותר', noteEn: 'Pads + rotors. SUV costs more' },
-  { issue: 'טיפול 10,000 ק"מ', issueEn: '10,000 km Service', minIls: 450, maxIls: 1400, category: 'service', note: 'שמן + פילטרים. יבואן מורשה יקר יותר', noteEn: 'Oil + filters. Authorized dealer costs more' },
-  { issue: 'מצבר', issueEn: 'Battery', minIls: 500, maxIls: 1900, category: 'electrical', note: 'רגיל: ₪500-1,000. Start-Stop: ₪1,000-1,900', noteEn: 'Standard: $140-$275. Start-Stop: $275-$520' },
-  { issue: 'כיוון פרונט', issueEn: 'Wheel Alignment', minIls: 150, maxIls: 600, category: 'suspension', note: '2 גלגלים. 4 גלגלים: ₪350-800', noteEn: '2 wheels. 4 wheels: $95-$220' },
-  { issue: 'מסרק הגה', issueEn: 'Steering Rack', minIls: 800, maxIls: 3000, category: 'suspension', note: 'יד שנייה: ₪800-1,200. חדש: ₪2,200-3,000', noteEn: 'Used: $220-$330. New: $600-$820' },
-  { issue: 'מזרקי דלק', issueEn: 'Fuel Injectors', minIls: 1500, maxIls: 2500, category: 'engine', note: 'חלקים + עבודה. ניקוי בלבד: ₪250-400', noteEn: 'Parts + labor. Cleaning only: $70-$110' },
-  { issue: 'החלפת שמן', issueEn: 'Oil Change', minIls: 180, maxIls: 700, category: 'engine', note: 'כולל פילטר. SUV: יותר נפח שמן', noteEn: 'Includes filter. SUV: larger oil capacity' },
-  { issue: 'מצתים', issueEn: 'Spark Plugs', minIls: 200, maxIls: 1200, category: 'engine', note: 'רגיל: ₪200-300. אירידיום (100K): ₪500-1,200', noteEn: 'Standard: $55-$82. Iridium (100K km): $140-$330' },
-];
 
 export default async function RepairsPage() {
   const locale = await getHostLocale();
@@ -85,13 +72,15 @@ export default async function RepairsPage() {
     else grouped[cost.category]!.push(cost);
   }
 
+  const fmtIls = (n: number) => isEn ? `$${Math.round(n / 3.65).toLocaleString('en-US')}` : `₪${n.toLocaleString('he-IL')}`;
+  const fmtMonth = (d: string) => { const [y, m] = d.split('-'); return `${Number(m)}/${y}`; };
   const jsonLd = {
     '@context': 'https://schema.org',
     '@type': 'FAQPage',
-    mainEntity: COMMON_ISSUES.map(issue => ({
+    mainEntity: MIDRAG_PRICES.filter(p => p.group !== 'brand').slice(0, 15).map(p => ({
       '@type': 'Question',
-      name: `כמה עולה ${issue.issue} בישראל?`,
-      acceptedAnswer: { '@type': 'Answer', text: `${issue.issue} עולה ₪${issue.minIls.toLocaleString()}-₪${issue.maxIls.toLocaleString()} בישראל. ${issue.note}.` },
+      name: `כמה עולה ${p.he}?`,
+      acceptedAnswer: { '@type': 'Answer', text: `לפי דיווחי לקוחות במידרג (עודכן ${fmtMonth(p.updated)}), הממוצע ששולם הוא ₪${p.avg.toLocaleString('he-IL')} כולל מע״מ, ושולמו בין ₪${p.min.toLocaleString('he-IL')} ל-₪${p.max.toLocaleString('he-IL')}.` },
     })),
   };
 
@@ -109,22 +98,47 @@ export default async function RepairsPage() {
         <h1 style={{ fontSize: 'clamp(1.5rem,4vw,2rem)', fontWeight: 900, marginBottom: 8 }}>{rp.title}</h1>
         <p style={{ color: 'var(--text-muted)', marginBottom: 32, fontSize: '0.9375rem' }}>{rp.subtitle}</p>
 
-        {/* Common issues quick-reference */}
+        {/* Prices customers reported paying on Midrag, grouped; every card links to its source page */}
+        {MIDRAG_GROUPS.map(g => {
+          const items = MIDRAG_PRICES.filter(p => p.group === g.key);
+          if (!items.length) return null;
+          return (
+            <section key={g.key} style={{ marginBottom: 24 }}>
+              <h2 style={{ fontSize: '1.05rem', fontWeight: 800, marginBottom: g.note ? 4 : 10 }}>{isEn ? g.en : g.he}</h2>
+              {g.note && <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', margin: '0 0 10px' }}>{isEn ? g.note.en : g.note.he}</p>}
+              <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
+                {items.map((p, i) => (
+                  <div key={p.key} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '10px 14px', borderTop: i ? '1px solid var(--border)' : 'none' }}>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ fontWeight: 600, fontSize: '0.88rem', lineHeight: 1.35 }}>{isEn ? p.en : p.he}</div>
+                      <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginTop: 2, lineHeight: 1.4 }}>
+                        {isEn ? `Paid ${fmtIls(p.min)} to ${fmtIls(p.max)}` : `שולם ${fmtIls(p.min)} עד ${fmtIls(p.max)}`}
+                        {' · '}{fmtMonth(p.updated)}{' · '}
+                        <a href={p.url} target="_blank" rel="nofollow noopener noreferrer" style={{ color: 'var(--accent)', textDecoration: 'none' }}>{isEn ? 'Midrag' : 'מידרג'}</a>
+                      </div>
+                    </div>
+                    <div style={{ textAlign: 'end', flexShrink: 0 }}>
+                      <div style={{ fontSize: '1.05rem', fontWeight: 900, color: 'var(--accent)', lineHeight: 1.1 }}>{fmtIls(p.avg)}</div>
+                      <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)' }}>{isEn ? 'average' : 'ממוצע'}</div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </section>
+          );
+        })}
+
+        {/* Garage-published rates (not customer payments) */}
         <section style={{ marginBottom: 40 }}>
-          <h2 style={{ fontSize: '1.1rem', fontWeight: 700, marginBottom: 16 }}>{rp.commonTitle}</h2>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: 10 }}>
-            {COMMON_ISSUES.map(item => (
-              <div key={item.issue} style={{
-                background: 'var(--surface)', border: '1px solid var(--border)',
-                borderRadius: 12, padding: '14px 16px',
-              }}>
-                <div style={{ fontWeight: 700, fontSize: '0.9rem', marginBottom: 4 }}>{isEn ? item.issueEn : item.issue}</div>
-                <div style={{ fontSize: '1.15rem', fontWeight: 800, color: 'var(--accent)', marginBottom: 4 }}>
-                  {isEn
-                    ? `$${Math.round(item.minIls / 3.65).toLocaleString()}-$${Math.round(item.maxIls / 3.65).toLocaleString()}`
-                    : `₪${item.minIls.toLocaleString()}-₪${item.maxIls.toLocaleString()}`}
-                </div>
-                <div style={{ fontSize: '0.73rem', color: 'var(--text-muted)', lineHeight: 1.4 }}>{isEn ? item.noteEn : item.note}</div>
+          <h2 style={{ fontSize: '1.05rem', fontWeight: 800, marginBottom: 4 }}>{isEn ? 'Garage rates' : 'תעריפי מוסכים'}</h2>
+          <p style={{ fontSize: '0.78rem', color: 'var(--text-muted)', margin: '0 0 12px' }}>
+            {isEn ? 'Average of the rates garages publish on Midrag - not prices customers paid.' : 'ממוצע המחירונים שהמוסכים עצמם מפרסמים במידרג - לא מחירים שלקוחות שילמו.'}
+          </p>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: 8 }}>
+            {MIDRAG_GARAGE_RATES.map(r => (
+              <div key={r.he} style={{ display: 'flex', justifyContent: 'space-between', gap: 8, padding: '10px 14px', background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 10, fontSize: '0.85rem' }}>
+                <span>{isEn ? r.en : r.he}</span>
+                <span style={{ fontWeight: 700, whiteSpace: 'nowrap' }}>{isEn ? `${fmtIls(r.min)}–${fmtIls(r.max)}` : `${fmtIls(r.min)} עד ${fmtIls(r.max)}`}</span>
               </div>
             ))}
           </div>
@@ -212,7 +226,11 @@ export default async function RepairsPage() {
 
         {/* Sources note */}
         <div style={{ marginTop: 32, padding: '14px 18px', background: 'var(--bg-muted)', borderRadius: 10, fontSize: '0.78rem', color: 'var(--text-muted)', lineHeight: 1.6 }}>
-          <strong>{rp.laborNote}</strong>
+          {isEn ? (
+            <>Prices are what Midrag (midrag.co.il) members reported actually paying, incl. VAT: the average and the lowest and highest payment. Midrag doesn&apos;t publish how many reports each price is based on. The pages were updated between January and July 2025 (checked {MIDRAG_CHECKED_ON}). Every garage sets its own rates, so these are not a quote for your car.</>
+          ) : (
+            <>המחירים הם מה שחברי מידרג (midrag.co.il) דיווחו ששילמו בפועל, כולל מע״מ: הממוצע, והתשלום הנמוך והגבוה ביותר שדווח. מידרג לא מפרסמת על כמה דיווחים מבוסס כל מחיר. הדפים עודכנו בין ינואר ליולי 2025 (נבדק ב-{MIDRAG_CHECKED_ON.split('-').reverse().join('.')}). כל מוסך קובע את המחיר שלו, ולכן זו לא הצעת מחיר לרכב שלכם.</>
+          )}
         </div>
       </div>
     </div>
