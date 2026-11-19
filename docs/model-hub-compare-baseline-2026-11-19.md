@@ -2,8 +2,8 @@
 
 Change: model hubs get a "popular comparisons" block ranked by real GSC clicks; Hebrew hub
 titles carry the English model name; `/cars/compare` groups lead with the most-clicked pairs
-and has a shorter, structured intro. The comparison pages' links back to the model pages were
-left as they are ("לדף הדגם ←") - a design choice, so they still pass weight but no anchor text.
+and has a shorter, structured intro. Comparison pages link back to each model with descriptive
+anchors ("חוות דעת על <model>", "תקלות נפוצות ב<model>") instead of "לדף הדגם ←".
 Source data: `src/data/top-compare-pairs.ts` (GSC, 90 days to 2026-11-14).
 
 ## Baseline (sc-domain:carissues.co.il, 90 days to 2026-11-14)
