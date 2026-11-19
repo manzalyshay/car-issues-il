@@ -238,13 +238,6 @@ export default async function CarYearPage({ params }: Props) {
                 {isEn ? `${make.nameEn} ${model.nameEn} ${year}` : `${make.nameHe} ${model.nameHe} ${year}`}
               </h1>
               {!isEn && <div style={{ fontSize: 13.5, color: '#9db1d4' }}>{make.nameEn} {model.nameEn} {year}</div>}
-              {/* Link up to the model hub, worded like the hub's own title, so Google treats the hub
-                  (not this year page) as the page for the bare model name. */}
-              <Link href={`/cars/${make.slug}/${model.slug}`} style={{ display: 'inline-block', marginTop: 6, fontSize: 12.5, color: '#c7d6f0', textDecoration: 'underline', textUnderlineOffset: 3 }}>
-                {isEn
-                  ? `All years: ${make.nameEn} ${model.nameEn} reviews & common problems`
-                  : `כל השנים: ${make.nameHe} ${model.nameHe} – חוות דעת ובעיות נפוצות`}
-              </Link>
 
               <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginTop: 9, flexWrap: 'wrap' }}>
                 {avgRating !== null && (
@@ -271,6 +264,11 @@ export default async function CarYearPage({ params }: Props) {
               {/* Year selector pills */}
               <div style={{ display: 'flex', alignItems: 'center', gap: 5, flexWrap: 'wrap', marginTop: 10 }}>
                 <span style={{ fontSize: 11, color: '#9db1d4', fontWeight: 600 }}>{cp.yearLabel}:</span>
+                {/* Link up to the model hub as the first pill: no extra height, and it tells Google
+                    the hub (not this year page) is the main page for the bare model name. */}
+                <Link href={`/cars/${make.slug}/${model.slug}`} title={isEn ? `${make.nameEn} ${model.nameEn} reviews & common problems` : `${make.nameHe} ${model.nameHe} – חוות דעת ובעיות נפוצות`} style={{ fontSize: 11, padding: '2px 8px', borderRadius: 999, border: '1px solid rgba(255,255,255,.5)', color: '#fff', fontWeight: 700, textDecoration: 'none' }}>
+                  {isEn ? 'All years' : 'כל השנים'}
+                </Link>
                 {model.years.slice(0, 10).map(y => (
                   y === yearNum ? (
                     <span key={y} style={{ fontSize: 11, padding: '2px 8px', borderRadius: 999, background: '#fff', color: '#0d1b2f', fontWeight: 700 }}>{y}</span>
