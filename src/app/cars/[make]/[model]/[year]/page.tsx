@@ -171,8 +171,8 @@ export default async function CarYearPage({ params }: Props) {
   const makeName = isEn ? make.nameEn : make.nameHe;
   const modelName = isEn ? model.nameEn : model.nameHe;
   const yearPill: React.CSSProperties = {
-    flexShrink: 0, fontSize: 12.5, lineHeight: 1, padding: '7px 12px', borderRadius: 999,
-    border: '1px solid rgba(255,255,255,.28)', color: '#c7d6f0', textDecoration: 'none', whiteSpace: 'nowrap',
+    flexShrink: 0, fontSize: 13, lineHeight: 1, padding: '8px 11px', borderRadius: 9,
+    color: '#c7d6f0', textDecoration: 'none', whiteSpace: 'nowrap', fontVariantNumeric: 'tabular-nums',
   };
   // Client component props are serialized into the page HTML regardless of what's
   // actually rendered - never ship Hebrew-only fields to the English site.
@@ -269,21 +269,21 @@ export default async function CarYearPage({ params }: Props) {
               {/* Year selector: one row that scrolls sideways (no wrapping), "all years" first.
                   The "all years" pill links up to the model hub, which tells Google the hub - not
                   this year page - is the main page for the bare model name. */}
-              <style>{`.year-pills{scrollbar-width:none}.year-pills::-webkit-scrollbar{display:none}`}</style>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 12 }}>
-                <span style={{ fontSize: 12, color: '#9db1d4', fontWeight: 600, flexShrink: 0 }}>{cp.yearLabel.replace(/:$/, '')}:</span>
-                <div className="year-pills" id="year-pills" style={{ display: 'flex', gap: 6, overflowX: 'auto', paddingBlock: 2, minWidth: 0 }}>
-                  <Link href={`/cars/${make.slug}/${model.slug}`} title={isEn ? `${make.nameEn} ${model.nameEn} reviews & common problems` : `${make.nameHe} ${model.nameHe} – חוות דעת ובעיות נפוצות`} style={{ ...yearPill, background: 'rgba(255,255,255,.12)', color: '#fff', fontWeight: 700 }}>
-                    {isEn ? 'All years' : 'כל השנים'}
-                  </Link>
+              <style>{`.year-pills{scrollbar-width:none;-webkit-mask-image:linear-gradient(to left,#000 92%,transparent);mask-image:linear-gradient(to left,#000 92%,transparent)}.year-pills::-webkit-scrollbar{display:none}.yp-chip:hover{background:rgba(255,255,255,.12)}`}</style>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 14 }}>
+                <Link href={`/cars/${make.slug}/${model.slug}`} title={isEn ? `${make.nameEn} ${model.nameEn} reviews & common problems` : `${make.nameHe} ${model.nameHe} – חוות דעת ובעיות נפוצות`} style={{ flexShrink: 0, fontSize: 12.5, fontWeight: 700, color: '#fff', textDecoration: 'none', padding: '8px 12px', borderRadius: 10, border: '1px solid rgba(255,255,255,.28)', whiteSpace: 'nowrap' }}>
+                  {isEn ? 'All years' : 'כל השנים'}
+                </Link>
+                <nav aria-label={isEn ? 'Model year' : 'שנת דגם'} className="year-pills" id="year-pills" style={{ display: 'flex', gap: 2, overflowX: 'auto', minWidth: 0, padding: 3, borderRadius: 12, background: 'rgba(255,255,255,.07)' }}>
                   {[...model.years].sort((x, y) => y - x).map(y => (
                     y === yearNum ? (
-                      <span key={y} id="year-pill-current" aria-current="page" style={{ ...yearPill, background: '#fff', color: '#0d1b2f', borderColor: '#fff', fontWeight: 800 }}>{y}</span>
+                      <span key={y} id="year-pill-current" aria-current="page" style={{ ...yearPill, background: '#fff', color: '#0d1b2f', fontWeight: 800, boxShadow: '0 1px 4px rgba(0,0,0,.25)' }}>{y}</span>
                     ) : (
-                      <Link key={y} href={`/cars/${make.slug}/${model.slug}/${y}`} style={yearPill}>{y}</Link>
+                      <Link key={y} href={`/cars/${make.slug}/${model.slug}/${y}`} className="yp-chip" style={yearPill}>{y}</Link>
                     )
                   ))}
-                </div>
+                  <span aria-hidden="true" style={{ flexShrink: 0, width: 20 }} />
+                </nav>
               </div>
               <YearPillsScroll />
 
