@@ -359,22 +359,30 @@ export default async function ModelPageView({ makeSlug, modelSlug, initialTab, v
                   </Link>
                 </div>
               )}
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, alignItems: 'center' }}>
-                {currentYear && (
+              {currentYear && (
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, alignItems: 'center' }}>
                   <Link href={`/cars/${make.slug}/${model.slug}/${currentYear}`} style={{ ...chip, background: 'var(--accent)', color: '#fff', fontWeight: 700 }}>
                     {isEn ? `${make.nameEn} ${model.nameEn} ${currentYear}` : `${make.nameHe} ${model.nameHe} ${currentYear}: מחיר וגרסאות`}
                   </Link>
-                )}
-                {topCompares.length > 0 && <span style={label}>{isEn ? 'Compare:' : 'השוואה:'}</span>}
-                {topCompares.map((pair) => {
-                  const other = pair.a.key === `${makeSlug}/${modelSlug}` ? pair.b : pair.a;
-                  return (
-                    <Link key={`qc-${other.key}`} href={pair.path} style={chip}>
-                      {isEn ? `vs ${other.make.nameEn} ${other.model.nameEn}` : `מול ${other.make.nameHe} ${other.model.nameHe}`}
-                    </Link>
-                  );
-                })}
-              </div>
+                </div>
+              )}
+              {topCompares.length > 0 && (
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, alignItems: 'center' }}>
+                  <span style={label}>{isEn ? 'Popular comparisons:' : 'השוואות פופולריות:'}</span>
+                  {/* Ordered by Search Console clicks (comparePairsForModel). Full pair names as
+                      anchor text - the same wording people search for ("X מול Y"). */}
+                  {topCompares.map((pair) => {
+                    const other = pair.a.key === `${makeSlug}/${modelSlug}` ? pair.b : pair.a;
+                    return (
+                      <Link key={`qc-${other.key}`} href={pair.path} style={chip}>
+                        {isEn
+                          ? `${model.nameEn} vs ${other.make.nameEn} ${other.model.nameEn}`
+                          : `${model.nameHe} מול ${other.make.nameHe} ${other.model.nameHe}`}
+                      </Link>
+                    );
+                  })}
+                </div>
+              )}
             </nav>
           );
         })()}

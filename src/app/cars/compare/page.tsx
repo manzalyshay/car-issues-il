@@ -5,7 +5,7 @@ import { getHostLocale, getBaseUrl } from '@/lib/hostLocale';
 import { translations } from '@/lib/translations';
 import { getModelPriceMins } from '@/lib/trimSpecsDb';
 import { resolvePairs, type ResolvedPair } from '@/lib/comparePairs';
-import { TOP_COMPARE_PAIRS } from '@/data/top-compare-pairs';
+import { TOP_COMPARE_PAIRS, COMPARE_PAIR_CLICKS } from '@/data/top-compare-pairs';
 import { SEARCHED_COMPARE_PAIRS } from '@/data/searched-compare-pairs';
 import { CompareClient } from './CompareClient';
 
@@ -87,17 +87,20 @@ export default async function ComparePage() {
   const pool = resolvePairs(makes, [...TOP_COMPARE_PAIRS, ...SEARCHED_COMPARE_PAIRS, ...POPULAR_PAIRS]);
   const topPaths = new Set(topPairs.map((p) => p.path));
   const morePairs = pool.filter((p) => !topPaths.has(p.path));
+  // Segment and price groups pick from every pair with Search Console clicks (click order),
+  // then the curated lists - so each group leads with the pages people actually open.
+  const rankedPool = resolvePairs(makes, [...COMPARE_PAIR_CLICKS.map(([a, b]) => [a, b] as const), ...SEARCHED_COMPARE_PAIRS, ...POPULAR_PAIRS]);
 
   const modelCount = makes.reduce((s, m) => s + m.models.length, 0);
   const categoryBlocks = CATEGORY_ENTRIES.map((c) => {
     const inCat = (p: ResolvedPair) => (c.dbCats as readonly string[]).includes(p.a.model.category) && (c.dbCats as readonly string[]).includes(p.b.model.category);
     const count = makes.reduce((s, m) => s + m.models.filter((mo) => (c.dbCats as readonly string[]).includes(mo.category)).length, 0);
-    return { ...c, count, pairs: pool.filter(inCat).slice(0, 4) };
+    return { ...c, count, pairs: rankedPool.filter(inCat).slice(0, 6) };
   }).filter((c) => c.count > 0);
   const budgetBlocks = BUDGET_BANDS.map((b) => {
     const inBand = (key: string) => { const p = priceMins.get(key); return p != null && p >= b.min && p < b.max; };
     const count = [...priceMins.keys()].filter(inBand).length;
-    return { ...b, count, pairs: pool.filter((p) => inBand(p.a.key) && inBand(p.b.key)).slice(0, 4) };
+    return { ...b, count, pairs: rankedPool.filter((p) => inBand(p.a.key) && inBand(p.b.key)).slice(0, 6) };
   }).filter((b) => b.pairs.length > 0);
 
   const PairLink = ({ p }: { p: ResolvedPair }) => (
@@ -153,12 +156,30 @@ export default async function ComparePage() {
           {isEn ? (
             <>
               <p style={{ margin: '0 0 10px' }}>Compare any two of the {modelCount} models from {makes.length} brands on CarIssues. Each comparison puts side by side key specs (power, fuel consumption, boot space), owner reviews available on this site, recall records and an AI summary of the information available for each model.</p>
+              {topPairs.length >= 3 && (
+                <p style={{ margin: '0 0 10px' }}>
+                  The most-opened comparisons are between family crossovers and SUVs, such as{' '}
+                  {topPairs.slice(0, 3).map((p, i) => (
+                    <span key={p.path}>{i > 0 && (i === 2 ? ' and ' : ', ')}<Link href={p.path} style={{ color: 'var(--accent)', textDecoration: 'none' }}>{label(p, 'a')} vs {label(p, 'b')}</Link></span>
+                  ))}
+                  .
+                </p>
+              )}
               <p style={{ margin: '0 0 10px' }}>How to use it: pick a make and model in both boxes above to open the full comparison page - with a short verdict on who each car suits, common questions and links to both model pages. You can also start from one of the most-read comparisons below, or browse by body type or price range.</p>
               <p style={{ margin: 0 }}>Data is refreshed regularly. When we don&apos;t have a figure for one of the models, the comparison simply leaves it out.</p>
             </>
           ) : (
             <>
               <p style={{ margin: '0 0 10px' }}>בעמוד הזה אפשר להשוות בין כל שני דגמים מתוך {modelCount} דגמים של {makes.length} יצרנים שנמכרים או נמכרו בישראל. כל השוואה מציגה זה לצד זה מחירוני גרסאות בישראל, נתוני מפרט, ביקורות בעלים הזמינות באתר, נתוני קריאות חזרה בארה״ב וסיכום של המידע הזמין לכל דגם.</p>
+              {topPairs.length >= 3 && (
+                <p style={{ margin: '0 0 10px' }}>
+                  ההשוואות שהגולשים פותחים הכי הרבה הן בין קרוסאוברים ורכבי SUV משפחתיים, למשל{' '}
+                  {topPairs.slice(0, 3).map((p, i) => (
+                    <span key={p.path}>{i > 0 && (i === 2 ? ' ו' : ', ')}<Link href={p.path} style={{ color: 'var(--accent)', textDecoration: 'none' }}>{label(p, 'a')} מול {label(p, 'b')}</Link></span>
+                  ))}
+                  . מי שמתלבט בין שני דגמים מוצא בכל השוואה בין רכבים את ההבדלים במחיר, בגודל ובאמינות, וגם את התקלות הנפוצות שבעלי הרכב מדווחים עליהן.
+                </p>
+              )}
               <p style={{ margin: '0 0 10px' }}>איך משתמשים: בוחרים יצרן ודגם בשני השדות למעלה ועוברים לדף ההשוואה המלא - עם שורה תחתונה למי מתאים כל רכב, שאלות נפוצות וקישורים לדפי שני הדגמים. אפשר גם להתחיל מאחת ההשוואות הנקראות ביותר למטה, או לבחור לפי סוג רכב או טווח מחיר.</p>
               <p style={{ margin: 0 }}>הנתונים מתעדכנים מעת לעת. כשאין לנו נתון מסוים על אחד הדגמים, ההשוואה פשוט לא מציגה אותו.</p>
             </>

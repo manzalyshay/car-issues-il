@@ -4,6 +4,7 @@ import { getReviewsForModel, getAverageRating } from '@/lib/reviewsDb';
 import { getTrimSpecs } from '@/lib/trimSpecsDb';
 import { getHostLocale, getBaseUrl } from '@/lib/hostLocale';
 import { getOgImage } from '@/lib/carImages';
+import { hebrewModelTitle } from '@/lib/modelTitle';
 import ModelPageView from './ModelPageView';
 
 export const revalidate = 900; // cache 15 minutes
@@ -11,19 +12,6 @@ export const revalidate = 900; // cache 15 minutes
 interface Props {
   params: Promise<{ make: string; model: string }>;
   searchParams: Promise<{ tab?: string }>;
-}
-
-/**
- * "<model> — חוות דעת, בעיות נפוצות ומחיר", kept to 60 characters where possible
- * (no "| CarIssues" suffix). "ומחיר" only when the model has an Israeli trim price.
- * If the full name pushes it over 60, the make is dropped from the front.
- */
-function hebrewModelTitle(makeHe: string, modelHe: string, yearSuffix: string, hasPrice: boolean): string {
-  const tail = hasPrice ? 'חוות דעת, בעיות נפוצות ומחיר' : 'חוות דעת ובעיות נפוצות';
-  const full = `${makeHe} ${modelHe}${yearSuffix} — ${tail}`;
-  if (full.length <= 60) return full;
-  const short = `${modelHe}${yearSuffix} — ${tail}`;
-  return short.length < full.length && modelHe.length >= 3 ? short : full;
 }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
@@ -84,7 +72,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const trimDesc = trimNames ? ` גימורים: ${trimNames}${trims.length > 6 ? ' ועוד' : ''}.` : '';
   const recentYears = model.years.slice(0, 4).join(', ');
   return {
-    title: { absolute: hebrewModelTitle(make.nameHe, model.nameHe, yearSuffix, minPrice != null) },
+    title: { absolute: hebrewModelTitle(make.nameHe, model.nameHe, make.nameEn, model.nameEn, minPrice != null) },
     description: `${reviews.length > 0 ? `${reviews.length} ביקורות אמיתיות` : 'ביקורות אמיתיות'} על ${make.nameHe} ${model.nameHe} (${make.nameEn} ${model.nameEn})${yearRange ? ` שנים ${yearRange}` : ''}${avgRating ? `. דירוג ממוצע ${avgRating.toFixed(1)}/5` : ''}.${priceDesc}${recentYears ? ` חוות דעת ${recentYears}.` : ''}${trimDesc} יתרונות, חסרונות ובעיות נפוצות מבעלי רכב בישראל.`.slice(0, 160),
     alternates: { canonical: url, languages: { he: url, en: `https://carissues.net/cars/${make.slug}/${model.slug}`, 'x-default': `https://carissues.net/cars/${make.slug}/${model.slug}` } },
     openGraph: {
