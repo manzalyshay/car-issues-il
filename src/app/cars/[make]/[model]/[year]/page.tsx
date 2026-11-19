@@ -1,4 +1,5 @@
 import { trimNameEn } from '@/lib/trimLabels';
+import { hebrewYearTitle } from '@/lib/yearTitle';
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
@@ -106,16 +107,16 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   }
 
   const ratingStr = avgRating ? ` ⭐ ${avgRating.toFixed(1)}` : '';
-  const reviewPart = yearReviews.length > 0
-    ? `${yearReviews.length} ביקורות בעלים${ratingStr}`
-    : '';
   const recallPartHe = metaRecalls.length > 0 ? ` ${metaRecalls.length === 1 ? 'ריקול אחד' : `${metaRecalls.length} ריקולים`}.` : '';
+  // Newest year = new-car price intent; older years = used-car intent (src/lib/yearTitle.ts).
+  const isNewest = (model.years ?? []).length > 0 && yearNum === Math.max(...(model.years ?? []));
   return {
-    // No reviews yet: one suffix, so "ואמינות" isn't repeated and the title isn't cut off in Google.
-    title: yearReviews.length > 0
-      ? `${make.nameHe} ${model.nameHe} ${year}${priceHook} - ${reviewPart} | מחיר, מפרט ואמינות`
-      : `${make.nameHe} ${model.nameHe} ${year}${priceHook} – מחיר, חוות דעת ואמינות`,
-    description: `${yearReviews.length > 0 ? `${yearReviews.length} ביקורות אמיתיות על` : 'כל מה שצריך לדעת על'} ${make.nameHe} ${model.nameHe} ${year} (${make.nameEn} ${model.nameEn})${avgRating ? ` - דירוג ממוצע ${avgRating.toFixed(1)}/5` : ''}.${priceDesc}${trimDesc}${recallPartHe} יתרונות, חסרונות ובעיות נפוצות מבעלי רכב בישראל.`.slice(0, 160),
+    title: { absolute: hebrewYearTitle({
+      makeHe: make.nameHe, modelHe: model.nameHe, year: yearNum, isNewest,
+      priceHook: isNewest ? priceHook.replace(/^ · /, ' ') : '',
+      reviewCount: yearReviews.length, rating: avgRating,
+    }) },
+    description: `${yearReviews.length > 0 ? `${yearReviews.length} ביקורות אמיתיות על` : isNewest ? 'כל מה שצריך לדעת על' : 'חוות דעת ותקלות נפוצות ב'}${isNewest || yearReviews.length > 0 ? ' ' : ''}${make.nameHe} ${model.nameHe} ${year}${isNewest ? '' : ' יד שנייה'} (${make.nameEn} ${model.nameEn})${avgRating ? ` - דירוג ממוצע ${avgRating.toFixed(1)}/5` : ''}.${isNewest ? priceDesc : priceDesc.replace(/ מחיר( מומלץ)?:/, ' מחיר כחדש:')}${trimDesc}${recallPartHe} יתרונות, חסרונות ובעיות נפוצות מבעלי רכב בישראל.`.slice(0, 160),
     robots: indexable ? { index: true, follow: true } : { index: false, follow: true },
     alternates: { canonical: url, languages: { he: url, en: `https://carissues.net/cars/${make.slug}/${model.slug}/${year}`, 'x-default': `https://carissues.net/cars/${make.slug}/${model.slug}/${year}` } },
     openGraph: { title: `${make.nameHe} ${model.nameHe} ${year}${ratingStr} | CarIssues IL`, description: `ביקורות ואמינות - ${make.nameHe} ${model.nameHe} ${year}`, url, images: ogImages },
@@ -237,6 +238,13 @@ export default async function CarYearPage({ params }: Props) {
                 {isEn ? `${make.nameEn} ${model.nameEn} ${year}` : `${make.nameHe} ${model.nameHe} ${year}`}
               </h1>
               {!isEn && <div style={{ fontSize: 13.5, color: '#9db1d4' }}>{make.nameEn} {model.nameEn} {year}</div>}
+              {/* Link up to the model hub, worded like the hub's own title, so Google treats the hub
+                  (not this year page) as the page for the bare model name. */}
+              <Link href={`/cars/${make.slug}/${model.slug}`} style={{ display: 'inline-block', marginTop: 6, fontSize: 12.5, color: '#c7d6f0', textDecoration: 'underline', textUnderlineOffset: 3 }}>
+                {isEn
+                  ? `All years: ${make.nameEn} ${model.nameEn} reviews & common problems`
+                  : `כל השנים: ${make.nameHe} ${model.nameHe} – חוות דעת ובעיות נפוצות`}
+              </Link>
 
               <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginTop: 9, flexWrap: 'wrap' }}>
                 {avgRating !== null && (
