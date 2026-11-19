@@ -1,8 +1,9 @@
 # Model hubs + /cars/compare: baseline to watch (2026-11-19)
 
-Change: comparison pages link back to each model hub with descriptive anchor text;
-model hubs get a "popular comparisons" block ranked by real GSC clicks; Hebrew hub
-titles carry the English model name; `/cars/compare` groups lead with the most-clicked pairs.
+Change: model hubs get a "popular comparisons" block ranked by real GSC clicks; Hebrew hub
+titles carry the English model name; `/cars/compare` groups lead with the most-clicked pairs
+and has a shorter, structured intro. The comparison pages' links back to the model pages were
+left as they are ("לדף הדגם ←") - a design choice, so they still pass weight but no anchor text.
 Source data: `src/data/top-compare-pairs.ts` (GSC, 90 days to 2026-11-14).
 
 ## Baseline (sc-domain:carissues.co.il, 90 days to 2026-11-14)
