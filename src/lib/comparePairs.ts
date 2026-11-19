@@ -1,4 +1,4 @@
-import { TOP_COMPARE_PAIRS } from '@/data/top-compare-pairs';
+import { TOP_COMPARE_PAIRS, COMPARE_PAIR_CLICKS } from '@/data/top-compare-pairs';
 import { SEARCHED_COMPARE_PAIRS } from '@/data/searched-compare-pairs';
 import type { CarMake, CarModel } from '@/data/cars';
 
@@ -43,12 +43,16 @@ export function curatedPairs(makes: CarMake[]): ResolvedPair[] {
 }
 
 /**
- * Compare pages most relevant to one model: curated pairs involving it first, then
+ * Compare pages most relevant to one model: the pairs involving it that earn the most
+ * Search Console clicks (COMPARE_PAIR_CLICKS) first, then searched pairs, then
  * same-category models from the catalogue (same make first), up to `limit`.
  */
 export function comparePairsForModel(makes: CarMake[], makeSlug: string, modelSlug: string, limit = 5): ResolvedPair[] {
   const self = `${makeSlug}/${modelSlug}`;
-  const curated = curatedPairs(makes).filter((p) => p.a.key === self || p.b.key === self);
+  // COMPARE_PAIR_CLICKS is already in click order, so the model's best pages come first.
+  const byClicks = COMPARE_PAIR_CLICKS.filter(([a, b]) => a === self || b === self).map(([a, b]) => [a, b] as const);
+  const curated = resolvePairs(makes, [...byClicks, ...SEARCHED_COMPARE_PAIRS])
+    .filter((p) => p.a.key === self || p.b.key === self);
   const out = [...curated];
   const have = new Set(out.map((p) => p.path));
   const me = resolveKey(makes, self);

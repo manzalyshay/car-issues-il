@@ -216,7 +216,7 @@ function ComparePageInner({ showHeader = true }: { showHeader?: boolean }) {
   const showComparison = data1 && data2;
 
   return (
-    <div style={{ padding: '32px 0 80px' }}>
+    <div style={{ padding: showHeader ? '32px 0 80px' : '0 0 28px' }}>
       <style>{`
         @media (max-width: 640px) {
           .cmp-selector-row { flex-direction: column !important; }

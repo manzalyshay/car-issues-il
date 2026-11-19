@@ -5,7 +5,7 @@ import { getHostLocale, getBaseUrl } from '@/lib/hostLocale';
 import { translations } from '@/lib/translations';
 import { getModelPriceMins } from '@/lib/trimSpecsDb';
 import { resolvePairs, type ResolvedPair } from '@/lib/comparePairs';
-import { TOP_COMPARE_PAIRS } from '@/data/top-compare-pairs';
+import { TOP_COMPARE_PAIRS, COMPARE_PAIR_CLICKS } from '@/data/top-compare-pairs';
 import { SEARCHED_COMPARE_PAIRS } from '@/data/searched-compare-pairs';
 import { CompareClient } from './CompareClient';
 
@@ -87,17 +87,20 @@ export default async function ComparePage() {
   const pool = resolvePairs(makes, [...TOP_COMPARE_PAIRS, ...SEARCHED_COMPARE_PAIRS, ...POPULAR_PAIRS]);
   const topPaths = new Set(topPairs.map((p) => p.path));
   const morePairs = pool.filter((p) => !topPaths.has(p.path));
+  // Segment and price groups pick from every pair with Search Console clicks (click order),
+  // then the curated lists - so each group leads with the pages people actually open.
+  const rankedPool = resolvePairs(makes, [...COMPARE_PAIR_CLICKS.map(([a, b]) => [a, b] as const), ...SEARCHED_COMPARE_PAIRS, ...POPULAR_PAIRS]);
 
   const modelCount = makes.reduce((s, m) => s + m.models.length, 0);
   const categoryBlocks = CATEGORY_ENTRIES.map((c) => {
     const inCat = (p: ResolvedPair) => (c.dbCats as readonly string[]).includes(p.a.model.category) && (c.dbCats as readonly string[]).includes(p.b.model.category);
     const count = makes.reduce((s, m) => s + m.models.filter((mo) => (c.dbCats as readonly string[]).includes(mo.category)).length, 0);
-    return { ...c, count, pairs: pool.filter(inCat).slice(0, 4) };
+    return { ...c, count, pairs: rankedPool.filter(inCat).slice(0, 6) };
   }).filter((c) => c.count > 0);
   const budgetBlocks = BUDGET_BANDS.map((b) => {
     const inBand = (key: string) => { const p = priceMins.get(key); return p != null && p >= b.min && p < b.max; };
     const count = [...priceMins.keys()].filter(inBand).length;
-    return { ...b, count, pairs: pool.filter((p) => inBand(p.a.key) && inBand(p.b.key)).slice(0, 4) };
+    return { ...b, count, pairs: rankedPool.filter((p) => inBand(p.a.key) && inBand(p.b.key)).slice(0, 6) };
   }).filter((b) => b.pairs.length > 0);
 
   const PairLink = ({ p }: { p: ResolvedPair }) => (
@@ -148,21 +151,41 @@ export default async function ComparePage() {
       <CompareClient showHeader={false} />
 
       <div className="container" style={{ paddingBottom: 64 }}>
-        {/* Intro - template copy, counts are live */}
-        <section style={{ maxWidth: 820, marginBottom: 36, fontSize: '0.95rem', lineHeight: 1.8, color: 'var(--text-muted)' }}>
-          {isEn ? (
-            <>
-              <p style={{ margin: '0 0 10px' }}>Compare any two of the {modelCount} models from {makes.length} brands on CarIssues. Each comparison puts side by side key specs (power, fuel consumption, boot space), owner reviews available on this site, recall records and an AI summary of the information available for each model.</p>
-              <p style={{ margin: '0 0 10px' }}>How to use it: pick a make and model in both boxes above to open the full comparison page - with a short verdict on who each car suits, common questions and links to both model pages. You can also start from one of the most-read comparisons below, or browse by body type or price range.</p>
-              <p style={{ margin: 0 }}>Data is refreshed regularly. When we don&apos;t have a figure for one of the models, the comparison simply leaves it out.</p>
-            </>
-          ) : (
-            <>
-              <p style={{ margin: '0 0 10px' }}>בעמוד הזה אפשר להשוות בין כל שני דגמים מתוך {modelCount} דגמים של {makes.length} יצרנים שנמכרים או נמכרו בישראל. כל השוואה מציגה זה לצד זה מחירוני גרסאות בישראל, נתוני מפרט, ביקורות בעלים הזמינות באתר, נתוני קריאות חזרה בארה״ב וסיכום של המידע הזמין לכל דגם.</p>
-              <p style={{ margin: '0 0 10px' }}>איך משתמשים: בוחרים יצרן ודגם בשני השדות למעלה ועוברים לדף ההשוואה המלא - עם שורה תחתונה למי מתאים כל רכב, שאלות נפוצות וקישורים לדפי שני הדגמים. אפשר גם להתחיל מאחת ההשוואות הנקראות ביותר למטה, או לבחור לפי סוג רכב או טווח מחיר.</p>
-              <p style={{ margin: 0 }}>הנתונים מתעדכנים מעת לעת. כשאין לנו נתון מסוים על אחד הדגמים, ההשוואה פשוט לא מציגה אותו.</p>
-            </>
-          )}
+        {/* Intro - short lead, then scannable blocks (counts are live) */}
+        <section style={{ maxWidth: 820, marginBottom: 36, color: 'var(--text-muted)', fontSize: '0.92rem', lineHeight: 1.6 }}>
+          <p style={{ margin: '0 0 16px', fontSize: '1rem', color: 'var(--text)' }}>
+            {isEn
+              ? <>Compare any two of <strong>{modelCount} models</strong> from {makes.length} brands, side by side.</>
+              : <>השוו בין כל שני דגמים מתוך <strong>{modelCount} דגמים</strong> של {makes.length} יצרנים שנמכרים בישראל.</>}
+          </p>
+
+          <h2 style={{ fontSize: '0.95rem', fontWeight: 800, color: 'var(--text)', margin: '0 0 8px' }}>{isEn ? 'In every comparison' : 'מה יש בכל השוואה'}</h2>
+          <ul style={{ listStyle: 'none', padding: 0, margin: '0 0 18px', display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 170px), 1fr))', gap: 8 }}>
+            {(isEn
+              ? [['💰', 'Prices & trims'], ['⚙️', 'Specs & fuel use'], ['⭐', 'Reviews & problems'], ['🛡️', 'Recalls & verdict']]
+              : [['💰', 'מחירון גרסאות'], ['⚙️', 'מפרט וצריכת דלק'], ['⭐', 'ביקורות ותקלות'], ['🛡️', 'ריקולים ושורה תחתונה']]
+            ).map(([icon, text]) => (
+              <li key={text} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 12px', background: 'var(--surface-2)', border: '1px solid var(--border)', borderRadius: 10, color: 'var(--text)', fontSize: '0.85rem' }}>
+                <span aria-hidden="true">{icon}</span>{text}
+              </li>
+            ))}
+          </ul>
+
+          <h2 style={{ fontSize: '0.95rem', fontWeight: 800, color: 'var(--text)', margin: '0 0 8px' }}>{isEn ? 'How it works' : 'איך משתמשים'}</h2>
+          <ol style={{ listStyle: 'none', margin: '0 0 12px', padding: 0, display: 'flex', flexDirection: 'column', gap: 6 }}>
+            {(isEn
+              ? ['Pick two cars in the boxes above.', 'Open the full comparison and verdict.', 'Or browse by body type or price below.']
+              : ['בוחרים שני רכבים בשדות למעלה.', 'עוברים להשוואה המלאה ולשורה התחתונה.', 'או מדפדפים לפי סוג רכב או מחיר למטה.']
+            ).map((t, i) => (
+              <li key={t} style={{ display: 'flex', alignItems: 'baseline', gap: 8 }}>
+                <span aria-hidden="true" style={{ flexShrink: 0, width: 20, height: 20, borderRadius: '50%', background: 'var(--accent)', color: '#fff', fontSize: '0.72rem', fontWeight: 700, display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>{i + 1}</span>
+                {t}
+              </li>
+            ))}
+          </ol>
+          <p style={{ margin: 0, fontSize: '0.8rem' }}>
+            {isEn ? "When we don't have a figure for one of the models, the comparison leaves it out." : 'כשאין נתון לאחד הדגמים, ההשוואה לא מציגה אותו.'}
+          </p>
         </section>
 
         {topPairs.length > 0 && (

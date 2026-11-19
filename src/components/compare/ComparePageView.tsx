@@ -82,6 +82,16 @@ export default async function ComparePageView({ make1, model1, make2, model2, lo
   const sp = locale === 'ru' ? ru.compareStaticPage : translations[locale].compareStaticPage;
   const nameA = isHe ? `${mA.nameHe} ${modA.nameHe}` : `${mA.nameEn} ${modA.nameEn}`;
   const nameB = isHe ? `${mB.nameHe} ${modB.nameHe}` : `${mB.nameEn} ${modB.nameEn}`;
+  // Descriptive anchor text for the links back to each model's pages (model hubs rank far
+  // below the compare pages, which pass them most of their internal-link weight). Model name
+  // only - the full make + model is printed right above, and the header columns are narrow on
+  // mobile - except very short names (Mazda "3"). Hebrew "ב" before a Latin name gets a hyphen.
+  // Hebrew links have no arrow: the column fits ~20 characters on a phone. No-break spaces keep
+  // the English arrow and "מאזדה 3" from wrapping apart.
+  const shortHe = (ma: typeof mA, mo: typeof modA) => (mo.nameHe.length >= 3 ? mo.nameHe : `${ma.nameHe}\u00A0${mo.nameHe}`);
+  const withBet = (name: string) => `ב${/^[A-Za-z0-9]/.test(name) ? '-' : ''}${name}`;
+  const hubLinkText = (ma: typeof mA, mo: typeof modA) => heLink(tr({ he: `חוות דעת על ${shortHe(ma, mo)}`, en: `${mo.nameEn} reviews\u00A0→`, ru: `Отзывы о ${mo.nameEn}\u00A0→` }));
+  const issuesLinkText = (ma: typeof mA, mo: typeof modA) => heLink(tr({ he: `תקלות נפוצות ${withBet(shortHe(ma, mo))}`, en: `${mo.nameEn} common problems\u00A0→`, ru: `Проблемы ${mo.nameEn}\u00A0→` }));
 
   const avgA = reviewsA.length ? reviewsA.reduce((s, r) => s + r.rating, 0) / reviewsA.length : null;
   const avgB = reviewsB.length ? reviewsB.reduce((s, r) => s + r.rating, 0) / reviewsB.length : null;
@@ -479,14 +489,14 @@ export default async function ComparePageView({ make1, model1, make2, model2, lo
             </div>
             <div className="cmp-car-name" style={{ fontWeight: 900, fontSize: '1.15rem', textAlign: 'center' }}>{nameA}</div>
             {isHe && <div style={{ color: 'var(--text-muted)', fontSize: '0.875rem', textAlign: 'center' }}>{mA.nameEn} {modA.nameEn}</div>}
-            <Link href={`/cars/${make1}/${model1}`} style={{ fontSize: '0.8125rem', color: 'var(--accent)', textDecoration: 'none', display: 'block', marginTop: 8 }}>
-              {heLink(sp.modelPageLink)}
+            <Link href={`/cars/${make1}/${model1}`} style={{ fontSize: '0.75rem', color: 'var(--accent)', textDecoration: 'none', display: 'block', marginTop: 8 }}>
+              {hubLinkText(mA, modA)}
             </Link>
-            <Link href={`/cars/${make1}/${model1}/issues`} style={{ fontSize: '0.8125rem', color: 'var(--accent)', textDecoration: 'none', display: 'block', marginTop: 4 }}>
-              {heLink(sp.issuesLink)}
+            <Link href={`/cars/${make1}/${model1}/issues`} style={{ fontSize: '0.75rem', color: 'var(--accent)', textDecoration: 'none', display: 'block', marginTop: 4 }}>
+              {issuesLinkText(mA, modA)}
             </Link>
             {!isRu && modA.years.length > 0 && (
-              <Link href={`/cars/${make1}/${model1}/${Math.max(...modA.years)}`} style={{ fontSize: '0.8125rem', color: 'var(--accent)', textDecoration: 'none', display: 'block', marginTop: 4 }}>
+              <Link href={`/cars/${make1}/${model1}/${Math.max(...modA.years)}`} style={{ fontSize: '0.75rem', color: 'var(--accent)', textDecoration: 'none', display: 'block', marginTop: 4 }}>
                 {isEn ? `${Math.max(...modA.years)} price & specs` : `מחיר ומפרט ${Math.max(...modA.years)}`}
               </Link>
             )}
@@ -498,14 +508,14 @@ export default async function ComparePageView({ make1, model1, make2, model2, lo
             </div>
             <div className="cmp-car-name" style={{ fontWeight: 900, fontSize: '1.15rem', textAlign: 'center' }}>{nameB}</div>
             {isHe && <div style={{ color: 'var(--text-muted)', fontSize: '0.875rem', textAlign: 'center' }}>{mB.nameEn} {modB.nameEn}</div>}
-            <Link href={`/cars/${make2}/${model2}`} style={{ fontSize: '0.8125rem', color: 'var(--accent)', textDecoration: 'none', display: 'block', marginTop: 8 }}>
-              {heLink(sp.modelPageLink)}
+            <Link href={`/cars/${make2}/${model2}`} style={{ fontSize: '0.75rem', color: 'var(--accent)', textDecoration: 'none', display: 'block', marginTop: 8 }}>
+              {hubLinkText(mB, modB)}
             </Link>
-            <Link href={`/cars/${make2}/${model2}/issues`} style={{ fontSize: '0.8125rem', color: 'var(--accent)', textDecoration: 'none', display: 'block', marginTop: 4 }}>
-              {heLink(sp.issuesLink)}
+            <Link href={`/cars/${make2}/${model2}/issues`} style={{ fontSize: '0.75rem', color: 'var(--accent)', textDecoration: 'none', display: 'block', marginTop: 4 }}>
+              {issuesLinkText(mB, modB)}
             </Link>
             {!isRu && modB.years.length > 0 && (
-              <Link href={`/cars/${make2}/${model2}/${Math.max(...modB.years)}`} style={{ fontSize: '0.8125rem', color: 'var(--accent)', textDecoration: 'none', display: 'block', marginTop: 4 }}>
+              <Link href={`/cars/${make2}/${model2}/${Math.max(...modB.years)}`} style={{ fontSize: '0.75rem', color: 'var(--accent)', textDecoration: 'none', display: 'block', marginTop: 4 }}>
                 {isEn ? `${Math.max(...modB.years)} price & specs` : `מחיר ומפרט ${Math.max(...modB.years)}`}
               </Link>
             )}
