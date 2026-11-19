@@ -1,5 +1,6 @@
 import { trimNameEn } from '@/lib/trimLabels';
 import { hebrewYearTitle } from '@/lib/yearTitle';
+import YearPillsScroll from './YearPillsScroll';
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
@@ -169,6 +170,10 @@ export default async function CarYearPage({ params }: Props) {
   const cp = translations[locale].carPage;
   const makeName = isEn ? make.nameEn : make.nameHe;
   const modelName = isEn ? model.nameEn : model.nameHe;
+  const yearPill: React.CSSProperties = {
+    flexShrink: 0, fontSize: 12.5, lineHeight: 1, padding: '7px 12px', borderRadius: 999,
+    border: '1px solid rgba(255,255,255,.28)', color: '#c7d6f0', textDecoration: 'none', whiteSpace: 'nowrap',
+  };
   // Client component props are serialized into the page HTML regardless of what's
   // actually rendered - never ship Hebrew-only fields to the English site.
   const makeNameHeForClient = isEn ? '' : make.nameHe;
@@ -261,22 +266,26 @@ export default async function CarYearPage({ params }: Props) {
                 <RecallsBadge makeEn={make.nameEn} modelEn={model.nameEn} year={yearNum} />
               </div>
 
-              {/* Year selector pills */}
-              <div style={{ display: 'flex', alignItems: 'center', gap: 5, flexWrap: 'wrap', marginTop: 10 }}>
-                <span style={{ fontSize: 11, color: '#9db1d4', fontWeight: 600 }}>{cp.yearLabel}:</span>
-                {/* Link up to the model hub as the first pill: no extra height, and it tells Google
-                    the hub (not this year page) is the main page for the bare model name. */}
-                <Link href={`/cars/${make.slug}/${model.slug}`} title={isEn ? `${make.nameEn} ${model.nameEn} reviews & common problems` : `${make.nameHe} ${model.nameHe} – חוות דעת ובעיות נפוצות`} style={{ fontSize: 11, padding: '2px 8px', borderRadius: 999, border: '1px solid rgba(255,255,255,.5)', color: '#fff', fontWeight: 700, textDecoration: 'none' }}>
-                  {isEn ? 'All years' : 'כל השנים'}
-                </Link>
-                {model.years.slice(0, 10).map(y => (
-                  y === yearNum ? (
-                    <span key={y} style={{ fontSize: 11, padding: '2px 8px', borderRadius: 999, background: '#fff', color: '#0d1b2f', fontWeight: 700 }}>{y}</span>
-                  ) : (
-                    <Link key={y} href={`/cars/${make.slug}/${model.slug}/${y}`} style={{ fontSize: 11, padding: '2px 8px', borderRadius: 999, border: '1px solid rgba(255,255,255,.28)', color: '#9db1d4', textDecoration: 'none' }}>{y}</Link>
-                  )
-                ))}
+              {/* Year selector: one row that scrolls sideways (no wrapping), "all years" first.
+                  The "all years" pill links up to the model hub, which tells Google the hub - not
+                  this year page - is the main page for the bare model name. */}
+              <style>{`.year-pills{scrollbar-width:none}.year-pills::-webkit-scrollbar{display:none}`}</style>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 12 }}>
+                <span style={{ fontSize: 12, color: '#9db1d4', fontWeight: 600, flexShrink: 0 }}>{cp.yearLabel.replace(/:$/, '')}:</span>
+                <div className="year-pills" id="year-pills" style={{ display: 'flex', gap: 6, overflowX: 'auto', paddingBlock: 2, minWidth: 0 }}>
+                  <Link href={`/cars/${make.slug}/${model.slug}`} title={isEn ? `${make.nameEn} ${model.nameEn} reviews & common problems` : `${make.nameHe} ${model.nameHe} – חוות דעת ובעיות נפוצות`} style={{ ...yearPill, background: 'rgba(255,255,255,.12)', color: '#fff', fontWeight: 700 }}>
+                    {isEn ? 'All years' : 'כל השנים'}
+                  </Link>
+                  {[...model.years].sort((x, y) => y - x).map(y => (
+                    y === yearNum ? (
+                      <span key={y} id="year-pill-current" aria-current="page" style={{ ...yearPill, background: '#fff', color: '#0d1b2f', borderColor: '#fff', fontWeight: 800 }}>{y}</span>
+                    ) : (
+                      <Link key={y} href={`/cars/${make.slug}/${model.slug}/${y}`} style={yearPill}>{y}</Link>
+                    )
+                  ))}
+                </div>
               </div>
+              <YearPillsScroll />
 
               <div style={{ display: 'flex', gap: 8, marginTop: 11, flexWrap: 'wrap' }}>
                 <FollowButton makeSlug={make.slug} modelSlug={model.slug} isEn={isEn} dark />
