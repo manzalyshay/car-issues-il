@@ -1,6 +1,5 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
-import { dbAll } from '@/lib/db';
 import { getAllMakes } from '@/lib/carsDb';
 import { getHostLocale, getBaseUrl } from '@/lib/hostLocale';
 import { translations } from '@/lib/translations';
@@ -23,12 +22,6 @@ export async function generateMetadata(): Promise<Metadata> {
   };
 }
 
-const CATEGORY_ORDER = ['service', 'brakes', 'engine', 'suspension', 'electrical'];
-interface RepairCostRow {
-  repair_key: string; repair_name_he: string; repair_name_en?: string; cost_min_ils: number; cost_max_ils: number;
-  category: string; applies_to: string; notes?: string;
-}
-
 const toUsd = (ils: number) => Math.round(ils / 3.65);
 const fmtMoney = (ils: number, isEn: boolean) => isEn ? `$${toUsd(ils).toLocaleString('en-US')}` : `₪${ils.toLocaleString('en-US')}`;
 const fmtRange = (min: number, max: number, isEn: boolean) => `${fmtMoney(min, isEn)}-${fmtMoney(max, isEn)}`;
@@ -45,9 +38,6 @@ export default async function RepairsPage() {
   const locale = await getHostLocale();
   const rp = translations[locale].repairsPage;
   const isEn = locale === 'en';
-  // Fetch all repair cost records
-  const allCosts = await dbAll<RepairCostRow>('SELECT * FROM repair_costs ORDER BY category, repair_key').catch(() => [] as RepairCostRow[]);
-
   // Fetch recent user submissions
   const recentSubmissions = await getValidatedRepairReports(12).catch(() => []);
 
@@ -68,20 +58,6 @@ export default async function RepairsPage() {
       nameEn: make.nameEn,
       models: Object.fromEntries(make.models.map(m => [m.slug, { he: m.nameHe, en: m.nameEn }])),
     };
-  }
-
-  // Group costs by category, prefer 'family' tier when both exist; skip rows with null costs
-  const seen = new Set<string>();
-  const grouped: Record<string, typeof allCosts> = {};
-  for (const cost of allCosts) {
-    if (cost.cost_min_ils == null || cost.cost_max_ils == null) continue;
-    const key = cost.repair_key;
-    if (seen.has(key) && cost.applies_to !== 'family') continue;
-    if (!seen.has(key)) seen.add(key);
-    if (!grouped[cost.category]) grouped[cost.category] = [];
-    const existing = grouped[cost.category]!.findIndex(c => c.repair_key === key);
-    if (existing >= 0) grouped[cost.category]![existing] = cost;
-    else grouped[cost.category]!.push(cost);
   }
 
   const jsonLd = {
@@ -160,41 +136,6 @@ export default async function RepairsPage() {
             ))}
           </div>
           <p style={{ marginTop: 14, fontSize: '0.75rem', color: 'var(--text-muted)' }}>{isEn ? REPAIR_PRICES_NOTES.footerEn : REPAIR_PRICES_NOTES.footerHe}</p>
-        </section>
-
-        {/* Detailed breakdown by category */}
-        <section style={{ marginBottom: 40 }}>
-          <h2 style={{ fontSize: '1.1rem', fontWeight: 700, marginBottom: 20 }}>{rp.fullTitle}</h2>
-          {CATEGORY_ORDER.filter(cat => grouped[cat]?.length).map(cat => (
-            <div key={cat} style={{ marginBottom: 32 }}>
-              <div style={{ fontSize: '0.85rem', fontWeight: 800, color: 'var(--text-muted)', marginBottom: 12, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                {(rp.categories as Record<string, string>)[cat] ?? cat}
-              </div>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 10 }}>
-                {grouped[cat]!.map(cost => (
-                  <div key={cost.repair_key} style={{
-                    background: 'var(--surface)', border: '1px solid var(--border)',
-                    borderRadius: 10, padding: '14px 16px',
-                  }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 8, marginBottom: 6 }}>
-                      <div style={{ fontWeight: 600, fontSize: '0.9rem' }}>{isEn ? (cost.repair_name_en ?? cost.repair_name_he) : cost.repair_name_he}</div>
-                      <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)', whiteSpace: 'nowrap', flexShrink: 0 }}>
-                        {cost.applies_to === 'suv' ? rp.appliesSuv : cost.applies_to === 'all' ? rp.appliesAll : rp.appliesFamily}
-                      </div>
-                    </div>
-                    <div style={{ fontSize: '1.1rem', fontWeight: 800, color: 'var(--accent)', marginBottom: 6 }}>
-                      {isEn
-                        ? `$${Math.round(cost.cost_min_ils / 3.65).toLocaleString()}-$${Math.round(cost.cost_max_ils / 3.65).toLocaleString()}`
-                        : `₪${cost.cost_min_ils.toLocaleString()}-₪${cost.cost_max_ils.toLocaleString()}`}
-                    </div>
-                    {cost.notes && (
-                      <div style={{ fontSize: '0.73rem', color: 'var(--text-muted)', lineHeight: 1.45 }}>{cost.notes}</div>
-                    )}
-                  </div>
-                ))}
-              </div>
-            </div>
-          ))}
         </section>
 
         {/* Recent community reports */}
