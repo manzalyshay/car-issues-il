@@ -132,3 +132,55 @@ export function trimValueLabel(
   if (!base) return null;
   return extra ? `${base} ${extra}` : base;
 }
+
+/**
+ * Short button labels for auto.co.il version names. Those names are full spec strings
+ * ("(מתיחת פנים) HEV, אוט', 1.6 ל' היברידי, EX"), so a selector of five versions is hard to
+ * scan. The short form keeps what tells versions apart: trim, powertrain, facelift
+ * ("EX · היברידי · מתיחת פנים"). If two labels in the list still collide, engine size and
+ * then drive are added; failing that the full name is used. Names that are not
+ * auto.co.il spec strings (e.g. "LX", "אלגנס") pass through unchanged.
+ */
+export function trimShortLabels(names: string[], locale: string): string[] {
+  const he = locale === 'he';
+  const parsed = names.map((name) => {
+    const facelift = /\(\s*(?:מתיחת[- ]פנים|מ\.\s*פנים)\s*\)/.test(name);
+    const body = name.replace(/\(\s*(?:מתיחת[- ]פנים|מ\.\s*פנים)\s*\)/g, '').trim();
+    const parts = body.split(',').map((p) => p.trim()).filter(Boolean);
+    const DRIVE = /^(4x4|4x2|2x4|awd|rwd|fwd|\d+x\d+)$/i;
+    const drive = parts.length > 1 && DRIVE.test(parts[parts.length - 1]) ? parts.pop()! : null;
+    const specLike = (p: string) => /ל'|ליטר|^(HEV|PHEV|MHEV|EV|BEV)$|^אוט'?$|^ידני|חשמלי|היברידי|הייבריד|פלאג|טורבו|דיזל|בנזין|^\d/.test(p);
+    const last = parts[parts.length - 1] ?? '';
+    const trim = parts.length > 1 && !specLike(last) ? last : null;
+    const spec = parts.join(' ');
+    const engine = /פלאג|PHEV/.test(spec) ? 'phev' : /מתון|MHEV/.test(spec) ? 'mild'
+      : /היברידי|הייבריד|HEV/.test(spec) ? 'hybrid' : /חשמלי|\bEV\b/.test(spec) ? 'electric'
+      : /דיזל/.test(spec) ? 'diesel' : null;
+    const cc = spec.match(/(\d\.\d)\s*(?:ל'|ליטר|T\b)/)?.[1] ?? null;
+    const isSpecString = parts.length > 1 || facelift || !!engine;
+    return { name, facelift, trim, engine, cc, drive, isSpecString };
+  });
+  const ENGINE: Record<string, [string, string]> = {
+    phev: ['פלאג-אין', 'Plug-in'], mild: ['היברידי מתון', 'Mild hybrid'], hybrid: ['היברידי', 'Hybrid'],
+    electric: ['חשמלי', 'Electric'], diesel: ['דיזל', 'Diesel'],
+  };
+  const build = (p: (typeof parsed)[number], level: number): string => {
+    if (!p.isSpecString) return he ? p.name : trimNameEn(p.name);
+    const bits: string[] = [];
+    if (p.trim) bits.push(he ? p.trim : trimNameEn(p.trim));
+    if (p.engine) bits.push(ENGINE[p.engine][he ? 0 : 1]);
+    if ((level >= 1 || (!p.trim && p.engine !== 'electric')) && p.cc) bits.push(he ? `${p.cc} ל'` : `${p.cc} L`);
+    if (level >= 2 && p.drive) bits.push(p.drive);
+    if (p.facelift) bits.push(he ? 'מתיחת פנים' : 'Facelift');
+    return bits.length ? bits.join(' · ') : he ? p.name : trimNameEn(p.name);
+  };
+  const labels = parsed.map((p) => build(p, 0));
+  for (let level = 1; level <= 3; level++) {
+    const counts = new Map<string, number>();
+    labels.forEach((l) => counts.set(l, (counts.get(l) ?? 0) + 1));
+    labels.forEach((l, i) => {
+      if ((counts.get(l) ?? 0) > 1) labels[i] = level === 3 ? (he ? parsed[i].name : trimNameEn(parsed[i].name)) : build(parsed[i], level);
+    });
+  }
+  return labels;
+}
