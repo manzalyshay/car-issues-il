@@ -300,7 +300,14 @@ async function main() {
       });
     }
     const manual = rows.filter(r => !r.auto_co_il_id);
-    if (REPLACE_MANUAL && crawl.currentYear && manual.length) {
+    // Keep hand-entered rows when they hold the only sourced prices: auto.co.il's current
+    // lineup has no list price but the importer price list (sync-gov-prices) priced them.
+    const currentPriced = crawl.versions.some(v => v.year === crawl.currentYear && v.price);
+    const manualPriced = manual.some(r => r.price_source);
+    if (REPLACE_MANUAL && manual.length && crawl.currentYear && !currentPriced && manualPriced) {
+      m.keptManual = manual.length;
+      m.keptManualReason = 'only sourced prices';
+    } else if (REPLACE_MANUAL && crawl.currentYear && manual.length) {
       modelSql.push(`DELETE FROM car_trims WHERE make_slug = ${q(make)} AND model_slug = ${q(model)} AND is_israel = 1 AND (auto_co_il_id IS NULL OR auto_co_il_id = '');`);
       m.deletedManual = manual.length;
       m.manualDeleted = manual.map(r => `${r.name}${r.price_source ? ` ₪${r.price_ils} (${r.price_source})` : ''}`);

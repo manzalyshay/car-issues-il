@@ -30,6 +30,7 @@ export const AUTOCOIL_SLUGS = {
   'omoda/omoda9': 'omoda/9',
   'polestar/polestar-2': 'polestar/2',
   'skoda/enyaq': 'skoda/enyaq-iv',
+  'suzuki/scross': 'suzuki/s-cross',
   'toyota/chr': 'toyota/c-hr',
   'volkswagen/troc': 'volkswagen/t-roc',
 };
