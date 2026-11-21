@@ -32,6 +32,7 @@
  *   node scripts/sync-autocoil-trims.mjs --model kia/niro                 # dry run
  *   node scripts/sync-autocoil-trims.mjs --model kia/niro --replace-manual --apply
  *   node scripts/sync-autocoil-trims.mjs --all                            # dry run, every model
+ * Only the model years listed in car_models.years are crawled. --concurrency N (default 3).
  * Needs CLOUDFLARE_API_TOKEN for wrangler (remote D1).
  */
 import { execFileSync } from 'node:child_process';
@@ -49,7 +50,8 @@ const ONLY = args.filter((a, i) => args[i - 1] === '--model');
 const TODAY = new Date().toISOString().slice(0, 10);
 const UA = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36';
 const MIN_PLAUSIBLE = 20000;
-const DELAY_MS = 600; // be polite to auto.co.il
+const DELAY_MS = 600; // be polite to auto.co.il: per worker, between requests
+const CONCURRENCY = Number(args[args.indexOf('--concurrency') + 1]) || 3; // models crawled at once
 
 // Our slug -> auto.co.il path, where they differ (same table as sync-autocoil-prices.mjs)
 const SLUG_OVERRIDES = {
@@ -197,7 +199,8 @@ function parseVersion(html) {
 }
 
 /** All versions of a model on auto.co.il: [{id, name, year, url, price}] */
-async function crawlModel(path) {
+async function crawlModel(path, allowedYears = null) {
+  const wanted = y => !allowedYears || !allowedYears.size || allowedYears.has(y);
   const base = `https://www.auto.co.il/cars/${path}/`;
   const home = await get(base);
   if (!home) return { status: 'no-page', versions: [] };
@@ -215,7 +218,8 @@ async function crawlModel(path) {
     }
   };
   addLinks(home, current);
-  for (const y of years) {
+  // Only the model years the site covers (car_models.years): auto.co.il can go back 15 years
+  for (const y of years.filter(wanted)) {
     await sleep(DELAY_MS);
     const html = await get(`${base}${y}/`);
     if (html) addLinks(html, versionOptions(html));
@@ -224,6 +228,7 @@ async function crawlModel(path) {
   const versions = [];
   const seen = new Set();
   for (const [url, { year, slug, options }] of links) {
+    if (!wanted(year) && options !== current) continue;
     await sleep(DELAY_MS);
     const html = await get(url);
     if (!html) continue;
@@ -260,23 +265,26 @@ async function main() {
   mkdirSync(OUT, { recursive: true });
   const where = ALL ? '' : ` AND (${ONLY.map(k => `(make_slug = ${q(k.split('/')[0])} AND model_slug = ${q(k.split('/')[1])})`).join(' OR ')})`;
   const existing = d1(`SELECT * FROM car_trims WHERE is_israel = 1${where}`);
-  const models = ALL
-    ? d1('SELECT make_slug, slug FROM car_models ORDER BY make_slug, slug').map(m => `${m.make_slug}/${m.slug}`)
-    : ONLY;
+  const modelRows = d1('SELECT make_slug, slug, years FROM car_models ORDER BY make_slug, slug');
+  const yearsOf = new Map(modelRows.map(m => {
+    let ys = []; try { ys = JSON.parse(m.years || '[]'); } catch { /* none */ }
+    return [`${m.make_slug}/${m.slug}`, new Set(ys.map(Number))];
+  }));
+  const models = ALL ? modelRows.map(m => `${m.make_slug}/${m.slug}`) : ONLY;
   const byModel = new Map(models.map(k => [k, []]));
   for (const r of existing) byModel.get(`${r.make_slug}/${r.model_slug}`)?.push(r);
 
-  const sql = [], rollback = [], report = [];
+  const results = new Map(); // key -> {m, modelSql, rollbackSql}, assembled in model order at the end
   let n = 0;
-  for (const [key, rows] of byModel) {
-    n++;
+  const processModel = async (key, rows) => {
     const [make, model] = key.split('/');
     const path = SLUG_OVERRIDES[key] || key;
-    const crawl = await crawlModel(path).catch(e => ({ status: `error: ${e.message}`, versions: [] }));
+    const crawl = await crawlModel(path, yearsOf.get(key)).catch(e => ({ status: `error: ${e.message}`, versions: [] }));
+    n++;
     const m = { model: key, autoPath: path, page: crawl.status, versions: crawl.versions.length, currentYear: crawl.currentYear ?? null,
       years: {}, inserted: 0, updated: 0, deletedManual: 0, keptManual: 0 };
     process.stdout.write(`\r${n}/${byModel.size} ${key.padEnd(36)} versions ${crawl.versions.length}      `);
-    if (!crawl.versions.length) { m.keptManual = rows.filter(r => !r.auto_co_il_id).length; report.push(m); continue; }
+    if (!crawl.versions.length) { m.keptManual = rows.filter(r => !r.auto_co_il_id).length; results.set(key, { m, modelSql: [], rollbackSql: [] }); return; }
 
     const linked = new Map(rows.filter(r => r.auto_co_il_id).map(r => [String(r.auto_co_il_id), r]));
     const modelSql = [];
@@ -310,12 +318,20 @@ async function main() {
     } else m.keptManual = manual.length;
     // Linked rows auto.co.il no longer lists stay as they are.
 
-    sql.push(`-- ${key}`, ...modelSql);
-    rollback.push(`-- ${key}`, `DELETE FROM car_trims WHERE make_slug = ${q(make)} AND model_slug = ${q(model)} AND is_israel = 1;`,
-      ...rows.map(r => insertSql(r)));
-    report.push(m);
-  }
+    results.set(key, { m, modelSql: [`-- ${key}`, ...modelSql], rollbackSql: [`-- ${key}`,
+      `DELETE FROM car_trims WHERE make_slug = ${q(make)} AND model_slug = ${q(model)} AND is_israel = 1;`, ...rows.map(r => insertSql(r))] });
+    // Partial report as it goes, so a long --all run can be checked (and isn't lost if stopped)
+    if (results.size % 10 === 0) writeFileSync(resolve(OUT, 'report.partial.json'), JSON.stringify([...results.values()].map(r => r.m), null, 1));
+  };
+  const queue = [...byModel];
+  await Promise.all(Array.from({ length: Math.min(CONCURRENCY, queue.length) }, async () => {
+    while (queue.length) { const [key, rows] = queue.shift(); await processModel(key, rows); }
+  }));
   console.log();
+  const ordered = [...byModel.keys()].map(k => results.get(k)).filter(Boolean);
+  const report = ordered.map(r => r.m);
+  const sql = ordered.flatMap(r => r.modelSql);
+  const rollback = ordered.flatMap(r => r.rollbackSql);
 
   writeFileSync(resolve(OUT, 'report.json'), JSON.stringify(report, null, 1));
   writeFileSync(resolve(OUT, 'sync.sql'), sql.join('\n') + '\n');
