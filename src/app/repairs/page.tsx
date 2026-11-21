@@ -5,6 +5,7 @@ import { getAllMakes } from '@/lib/carsDb';
 import { getHostLocale, getBaseUrl } from '@/lib/hostLocale';
 import { translations } from '@/lib/translations';
 import { getValidatedRepairReports } from '@/lib/repairReports';
+import { REPAIR_PRICES, REPAIR_PRICE_CATEGORY_ORDER, REPAIR_PRICE_CATEGORY_LABELS, GARAGE_RATES, REPAIR_PRICES_NOTES, type DistSegment } from '@/data/repairPrices';
 
 export const revalidate = 3600; // cache 1 hour
 
@@ -28,19 +29,17 @@ interface RepairCostRow {
   category: string; applies_to: string; notes?: string;
 }
 
-// Common issues per category - known Israeli market pain points
-const COMMON_ISSUES = [
-  { issue: 'ממיר קטליטי (קטליזטור)', issueEn: 'Catalytic Converter', minIls: 1400, maxIls: 7000, category: 'engine', note: 'שחזור: ₪1,400-1,800. מקורי: ₪4,000-7,000', noteEn: 'Rebuilt: $380-$490. OEM: $1,100-$1,920' },
-  { issue: 'רצועת תזמון', issueEn: 'Timing Belt', minIls: 1100, maxIls: 2800, category: 'engine', note: 'חובה להחליף כל 60-80K ק"מ. כולל פומפת מים', noteEn: 'Replace every 60-80K km. Includes water pump' },
-  { issue: 'בלמים קדמיים', issueEn: 'Front Brakes', minIls: 500, maxIls: 1400, category: 'brakes', note: 'רפידות + צלחות. SUV יקר יותר', noteEn: 'Pads + rotors. SUV costs more' },
-  { issue: 'טיפול 10,000 ק"מ', issueEn: '10,000 km Service', minIls: 450, maxIls: 1400, category: 'service', note: 'שמן + פילטרים. יבואן מורשה יקר יותר', noteEn: 'Oil + filters. Authorized dealer costs more' },
-  { issue: 'מצבר', issueEn: 'Battery', minIls: 500, maxIls: 1900, category: 'electrical', note: 'רגיל: ₪500-1,000. Start-Stop: ₪1,000-1,900', noteEn: 'Standard: $140-$275. Start-Stop: $275-$520' },
-  { issue: 'כיוון פרונט', issueEn: 'Wheel Alignment', minIls: 150, maxIls: 600, category: 'suspension', note: '2 גלגלים. 4 גלגלים: ₪350-800', noteEn: '2 wheels. 4 wheels: $95-$220' },
-  { issue: 'מסרק הגה', issueEn: 'Steering Rack', minIls: 800, maxIls: 3000, category: 'suspension', note: 'יד שנייה: ₪800-1,200. חדש: ₪2,200-3,000', noteEn: 'Used: $220-$330. New: $600-$820' },
-  { issue: 'מזרקי דלק', issueEn: 'Fuel Injectors', minIls: 1500, maxIls: 2500, category: 'engine', note: 'חלקים + עבודה. ניקוי בלבד: ₪250-400', noteEn: 'Parts + labor. Cleaning only: $70-$110' },
-  { issue: 'החלפת שמן', issueEn: 'Oil Change', minIls: 180, maxIls: 700, category: 'engine', note: 'כולל פילטר. SUV: יותר נפח שמן', noteEn: 'Includes filter. SUV: larger oil capacity' },
-  { issue: 'מצתים', issueEn: 'Spark Plugs', minIls: 200, maxIls: 1200, category: 'engine', note: 'רגיל: ₪200-300. אירידיום (100K): ₪500-1,200', noteEn: 'Standard: $55-$82. Iridium (100K km): $140-$330' },
-];
+const toUsd = (ils: number) => Math.round(ils / 3.65);
+const fmtMoney = (ils: number, isEn: boolean) => isEn ? `$${toUsd(ils).toLocaleString('en-US')}` : `₪${ils.toLocaleString('en-US')}`;
+const fmtRange = (min: number, max: number, isEn: boolean) => `${fmtMoney(min, isEn)}-${fmtMoney(max, isEn)}`;
+const fmtDate = (iso: string) => { const [y, m, d] = iso.split('-'); return `${Number(d)}/${Number(m)}/${y}`; };
+
+function distText(seg: DistSegment, isEn: boolean): string {
+  const share = isEn && seg.share === 'שליש' ? 'A third' : seg.share;
+  if (seg.kind === 'between') return isEn ? `${share} of cases: ${fmtRange(seg.low, seg.high, true)}` : `${share} מהמקרים ${seg.low.toLocaleString('en-US')} עד ${seg.high.toLocaleString('en-US')} ₪`;
+  if (seg.kind === 'above') return isEn ? `${share} of cases paid over ${fmtMoney(seg.value, true)}` : `${share} מהמקרים שילמו מעל ${seg.value.toLocaleString('en-US')} ₪`;
+  return isEn ? `${share} of cases under ${fmtMoney(seg.value, true)}` : `${share} מהמקרים פחות מ-${seg.value.toLocaleString('en-US')} ₪`;
+}
 
 export default async function RepairsPage() {
   const locale = await getHostLocale();
@@ -88,10 +87,14 @@ export default async function RepairsPage() {
   const jsonLd = {
     '@context': 'https://schema.org',
     '@type': 'FAQPage',
-    mainEntity: COMMON_ISSUES.map(issue => ({
+    mainEntity: REPAIR_PRICES.map(item => isEn ? ({
       '@type': 'Question',
-      name: `כמה עולה ${issue.issue} בישראל?`,
-      acceptedAnswer: { '@type': 'Answer', text: `${issue.issue} עולה ₪${issue.minIls.toLocaleString()}-₪${issue.maxIls.toLocaleString()} בישראל. ${issue.note}.` },
+      name: `How much does ${item.nameEn.toLowerCase()} cost in Israel?`,
+      acceptedAnswer: { '@type': 'Answer', text: `Average about ${fmtMoney(item.avg, true)}, typical range ${fmtRange(item.min, item.max, true)} (incl. VAT). ${item.dist.map(d => distText(d, true)).join('; ')}.` },
+    }) : ({
+      '@type': 'Question',
+      name: `כמה עולה ${item.nameHe} בישראל?`,
+      acceptedAnswer: { '@type': 'Answer', text: `ממוצע ${item.avg.toLocaleString('en-US')} ₪, טווח ${item.min.toLocaleString('en-US')} עד ${item.max.toLocaleString('en-US')} ₪ (כולל מע״מ). ${item.dist.map(d => distText(d, false)).join(', ')}.` },
     })),
   };
 
@@ -109,25 +112,54 @@ export default async function RepairsPage() {
         <h1 style={{ fontSize: 'clamp(1.5rem,4vw,2rem)', fontWeight: 900, marginBottom: 8 }}>{rp.title}</h1>
         <p style={{ color: 'var(--text-muted)', marginBottom: 32, fontSize: '0.9375rem' }}>{rp.subtitle}</p>
 
-        {/* Common issues quick-reference */}
+        {/* Market repair prices */}
         <section style={{ marginBottom: 40 }}>
-          <h2 style={{ fontSize: '1.1rem', fontWeight: 700, marginBottom: 16 }}>{rp.commonTitle}</h2>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: 10 }}>
-            {COMMON_ISSUES.map(item => (
-              <div key={item.issue} style={{
-                background: 'var(--surface)', border: '1px solid var(--border)',
-                borderRadius: 12, padding: '14px 16px',
-              }}>
-                <div style={{ fontWeight: 700, fontSize: '0.9rem', marginBottom: 4 }}>{isEn ? item.issueEn : item.issue}</div>
-                <div style={{ fontSize: '1.15rem', fontWeight: 800, color: 'var(--accent)', marginBottom: 4 }}>
-                  {isEn
-                    ? `$${Math.round(item.minIls / 3.65).toLocaleString()}-$${Math.round(item.maxIls / 3.65).toLocaleString()}`
-                    : `₪${item.minIls.toLocaleString()}-₪${item.maxIls.toLocaleString()}`}
+          <h2 style={{ fontSize: '1.1rem', fontWeight: 700, marginBottom: 12 }}>{rp.commonTitle}</h2>
+          <ul style={{ margin: '0 0 20px', paddingInlineStart: 18, fontSize: '0.8rem', color: 'var(--text-muted)', lineHeight: 1.6 }}>
+            {(isEn ? REPAIR_PRICES_NOTES.en : REPAIR_PRICES_NOTES.he).map(n => <li key={n}>{n}</li>)}
+          </ul>
+          {REPAIR_PRICE_CATEGORY_ORDER.map(cat => {
+            const items = REPAIR_PRICES.filter(p => p.category === cat);
+            if (!items.length) return null;
+            return (
+              <div key={cat} style={{ marginBottom: 28 }}>
+                <div style={{ fontSize: '0.85rem', fontWeight: 800, color: 'var(--text-muted)', marginBottom: 12, letterSpacing: '0.05em' }}>
+                  {isEn ? REPAIR_PRICE_CATEGORY_LABELS[cat].en : REPAIR_PRICE_CATEGORY_LABELS[cat].he}
                 </div>
-                <div style={{ fontSize: '0.73rem', color: 'var(--text-muted)', lineHeight: 1.4 }}>{isEn ? item.noteEn : item.note}</div>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: 10 }}>
+                  {items.map(item => (
+                    <div key={item.id} style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 12, padding: '14px 16px', display: 'flex', flexDirection: 'column', gap: 4 }}>
+                      <div style={{ fontWeight: 700, fontSize: '0.9rem' }}>{isEn ? item.nameEn : item.nameHe}</div>
+                      <div style={{ display: 'flex', alignItems: 'baseline', gap: 6, flexWrap: 'wrap' }}>
+                        <span style={{ fontSize: '1.15rem', fontWeight: 800, color: 'var(--accent)' }}>{fmtMoney(item.avg, isEn)}</span>
+                        <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{isEn ? 'average' : 'ממוצע'}</span>
+                      </div>
+                      <div style={{ fontSize: '0.8rem', fontWeight: 600 }}>
+                        {isEn ? 'Range: ' : 'טווח: '}{fmtRange(item.min, item.max, isEn)}
+                      </div>
+                      <div style={{ fontSize: '0.73rem', color: 'var(--text-muted)', lineHeight: 1.4 }}>
+                        {item.dist.map(d => distText(d, isEn)).join(isEn ? '; ' : ', ')}
+                      </div>
+                      <div style={{ fontSize: '0.68rem', color: 'var(--text-muted)', marginTop: 'auto', paddingTop: 4 }}>
+                        {isEn ? 'Source data date: ' : 'תאריך נתוני מקור: '}{fmtDate(item.sourceDate)}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            );
+          })}
+
+          <h3 style={{ fontSize: '1rem', fontWeight: 700, margin: '8px 0 12px' }}>{isEn ? 'Rates published by garages' : 'תעריפים שפורסמו בידי מוסכים'}</h3>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: 10 }}>
+            {GARAGE_RATES.map(r => (
+              <div key={r.he} style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 10, padding: '12px 16px' }}>
+                <div style={{ fontWeight: 600, fontSize: '0.85rem', marginBottom: 4 }}>{isEn ? r.en : r.he}</div>
+                <div style={{ fontSize: '1.05rem', fontWeight: 800, color: 'var(--accent)' }}>{fmtRange(r.min, r.max, isEn)}</div>
               </div>
             ))}
           </div>
+          <p style={{ marginTop: 14, fontSize: '0.75rem', color: 'var(--text-muted)' }}>{isEn ? REPAIR_PRICES_NOTES.footerEn : REPAIR_PRICES_NOTES.footerHe}</p>
         </section>
 
         {/* Detailed breakdown by category */}
