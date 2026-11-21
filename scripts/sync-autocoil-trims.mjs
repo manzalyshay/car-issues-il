@@ -39,6 +39,7 @@ import { execFileSync } from 'node:child_process';
 import { writeFileSync, mkdirSync } from 'node:fs';
 import { resolve, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { AUTOCOIL_SLUGS } from './lib/autocoil-slugs.mjs';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const OUT = resolve(ROOT, '.trim-sync');
@@ -53,20 +54,8 @@ const MIN_PLAUSIBLE = 20000;
 const DELAY_MS = 600; // be polite to auto.co.il: per worker, between requests
 const CONCURRENCY = Number(args[args.indexOf('--concurrency') + 1]) || 3; // models crawled at once
 
-// Our slug -> auto.co.il path, where they differ (same table as sync-autocoil-prices.mjs)
-const SLUG_OVERRIDES = {
-  'mazda/cx3': 'mazda/cx-3', 'mazda/cx5': 'mazda/cx-5', 'mazda/cx30': 'mazda/cx-30',
-  'mazda/mazda3': 'mazda/3', 'mazda/mazda6': 'mazda/6',
-  'bmw/series1': 'bmw/1-series', 'bmw/series3': 'bmw/3-series', 'bmw/series5': 'bmw/5-series',
-  'toyota/chr': 'toyota/c-hr', 'volkswagen/troc': 'volkswagen/t-roc',
-  'mercedes/a-class': 'mercedes-benz/a-class', 'mercedes/b-class': 'mercedes-benz/b-class',
-  'mercedes/c-class': 'mercedes-benz/c-class', 'mercedes/cla': 'mercedes-benz/cla-class',
-  'mercedes/e-class': 'mercedes-benz/e-class', 'mercedes/eqb': 'mercedes-benz/eqb',
-  'mercedes/eqc': 'mercedes-benz/eqc', 'mercedes/gla': 'mercedes-benz/gla-class',
-  'mercedes/glb': 'mercedes-benz/glb', 'mercedes/glc': 'mercedes-benz/glc-class',
-  'byd/atto3': 'byd/atto-3', 'byd/sealion7': 'byd/sealion-7',
-  'honda/crv': 'honda/cr-v', 'honda/hrv': 'honda/hr-v', 'mg/mg-zs': 'mg/zs', 'skoda/enyaq': 'skoda/enyaq-iv',
-};
+// Our slug -> auto.co.il path, where they differ
+const SLUG_OVERRIDES = AUTOCOIL_SLUGS;
 
 function d1(sql) {
   const out = execFileSync('npx', ['wrangler', 'd1', 'execute', 'car-issues-db', '--remote', '--json', '--command', sql],
