@@ -5,7 +5,7 @@ import Link from 'next/link';
 import type { TrimSpec } from '@/data/cars';
 import { TRIM_FEATURES } from '@/data/cars';
 import { useLocale } from '@/lib/localeContext';
-import { trimDisplayName, trimValueLabel, driveKey, engineKey, transmissionKey, transmissionGears } from '@/lib/trimLabels';
+import { trimDisplayName, trimShortLabels, trimValueLabel, driveKey, engineKey, transmissionKey, transmissionGears } from '@/lib/trimLabels';
 
 function toTrimSlug(name: string) {
   return name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
@@ -154,19 +154,22 @@ export default function TrimSpecsTab({ makeSlug, modelSlug, makeNameHe, modelNam
   const hasSafetyCard = ncap != null || (locale !== 'en' && !!safetyHe);
   const hasTechCard = techStats.length > 0 || techChecklist.length > 0 || (locale !== 'en' && !!techComfortHe);
 
+  // auto.co.il version names are long spec strings: buttons show a short label, full name on hover
+  const shortLabels = noTrims ? [] : trimShortLabels(allTrims!.map(t => t.name), locale);
   const trimSelector = trim && (
     <div style={{ marginBottom: 20 }}>
       <p style={{ fontSize: '0.78rem', color: 'var(--text-muted)', marginBottom: 10, fontWeight: 600 }}>
         {ts.selectTrim}
       </p>
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
-        {allTrims!.map(t => {
+        {allTrims!.map((t, i) => {
           const on = selected === t.name;
           return (
             <button
               key={t.id ?? t.name}
               onClick={() => { setSelected(t.name); setTrimInUrl(t.name); }}
               aria-pressed={on}
+              title={trimDisplayName(t.name, locale)}
               style={{
                 padding: '6px 16px', borderRadius: 999,
                 border: on ? '2px solid var(--accent)' : '1.5px solid var(--border)',
@@ -177,7 +180,7 @@ export default function TrimSpecsTab({ makeSlug, modelSlug, makeNameHe, modelNam
                 display: 'flex', alignItems: 'center', gap: 6,
               }}
             >
-              {trimDisplayName(t.name, locale)}
+              {shortLabels[i]}
               {t.priceIls && (
                 <span style={{ fontSize: '0.72rem', opacity: on ? 0.85 : 0.6 }}>
                   {fmtPrice(t.priceIls, locale)}
