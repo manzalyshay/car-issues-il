@@ -38,12 +38,17 @@ export default function HeroMedia({
     ? fabLabel
     : `${yearRange} · ${categoryLabel}`;
 
-  // Thumbnail list: 3D first, then images
-  type ThumbItem = { kind: 'fab' } | { kind: 'img'; img: CarImage; idx: number };
+  // Thumbnail list: 3D first, then images, then a "+N" tile when more photos exist
+  type ThumbItem = { kind: 'fab' } | { kind: 'img'; img: CarImage; idx: number } | { kind: 'more'; count: number };
+  const MAX_TILES = 5;
   const thumbs: ThumbItem[] = [];
   if (hasFab) thumbs.push({ kind: 'fab' });
-  images.slice(0, hasFab ? 4 : 5).forEach((img, idx) => thumbs.push({ kind: 'img', img, idx }));
+  let imgSlots = MAX_TILES - thumbs.length;
+  if (images.length > imgSlots) imgSlots -= 1;
+  images.slice(0, imgSlots).forEach((img, idx) => thumbs.push({ kind: 'img', img, idx }));
+  if (images.length > imgSlots) thumbs.push({ kind: 'more', count: images.length - imgSlots });
   const showThumbs = thumbs.length > 1;
+  const openImagesTab = () => window.dispatchEvent(new CustomEvent('car-open-tab', { detail: 'images' }));
 
   // Full-size original - only used for the deliberate "open full size" click,
   // never for the inline <img> itself (that uses a sized derivative below).
@@ -72,10 +77,10 @@ export default function HeroMedia({
   }, [activeImageSrc]);
 
   return (
-    <div style={{ display: 'grid', gap: 6, justifySelf: 'end', width: '100%', maxWidth: 380 }}>
+    <div style={{ display: 'grid', gap: 10, width: '100%', minWidth: 0 }}>
       {/* Main slot */}
       <div
-        style={{ position: 'relative', aspectRatio: '16/9', borderRadius: 14, overflow: 'hidden', background: '#1a3055', boxShadow: '0 20px 46px -28px rgba(0,0,0,.9)', cursor: activeImageUrl ? 'zoom-in' : 'default' }}
+        style={{ position: 'relative', aspectRatio: '16/9', borderRadius: 18, overflow: 'hidden', background: '#1a3055', boxShadow: '0 20px 46px -28px rgba(0,0,0,.9)', cursor: activeImageUrl ? 'zoom-in' : 'default' }}
         onClick={() => { if (activeImageUrl) window.open(activeImageUrl, '_blank'); }}
       >
         {active === 'fab' && hasFab ? (
@@ -119,13 +124,24 @@ export default function HeroMedia({
         )}
         <style>{`@keyframes hero-img-spin { to { transform: rotate(360deg); } }`}</style>
 
-        {/* Year/trim/category badge - bottom left */}
-        <div style={{
-          position: 'absolute', bottom: 8, insetInlineStart: 8,
-          background: 'rgba(10,20,36,0.72)', backdropFilter: 'blur(6px)',
-          color: '#c8d8f0', fontSize: 10.5, fontWeight: 700,
-          padding: '3px 8px', borderRadius: 99,
-          letterSpacing: '.02em', maxWidth: '90%',
+        {/* 3D hint - top corner, only while the 3D viewer is shown */}
+        {active === 'fab' && hasFab && (
+          <div style={{
+            position: 'absolute', top: 12, insetInlineStart: 12,
+            background: '#0f1d3d', color: '#fff', fontSize: 12, fontWeight: 700,
+            padding: '4px 10px', borderRadius: 999, pointerEvents: 'none',
+          }}>
+            {isEn ? '3D · drag to rotate' : 'תלת-ממד · גררו לסיבוב'}
+          </div>
+        )}
+
+        {/* Year/trim/category badge - bottom end corner */}
+        <div dir="ltr" style={{
+          position: 'absolute', bottom: 12, ...(isEn ? { right: 12 } : { left: 12 }),
+          background: 'rgba(15,29,61,0.85)',
+          color: '#fff', fontSize: 13, fontWeight: 500,
+          padding: '5px 12px', borderRadius: 999,
+          maxWidth: '75%',
           overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
           pointerEvents: 'none',
         }}>
@@ -133,72 +149,58 @@ export default function HeroMedia({
         </div>
       </div>
 
-      {/* Photo credit - only for the active image slot, not the 3D viewer */}
-      {active !== 'fab' && images[active as number]?.source_url && (
-        <a
-          href={images[active as number].source_url!}
-          target="_blank"
-          rel="noopener nofollow"
-          onClick={(e) => e.stopPropagation()}
-          style={{ fontSize: 10.5, color: 'var(--text-faint)', textDecoration: 'none', justifySelf: 'end' }}
-        >
-          Photo: Wikimedia Commons
-        </a>
-      )}
-
-      {/* 3D credit - only for the active 3D slot */}
-      {active === 'fab' && hasFab && (
-        <a
-          href={sketchfabModel!.viewerUrl}
-          target="_blank"
-          rel="noopener nofollow"
-          onClick={(e) => e.stopPropagation()}
-          style={{ fontSize: 10.5, color: 'var(--text-faint)', textDecoration: 'none', justifySelf: 'end' }}
-        >
-          {isEn
-            ? `3D: Sketchfab · ${sketchfabModel!.author} · ${sketchfabModel!.license}`
-            : `תלת-ממד: Sketchfab · ${sketchfabModel!.author} · ${sketchfabModel!.license}`}
-        </a>
-      )}
-
       {/* Thumbnail strip */}
       {showThumbs && (
-        <div style={{ display: 'grid', gridTemplateColumns: `repeat(${Math.min(thumbs.length, 5)},1fr)`, gap: 5 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: `repeat(${thumbs.length},minmax(0,1fr))`, gap: 8 }}>
           {thumbs.map((item) => {
-            const isActive = item.kind === 'fab' ? active === 'fab' : active === item.idx;
+            const tile: React.CSSProperties = {
+              aspectRatio: '4/3', borderRadius: 12, border: 'none', cursor: 'pointer', padding: 0, overflow: 'hidden',
+              fontFamily: 'inherit', boxSizing: 'border-box',
+            };
             if (item.kind === 'fab') {
+              const isActive = active === 'fab';
               return (
                 <button
                   key="fab"
                   onClick={() => setActive('fab')}
-                  title={fabLabel ?? '3D Model'}
+                  aria-label={isEn ? '3D model' : 'מודל תלת-ממד'}
+                  aria-pressed={isActive}
                   style={{
-                    aspectRatio: '4/3', borderRadius: 8, background: '#0f172a', border: 'none',
-                    cursor: 'pointer', padding: 0, overflow: 'hidden',
-                    outline: isActive ? '2px solid #7ba0e8' : 'none',
-                    opacity: isActive ? 1 : 0.72,
+                    ...tile, background: '#182a54', color: '#fff',
+                    border: `2px solid ${isActive ? '#2f62e0' : 'transparent'}`,
                     display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 2,
+                    fontSize: 12, fontWeight: 700,
                   }}
                 >
-                  <svg viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="1.5" style={{ width: 16, height: 16, opacity: 0.9 }}>
-                    <path d="M12 2L2 7l10 5 10-5-10-5z" strokeLinejoin="round"/>
-                    <path d="M2 17l10 5 10-5" strokeLinejoin="round"/>
-                    <path d="M2 12l10 5 10-5" strokeLinejoin="round"/>
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinejoin="round" style={{ width: 18, height: 18 }} aria-hidden="true">
+                    <path d="M12 2L2 7l10 5 10-5-10-5z" />
+                    <path d="M2 17l10 5 10-5" />
+                    <path d="M2 12l10 5 10-5" />
                   </svg>
-                  <span style={{ fontSize: 8, color: 'rgba(255,255,255,0.7)', fontWeight: 700 }}>3D</span>
+                  3D
                 </button>
               );
             }
+            if (item.kind === 'more') {
+              return (
+                <button
+                  key="more"
+                  onClick={openImagesTab}
+                  aria-label={isEn ? `${item.count} more photos` : `עוד ${item.count} תמונות`}
+                  style={{ ...tile, background: '#3b475f', color: '#fff', fontSize: 15, fontWeight: 700 }}
+                >
+                  <span dir="ltr">+{item.count}</span>
+                </button>
+              );
+            }
+            const isActive = active === item.idx;
             return (
               <button
                 key={item.img.id}
                 onClick={() => setActive(item.idx)}
-                style={{
-                  aspectRatio: '4/3', borderRadius: 8, background: '#24406b', border: 'none',
-                  cursor: 'pointer', padding: 0, overflow: 'hidden',
-                  outline: isActive ? '2px solid #7ba0e8' : 'none',
-                  opacity: isActive ? 1 : 0.72,
-                }}
+                aria-label={isEn ? `Photo ${item.idx + 1}` : `תמונה ${item.idx + 1}`}
+                aria-pressed={isActive}
+                style={{ ...tile, background: '#34446b', border: `2px solid ${isActive ? '#2f62e0' : 'transparent'}` }}
               >
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
@@ -212,6 +214,35 @@ export default function HeroMedia({
           })}
         </div>
       )}
+
+      {/* Photo credit - only for the active image slot, not the 3D viewer */}
+      {active !== 'fab' && images[active as number]?.source_url && (
+        <a
+          href={images[active as number].source_url!}
+          target="_blank"
+          rel="noopener nofollow"
+          onClick={(e) => e.stopPropagation()}
+          className="hero-media-credit" style={{ fontSize: 12, textDecoration: 'none', justifySelf: 'start' }}
+        >
+          Photo: Wikimedia Commons
+        </a>
+      )}
+
+      {/* 3D credit - only for the active 3D slot */}
+      {active === 'fab' && hasFab && (
+        <a
+          href={sketchfabModel!.viewerUrl}
+          target="_blank"
+          rel="noopener nofollow"
+          onClick={(e) => e.stopPropagation()}
+          className="hero-media-credit" style={{ fontSize: 12, textDecoration: 'none', justifySelf: 'start' }}
+        >
+          {isEn
+            ? `3D: Sketchfab · ${sketchfabModel!.author} · ${sketchfabModel!.license}`
+            : `תלת-ממד: Sketchfab · ${sketchfabModel!.author} · ${sketchfabModel!.license}`}
+        </a>
+      )}
+
     </div>
   );
 }

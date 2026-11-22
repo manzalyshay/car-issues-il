@@ -135,6 +135,18 @@ export default async function ModelPageView({ makeSlug, modelSlug, initialTab, v
     ? `${Math.min(...model.years)}-${Math.max(...model.years)}`
     : model.years.length === 1 ? `${model.years[0]}` : '';
 
+  // Key-fact tiles in the hero.
+  const countryName = translations[locale].carsPage.countryNames[make.country] ?? make.country;
+  const heroStats: { label: string; note?: string; value: string; ltr?: boolean }[] = [];
+  if (!isEn && model.activeVehiclesIl != null && model.activeVehiclesIl > 0) {
+    const asOf = model.activeVehiclesIlAsOf
+      ? new Date(`${model.activeVehiclesIlAsOf}T12:00:00Z`).toLocaleDateString('he-IL', { month: 'short', year: 'numeric', timeZone: 'Asia/Jerusalem' })
+      : 'אוק׳ 2026';
+    heroStats.push({ label: 'בכביש בישראל', note: `(${asOf})`, value: model.activeVehiclesIl.toLocaleString('he-IL') });
+  }
+  if (yearRange) heroStats.push({ label: isEn ? 'Model years' : 'שנות ייצור', value: yearRange.replace('-', '–'), ltr: true });
+  heroStats.push({ label: isEn ? 'Type · Country' : 'סוג · ארץ ייצור', value: `${getCategoryLabel(model.category, locale)} · ${countryName}` });
+
   // 3D model relevance: year-aware lookup already handles year_from/year_to entries;
   // fall back to name-based check for legacy entries
   const relevantSketchfabModel = (() => {
@@ -166,56 +178,61 @@ export default async function ModelPageView({ makeSlug, modelSlug, initialTab, v
     <div style={{ background: 'var(--bg)', minHeight: '100vh' }}>
 
       {/* ── MODEL HERO - dark navy ─── */}
-      <section style={{
-        position: 'relative',
-        background: 'linear-gradient(180deg,#0d1b2f,#12294a)',
-        color: '#fff',
-        padding: '8px clamp(16px,3vw,32px) 14px',
-        overflow: 'hidden',
-      }}>
-        <div aria-hidden style={{ position: 'absolute', inset: 0, opacity: .5, background: 'radial-gradient(60% 70% at 82% 0%, rgba(23,64,143,.9), transparent 70%)', pointerEvents: 'none' }} />
-        <div style={{ position: 'relative', maxWidth: 1280, margin: '0 auto' }}>
+      <section className="mp-hero">
+        <div className="model-hero-inner" style={{ maxWidth: 1200, margin: '0 auto', display: 'flex', flexWrap: 'wrap', gap: 'clamp(16px,3vw,40px)', alignItems: 'flex-start' }}>
 
-          {/* Breadcrumb inside hero */}
-          <nav style={{ display: 'flex', alignItems: 'center', gap: 7, fontSize: 12, color: '#9db1d4', paddingBottom: 8, flexWrap: 'wrap', direction: isEn ? 'ltr' : 'rtl' }}>
-            <Link href="/" style={{ color: '#9db1d4', textDecoration: 'none' }}>{translations[locale].carsPage.home}</Link>
-            <span>›</span>
-            <Link href="/cars" style={{ color: '#9db1d4', textDecoration: 'none' }}>{translations[locale].carsPage.makes}</Link>
-            <span>›</span>
-            <Link href={`/cars/${make.slug}`} style={{ color: '#9db1d4', textDecoration: 'none' }}>{makeName}</Link>
-            <span>›</span>
-            {issuesView ? (
-              <>
-                <Link href={`/cars/${make.slug}/${model.slug}`} style={{ color: '#9db1d4', textDecoration: 'none' }}>{modelName}</Link>
-                <span>›</span>
-                <span style={{ color: '#fff', fontWeight: 600, whiteSpace: 'nowrap' }}>{isEn ? 'Problems & recalls' : 'תקלות וריקולים'}</span>
-              </>
-            ) : (
-              <span style={{ color: '#fff', fontWeight: 600, whiteSpace: 'nowrap' }}>{modelName}</span>
-            )}
-          </nav>
+          {/* Info column */}
+          <div className="model-hero-info" style={{ flex: '1 1 420px', minWidth: 0, display: 'flex', flexDirection: 'column', gap: 'clamp(16px,1.6vw,20px)' }}>
+            {/* Breadcrumb inside hero */}
+            <nav aria-label={isEn ? 'Breadcrumb' : 'פירורי לחם'} style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, color: '#aab6d4', flexWrap: 'wrap', direction: isEn ? 'ltr' : 'rtl' }}>
+              <Link href="/" style={{ color: '#aab6d4', textDecoration: 'none' }}>{translations[locale].carsPage.home}</Link>
+              <span aria-hidden="true">{isEn ? '›' : '‹'}</span>
+              <Link href="/cars" style={{ color: '#aab6d4', textDecoration: 'none' }}>{translations[locale].carsPage.makes}</Link>
+              <span aria-hidden="true">{isEn ? '›' : '‹'}</span>
+              <Link href={`/cars/${make.slug}`} style={{ color: '#aab6d4', textDecoration: 'none' }}>{makeName}</Link>
+              <span aria-hidden="true">{isEn ? '›' : '‹'}</span>
+              {issuesView ? (
+                <>
+                  <Link href={`/cars/${make.slug}/${model.slug}`} style={{ color: '#aab6d4', textDecoration: 'none' }}>{modelName}</Link>
+                  <span aria-hidden="true">{isEn ? '›' : '‹'}</span>
+                  <span style={{ color: '#fff', whiteSpace: 'nowrap' }}>{isEn ? 'Problems & recalls' : 'תקלות וריקולים'}</span>
+                </>
+              ) : (
+                <span style={{ color: '#fff', whiteSpace: 'nowrap' }}>{modelName}</span>
+              )}
+            </nav>
 
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(240px,1fr))', gap: 'clamp(14px,2vw,26px)', alignItems: 'center' }}>
-
-            {/* Info column */}
-            <div>
-              <div style={{ fontSize: 12.5, color: '#9db1d4', fontWeight: 600 }}>
-                {yearRange ? `${yearRange} · ` : ''}{getCategoryLabel(model.category, locale)} · {translations[locale].carsPage.countryNames[make.country] ?? make.country}
-              </div>
-              <h1 style={{ fontFamily: 'Heebo,sans-serif', fontWeight: 900, fontSize: 'clamp(21px,2.2vw,30px)', lineHeight: 1.1, letterSpacing: '-.04em', margin: '4px 0 2px', color: '#fff' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+              <h1 style={{ fontFamily: 'Heebo,sans-serif', fontWeight: 800, fontSize: 'clamp(32px,3.4vw,48px)', lineHeight: 1.08, margin: 0, color: '#fff' }}>
                 {isEn ? `${make.nameEn} ${model.nameEn}` : `${make.nameHe} ${model.nameHe}`}
                 {issuesView && (isEn ? ' - Common Problems & Recalls' : ' - תקלות נפוצות וריקולים')}
               </h1>
-              {!isEn && !issuesView && <div style={{ fontSize: 13.5, color: '#9db1d4' }}>{make.nameEn} {model.nameEn} · בעיות נפוצות וחוות דעת בעלים</div>}
-              {issuesView && issuesSubtitle && <div style={{ fontSize: 13.5, color: '#9db1d4' }}>{issuesSubtitle}</div>}
+              {!issuesView && (
+                <p style={{ margin: 0, fontSize: 'clamp(15px,1.3vw,18px)', color: '#c3cde3' }}>
+                  {isEn ? 'Common problems and owner reviews' : <>בעיות נפוצות וחוות דעת בעלים · <span dir="ltr">{make.nameEn} {model.nameEn}</span></>}
+                </p>
+              )}
+              {issuesView && issuesSubtitle && <p style={{ margin: 0, fontSize: 15, color: '#c3cde3' }}>{issuesSubtitle}</p>}
+            </div>
 
-              <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginTop: 9, flexWrap: 'wrap' }}>
+            {/* Key facts */}
+            {heroStats.length > 0 && (
+              <div className="hero-stats" style={{ display: 'grid', gridTemplateColumns: `repeat(${heroStats.length},minmax(0,1fr))` }}>
+                {heroStats.map((st) => (
+                  <div key={st.label} className="hero-stat" style={{ background: '#182a54', display: 'flex', flexDirection: 'column', gap: 2, minWidth: 0 }}>
+                    <span style={{ fontSize: 'clamp(12px,1vw,13px)', color: '#aab6d4' }}>{st.label}{st.note && <span className="hero-stat-note"> {st.note}</span>}</span>
+                    <span dir={st.ltr ? 'ltr' : undefined} style={{ fontSize: 'clamp(17px,1.7vw,24px)', fontWeight: 800, lineHeight: 1.2, textAlign: isEn ? 'left' : 'right' }}>{st.value}</span>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {(avgRating !== null || allReviews.length > 0) && (
+              <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
                 {avgRating !== null && (
                   <span style={{ display: 'flex', alignItems: 'baseline', gap: 3 }}>
-                    <span style={{ fontFamily: 'Heebo,sans-serif', fontWeight: 900, fontSize: 27, letterSpacing: '-.05em', lineHeight: 1, color: '#fff' }}>
-                      {(avgRating * 2).toFixed(1)}
-                    </span>
-                    <span style={{ fontSize: 12.5, color: '#9db1d4', fontWeight: 700 }}>/10</span>
+                    <span style={{ fontWeight: 800, fontSize: 24, lineHeight: 1, color: '#fff' }}>{(avgRating * 2).toFixed(1)}</span>
+                    <span style={{ fontSize: 13, color: '#aab6d4', fontWeight: 700 }}>/10</span>
                   </span>
                 )}
                 {avgRating !== null && avgRating >= 4 && (
@@ -224,62 +241,56 @@ export default async function ModelPageView({ makeSlug, modelSlug, initialTab, v
                   </span>
                 )}
                 {allReviews.length > 0 && (
-                  <span style={{ fontSize: 12.5, color: '#9db1d4' }}>
+                  <span style={{ fontSize: 14, color: '#aab6d4' }}>
                     {allReviews.length} {isEn ? 'owner reviews' : 'ביקורות בעלים'}
                   </span>
                 )}
               </div>
+            )}
 
-              {!isEn && model.activeVehiclesIl != null && model.activeVehiclesIl > 0 && (
-                <div style={{ marginTop: 7, fontSize: 12, color: '#9db1d4' }}>
-                  <span style={{ fontWeight: 700, color: '#c8d8f0' }}>
-                    {model.activeVehiclesIl.toLocaleString('he-IL')}
-                  </span>
-                  {' '}רכבים פעילים בישראל
-                  <span style={{ opacity: 0.65, marginInlineStart: 4 }}>
-                    ({model.activeVehiclesIlAsOf
-                      ? new Date(`${model.activeVehiclesIlAsOf}T12:00:00Z`).toLocaleDateString('he-IL', { month: 'short', year: 'numeric', timeZone: 'Asia/Jerusalem' })
-                      : 'אוק׳ 2026'})
-                  </span>
-                </div>
-              )}
-              {!isEn && model.activeVehiclesIl === 0 && curatedModelData?.on_sale_il !== false && (
-                <div style={{ marginTop: 7, fontSize: 12, color: '#f0a050' }}>
-                  לא משווק כיום בישראל
-                </div>
-              )}
-              {!isEn && curatedModelData?.on_sale_il === false && curatedModelData.status_note && (
-                <div style={{ marginTop: 7, fontSize: 12.5, color: '#f0a050', fontWeight: 700 }}>
-                  {curatedModelData.status_note}
-                </div>
-              )}
-              {!isEn && curatedModelData?.on_sale_il === true && typeof curatedModelData.price_from_ils === 'number' && (
-                <div style={{ marginTop: 7, fontSize: 12.5, color: '#9db1d4' }}>
-                  <span style={{ color: '#c8d8f0', fontWeight: 700 }}>
-                    {`החל מ-${curatedModelData.price_from_ils.toLocaleString('he-IL')} ₪`}
-                  </span>
-                  {curatedModelData.price_note ? ` · ${curatedModelData.price_note}` : ''}
-                </div>
-              )}
-
-              <div style={{ display: 'flex', gap: 8, marginTop: 11, flexWrap: 'wrap' }}>
-                <FollowButton makeSlug={make.slug} modelSlug={model.slug} isEn={isEn} dark />
-                <Link
-                  href={`/cars/compare?car1=${make.slug}/${model.slug}`}
-                  style={{ border: '1px solid rgba(255,255,255,.28)', background: 'rgba(255,255,255,.08)', color: '#fff', fontWeight: 700, fontSize: 13.5, padding: '8px 14px', borderRadius: 10, textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: 6, whiteSpace: 'nowrap' }}
-                >
-                  {isEn ? 'Compare' : 'השוואה'}
-                </Link>
-                <SharePopup title={`${makeName} ${modelName}: ${cp.shareTitle}`} url={`${getBaseUrl(locale)}/cars/${make.slug}/${model.slug}`} dark />
+            {!isEn && model.activeVehiclesIl === 0 && curatedModelData?.on_sale_il !== false && (
+              <div style={{ fontSize: 14, color: '#f0a050' }}>לא משווק כיום בישראל</div>
+            )}
+            {!isEn && curatedModelData?.on_sale_il === false && curatedModelData.status_note && (
+              <div style={{ fontSize: 14, color: '#f0a050', fontWeight: 700 }}>{curatedModelData.status_note}</div>
+            )}
+            {!isEn && curatedModelData?.on_sale_il === true && typeof curatedModelData.price_from_ils === 'number' && (
+              <div style={{ fontSize: 14, color: '#aab6d4' }}>
+                <span style={{ color: '#fff', fontWeight: 700 }}>
+                  {`החל מ-${curatedModelData.price_from_ils.toLocaleString('he-IL')} ₪`}
+                </span>
+                {curatedModelData.price_note ? ` · ${curatedModelData.price_note}` : ''}
               </div>
+            )}
 
-              {/* Year quick-picker - filters images/videos in place */}
-              {model.years.length > 1 && (
-                <HeroYearPicker years={model.years} makeSlug={make.slug} modelSlug={model.slug} />
-              )}
+            {/* Year picker - segmented control (desktop only; mobile gets the strip under the hero) */}
+            {model.years.length > 1 && (
+              <HeroYearPicker years={model.years} makeSlug={make.slug} modelSlug={model.slug} variant="hero" locale={locale} />
+            )}
+
+            <div className="hero-actions" style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+              <FollowButton makeSlug={make.slug} modelSlug={model.slug} isEn={isEn} dark />
+              <Link
+                href={`/cars/compare?car1=${make.slug}/${model.slug}`}
+                style={{ height: 48, padding: '0 18px', border: '1px solid #3a4c78', borderRadius: 12, background: 'transparent', color: '#fff', fontWeight: 700, fontSize: 15, textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: 6, whiteSpace: 'nowrap', boxSizing: 'border-box' }}
+              >
+                <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M16 3h5v5M21 3l-7 7M8 21H3v-5M3 21l7-7" /></svg>
+                <span className="hero-compare-short">{isEn ? 'Compare' : 'השוואה'}</span>
+                <span className="hero-compare-long">{isEn ? 'Compare with another model' : 'השוואה לדגם אחר'}</span>
+              </Link>
+              <SharePopup title={`${makeName} ${modelName}: ${cp.shareTitle}`} url={`${getBaseUrl(locale)}/cars/${make.slug}/${model.slug}`} dark iconOnly />
             </div>
+          </div>
 
-            {/* Hero media - interactive with clickable thumbnails + year/trim badge */}
+          {/* Year picker - scrolling pills between the hero and the media (mobile only) */}
+          {model.years.length > 1 && (
+            <div className="model-hero-years">
+              <HeroYearPicker years={model.years} makeSlug={make.slug} modelSlug={model.slug} variant="strip" locale={locale} />
+            </div>
+          )}
+
+          {/* Hero media - interactive with clickable thumbnails + year/trim badge */}
+          <div className="model-hero-media" style={{ flex: '1 1 460px', minWidth: 0 }}>
             <HeroMedia
               images={carImages}
               sketchfabModel={relevantSketchfabModel}

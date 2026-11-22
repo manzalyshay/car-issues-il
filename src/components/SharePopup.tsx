@@ -9,6 +9,8 @@ interface Props {
   label?: string;
   compact?: boolean;
   dark?: boolean;
+  /** Square icon-only button (dark hero). */
+  iconOnly?: boolean;
 }
 
 const PLATFORMS_HE = [
@@ -89,7 +91,7 @@ const PLATFORMS_EN = [
   },
 ];
 
-export default function SharePopup({ title, url, label, compact = false, dark }: Props) {
+export default function SharePopup({ title, url, label, compact = false, dark, iconOnly }: Props) {
   const { locale } = useLocale();
   const isEn = locale === 'en';
   const PLATFORMS = isEn ? PLATFORMS_EN : PLATFORMS_HE;
@@ -140,7 +142,13 @@ export default function SharePopup({ title, url, label, compact = false, dark }:
       <button
         ref={btnRef}
         onClick={() => setOpen((v) => !v)}
-        style={dark ? {
+        aria-label={iconOnly ? resolvedLabel : undefined}
+        style={dark && iconOnly ? {
+          width: 48, height: 48, display: 'flex', alignItems: 'center', justifyContent: 'center',
+          borderRadius: 12, border: '1px solid #3a4c78',
+          background: open ? 'rgba(255,255,255,.12)' : 'transparent',
+          color: '#fff', cursor: 'pointer', fontFamily: 'inherit', transition: 'all 0.15s', padding: 0,
+        } : dark ? {
           display: 'flex', alignItems: 'center', gap: 5,
           padding: '8px 14px', borderRadius: 10,
           border: '1px solid rgba(255,255,255,.28)',
@@ -156,11 +164,11 @@ export default function SharePopup({ title, url, label, compact = false, dark }:
           fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit', transition: 'all 0.15s',
         }}
       >
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+        <svg width={iconOnly ? 18 : 14} height={iconOnly ? 18 : 14} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={iconOnly ? 2 : 2.5} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
           <circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/>
           <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/>
         </svg>
-        {resolvedLabel}
+        {!iconOnly && resolvedLabel}
       </button>
 
       {open && (
