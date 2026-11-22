@@ -126,16 +126,19 @@ export async function getTrimSpecs(makeSlug: string, modelSlug: string, year?: n
  * The trims on sale now, for pages without a year (model page, compare, FAQ). Rows with a
  * model_year are a year-by-year history (auto.co.il), so mixing every year would show
  * e.g. a 2019 plug-in "EX" next to the 2026 hybrid "EX": only the latest year is shown.
- * Undated rows are an importer price list of current trims; they win only when the dated
- * history stops before this year.
+ * Undated rows are an importer price list of current trims; they win when the dated
+ * history stops before this year, or when they are priced and the latest year is not.
  */
 function currentLineup(trims: TrimSpecWithYear[]): TrimSpecWithYear[] {
   const dated = trims.filter((t) => t.modelYear != null);
   if (!dated.length) return trims;
   const latest = Math.max(...dated.map((t) => t.modelYear!));
   const undated = trims.filter((t) => t.modelYear == null);
+  const latestRows = dated.filter((t) => t.modelYear === latest);
   if (undated.length && latest < new Date().getFullYear()) return undated;
-  return dated.filter((t) => t.modelYear === latest);
+  // The latest year has no list price but the importer list does: show the priced list
+  if (undated.some((t) => t.priceIls != null) && !latestRows.some((t) => t.priceIls != null)) return undated;
+  return latestRows;
 }
 
 /**
