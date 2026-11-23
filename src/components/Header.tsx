@@ -30,6 +30,7 @@ const CATEGORIES_HE = [
   { icon: '🏎',  label: 'ספורט',  href: '/cars/category/sports' },
   { icon: '👨‍👩‍👧', label: 'משפחתי', href: '/cars/category/minivan' },
   { icon: '🚐', label: 'מסחרי',  href: '/cars/category/pickup' },
+  { icon: '🏍️', label: 'אופנועים', href: '/motorcycles' },
 ];
 const CATEGORIES_EN = [
   { icon: '🚗', label: 'Sedan',      href: '/cars/category/sedan' },
@@ -103,6 +104,7 @@ export default function Header() {
     { href: '/vehicle-lookup', label: 'בדיקת רכב לפי מספר', title: 'בדיקת רכב לפי מספר רישוי' },
     { href: '/cars/compare',   label: 'השוואה' },
     { href: '/cars',           label: 'ביקורות' },
+    { href: '/motorcycles',    label: 'אופנועים' },
     { href: '/rankings',       label: 'דירוגים' },
     { href: '/repairs',        label: 'עלויות תיקון' },
     { href: '/news',           label: 'חדשות' },

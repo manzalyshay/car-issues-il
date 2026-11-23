@@ -8,6 +8,7 @@ import { CATEGORY_LABELS } from '@/data/reviews';
 import type { Review } from '@/data/reviews';
 import type { CarMake } from '@/lib/carsDb';
 import { useLocale } from '@/lib/localeContext';
+import { isMotoKey, vehiclePath } from '@/lib/motoKeys';
 
 function dbToReview(row: Record<string, unknown>): Review {
   return {
@@ -191,7 +192,9 @@ export default function ProfilePage() {
               const carLabel = make && model
                 ? `${locale === 'en' ? make.nameEn : make.nameHe} ${locale === 'en' ? model.nameEn : model.nameHe} ${review.year}`
                 : `${review.makeSlug} ${review.modelSlug} ${review.year}`;
-              const carHref = `/cars/${review.makeSlug}/${review.modelSlug}/${review.year}`;
+              const carHref = isMotoKey(review.makeSlug)
+                ? vehiclePath(review.makeSlug, review.modelSlug)
+                : `/cars/${review.makeSlug}/${review.modelSlug}/${review.year}`;
 
               return (
                 <div key={review.id} className="card" style={{ padding: '20px 24px' }}>

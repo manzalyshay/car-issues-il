@@ -11,6 +11,7 @@
  * known-issue scraped_at, news published_at) - never "now". Where no date exists the
  * field is omitted.
  */
+import { getAllMotoMakes } from './motoDb';
 import type { MetadataRoute } from 'next';
 import { getAllMakes } from './carsDb';
 import { dbAll } from './db';
@@ -102,9 +103,10 @@ export function xmlResponse(xml: string, status = 200) {
 
 export async function heSitemapEntries(): Promise<MetadataRoute.Sitemap> {
   const BASE = HE_BASE;
-  const [makes, news] = await Promise.all([
+  const [makes, news, motoMakes] = await Promise.all([
     getAllMakes().catch(() => []),
     getLatestNews(200, 0, 'he').catch(() => []),
+    getAllMotoMakes().catch(() => []),
   ]);
 
   const makeUrls = makes.map((make) => ({ url: `${BASE}/cars/${make.slug}`, changeFrequency: 'weekly' as const, priority: 0.8 }));
@@ -161,9 +163,18 @@ export async function heSitemapEntries(): Promise<MetadataRoute.Sitemap> {
     priority: 0.6,
   }));
 
+  // Motorcycles (Hebrew site only)
+  const motoUrls: MetadataRoute.Sitemap = motoMakes.length ? [
+    { url: `${BASE}/motorcycles`, changeFrequency: 'weekly' as const, priority: 0.8 },
+    ...motoMakes.map((m) => ({ url: `${BASE}/motorcycles/${m.slug}`, changeFrequency: 'weekly' as const, priority: 0.7 })),
+    ...motoMakes.flatMap((m) => m.models.map((mo) => ({
+      url: `${BASE}/motorcycles/${m.slug}/${mo.slug}`, changeFrequency: 'weekly' as const, priority: 0.8,
+    }))),
+  ] : [];
+
   return [
     ...STATIC_PAGES.map((s) => ({ url: `${BASE}${s.path}`, changeFrequency: s.changeFrequency, priority: s.priority })),
-    ...makeUrls, ...modelUrls, ...issuesUrls, ...yearUrls, ...trimUrls, ...compareUrls, ...newsUrls,
+    ...makeUrls, ...modelUrls, ...issuesUrls, ...yearUrls, ...trimUrls, ...compareUrls, ...newsUrls, ...motoUrls,
   ];
 }
 

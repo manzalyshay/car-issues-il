@@ -18,6 +18,8 @@ interface Props {
   intro?: string;
   /** Weaknesses found in published road tests, each with its source. */
   articleFindings?: ArticleFinding[];
+  /** Hide the car-body diagram (motorcycle pages). */
+  hideDiagram?: boolean;
 }
 
 /** Recall cards shown per page. */
@@ -28,7 +30,7 @@ const pageBtn: React.CSSProperties = {
   background: 'var(--bg-muted)', color: 'var(--text-muted)', border: 'none', cursor: 'pointer',
 };
 
-export default function RecallsSection({ makeEn, modelEn, year, years, initialRecalls, intro, articleFindings }: Props) {
+export default function RecallsSection({ makeEn, modelEn, year, years, initialRecalls, intro, articleFindings, hideDiagram }: Props) {
   const { t, locale } = useLocale();
   const rc = t.recalls;
   const isHe = locale === 'he';
@@ -259,7 +261,7 @@ export default function RecallsSection({ makeEn, modelEn, year, years, initialRe
           )}
 
           {/* Interactive car diagram */}
-          <CarDiagramRecalls recalls={recalls} />
+          {!hideDiagram && <CarDiagramRecalls recalls={recalls} />}
 
           {/* Year filter tabs */}
           {!year && availableYears.length > 1 && (
