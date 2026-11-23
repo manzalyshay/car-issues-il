@@ -26,6 +26,7 @@ import RecallsBarChart from '@/components/RecallsBarChart';
 import FuelComparisonChart from '@/components/FuelComparisonChart';
 import VerdictCard from '@/components/VerdictCard';
 import FollowButton from '@/components/FollowButton';
+import WriteReviewButton from '@/components/WriteReviewButton';
 import HeroMedia from '@/components/HeroMedia';
 import ModelFaq, { buildFaqs } from '@/components/ModelFaq';
 import HeroYearPicker from '@/components/HeroYearPicker';
@@ -269,6 +270,7 @@ export default async function ModelPageView({ makeSlug, modelSlug, initialTab, v
             )}
 
             <div className="hero-actions" style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+              <WriteReviewButton />
               <FollowButton makeSlug={make.slug} modelSlug={model.slug} isEn={isEn} dark />
               <Link
                 href={`/cars/compare?car1=${make.slug}/${model.slug}`}

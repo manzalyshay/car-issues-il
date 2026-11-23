@@ -382,7 +382,8 @@ button { font-family: inherit; cursor: pointer; }
 .hero-years-desktop { display: flex; }
 .hero-years-mobile { display: none; }
 .hero-years-scroll::-webkit-scrollbar { display: none; }
-.hero-compare-short { display: none; }
+/* Short "Compare" label everywhere: the hero row also holds Write review + Follow + Share. */
+.hero-compare-long { display: none; }
 @media (max-width: 768px) {
   .mp-hero { padding: 0; background: transparent; color: inherit; }
   .model-hero-inner { gap: 0 !important; }
@@ -395,10 +396,9 @@ button { font-family: inherit; cursor: pointer; }
   .hero-stat { border-radius: 12px; padding: 10px 12px; }
   .hero-years-desktop { display: none; }
   .hero-years-mobile { display: flex; }
-  .hero-actions { flex-wrap: nowrap !important; }
+  .hero-actions { flex-wrap: wrap !important; }
+  .hero-actions .hero-review-btn { flex: 1 1 100%; }
   .hero-actions .hero-follow-btn { flex: 1 1 auto; padding: 0 12px !important; }
-  .hero-compare-short { display: inline; }
-  .hero-compare-long { display: none; }
   .car-subnav-link { font-size: 15px; padding: 0 12px; }
 }
 

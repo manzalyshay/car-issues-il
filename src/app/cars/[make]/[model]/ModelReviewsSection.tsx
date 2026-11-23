@@ -1,8 +1,9 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import ReviewList from '@/components/ReviewList';
 import ReviewForm from '@/components/ReviewForm';
+import { OPEN_REVIEW_FORM_EVENT } from '@/components/WriteReviewButton';
 import { useLocale } from '@/lib/localeContext';
 import type { Review } from '@/data/reviews';
 
@@ -28,6 +29,26 @@ export default function ModelReviewsSection({ makeSlug, modelSlug, years, trims,
   const [starRating, setStarRating] = useState<number | null>(null);
   const [expanded, setExpanded] = useState(false);
   const [page, setPage] = useState(1);
+  const writeRef = useRef<HTMLDivElement>(null);
+
+  // Open the form from anywhere: the hero button / review nudge (custom event) and
+  // links to #write-review (verdict card, vehicle lookup) - on load and on hash change.
+  useEffect(() => {
+    const open = (rating?: number) => {
+      if (rating) setStarRating(rating);
+      setShowForm(true);
+      setTimeout(() => writeRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50);
+    };
+    const onEvent = (e: Event) => open((e as CustomEvent<{ rating?: number }>).detail?.rating);
+    const onHash = () => { if (window.location.hash === '#write-review') open(); };
+    onHash();
+    window.addEventListener(OPEN_REVIEW_FORM_EVENT, onEvent);
+    window.addEventListener('hashchange', onHash);
+    return () => {
+      window.removeEventListener(OPEN_REVIEW_FORM_EVENT, onEvent);
+      window.removeEventListener('hashchange', onHash);
+    };
+  }, []);
 
   const filtered = selectedYear ? reviews.filter((r) => r.year === selectedYear) : reviews;
   const collapsedCount = INITIAL_VISIBLE;
@@ -79,10 +100,22 @@ export default function ModelReviewsSection({ makeSlug, modelSlug, years, trims,
         })()}
       </div>
 
-      {/* Stars - always visible */}
-      <div style={{ textAlign: 'center', marginBottom: 20 }}>
-        <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: 6, fontWeight: 600 }}>
-          {locale === 'en' ? 'Rate this car' : 'דרגו את הרכב'}
+      {/* Write-review call to action - always visible */}
+      <div
+        id="write-review"
+        ref={writeRef}
+        style={{
+          textAlign: 'center', marginBottom: 20, padding: '16px 14px 18px', scrollMarginTop: 80,
+          border: '1px solid rgba(245,158,11,.35)', background: 'rgba(245,158,11,.06)', borderRadius: 12,
+        }}
+      >
+        <div style={{ fontSize: '0.95rem', fontWeight: 800, marginBottom: 2 }}>
+          {reviews.length === 0
+            ? (locale === 'en' ? 'No owner reviews yet - be the first!' : locale === 'ru' ? 'Отзывов пока нет - будьте первым!' : 'אין עדיין ביקורות בעלים - היו הראשונים!')
+            : (locale === 'en' ? 'Own this car? Share your experience' : locale === 'ru' ? 'Есть эта машина? Поделитесь опытом' : 'יש לכם את הרכב? שתפו את החוויה שלכם')}
+        </div>
+        <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)', marginBottom: 8 }}>
+          {locale === 'en' ? 'No sign-up needed · takes 2 minutes' : locale === 'ru' ? 'Без регистрации · 2 минуты' : 'בלי הרשמה · לוקח 2 דקות'}
         </div>
         <div style={{ display: 'flex', justifyContent: 'center', gap: 2 }}>
           {[1, 2, 3, 4, 5].map(star => (
@@ -102,6 +135,16 @@ export default function ModelReviewsSection({ makeSlug, modelSlug, years, trims,
             >★</button>
           ))}
         </div>
+        {!showForm && (
+          <button
+            type="button"
+            className="btn btn-primary"
+            onClick={() => setShowForm(true)}
+            style={{ marginTop: 10, height: 40, padding: '0 22px', fontWeight: 700 }}
+          >
+            ✍️ {locale === 'en' ? 'Write a review' : locale === 'ru' ? 'Написать отзыв' : 'כתבו ביקורת'}
+          </button>
+        )}
       </div>
 
       {/* Inline compact form - appears after star click */}
