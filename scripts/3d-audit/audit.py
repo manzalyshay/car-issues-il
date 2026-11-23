@@ -7,13 +7,20 @@ Input: two JSON files exported from D1 (raw query result is fine):
   counts.json   = SELECT make_slug || '/' || slug AS k, active_vehicles_il AS n FROM car_models
 Usage: python3 -I scripts/3d-audit/audit.py models.json counts.json out.json
 
-For each car it picks the entry the model page shows (same rules as src/lib/sketchfab.ts:
-title filters, then open-ended entry, else highest year_from) and flags it when:
+Checks every visible entry, not only the one the model page shows: year pages pick their own
+entry by year_from/year_to. The model-page entry (same rules as src/lib/sketchfab.ts: title
+filters, then open-ended entry, else highest year_from) is marked page=model, the rest page=year.
+An entry is flagged when:
   broken  - Sketchfab API has no such model (deleted / private)
   crude   - under 30k faces, or no textures and under 80k faces
-  heavy   - geometry over 20 MB (slow to load)
+  heavy   - geometry over 20 MB (slow to load). Face count alone is not flagged: the one model
+            known to crash a page (Trailblazer, 1.37M faces, 2026-11-23) was a guess, not a rule, and
+            many models that size run fine. Hide a model for crashing only when it is reported.
+  unseen  - nobody has looked at it yet (not in reviewed.json "seen"). Missing parts such as
+            wheels pass every number above (2026-11-23 Juke), so each model needs one visual check:
+            `python3 -I scripts/3d-audit/sheet.py out.png issues.json` draws the previews.
 Cars with no visible 3D model at all are listed as "missing" when they have over 5,000 on the road.
-Skips anything listed in reviewed.json (deliberate keeps). Keep the title rules in sync with UNSUITABLE_3D_TITLES / MISASSIGNED_3D_TITLES in src/lib/sketchfab.ts.
+Skips anything listed in reviewed.json "uids" (deliberate keeps); "seen" only clears "unseen". Keep the title rules in sync with UNSUITABLE_3D_TITLES / MISASSIGNED_3D_TITLES in src/lib/sketchfab.ts.
 """
 import json, re, sys, ssl, os, urllib.request, collections, concurrent.futures as cf
 
@@ -26,6 +33,7 @@ MISASSIGNED = {'alfa-romeo/tonale': [r'\bconcept\b'], 'byd/sealion6': [r'\bseali
   'mini/countryman': [r'\bvuitton\b'], 'opel/corsa': [r'\b1995\b'], 'seat/leon': [r'\be-racer\b'],
   'volkswagen/id4': [r'\bid[ .-]?3\b'], 'volkswagen/taigo': [r'\bvirtus\b']}
 ALLOWED = {'e4087350c4d84d8391de09b405c96488'}
+HEAVY_MB = 20
 
 def rows(path):
     d = json.load(open(path))
@@ -44,10 +52,13 @@ def get(u):
         time.sleep(2 * (attempt + 1))
     return {'_err': 'unreachable'}
 
-def shown(k, es):
-    es = [e for e in es if e['sketchfab_uid'] in ALLOWED or not (
+def usable(k, es):
+    return [e for e in es if e['sketchfab_uid'] in ALLOWED or not (
         any(re.search(p, e['sketchfab_name'], re.I) for p in UNSUITABLE) or
         any(re.search(p, e['sketchfab_name'], re.I) for p in MISASSIGNED.get(k, [])))]
+
+def shown(k, es):
+    es = usable(k, es)
     if not es: return None
     oe = [e for e in es if e['year_to'] is None]
     return oe[0] if oe else max(es, key=lambda e: e['year_from'] or -1e9)
@@ -63,22 +74,29 @@ n = {r['k']: r['n'] or 0 for r in rows(counts)}
 g = collections.defaultdict(list)
 for r in rows(models): g[f"{r['make_slug']}/{r['model_slug']}"].append(r)
 picks = {k: shown(k, es) for k, es in g.items()}
+entries = [(k, e) for k, es in g.items() for e in usable(k, es)]
 with cf.ThreadPoolExecutor(4) as ex:
-    infos = dict(zip(picks, ex.map(lambda m: info(m['sketchfab_uid']) if m else None, picks.values())))
+    infos = dict(zip([e['sketchfab_uid'] for _, e in entries], ex.map(lambda ke: info(ke[1]['sketchfab_uid']), entries)))
 rev = json.load(open(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'reviewed.json')))
+seen = rev.get('seen', {})
 issues = []
 for k, m in picks.items():
-    i = infos[k]
-    if m is None: kind = 'missing'
-    elif i['broken']: kind = 'broken'
+    if m is None and k not in rev['missing_ok']: issues.append(dict(car=k, kind='missing', on_road=n.get(k, 0)))
+for k, e in entries:
+    i, uid = infos[e['sketchfab_uid']], e['sketchfab_uid']
+    if i['broken']: kind = 'broken'
     elif i['unchecked']: continue  # Sketchfab didn't answer; check again next run
     elif (i['faces'] or 0) < 30000 or (i['tex'] == 0 and (i['faces'] or 0) < 80000): kind = 'crude'
-    elif i['mb'] > 20: kind = 'heavy'
+    elif i['mb'] > HEAVY_MB: kind = 'heavy'
+    elif uid not in seen: kind = 'unseen'
     else: continue
-    if (m and m['sketchfab_uid'] in rev['uids']) or (kind == 'missing' and k in rev['missing_ok']): continue
-    issues.append(dict(car=k, kind=kind, on_road=n.get(k, 0), uid=m and m['sketchfab_uid'], name=m and m['sketchfab_name'], **(i or {})))
+    if uid in rev['uids']: continue
+    page = 'model' if picks.get(k) and picks[k]['sketchfab_uid'] == uid else 'year'
+    issues.append(dict(car=k, kind=kind, page=page, on_road=n.get(k, 0), uid=uid, name=e['sketchfab_name'],
+                       years=f"{e['year_from'] or ''}-{e['year_to'] or ''}", **i))
 for k, c in n.items():
     if k not in g and c > 5000 and k not in rev['missing_ok']: issues.append(dict(car=k, kind='missing', on_road=c))
-issues.sort(key=lambda x: -x['on_road'])
+issues.sort(key=lambda x: (-x['on_road'], x.get('page') != 'model'))
 json.dump(issues, open(out, 'w'), indent=1)
-for x in issues: print(f"{x['on_road']:>7} {x['kind']:<8} {x['car']:<30} {x.get('name') or ''} {x.get('faces') or ''} {x.get('mb') or ''}")
+for x in issues: print(f"{x['on_road']:>7} {x['kind']:<8} {x.get('page') or '':<5} {x['car']:<30} {x.get('name') or ''} {x.get('faces') or ''} {x.get('tex') or ''} {x.get('mb') or ''}")
+print(collections.Counter(x['kind'] for x in issues))
