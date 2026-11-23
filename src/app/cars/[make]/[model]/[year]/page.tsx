@@ -19,6 +19,7 @@ import { getProReviewScoreSets, scoreSetsForPageYear } from '@/lib/proReviewScor
 import SharePopup from '@/components/SharePopup';
 import RecallsBadge from '@/components/RecallsBadge';
 import HeroMedia from '@/components/HeroMedia';
+import HeroYearPicker from '@/components/HeroYearPicker';
 import CarSidebarLayout from '../CarSidebarLayout';
 import ModelReviewsSection from '../ModelReviewsSection';
 import VerdictCard from '@/components/VerdictCard';
@@ -261,28 +262,22 @@ export default async function CarYearPage({ params }: Props) {
                 <RecallsBadge makeEn={make.nameEn} modelEn={model.nameEn} year={yearNum} />
               </div>
 
-              {/* Year selector pills */}
-              <div style={{ display: 'flex', alignItems: 'center', gap: 5, flexWrap: 'wrap', marginTop: 10 }}>
-                <span style={{ fontSize: 11, color: '#9db1d4', fontWeight: 600 }}>{cp.yearLabel}:</span>
-                {model.years.slice(0, 10).map(y => (
-                  y === yearNum ? (
-                    <span key={y} style={{ fontSize: 11, padding: '2px 8px', borderRadius: 999, background: '#fff', color: '#0d1b2f', fontWeight: 700 }}>{y}</span>
-                  ) : (
-                    <Link key={y} href={`/cars/${make.slug}/${model.slug}/${y}`} style={{ fontSize: 11, padding: '2px 8px', borderRadius: 999, border: '1px solid rgba(255,255,255,.28)', color: '#9db1d4', textDecoration: 'none' }}>{y}</Link>
-                  )
-                ))}
+              {/* Year picker - segmented control (desktop only; mobile gets the strip under the hero) */}
+              <div style={{ marginTop: 14 }}>
+                <HeroYearPicker years={model.years} makeSlug={make.slug} modelSlug={model.slug} selected={yearNum} variant="hero" locale={locale} />
               </div>
 
-              <div style={{ display: 'flex', gap: 8, marginTop: 11, flexWrap: 'wrap' }}>
+              <div className="hero-actions" style={{ display: 'flex', gap: 8, marginTop: 14, flexWrap: 'wrap' }}>
                 <WriteReviewButton />
                 <FollowButton makeSlug={make.slug} modelSlug={model.slug} isEn={isEn} dark />
                 <Link
                   href={`/cars/compare?car1=${make.slug}/${model.slug}`}
-                  style={{ border: '1px solid rgba(255,255,255,.28)', background: 'rgba(255,255,255,.08)', color: '#fff', fontWeight: 700, fontSize: 13.5, padding: '8px 14px', borderRadius: 10, textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: 6, whiteSpace: 'nowrap' }}
+                  style={{ height: 48, padding: '0 18px', border: '1px solid #3a4c78', borderRadius: 12, background: 'transparent', color: '#fff', fontWeight: 700, fontSize: 15, textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: 6, whiteSpace: 'nowrap', boxSizing: 'border-box' }}
                 >
+                  <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M16 3h5v5M21 3l-7 7M8 21H3v-5M3 21l7-7" /></svg>
                   {isEn ? 'Compare' : 'השוואה'}
                 </Link>
-                <SharePopup title={`${makeName} ${modelName} ${year} - ${cp.shareTitle}`} url={`${base}/cars/${make.slug}/${model.slug}/${year}`} dark />
+                <SharePopup title={`${makeName} ${modelName} ${year} - ${cp.shareTitle}`} url={`${base}/cars/${make.slug}/${model.slug}/${year}`} dark iconOnly />
               </div>
             </div>
 
@@ -300,6 +295,9 @@ export default async function CarYearPage({ params }: Props) {
           </div>
         </div>
       </section>
+
+      {/* Year picker - scrolling pills under the hero (mobile only) */}
+      <HeroYearPicker years={model.years} makeSlug={make.slug} modelSlug={model.slug} selected={yearNum} variant="strip" locale={locale} />
 
       {/* ── SIDEBAR + CONTENT ── */}
       <CarSidebarLayout

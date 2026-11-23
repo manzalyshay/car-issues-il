@@ -149,6 +149,18 @@ export default function CarSidebarLayout({ makeSlug, modelSlug, makeNameHe, mode
     }
   };
 
+  /* Open a tab from elsewhere on the page (the hero's "+N photos" tile) */
+  useEffect(() => {
+    const handler = (e: Event) => {
+      const next = (e as CustomEvent<string>).detail as Tab;
+      if (!VALID_TABS.includes(next)) return;
+      handleTabClick(next);
+      setTimeout(() => navRef.current?.closest('.car-subnav-wrap')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50);
+    };
+    window.addEventListener('car-open-tab', handler);
+    return () => window.removeEventListener('car-open-tab', handler);
+  }, [tab, videos, images, videosLoading, imagesLoading, yearFilter]); // eslint-disable-line react-hooks/exhaustive-deps
+
   const loadingPlaceholder = (
     <div style={{ textAlign: 'center', padding: '48px 0', color: 'var(--text-muted)', fontSize: '0.9rem' }}>
       {t.carTabs.loading}
@@ -202,7 +214,6 @@ export default function CarSidebarLayout({ makeSlug, modelSlug, makeNameHe, mode
                   }
                 }}
               >
-                <span style={{ fontSize: '0.85rem' }}>{item.icon}</span>
                 {item.label}
               </button>
             );
@@ -215,7 +226,7 @@ export default function CarSidebarLayout({ makeSlug, modelSlug, makeNameHe, mode
             style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '0 12px', fontSize: '0.78rem', fontWeight: 700, color: 'var(--text-muted)', textDecoration: 'none', whiteSpace: 'nowrap', borderInlineStart: '1px solid var(--border)', transition: 'color 0.15s' }}
             className="subnav-cta"
           >
-            ⚖️ {s.compare}
+            {s.compare}
           </Link>
         </div>
       </div>
