@@ -3,7 +3,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { getMakeBySlug, getModelBySlug } from '@/lib/carsDb';
-import { getTrimSpecs } from '@/lib/trimSpecsDb';
+import { getAllTrimSpecs } from '@/lib/trimSpecsDb';
 import { TRIM_FEATURES } from '@/data/cars';
 import { getHostLocale } from '@/lib/hostLocale';
 
@@ -49,13 +49,13 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     getHostLocale(),
     getMakeBySlug(makeSlug),
     getModelBySlug(makeSlug, modelSlug),
-    getTrimSpecs(makeSlug, modelSlug).catch(() => []),
+    getAllTrimSpecs(makeSlug, modelSlug).catch(() => []),
   ]);
   if (!make || !model) return {};
   const trim = trims.find(t => toTrimSlug(t.name) === trimSlug);
   if (!trim) return {};
 
-  const year = model.years[0];
+  const year = trim.modelYear ?? model.years[0];
   const isEn = locale === 'en';
   // Trim names are often Hebrew (Israeli price list): English pages show the translation
   const trimName = isEn ? trimNameEn(trim.name) : trim.name;
@@ -102,7 +102,7 @@ export default async function TrimPage({ params }: Props) {
     getHostLocale(),
     getMakeBySlug(makeSlug),
     getModelBySlug(makeSlug, modelSlug),
-    getTrimSpecs(makeSlug, modelSlug).catch(() => []),
+    getAllTrimSpecs(makeSlug, modelSlug).catch(() => []),
   ]);
 
   if (!make || !model) notFound();
@@ -114,7 +114,7 @@ export default async function TrimPage({ params }: Props) {
   const trimName = isEn ? trimNameEn(trim.name) : trim.name;
   const makeName = isEn ? make.nameEn : make.nameHe;
   const modelName = isEn ? model.nameEn : model.nameHe;
-  const year = model.years[0];
+  const year = trim.modelYear ?? model.years[0];
   const trimIndex = trims.findIndex(t => t.id === trim.id);
   const prevTrim = trimIndex > 0 ? trims[trimIndex - 1] : null;
   const nextTrim = trimIndex < trims.length - 1 ? trims[trimIndex + 1] : null;

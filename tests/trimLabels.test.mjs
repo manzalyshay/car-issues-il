@@ -84,3 +84,24 @@ test('value labels: Hebrew kept on he, never shown elsewhere', () => {
   assert.equal(trimValueLabel('משהו לא מוכר', null, en, 'en'), null);
   assert.equal(trimValueLabel('vegan', null, en, 'en'), 'vegan');
 });
+
+test('trimShortLabels: short, distinct labels for auto.co.il version names', async () => {
+  const { trimShortLabels } = await import('../src/lib/trimLabels.ts');
+  const niro2026 = [
+    "(מתיחת פנים) HEV, אוט', 1.6 ל' היברידי, EX",
+    "(מתיחת פנים) HEV, אוט', 1.6 ל' היברידי, Premium",
+    "HEV, אוט', 1.6 ל' היברידי, EX",
+    "HEV, אוט', 1.6 ל' היברידי, LX",
+  ];
+  assert.deepEqual(trimShortLabels(niro2026, 'he'), ['EX · היברידי · מתיחת פנים', 'Premium · היברידי · מתיחת פנים', 'EX · היברידי', 'LX · היברידי']);
+  assert.deepEqual(trimShortLabels(niro2026, 'en'), ['EX · Hybrid · Facelift', 'Premium · Hybrid · Facelift', 'EX · Hybrid', 'LX · Hybrid']);
+  // No trim token: powertrain (+ engine size unless electric)
+  assert.deepEqual(trimShortLabels(["PHEV, אוט', 1.6 ל' פלאג אין הייבריד", 'EV, חשמלי'], 'he'), ["פלאג-אין · 1.6 ל'", 'חשמלי']);
+  // Plain names pass through; English never shows Hebrew
+  assert.deepEqual(trimShortLabels(['LX', 'אלגנס'], 'he'), ['LX', 'אלגנס']);
+  assert.deepEqual(trimShortLabels(['LX', 'אלגנס'], 'en'), ['LX', 'Elegance']);
+  // Collisions get engine size, then drive
+  assert.deepEqual(trimShortLabels(["1.5 ל' טורבו, אוט', Style", "2.0 ל' טורבו, אוט', Style"], 'he'), ["Style · 1.5 ל'", "Style · 2.0 ל'"]);
+  assert.deepEqual(trimShortLabels(["2.0 ל', אוט', Style ,4x2", "2.0 ל', אוט', Style ,4x4"], 'en'), ['Style · 2.0 L · 4x2', 'Style · 2.0 L · 4x4']);
+  for (const l of trimShortLabels(niro2026, 'en')) assert.equal(hasHebrew(l), false);
+});

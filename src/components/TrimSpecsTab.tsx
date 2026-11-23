@@ -5,7 +5,7 @@ import Link from 'next/link';
 import type { TrimSpec } from '@/data/cars';
 import { TRIM_FEATURES } from '@/data/cars';
 import { useLocale } from '@/lib/localeContext';
-import { trimDisplayName, trimValueLabel, driveKey, engineKey, transmissionKey, transmissionGears } from '@/lib/trimLabels';
+import { trimDisplayName, trimShortLabels, trimValueLabel, driveKey, engineKey, transmissionKey, transmissionGears } from '@/lib/trimLabels';
 
 function toTrimSlug(name: string) {
   return name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
@@ -165,6 +165,8 @@ export default function TrimSpecsTab({ makeSlug, modelSlug, makeNameHe, modelNam
   const hasSafetyCard = ncap != null || (locale !== 'en' && !!safetyHe);
   const hasTechCard = techStats.length > 0 || techChecklist.length > 0 || (locale !== 'en' && !!techComfortHe);
 
+  // auto.co.il version names are long spec strings: buttons show a short label, full name on hover
+  const shortLabels = noTrims ? [] : trimShortLabels(allTrims!.map(t => t.name), locale);
   // Trim picker groups: by powertrain (cheapest first); trims with no current price last.
   const tl = TRIM_PICKER_LABELS[locale] ?? TRIM_PICKER_LABELS.he;
   const trimSpecLine = (t: TrimWithYear) => [
@@ -199,13 +201,14 @@ export default function TrimSpecsTab({ makeSlug, modelSlug, makeNameHe, modelNam
         {ts.selectTrim}
       </p>
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
-        {allTrims!.map(t => {
+        {allTrims!.map((t, i) => {
           const on = selected === t.name;
           return (
             <button
               key={t.id ?? t.name}
               onClick={() => { setSelected(t.name); setTrimInUrl(t.name); }}
               aria-pressed={on}
+              title={trimDisplayName(t.name, locale)}
               style={{
                 padding: '6px 16px', borderRadius: 999,
                 border: on ? '2px solid var(--accent)' : '1.5px solid var(--border)',
@@ -216,7 +219,7 @@ export default function TrimSpecsTab({ makeSlug, modelSlug, makeNameHe, modelNam
                 display: 'flex', alignItems: 'center', gap: 6,
               }}
             >
-              {trimDisplayName(t.name, locale)}
+              {shortLabels[i]}
               {t.priceIls && (
                 <span style={{ fontSize: '0.72rem', opacity: on ? 0.85 : 0.6 }}>
                   {fmtPrice(t.priceIls, locale)}
@@ -385,6 +388,7 @@ export default function TrimSpecsTab({ makeSlug, modelSlug, makeNameHe, modelNam
                       aria-checked={on}
                       onClick={() => { setSelected(t.name); setTrimInUrl(t.name); }}
                       className="trim-card"
+                      title={trimDisplayName(t.name, locale)}
                       style={{
                         background: on ? 'var(--accent-soft)' : 'var(--surface)',
                         border: on ? '2px solid var(--accent)' : '1px solid var(--border)',
@@ -395,7 +399,7 @@ export default function TrimSpecsTab({ makeSlug, modelSlug, makeNameHe, modelNam
                         <span style={{ width: 10, height: 10, borderRadius: '50%', background: on ? 'var(--accent)' : 'transparent' }} />
                       </span>
                       <span className="trim-card-info">
-                        <span style={{ fontSize: 16, fontWeight: 700, color: 'var(--text)' }}>{trimDisplayName(t.name, locale)}</span>
+                        <span style={{ fontSize: 16, fontWeight: 700, color: 'var(--text)' }}>{shortLabels[allTrims!.indexOf(t)] ?? trimDisplayName(t.name, locale)}</span>
                         {trimSpecLine(t) && <span style={{ fontSize: 13, color: 'var(--text-muted)' }}>{trimSpecLine(t)}</span>}
                       </span>
                       <span className="trim-card-price">

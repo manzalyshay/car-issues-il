@@ -55,3 +55,4 @@ scripts/gsc-token.json
 .cache/
 __pycache__/
 .price-sync/
+.trim-sync/
