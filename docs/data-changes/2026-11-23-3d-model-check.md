@@ -1,10 +1,10 @@
-# 2026-11-23: full 3D model check (pending approval)
+# 2026-11-23: full 3D model check
 
 First run of the updated check (scripts/3d-audit): every visible entry, not only the model-page one; heavy now also
 means over 1M faces (or over 20 textures above 600k faces); every model gets one preview check.
 All 582 visible models were looked at in contact sheets (scripts/3d-audit/sheet.py).
 
-**Not applied yet**: production writes need the owner's go-ahead. Planned changes (car_3d_models):
+Applied 2026-11-23 with the owner's approval (all 27 statements changed one row each). Changes (car_3d_models):
 
 | Car | Years | Page | On the road | Problem | uid |
 |---|---|---|---|---|---|
@@ -41,7 +41,8 @@ replacing the Proace City Verso van. Fiat Panda: every 2012+ (third generation) 
 
 Kept although under the crude face count (look right): nissan/micra 2004, suzuki/alto 2017, bmw/x3 2011, range-rover-evoque 2015.
 
-Still open: 176 heavy models (119 on model pages, 31 of them cars with over 10,000 on the road).
+Still open: 176 heavy models (119 on model pages, 31 of them cars with over 10,000 on the road). The owner chose to report
+broken models as they find them rather than replace these in bulk.
 
 Apply SQL:
 
