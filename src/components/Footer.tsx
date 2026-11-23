@@ -106,6 +106,7 @@ export default function Footer() {
         { href: '/repairs',        label: isEn ? 'Repair Costs'     : 'עלויות תיקון' },
               ...(isEn ? [] : [
           { href: '/recall-check', label: 'בדיקת ריקול לפי מספר רכב' },
+          { href: '/motorcycles', label: 'אופנועים וקטנועים' },
           { href: '/motorcycle-check', label: 'בדיקת אופנוע לפי מספר' },
           { href: '/disabled-tag-check', label: 'בדיקת תו נכה' },
         ]),

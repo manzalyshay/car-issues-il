@@ -15,6 +15,7 @@ function purgeCloudflarePaths(urls: string[]) {
   }).catch(() => {}); // fire-and-forget, never block the response
 }
 import type { Review } from '@/data/reviews';
+import { vehiclePath, isMotoKey } from '@/lib/motoKeys';
 
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
@@ -47,10 +48,10 @@ async function notifyFollowers({
   ).catch(() => []);
   if (!followers.length) return;
 
-  const carName = `${makeSlug} ${modelSlug}`.replace(/-/g, ' ');
+  const carName = `${makeSlug.replace(/^moto-/, '')} ${modelSlug}`.replace(/-/g, ' ');
   const stars = '★'.repeat(rating) + '☆'.repeat(5 - rating);
   const preview = body.slice(0, 200) + (body.length > 200 ? '…' : '');
-  const url = `https://carissues.co.il/cars/${makeSlug}/${modelSlug}`;
+  const url = `https://carissues.co.il${vehiclePath(makeSlug, modelSlug)}`;
 
   const html = `
 <div dir="rtl" style="font-family:sans-serif;max-width:520px;margin:0 auto;color:#1c2733">
@@ -140,18 +141,16 @@ export async function POST(req: NextRequest) {
     notifyFollowers({ makeSlug, modelSlug, authorName, rating, title, body: reviewBody }).catch(() => {});
 
     // The review is saved: a cache-refresh failure must not turn this into an error response.
+    // Motorcycle reviews are stored under 'moto-<make>' and live at /motorcycles/... (no issues page)
+    const pagePath = vehiclePath(makeSlug, modelSlug);
+    const paths = isMotoKey(makeSlug) ? [pagePath] : [pagePath, `${pagePath}/issues`];
     try {
-      revalidatePath(`/cars/${makeSlug}/${modelSlug}`);
-      revalidatePath(`/cars/${makeSlug}/${modelSlug}/issues`);
+      for (const p of paths) revalidatePath(p);
       revalidatePath('/');
     } catch (err) {
       console.error('[Reviews API] revalidate failed', err);
     }
-    purgeCloudflarePaths([
-      `https://carissues.co.il/cars/${makeSlug}/${modelSlug}`,
-      `https://carissues.co.il/cars/${makeSlug}/${modelSlug}/issues`,
-      'https://carissues.co.il/',
-    ]);
+    purgeCloudflarePaths([...paths.map((p) => `https://carissues.co.il${p}`), 'https://carissues.co.il/']);
     return NextResponse.json({ review }, { status: 201 });
   } catch (err) {
     console.error('[Reviews API]', err);

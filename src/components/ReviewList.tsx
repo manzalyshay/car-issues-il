@@ -6,6 +6,7 @@ import SharePopup from './SharePopup';
 import type { Review } from '@/data/reviews';
 import { useAuth } from '@/lib/authContext';
 import { useLocale } from '@/lib/localeContext';
+import { vehiclePath } from '@/lib/motoKeys';
 
 interface Props {
   reviews: Review[];
@@ -601,7 +602,7 @@ export default function ReviewList({ reviews, onHelpful, onDislike, visibleCount
                       compact
                       label={rl.share}
                       title={`${review.title || `${review.makeSlug} ${review.modelSlug}`} - CarIssues`}
-                      url={`https://${locale === 'en' ? 'carissues.net' : 'carissues.co.il'}/cars/${review.makeSlug}/${review.modelSlug}#review-${review.id}`}
+                      url={`https://${locale === 'en' ? 'carissues.net' : 'carissues.co.il'}${vehiclePath(review.makeSlug, review.modelSlug)}#review-${review.id}`}
                     />
                   </div>
 

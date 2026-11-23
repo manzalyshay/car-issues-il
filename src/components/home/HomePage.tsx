@@ -5,6 +5,7 @@
  * Russian comparison pages (no news, model cards, reviews or ticker).
  */
 import { getAllMakes } from '@/lib/carsDb';
+import { getAllMotoMakes, isMotoKey, motoKey, vehiclePath } from '@/lib/motoDb';
 import { dbAll, dbFirst } from '@/lib/db';
 import { getAllAiScores, blendWithOwnerRating } from '@/lib/aiScore';
 import { getAllHeadlineTestAverages } from '@/lib/proReviewScores';
@@ -106,11 +107,15 @@ async function getTopRanked(limit = 3, isEn = false) {
 }
 
 async function getRecentReviews(limit = 3, locale?: string) {
-  const makes = await getAllMakes();
+  const [makes, motoMakes] = await Promise.all([getAllMakes(), getAllMotoMakes().catch(() => [])]);
   const lookup = new Map<string, { makeHe: string; modelHe: string; makeEn: string; modelEn: string; logoUrl: string }>();
   for (const make of makes)
     for (const model of make.models)
       lookup.set(`${make.slug}/${model.slug}`, { makeHe: make.nameHe, modelHe: model.nameHe, makeEn: make.nameEn, modelEn: model.nameEn, logoUrl: make.logoUrl });
+  // Motorcycle reviews are stored under 'moto-<make>'
+  for (const make of motoMakes)
+    for (const model of make.models)
+      lookup.set(`${motoKey(make.slug)}/${model.slug}`, { makeHe: make.nameHe, modelHe: model.nameHe, makeEn: make.nameEn, modelEn: model.nameEn, logoUrl: make.logoUrl });
 
   const where = locale === 'en' ? 'WHERE body_en IS NOT NULL' : '';
   const rows = await dbAll<{
@@ -123,6 +128,7 @@ async function getRecentReviews(limit = 3, locale?: string) {
 
   return rows.map((r) => ({
     ...r,
+    href: vehiclePath(r.make_slug, r.model_slug),
     ...(lookup.get(`${r.make_slug}/${r.model_slug}`) ?? { makeHe: r.make_slug, modelHe: r.model_slug, makeEn: r.make_slug, modelEn: r.model_slug, logoUrl: '' }),
   }));
 }
@@ -261,7 +267,8 @@ export default async function HomePage({ locale }: { locale: Locale }) {
     ? topRanked.map((c) => ({ ...c, makeHe: '', modelHe: '' }))
     : topRanked;
   const recentReviewsForClient = locale === 'en'
-    ? recentReviews.map((r) => ({ ...r, makeHe: '', modelHe: '', title: r.title_en ?? '', body: r.body_en ?? '', author: 'Anonymous', sub_model: undefined }))
+    // Motorcycle pages are Hebrew-only
+    ? recentReviews.filter((r) => !isMotoKey(r.make_slug)).map((r) => ({ ...r, makeHe: '', modelHe: '', title: r.title_en ?? '', body: r.body_en ?? '', author: 'Anonymous', sub_model: undefined }))
     : recentReviews;
   const tickerItemsForClient = locale === 'en'
     ? tickerItems.map((t) => ({ ...t, code: t.codeEn, textHe: '' }))
