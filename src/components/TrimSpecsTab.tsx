@@ -45,6 +45,17 @@ function anyHas(trims: TrimWithYear[], key: string) {
   return trims.some(t => Array.isArray(t.features) && t.features.includes(key));
 }
 
+/** Section labels carry a leading emoji; the trim card headings drop it. */
+const plain = (label: string) => label.replace(/^[^\p{L}\p{N}]+/u, '');
+
+const ENGINE_COLORS: Record<string, string> = { petrol: '#2f62e0', hybrid: '#1b9e77', phev: '#7a4fd6', electric: '#0f9bb0', diesel: '#e0832f' };
+
+const TRIM_PICKER_LABELS: Record<string, { choose: string; count: (n: number) => string; sorted: string; noPrice: string; unpricedTitle: string; unpricedSub: string; other: string; fullSpecs: string; compare: string }> = {
+  he: { choose: 'בחרו גימור', count: n => n === 1 ? 'גימור אחד' : `${n} גימורים`, sorted: 'ממוין לפי סוג הנעה ומחיר', noPrice: 'אין מחיר', unpricedTitle: 'ללא מחיר עדכני', unpricedSub: '', other: 'אחר', fullSpecs: 'מפרט מלא', compare: 'השוואה לדגם אחר' },
+  en: { choose: 'Choose a trim', count: n => `${n} trim${n === 1 ? '' : 's'}`, sorted: 'Sorted by powertrain and price', noPrice: 'No price', unpricedTitle: 'No current price', unpricedSub: '', other: 'Other', fullSpecs: 'Full specs', compare: 'Compare with another model' },
+  ru: { choose: 'Выберите комплектацию', count: n => `Комплектаций: ${n}`, sorted: 'По типу двигателя и цене', noPrice: 'Нет цены', unpricedTitle: 'Без актуальной цены', unpricedSub: '', other: 'Другое', fullSpecs: 'Все характеристики', compare: 'Сравнить с другой моделью' },
+};
+
 // ILS → USD fixed rate (approximate)
 const ILS_TO_USD = 3.65;
 function fmtPrice(priceIls: number, locale: string) {
@@ -156,6 +167,34 @@ export default function TrimSpecsTab({ makeSlug, modelSlug, makeNameHe, modelNam
 
   // auto.co.il version names are long spec strings: buttons show a short label, full name on hover
   const shortLabels = noTrims ? [] : trimShortLabels(allTrims!.map(t => t.name), locale);
+  // Trim picker groups: by powertrain (cheapest first); trims with no current price last.
+  const tl = TRIM_PICKER_LABELS[locale] ?? TRIM_PICKER_LABELS.he;
+  const trimSpecLine = (t: TrimWithYear) => [
+    t.engineCc ? (locale === 'en' ? `${(t.engineCc / 1000).toFixed(1)}L` : locale === 'ru' ? `${(t.engineCc / 1000).toFixed(1)} л` : `${(t.engineCc / 1000).toFixed(1)} ל׳`) : null,
+    t.engineHp ? `${t.engineHp} ${ts.hp}` : null,
+    trimValueLabel(t.drive, driveKey(t.drive), ts.drives, locale),
+  ].filter(Boolean).join(' · ');
+  const trimGroups: { key: string; title: string; sub?: string; color: string; items: TrimWithYear[] }[] = [];
+  if (!noTrims) {
+    const byKey = new Map<string, TrimWithYear[]>();
+    const unpriced: TrimWithYear[] = [];
+    for (const t of allTrims!) {
+      if (!t.priceIls) { unpriced.push(t); continue; }
+      const k = engineKey(t.engineType) ?? 'other';
+      if (!byKey.has(k)) byKey.set(k, []);
+      byKey.get(k)!.push(t);
+    }
+    const groups = [...byKey.entries()].map(([k, items]) => ({
+      key: k,
+      title: k === 'other' ? tl.other : (ts.engineTypes[k] ?? k),
+      color: ENGINE_COLORS[k] ?? '#5b6a86',
+      items: items.sort((x, y) => (x.priceIls ?? 0) - (y.priceIls ?? 0)),
+    })).sort((x, y) => (x.items[0].priceIls ?? 0) - (y.items[0].priceIls ?? 0));
+    trimGroups.push(...groups);
+    if (unpriced.length) trimGroups.push({ key: 'unpriced', title: tl.unpricedTitle, sub: tl.unpricedSub, color: '#8a94aa', items: unpriced });
+  }
+  const selectedGroup = trim ? trimGroups.find(g => g.items.some(t => t.name === trim.name)) : undefined;
+
   const trimSelector = trim && (
     <div style={{ marginBottom: 20 }}>
       <p style={{ fontSize: '0.78rem', color: 'var(--text-muted)', marginBottom: 10, fontWeight: 600 }}>
@@ -320,86 +359,151 @@ export default function TrimSpecsTab({ makeSlug, modelSlug, makeNameHe, modelNam
         </div>
       )}
 
-      {/* Specs mode includes the same trim selector, with full technical details. */}
+      {/* Specs mode: trims grouped by powertrain, with the selected trim's details beside them. */}
       {mode === 'specs' && trim && (<>
-      {trimSelector}
-
-      {/* Detail card for selected trim */}
-      <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 14, overflow: 'hidden' }}>
-        {/* Card header */}
-        <div style={{ background: 'var(--accent)', padding: '16px 20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <div>
-            <div style={{ fontSize: '1.1rem', fontWeight: 800, color: '#fff' }}>{trimDisplayName(trim.name, locale)}</div>
-            <div style={{ fontSize: '0.8rem', color: 'rgba(255,255,255,0.75)', marginTop: 2 }}>
-              {displayMakeName} {displayModelName}
+      <div className="trim-layout">
+        <div className="trim-list" style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', flexWrap: 'wrap', gap: 8 }}>
+              <h2 style={{ margin: 0, fontSize: 'clamp(20px,2vw,26px)', fontWeight: 800 }}>{tl.choose}</h2>
+              <span style={{ fontSize: 14, color: 'var(--text-muted)' }}>{tl.count(allTrims!.length)}{defaultYear ? ` · ${defaultYear}` : ''}</span>
             </div>
+            <p style={{ margin: 0, fontSize: 14, color: 'var(--text-muted)' }}>{tl.sorted}</p>
           </div>
-          {trim.priceIls && (
-            <div style={{ textAlign: 'left' }}>
-              <div style={{ fontSize: '1.25rem', fontWeight: 900, color: '#fff' }}>{locale === 'en' ? `$${Math.round(trim.priceIls / ILS_TO_USD).toLocaleString('en-US')}` : `₪${trim.priceIls.toLocaleString('he-IL')}`}</div>
-              <div style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.7)' }}>{ts.recommended}</div>
+
+          {trimGroups.map(g => (
+            <div key={g.key} role="radiogroup" aria-label={g.title} style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <span aria-hidden="true" style={{ width: 10, height: 10, borderRadius: '50%', background: g.color, flex: 'none' }} />
+                <h3 style={{ margin: 0, fontSize: 15, fontWeight: 700, color: 'var(--text)' }}>{g.title}</h3>
+                {g.sub && <span style={{ fontSize: 14, color: 'var(--text-muted)' }}>{g.sub}</span>}
+              </div>
+              <div className="trim-cards">
+                {g.items.map(t => {
+                  const on = t.name === trim.name;
+                  return (
+                    <button
+                      key={t.id ?? t.name}
+                      role="radio"
+                      aria-checked={on}
+                      onClick={() => { setSelected(t.name); setTrimInUrl(t.name); }}
+                      className="trim-card"
+                      title={trimDisplayName(t.name, locale)}
+                      style={{
+                        background: on ? 'var(--accent-soft)' : 'var(--surface)',
+                        border: on ? '2px solid var(--accent)' : '1px solid var(--border)',
+                        padding: on ? '12px 14px' : '13px 15px',
+                      }}
+                    >
+                      <span className="trim-card-radio" aria-hidden="true" style={{ border: `2px solid ${on ? 'var(--accent)' : '#a3abbd'}` }}>
+                        <span style={{ width: 10, height: 10, borderRadius: '50%', background: on ? 'var(--accent)' : 'transparent' }} />
+                      </span>
+                      <span className="trim-card-info">
+                        <span style={{ fontSize: 16, fontWeight: 700, color: 'var(--text)' }}>{shortLabels[allTrims!.indexOf(t)] ?? trimDisplayName(t.name, locale)}</span>
+                        {trimSpecLine(t) && <span style={{ fontSize: 13, color: 'var(--text-muted)' }}>{trimSpecLine(t)}</span>}
+                      </span>
+                      <span className="trim-card-price">
+                        <span style={{ fontSize: 17, fontWeight: 800, color: t.priceIls ? 'var(--text)' : 'var(--text-muted)' }}>
+                          {t.priceIls ? fmtPrice(t.priceIls, locale) : '—'}
+                        </span>
+                        <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>{t.priceIls ? ts.recommended : tl.noPrice}</span>
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
             </div>
-          )}
+          ))}
         </div>
 
-        <div style={{ padding: '4px 20px 16px' }}>
-          {/* Engine */}
-          {hasEngine && (
-            <div style={{ marginBottom: 8 }}>
-              <div style={{ fontSize: '0.72rem', fontWeight: 800, color: 'var(--text-muted)', letterSpacing: '0.08em', textTransform: 'uppercase', padding: '14px 0 4px' }}>
-                {ts.engine}
+        {/* Detail card for selected trim */}
+        <aside className="trim-aside" style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 20, overflow: 'hidden' }}>
+          <div style={{ background: 'var(--accent)', color: '#fff', padding: 20, display: 'flex', flexDirection: 'column', gap: 6 }}>
+            <span style={{ fontSize: 14, color: '#c3cde3' }}>{displayMakeName} {displayModelName}{selectedGroup ? ` · ${selectedGroup.title}` : ''}</span>
+            <span style={{ fontSize: 22, fontWeight: 800, lineHeight: 1.25 }}>{trimDisplayName(trim.name, locale)}</span>
+            {trim.priceIls && (
+              <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, flexWrap: 'wrap' }}>
+                <span style={{ fontSize: 'clamp(28px,2.6vw,34px)', fontWeight: 800 }}>{locale === 'en' ? `$${Math.round(trim.priceIls / ILS_TO_USD).toLocaleString('en-US')}` : `₪${trim.priceIls.toLocaleString('he-IL')}`}</span>
+                <span style={{ fontSize: 14, color: '#c3cde3' }}>{ts.recommended}</span>
               </div>
-              {/* Raw values may be stored as Hebrew text: label them by key; no row rather than Hebrew on en/ru */}
-              {engineLabel && row(ts.engineType, engineLabel)}
-              {trim.engineCc && row(ts.engineCc, `${trim.engineCc.toLocaleString()} ${ts.cc}`)}
-              {trim.engineHp && row(ts.engineHp, <span style={{ color: 'var(--accent)' }}>{trim.engineHp} {ts.hp}</span>)}
-              {transmissionLabel && row(ts.transmission, transmissionLabel)}
-              {driveLabel && row(ts.drive, driveLabel)}
-            </div>
-          )}
+            )}
+          </div>
 
-          {/* Interior */}
-          {hasInterior && (
-            <div style={{ marginBottom: 8 }}>
-              <div style={{ fontSize: '0.72rem', fontWeight: 800, color: 'var(--text-muted)', letterSpacing: '0.08em', textTransform: 'uppercase', padding: '14px 0 4px' }}>
-                {ts.interior}
+          <div style={{ padding: '4px 20px 8px' }}>
+            {/* Engine */}
+            {hasEngine && (
+              <div style={{ marginBottom: 8 }}>
+                <h4 style={{ margin: '14px 0 4px', fontSize: 15, fontWeight: 700, color: 'var(--text)' }}>{plain(ts.engine)}</h4>
+                {/* Raw values may be stored as Hebrew text: label them by key; no row rather than Hebrew on en/ru */}
+                {engineLabel && row(ts.engineType, engineLabel)}
+                {trim.engineCc && row(ts.engineCc, `${trim.engineCc.toLocaleString()} ${ts.cc}`)}
+                {trim.engineHp && row(ts.engineHp, <span style={{ color: 'var(--accent)' }}>{trim.engineHp} {ts.hp}</span>)}
+                {transmissionLabel && row(ts.transmission, transmissionLabel)}
+                {driveLabel && row(ts.drive, driveLabel)}
               </div>
-              {seatsLabel && row(ts.upholstery, seatsLabel)}
-              {trim.seatCount && trim.seatCount !== 5 && row(ts.seats, trim.seatCount)}
-              {trim.screenSize && row(ts.screen, `${trim.screenSize}"`)}
-            </div>
-          )}
+            )}
 
-          {/* Feature groups - only features NOT already shown in the cards above */}
-          {FEATURE_GROUPS.map(group => {
-            const shownInCards = new Set<string>([...safetyKeys, ...techChecklist]);
-            const relevantKeys = group.keys.filter(k => anyHas(allTrims ?? [], k) && !shownInCards.has(k));
-            if (relevantKeys.length === 0) return null;
-            return (
-              <div key={group.sectionKey} style={{ marginBottom: 8 }}>
-                <div style={{ fontSize: '0.72rem', fontWeight: 800, color: 'var(--text-muted)', letterSpacing: '0.08em', textTransform: 'uppercase', padding: '14px 0 4px' }}>
-                  {group.icon} {ts.sections[group.sectionKey]}
+            {/* Interior */}
+            {hasInterior && (
+              <div style={{ marginBottom: 8 }}>
+                <h4 style={{ margin: '14px 0 4px', fontSize: 15, fontWeight: 700, color: 'var(--text)' }}>{plain(ts.interior)}</h4>
+                {seatsLabel && row(ts.upholstery, seatsLabel)}
+                {trim.seatCount && trim.seatCount !== 5 && row(ts.seats, trim.seatCount)}
+                {trim.screenSize && row(ts.screen, `${trim.screenSize}"`)}
+              </div>
+            )}
+
+            {/* Feature groups - only features NOT already shown in the safety tab cards */}
+            {FEATURE_GROUPS.map(group => {
+              const shownInCards = new Set<string>([...safetyKeys, ...techChecklist]);
+              const relevantKeys = group.keys.filter(k => anyHas(allTrims ?? [], k) && !shownInCards.has(k));
+              if (relevantKeys.length === 0) return null;
+              return (
+                <div key={group.sectionKey} style={{ marginBottom: 8 }}>
+                  <h4 style={{ margin: '14px 0 4px', fontSize: 15, fontWeight: 700, color: 'var(--text)' }}>{plain(ts.sections[group.sectionKey])}</h4>
+                  {relevantKeys.map(k => featureRow(TRIM_FEATURES[k].labelHe, k))}
                 </div>
-                {relevantKeys.map(k => featureRow(TRIM_FEATURES[k].labelHe, k))}
-              </div>
-            );
-          })}
-        </div>
+              );
+            })}
+          </div>
 
-        {/* Footer link */}
-        <div style={{ borderTop: '1px solid var(--border)', padding: '12px 20px', background: 'var(--surface-2)' }}>
-          <Link
-            href={`/cars/${makeSlug}/${modelSlug}/trim/${toTrimSlug(trim.name)}`}
-            style={{ fontSize: '0.83rem', color: 'var(--accent)', fontWeight: 600, textDecoration: 'none' }}
-          >
-            {ts.moreDetails} {trimDisplayName(trim.name, locale)} {locale === 'he' ? '←' : '→'}
-          </Link>
-        </div>
+          <div style={{ display: 'flex', gap: 8, padding: '12px 20px 20px', flexWrap: 'wrap' }}>
+            <Link
+              href={`/cars/${makeSlug}/${modelSlug}/trim/${toTrimSlug(trim.name)}`}
+              style={{ flex: '1 1 120px', height: 48, display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: 12, background: 'var(--accent)', color: '#fff', fontWeight: 700, fontSize: 15, textDecoration: 'none' }}
+            >
+              {tl.fullSpecs}
+            </Link>
+            <Link
+              href={`/cars/compare?car1=${makeSlug}/${modelSlug}`}
+              style={{ flex: '1 1 120px', height: 48, display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: 12, border: '1px solid var(--border-strong)', color: 'var(--accent)', fontWeight: 700, fontSize: 15, textDecoration: 'none' }}
+            >
+              {tl.compare}
+            </Link>
+          </div>
+        </aside>
       </div>
 
       <p style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginTop: 10, textAlign: 'center' }}>
         {ts.disclaimer}
       </p>
+      <style>{`
+        .trim-layout { display: flex; flex-wrap: wrap; gap: 28px; align-items: flex-start; }
+        .trim-list { flex: 999 1 560px; min-width: 0; }
+        .trim-aside { flex: 1 1 340px; min-width: 0; }
+        .trim-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 10px; }
+        .trim-card { display: flex; flex-wrap: wrap; align-items: flex-start; gap: 6px 12px; min-height: 112px; border-radius: 14px; cursor: pointer; font-family: inherit; box-sizing: border-box; width: 100%; text-align: start; }
+        .trim-card-radio { order: 1; flex: none; width: 22px; height: 22px; border-radius: 50%; display: flex; align-items: center; justify-content: center; box-sizing: border-box; }
+        .trim-card-price { order: 2; margin-inline-start: auto; display: flex; flex-direction: column; align-items: flex-end; }
+        .trim-card-info { order: 3; flex-basis: 100%; display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+        @media (max-width: 768px) {
+          .trim-layout { gap: 20px; }
+          .trim-cards { grid-template-columns: 1fr; gap: 8px; }
+          .trim-card { flex-wrap: nowrap; align-items: center; min-height: 64px; }
+          .trim-card-info { order: 2; flex: 1 1 auto; }
+          .trim-card-price { order: 3; margin-inline-start: 0; }
+        }
+      `}</style>
       </>)}
     </div>
   );
