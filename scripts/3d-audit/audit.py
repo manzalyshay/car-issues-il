@@ -13,9 +13,9 @@ filters, then open-ended entry, else highest year_from) is marked page=model, th
 An entry is flagged when:
   broken  - Sketchfab API has no such model (deleted / private)
   crude   - under 30k faces, or no textures and under 80k faces
-  heavy   - geometry over 20 MB, over 1M faces, or over 20 textures on a model over 600k faces
-            (slow to load; can crash phones: the 2026-11-23 Trailblazer crash was 1.37M faces /
-            33 textures / 10.4 MB. Many textures on a light model are fine: 108 such models are 1-7 MB)
+  heavy   - geometry over 20 MB (slow to load). Face count alone is not flagged: the one model
+            known to crash a page (Trailblazer, 1.37M faces, 2026-11-23) was a guess, not a rule, and
+            many models that size run fine. Hide a model for crashing only when it is reported.
   unseen  - nobody has looked at it yet (not in reviewed.json "seen"). Missing parts such as
             wheels pass every number above (2026-11-23 Juke), so each model needs one visual check:
             `python3 -I scripts/3d-audit/sheet.py out.png issues.json` draws the previews.
@@ -33,7 +33,7 @@ MISASSIGNED = {'alfa-romeo/tonale': [r'\bconcept\b'], 'byd/sealion6': [r'\bseali
   'mini/countryman': [r'\bvuitton\b'], 'opel/corsa': [r'\b1995\b'], 'seat/leon': [r'\be-racer\b'],
   'volkswagen/id4': [r'\bid[ .-]?3\b'], 'volkswagen/taigo': [r'\bvirtus\b']}
 ALLOWED = {'e4087350c4d84d8391de09b405c96488'}
-HEAVY_MB, HEAVY_FACES, HEAVY_TEX, HEAVY_TEX_FACES = 20, 1_000_000, 20, 600_000
+HEAVY_MB = 20
 
 def rows(path):
     d = json.load(open(path))
@@ -87,7 +87,7 @@ for k, e in entries:
     if i['broken']: kind = 'broken'
     elif i['unchecked']: continue  # Sketchfab didn't answer; check again next run
     elif (i['faces'] or 0) < 30000 or (i['tex'] == 0 and (i['faces'] or 0) < 80000): kind = 'crude'
-    elif i['mb'] > HEAVY_MB or (i['faces'] or 0) > HEAVY_FACES or ((i['tex'] or 0) > HEAVY_TEX and (i['faces'] or 0) > HEAVY_TEX_FACES): kind = 'heavy'
+    elif i['mb'] > HEAVY_MB: kind = 'heavy'
     elif uid not in seen: kind = 'unseen'
     else: continue
     if uid in rev['uids']: continue
