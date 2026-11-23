@@ -26,6 +26,7 @@ import RepairCostsSection from '@/components/RepairCostsSection';
 import SellerPriceChart from '@/components/SellerPriceChart';
 import RecallsBarChart from '@/components/RecallsBarChart';
 import FollowButton from '@/components/FollowButton';
+import WriteReviewButton from '@/components/WriteReviewButton';
 import { ownerAggregateRating, ownerReviewsOnly } from '@/lib/ownerRating';
 
 export const revalidate = 86400;
@@ -273,6 +274,7 @@ export default async function CarYearPage({ params }: Props) {
               </div>
 
               <div style={{ display: 'flex', gap: 8, marginTop: 11, flexWrap: 'wrap' }}>
+                <WriteReviewButton />
                 <FollowButton makeSlug={make.slug} modelSlug={model.slug} isEn={isEn} dark />
                 <Link
                   href={`/cars/compare?car1=${make.slug}/${model.slug}`}

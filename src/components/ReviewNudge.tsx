@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { useLocale } from '@/lib/localeContext';
+import { openReviewForm } from './WriteReviewButton';
 
 interface Props {
   makeSlug: string;
@@ -71,15 +72,10 @@ export default function ReviewNudge({ makeSlug, modelSlug, makeNameHe, modelName
   }, [storageKey]);
 
   function handleStarPick(star: number) {
-    // Dismiss nudge, scroll to form, click matching star in the real form
+    // Dismiss nudge; the reviews section opens its form with this rating and scrolls to it
     setDismissed(true);
     setTimeout(() => setVisible(false), 300);
-    const el = document.getElementById('write-review');
-    if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    setTimeout(() => {
-      const stars = document.querySelectorAll<HTMLButtonElement>('#write-review button[type="button"]');
-      stars[star - 1]?.click();
-    }, 600);
+    openReviewForm(star);
   }
 
   function dismiss() {
