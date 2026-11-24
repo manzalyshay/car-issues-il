@@ -34,9 +34,12 @@ All stored in the existing car tables under make key `moto-<make>`:
 - `car_images`: 224 Wikimedia Commons photos for 57 models (`scripts/moto/images.py`), every one checked by eye on
   contact sheets. Rejected: old generations sharing a name (1960s Vespa Sprint/Primavera, 1970s Kawasaki Z650/Z900,
   1990s Africa Twin, CB600/900 Hornet), other variants (Tracer, Z900RS, Joyride 16, Cruisym 400), police/ambulance
-  bikes, group shots, close-ups and parts. `moto_models.leading_image_url` = the main photo. No photos yet for 17
-  models (Forza 125, PCX, XMAX 125/400, NMAX, Tricity, Joyride, Joymax Z, Movie, AK 550, 390 Adventure, X-Evo,
-  CFMOTO, Ultra Bee) - Commons had none that matched or rate-limited the search.
+  bikes, group shots, close-ups and parts. `moto_models.leading_image_url` = the main photo.
+  Second pass (the Commons API was rate-limiting this machine, so Commons category and search pages were read
+  directly): 33 more photos for 13 models (PCX, NMAX, Tricity 125/300, Forza 125, XMAX 125, Joyride, Joymax Z, Movie,
+  AK 550, 390 Adventure, X-Evo, CFMOTO 700MT); licences read from each file's Licensing section. PCX and NMAX
+  photos include the 160/155 versions, which share the 125's body. 257 photos for 70 of 74 models in all; none on
+  Commons for Sur-Ron Ultra Bee, XMAX 400, CFMOTO 450MT and 800MT.
 - `car_3d_models`: 15 Sketchfab models (`scripts/moto/models3d.py`), checked by eye; skipped riders, untextured
   scans, parts and anything over ~1.2M faces (X-ADV, 390 Duke and Vespa Sprint candidates were 1.5-2.3M).
 - `expert_reviews`: 48 Hebrew AI summaries (year NULL), written from MCN (motorcyclenews.com) expert road tests and
