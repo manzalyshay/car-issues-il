@@ -26,3 +26,29 @@ Rollback:
 DROP TABLE moto_models;
 DROP TABLE moto_makes;
 ```
+
+## 2026-11-24: photos, 3D models and AI summaries
+
+All stored in the existing car tables under make key `moto-<make>`:
+
+- `car_images`: 224 Wikimedia Commons photos for 57 models (`scripts/moto/images.py`), every one checked by eye on
+  contact sheets. Rejected: old generations sharing a name (1960s Vespa Sprint/Primavera, 1970s Kawasaki Z650/Z900,
+  1990s Africa Twin, CB600/900 Hornet), other variants (Tracer, Z900RS, Joyride 16, Cruisym 400), police/ambulance
+  bikes, group shots, close-ups and parts. `moto_models.leading_image_url` = the main photo. No photos yet for 17
+  models (Forza 125, PCX, XMAX 125/400, NMAX, Tricity, Joyride, Joymax Z, Movie, AK 550, 390 Adventure, X-Evo,
+  CFMOTO, Ultra Bee) - Commons had none that matched or rate-limited the search.
+- `car_3d_models`: 15 Sketchfab models (`scripts/moto/models3d.py`), checked by eye; skipped riders, untextured
+  scans, parts and anything over ~1.2M faces (X-ADV, 390 Duke and Vespa Sprint candidates were 1.5-2.3M).
+- `expert_reviews`: 48 Hebrew AI summaries (year NULL), written from MCN (motorcyclenews.com) expert road tests and
+  963 owners' reviews collected by `scripts/moto/mcn.py`; text in `scripts/moto/summaries.json`, loaded by
+  `scripts/moto/load_summaries.py`. Each row keeps the MCN source links, owner/expert ratings and per-area scores
+  (`model_data_json`). Reviews MCN filed under the wrong bike (e.g. a Transalp on the X-ADV page) are dropped.
+
+Rollback:
+
+```sql
+DELETE FROM car_images WHERE make_slug LIKE 'moto-%';
+DELETE FROM car_3d_models WHERE make_slug LIKE 'moto-%';
+DELETE FROM expert_reviews WHERE make_slug LIKE 'moto-%';
+UPDATE moto_models SET leading_image_url = NULL;
+```

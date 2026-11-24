@@ -24,6 +24,8 @@ export interface MotoModel {
   recallPatterns: string[];
   activeVehiclesIl: number | null;
   activeVehiclesIlAsOf: string | null;
+  /** Main photo (car_images row marked is_main under the moto- key), for list cards. */
+  leadingImageUrl: string | null;
 }
 
 export interface MotoMake {
@@ -69,7 +71,7 @@ export async function getAllMotoMakes(): Promise<MotoMake[]> {
     dbAll<{
       make_slug: string; slug: string; name_he: string; name_en: string; category: string; years: string; trims: string;
       cc_min: number | null; cc_max: number | null; recall_patterns: string;
-      active_vehicles_il: number | null; active_vehicles_il_as_of: string | null;
+      active_vehicles_il: number | null; active_vehicles_il_as_of: string | null; leading_image_url: string | null;
     }>('SELECT * FROM moto_models ORDER BY sort_order'),
   ]);
   const data: MotoMake[] = makes.map((m) => ({
@@ -91,6 +93,7 @@ export async function getAllMotoMakes(): Promise<MotoMake[]> {
       recallPatterns: parse<string[]>(mo.recall_patterns, []),
       activeVehiclesIl: mo.active_vehicles_il,
       activeVehiclesIlAsOf: mo.active_vehicles_il_as_of,
+      leadingImageUrl: mo.leading_image_url,
     })),
   }));
   g._motoCache = { data, ts: now };

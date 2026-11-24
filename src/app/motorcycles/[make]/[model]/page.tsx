@@ -12,6 +12,10 @@ import WriteReviewButton from '@/components/WriteReviewButton';
 import ReviewNudge from '@/components/ReviewNudge';
 import SharePopup from '@/components/SharePopup';
 import MotoModelCard, { MOTO_ICON } from '@/components/moto/MotoModelCard';
+import MotoAiSummary from '@/components/moto/MotoAiSummary';
+import HeroMedia from '@/components/HeroMedia';
+import { getImagesForCar } from '@/lib/carImages';
+import { findCarModel } from '@/lib/sketchfab';
 
 export const revalidate = 900;
 
@@ -40,9 +44,12 @@ export default async function MotoModelPage({ params }: Props) {
   if (!found) notFound();
   const { make, model } = found;
   const key = motoKey(make.slug);
-  const [reviews, recalls] = await Promise.all([
+  // Photos and 3D models live in car_images / car_3d_models under the same 'moto-<make>' key
+  const [reviews, recalls, images, model3d] = await Promise.all([
     getReviewsForModel(key, model.slug).catch(() => []),
     getMotoRecalls(make, model),
+    getImagesForCar(key, model.slug).catch(() => []),
+    findCarModel(key, model.slug).catch(() => null),
   ]);
 
   const base = getBaseUrl('he');
@@ -61,8 +68,8 @@ export default async function MotoModelPage({ params }: Props) {
   return (
     <div style={{ background: 'var(--bg)', minHeight: '100vh' }}>
       <section className="mp-hero">
-        <div className="model-hero-inner" style={{ maxWidth: 1200, margin: '0 auto' }}>
-          <div className="model-hero-info" style={{ display: 'flex', flexDirection: 'column', gap: 'clamp(16px,1.6vw,20px)', maxWidth: 720 }}>
+        <div className="model-hero-inner" style={{ maxWidth: 1200, margin: '0 auto', display: 'flex', flexWrap: 'wrap', gap: 'clamp(16px,3vw,40px)', alignItems: 'flex-start' }}>
+          <div className="model-hero-info" style={{ flex: '1 1 420px', minWidth: 0, display: 'flex', flexDirection: 'column', gap: 'clamp(16px,1.6vw,20px)' }}>
             <nav aria-label="פירורי לחם" style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, color: '#aab6d4', flexWrap: 'wrap' }}>
               <Link href="/" style={{ color: '#aab6d4', textDecoration: 'none' }}>בית</Link>
               <span aria-hidden="true">‹</span>
@@ -110,10 +117,27 @@ export default async function MotoModelPage({ params }: Props) {
               <SharePopup title={`${name}: בעיות נפוצות וחוות דעת בעלים`} url={url} dark iconOnly />
             </div>
           </div>
+
+          {(images.length > 0 || model3d) && (
+            <div className="model-hero-media" style={{ flex: '1 1 460px', minWidth: 0 }}>
+              <HeroMedia
+                images={images}
+                sketchfabModel={model3d}
+                makeSlug={key}
+                modelSlug={model.slug}
+                makeNameEn={make.nameEn}
+                modelNameEn={model.nameEn}
+                yearRange={yearRange ?? ''}
+                categoryLabel={motoCategoryLabel(model.category)}
+              />
+            </div>
+          )}
         </div>
       </section>
 
       <div className="container" style={{ paddingTop: 28, paddingBottom: 48, maxWidth: 900 }}>
+        <MotoAiSummary makeSlug={make.slug} modelSlug={model.slug} name={name} />
+
         <section id="reviews" style={{ marginBottom: 40 }}>
           <ModelReviewsSection
             makeSlug={key}
