@@ -84,7 +84,30 @@ function isMainEligible(title: string | null): boolean {
  * cap are left as a plain slice (fail closed to the existing neutral fallback
  * rather than guessing).
  */
-function withMainEligibleFirst(images: CarImage[], mainCap = 20, demotedBudget = 10): CarImage[] {
+/**
+ * The same Commons file is stored more than once for some models (full-size and
+ * thumbnail URL, with and without a year, title with or without "File:"). Key on
+ * the file name so each photo shows once.
+ */
+function photoKey(img: CarImage): string {
+  const fromUrl = (img.url ?? '').split('?')[0].match(/\/commons\/(?:thumb\/)?[0-9a-f]\/[0-9a-f]{2}\/([^/]+)/);
+  let name = fromUrl?.[1] ?? img.title ?? img.url ?? img.id;
+  try { name = decodeURIComponent(name); } catch { /* keep as is */ }
+  return name.replace(/^File:/i, '').replace(/_/g, ' ').trim().toLowerCase();
+}
+
+function dedupeImages(images: CarImage[]): CarImage[] {
+  const seen = new Set<string>();
+  return images.filter(img => {
+    const key = photoKey(img);
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+}
+
+function withMainEligibleFirst(all: CarImage[], mainCap = 20, demotedBudget = 10): CarImage[] {
+  const images = dedupeImages(all);
   const eligible = images.filter(img => isMainEligible(img.title));
   const demoted = images.filter(img => !isMainEligible(img.title));
   if (eligible.length === 0) return images.slice(0, mainCap);
