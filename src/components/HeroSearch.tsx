@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import type { CarMake } from '@/lib/carsDb';
 import MakeLogo from './MakeLogo';
 import { useLocale } from '@/lib/localeContext';
+import { useMotoSearchIndex } from '@/lib/motoSearch';
 
 interface Result { label: string; sublabel?: string; href: string; type: 'make' | 'model'; logoUrl: string; nameEn: string; }
 
@@ -18,6 +19,7 @@ export default function HeroSearch() {
   const inputRef              = useRef<HTMLInputElement>(null);
   const router                = useRouter();
   const { locale, t }         = useLocale();
+  const motoDb                = useMotoSearchIndex(locale);
 
   useEffect(() => { fetch('/api/cars').then(r => r.json()).then(setDb); }, []);
 
@@ -41,9 +43,20 @@ export default function HeroSearch() {
         }
       }
     }
+    for (const make of motoDb) {
+      if (matches(make.nameHe) || matches(make.nameEn) || matches(make.slug)) {
+        makes.push({ label: `${make.nameHe} - אופנועים`, sublabel: `${make.models.length} דגמים`, href: `/motorcycles/${make.slug}`, type: 'make', logoUrl: make.logoUrl, nameEn: make.nameEn });
+      }
+      for (const model of make.models) {
+        const combinedHe = `${make.nameHe} ${model.nameHe}`;
+        if (matches(combinedHe) || matches(`${make.nameEn} ${model.nameEn}`) || matches(model.nameHe) || matches(model.nameEn) || matches(model.slug)) {
+          models.push({ label: combinedHe, sublabel: `אופנוע · ${model.nameEn}`, href: `/motorcycles/${make.slug}/${model.slug}`, type: 'model', logoUrl: make.logoUrl, nameEn: make.nameEn });
+        }
+      }
+    }
     const combined = [...makes.slice(0, 3), ...models].slice(0, 8);
     setResults(combined); setOpen(combined.length > 0); setActive(-1);
-  }, [query, db, locale, t.search.model]);
+  }, [query, db, motoDb, locale, t.search.model]);
 
   const choose = useCallback((href: string) => { setQuery(''); setOpen(false); router.push(href); }, [router]);
 

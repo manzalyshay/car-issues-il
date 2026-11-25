@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import type { CarMake } from '@/lib/carsDb';
 import { useLocale } from '@/lib/localeContext';
+import { useMotoSearchIndex } from '@/lib/motoSearch';
 
 interface SearchResult {
   label: string;
@@ -21,6 +22,7 @@ export default function SearchBox({ fullWidth = false, compact = false }: { full
   const router   = useRouter();
   const { locale, t } = useLocale();
   const isEn = locale === 'en';
+  const motoDatabase = useMotoSearchIndex(locale);
 
   useEffect(() => {
     fetch('/api/cars').then(r => r.json()).then(setCarDatabase);
@@ -48,9 +50,19 @@ export default function SearchBox({ fullWidth = false, compact = false }: { full
         }
       }
     }
+    for (const make of motoDatabase) {
+      if (matches(make.nameHe) || matches(make.nameEn) || matches(make.slug)) {
+        found.push({ label: `${make.nameHe} - אופנועים`, href: `/motorcycles/${make.slug}`, type: 'make' });
+      }
+      for (const model of make.models) {
+        if (matches(`${make.nameHe} ${model.nameHe}`) || matches(`${make.nameEn} ${model.nameEn}`) || matches(model.nameHe) || matches(model.nameEn) || matches(model.slug)) {
+          found.push({ label: `🏍️ ${make.nameHe} ${model.nameHe}`, href: `/motorcycles/${make.slug}/${model.slug}`, type: 'model' });
+        }
+      }
+    }
     setResults(found.slice(0, 8));
     setOpen(found.length > 0);
-  }, [query, carDatabase, isEn]);
+  }, [query, carDatabase, motoDatabase, isEn]);
 
   const choose = (href: string) => {
     setQuery('');
