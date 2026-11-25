@@ -1,0 +1,1263 @@
+{
+ "_doc": "Motorcycle makes/models for /motorcycles. registry = Ministry of Transport two-wheeler registry (data.gov.il bf9df4e2-...). Each model matches rows by registry make prefix + degem_nm: 'codes' exact (whitespace-normalised), 'patterns' regex. Codes were identified from engine cc, wheel/tyre sizes, VIN prefix and production years.",
+ "makes": [
+  {
+   "slug": "honda",
+   "he": "הונדה",
+   "en": "Honda",
+   "country": "יפן",
+   "registry": [
+    "הונדה"
+   ],
+   "recallMakes": [
+    "HONDA",
+    "HONDAMOTORCYCLES"
+   ]
+  },
+  {
+   "slug": "yamaha",
+   "he": "ימאהה",
+   "en": "Yamaha",
+   "country": "יפן",
+   "registry": [
+    "ימאהה"
+   ],
+   "recallMakes": [
+    "YAMAHA"
+   ]
+  },
+  {
+   "slug": "sym",
+   "he": "SYM",
+   "en": "SYM",
+   "country": "טייוואן",
+   "registry": [
+    "סאן יאנג",
+    "אס ווי א"
+   ],
+   "recallMakes": [
+    "SYMSANYANGMOTORS"
+   ]
+  },
+  {
+   "slug": "kymco",
+   "he": "קימקו",
+   "en": "Kymco",
+   "country": "טייוואן",
+   "registry": [
+    "קואנג יאנג",
+    "קימקו"
+   ],
+   "recallMakes": [
+    "KYMCO"
+   ]
+  },
+  {
+   "slug": "ktm",
+   "he": "KTM",
+   "en": "KTM",
+   "country": "אוסטריה",
+   "registry": [
+    "קי.טי.א"
+   ],
+   "recallMakes": [
+    "KTM"
+   ]
+  },
+  {
+   "slug": "piaggio",
+   "he": "פיאג'ו",
+   "en": "Piaggio",
+   "country": "איטליה",
+   "registry": [
+    "פיאג'ו"
+   ],
+   "recallMakes": [
+    "PIAGGIO"
+   ]
+  },
+  {
+   "slug": "vespa",
+   "he": "וספה",
+   "en": "Vespa",
+   "country": "איטליה",
+   "registry": [
+    "פיאג'ו"
+   ],
+   "recallMakes": [
+    "PIAGGIO",
+    "VESPA"
+   ]
+  },
+  {
+   "slug": "bmw",
+   "he": "ב.מ.וו",
+   "en": "BMW",
+   "country": "גרמניה",
+   "registry": [
+    "ב מ וו"
+   ],
+   "recallMakes": [
+    "BMW"
+   ]
+  },
+  {
+   "slug": "kawasaki",
+   "he": "קוואסאקי",
+   "en": "Kawasaki",
+   "country": "יפן",
+   "registry": [
+    "קוואסאקי"
+   ],
+   "recallMakes": [
+    "KAWASAKI"
+   ]
+  },
+  {
+   "slug": "suzuki",
+   "he": "סוזוקי",
+   "en": "Suzuki",
+   "country": "יפן",
+   "registry": [
+    "סוזוקי"
+   ],
+   "recallMakes": [
+    "SUZUKIMOTORCYCLES"
+   ]
+  },
+  {
+   "slug": "cfmoto",
+   "he": "CFMOTO",
+   "en": "CFMOTO",
+   "country": "סין",
+   "registry": [
+    "סי.אף.מוטו"
+   ],
+   "recallMakes": [
+    "CFMOTO"
+   ]
+  },
+  {
+   "slug": "royal-enfield",
+   "he": "רויאל אנפילד",
+   "en": "Royal Enfield",
+   "country": "הודו",
+   "registry": [
+    "רויאל אנפילד"
+   ],
+   "recallMakes": [
+    "ROYALENFIELD"
+   ]
+  },
+  {
+   "slug": "benelli",
+   "he": "בנלי",
+   "en": "Benelli",
+   "country": "איטליה",
+   "registry": [
+    "בנלי"
+   ],
+   "recallMakes": [
+    "BENELLI"
+   ]
+  },
+  {
+   "slug": "zontes",
+   "he": "זונטס",
+   "en": "Zontes",
+   "country": "סין",
+   "registry": [
+    "זונטס"
+   ],
+   "recallMakes": [
+    "ZONTES"
+   ]
+  },
+  {
+   "slug": "sur-ron",
+   "he": "סור-רון",
+   "en": "Sur-Ron",
+   "country": "סין",
+   "registry": [
+    "סורון"
+   ],
+   "recallMakes": [
+    "SURRON"
+   ]
+  }
+ ],
+ "models": [
+  {
+   "make": "honda",
+   "slug": "forza-350",
+   "he": "פורזה 350",
+   "en": "Forza 350",
+   "category": "scooter",
+   "codes": [
+    "NF10",
+    "NF13"
+   ],
+   "recall": [
+    "NSS350",
+    "FORZA350"
+   ]
+  },
+  {
+   "make": "honda",
+   "slug": "forza-300",
+   "he": "פורזה 300",
+   "en": "Forza 300",
+   "category": "scooter",
+   "codes": [
+    "NF08"
+   ],
+   "recall": [
+    "NSS300",
+    "FORZA300"
+   ]
+  },
+  {
+   "make": "honda",
+   "slug": "forza-125",
+   "he": "פורזה 125",
+   "en": "Forza 125",
+   "category": "scooter",
+   "codes": [
+    "JK02"
+   ],
+   "recall": [
+    "NSS125",
+    "FORZA125"
+   ]
+  },
+  {
+   "make": "honda",
+   "slug": "forza-750",
+   "he": "פורזה 750",
+   "en": "Forza 750",
+   "category": "scooter",
+   "codes": [
+    "RH11",
+    "RH22"
+   ],
+   "recall": [
+    "NSS750",
+    "FORZA750"
+   ]
+  },
+  {
+   "make": "honda",
+   "slug": "x-adv",
+   "he": "X-ADV",
+   "en": "X-ADV",
+   "category": "scooter",
+   "codes": [
+    "RC95",
+    "RH10",
+    "RH21"
+   ],
+   "recall": [
+    "ADV750",
+    "XADV"
+   ]
+  },
+  {
+   "make": "honda",
+   "slug": "pcx-125",
+   "he": "PCX 125",
+   "en": "PCX 125",
+   "category": "scooter",
+   "codes": [
+    "JK05",
+    "JK41"
+   ],
+   "recall": [
+    "PCX"
+   ]
+  },
+  {
+   "make": "honda",
+   "slug": "vision-110",
+   "he": "ויז'ן 110",
+   "en": "Vision 110",
+   "category": "scooter",
+   "codes": [
+    "JK03",
+    "JK39"
+   ],
+   "recall": [
+    "VISION",
+    "NSC110"
+   ]
+  },
+  {
+   "make": "honda",
+   "slug": "nc750x",
+   "he": "NC750X",
+   "en": "NC750X",
+   "category": "adventure",
+   "codes": [
+    "RC90",
+    "RH09",
+    "RH23"
+   ],
+   "recall": [
+    "NC750X"
+   ]
+  },
+  {
+   "make": "honda",
+   "slug": "cb500x",
+   "he": "CB500X",
+   "en": "CB500X",
+   "category": "adventure",
+   "codes": [
+    "PC64"
+   ],
+   "patterns": [
+    "^CB500X"
+   ],
+   "recall": [
+    "CB500X",
+    "CB5000F/X"
+   ]
+  },
+  {
+   "make": "honda",
+   "slug": "nx500",
+   "he": "NX500",
+   "en": "NX500",
+   "category": "adventure",
+   "codes": [
+    "PC72"
+   ],
+   "recall": [
+    "NX500"
+   ]
+  },
+  {
+   "make": "honda",
+   "slug": "africa-twin",
+   "he": "אפריקה טווין",
+   "en": "Africa Twin",
+   "category": "adventure",
+   "codes": [
+    "SD08",
+    "SD09"
+   ],
+   "recall": [
+    "CRF1000",
+    "CRF1100",
+    "CRF11000",
+    "AFRICATWIN"
+   ]
+  },
+  {
+   "make": "honda",
+   "slug": "transalp-750",
+   "he": "טרנסאלפ 750",
+   "en": "XL750 Transalp",
+   "category": "adventure",
+   "codes": [
+    "RD16"
+   ],
+   "recall": [
+    "XL750"
+   ]
+  },
+  {
+   "make": "honda",
+   "slug": "hornet-750",
+   "he": "הורנט 750",
+   "en": "CB750 Hornet",
+   "category": "naked",
+   "codes": [
+    "RH12"
+   ],
+   "registryMake": "הונדה יפן",
+   "recall": [
+    "CB750"
+   ]
+  },
+  {
+   "make": "honda",
+   "slug": "cb650r",
+   "he": "CB650R",
+   "en": "CB650R",
+   "category": "naked",
+   "codes": [
+    "RH01",
+    "RH15"
+   ],
+   "recall": [
+    "(^|,)CB650R",
+    "CB/CBR650R"
+   ]
+  },
+  {
+   "make": "honda",
+   "slug": "cbr650r",
+   "he": "CBR650R",
+   "en": "CBR650R",
+   "category": "sport",
+   "codes": [
+    "RH02",
+    "RH16"
+   ],
+   "recall": [
+    "CBR650R"
+   ]
+  },
+  {
+   "make": "honda",
+   "slug": "crf300l",
+   "he": "CRF300L",
+   "en": "CRF300L",
+   "category": "offroad",
+   "codes": [
+    "ND16",
+    "ND22"
+   ],
+   "recall": [
+    "CRF300"
+   ]
+  },
+  {
+   "make": "yamaha",
+   "slug": "tmax",
+   "he": "TMAX",
+   "en": "TMAX",
+   "category": "scooter",
+   "codes": [
+    "SJ09",
+    "SJ14",
+    "SJ18",
+    "SJ21"
+   ],
+   "patterns": [
+    "T-?MAX"
+   ],
+   "recall": [
+    "TMAX",
+    "XP530",
+    "XP560",
+    "XP500"
+   ]
+  },
+  {
+   "make": "yamaha",
+   "slug": "xmax-300",
+   "he": "XMAX 300",
+   "en": "XMAX 300",
+   "category": "scooter",
+   "codes": [
+    "SH13",
+    "SH14",
+    "SH28"
+   ],
+   "patterns": [
+    "X-?MAX ?300"
+   ],
+   "recall": [
+    "XMAX300"
+   ]
+  },
+  {
+   "make": "yamaha",
+   "slug": "xmax-125",
+   "he": "XMAX 125",
+   "en": "XMAX 125",
+   "category": "scooter",
+   "codes": [
+    "SEE6",
+    "SEH3",
+    "SEL5"
+   ],
+   "patterns": [
+    "X-?MAX ?125"
+   ],
+   "recall": [
+    "XMAX125"
+   ]
+  },
+  {
+   "make": "yamaha",
+   "slug": "xmax-400",
+   "he": "XMAX 400",
+   "en": "XMAX 400",
+   "category": "scooter",
+   "codes": [
+    "SH12"
+   ],
+   "patterns": [
+    "X-?MAX ?400"
+   ],
+   "recall": [
+    "XMAX400",
+    "YP400"
+   ]
+  },
+  {
+   "make": "yamaha",
+   "slug": "nmax-125",
+   "he": "NMAX 125",
+   "en": "NMAX 125",
+   "category": "scooter",
+   "codes": [
+    "SEC7",
+    "SEG5",
+    "SEL1"
+   ],
+   "patterns": [
+    "N-?MAX ?125"
+   ],
+   "recall": [
+    "NMAX",
+    "MMAX125"
+   ]
+  },
+  {
+   "make": "yamaha",
+   "slug": "tricity-125",
+   "he": "טריסיטי 125",
+   "en": "Tricity 125",
+   "category": "scooter",
+   "codes": [
+    "SEC2",
+    "SEK1",
+    "SEL4"
+   ],
+   "patterns": [
+    "^TRICITY( 125)?$"
+   ],
+   "recall": [
+    "TRICITY125"
+   ]
+  },
+  {
+   "make": "yamaha",
+   "slug": "tricity-300",
+   "he": "טריסיטי 300",
+   "en": "Tricity 300",
+   "category": "scooter",
+   "codes": [
+    "SH16",
+    "SH20"
+   ],
+   "recall": [
+    "TRICITY300"
+   ]
+  },
+  {
+   "make": "yamaha",
+   "slug": "tenere-700",
+   "he": "טנרה 700",
+   "en": "Ténéré 700",
+   "category": "adventure",
+   "codes": [
+    "DM07",
+    "DM11",
+    "DM15",
+    "DM20"
+   ],
+   "recall": [
+    "TENERE700"
+   ]
+  },
+  {
+   "make": "yamaha",
+   "slug": "mt-07",
+   "he": "MT-07",
+   "en": "MT-07",
+   "category": "naked",
+   "patterns": [
+    "^MT-?07"
+   ],
+   "recall": [
+    "MT07"
+   ]
+  },
+  {
+   "make": "yamaha",
+   "slug": "mt-09",
+   "he": "MT-09",
+   "en": "MT-09",
+   "category": "naked",
+   "patterns": [
+    "^MT-?09"
+   ],
+   "recall": [
+    "MT09",
+    "(^|,)MT9(,|$)"
+   ]
+  },
+  {
+   "make": "sym",
+   "slug": "joyride",
+   "he": "ג'וירייד",
+   "en": "Joyride",
+   "category": "scooter",
+   "codes": [
+    "LF12W JR125",
+    "LF18W JR200",
+    "LFA3",
+    "LFA5",
+    "LFB3",
+    "LF"
+   ],
+   "patterns": [
+    "JOY ?RIDE"
+   ],
+   "trims": [
+    "125",
+    "200"
+   ],
+   "recall": [
+    "LF12W",
+    "LF18W",
+    "JOYRIDE"
+   ]
+  },
+  {
+   "make": "sym",
+   "slug": "joymax-z",
+   "he": "ג'וימקס Z",
+   "en": "Joymax Z",
+   "category": "scooter",
+   "codes": [
+    "LWA6",
+    "LWA7",
+    "LWB3",
+    "LWB6",
+    "LWB7",
+    "LW"
+   ],
+   "trims": [
+    "125",
+    "250",
+    "300"
+   ]
+  },
+  {
+   "make": "sym",
+   "slug": "joymax",
+   "he": "ג'וימקס",
+   "en": "Joymax",
+   "category": "scooter",
+   "codes": [
+    "LN25W JM250",
+    "LN30W JM300",
+    "LM25W JM250",
+    "LN12W JM125",
+    "LNA6",
+    "LNB3",
+    "LNB6",
+    "LNB7"
+   ],
+   "patterns": [
+    "^JOYMAX"
+   ],
+   "trims": [
+    "125",
+    "250",
+    "300"
+   ],
+   "recall": [
+    "JOYMAX"
+   ]
+  },
+  {
+   "make": "sym",
+   "slug": "cruisym",
+   "he": "קרוזסים",
+   "en": "Cruisym",
+   "category": "scooter",
+   "codes": [
+    "LVA7",
+    "LV"
+   ],
+   "patterns": [
+    "CRUISYM"
+   ],
+   "trims": [
+    "125",
+    "250",
+    "300"
+   ]
+  },
+  {
+   "make": "sym",
+   "slug": "maxsym-tl",
+   "he": "מקססים TL",
+   "en": "Maxsym TL",
+   "category": "scooter",
+   "codes": [
+    "TL"
+   ]
+  },
+  {
+   "make": "sym",
+   "slug": "maxsym-400",
+   "he": "מקססים 400",
+   "en": "Maxsym 400",
+   "category": "scooter",
+   "codes": [
+    "LXA9",
+    "LZ"
+   ],
+   "patterns": [
+    "MAXSYM 400"
+   ]
+  },
+  {
+   "make": "sym",
+   "slug": "jet-14",
+   "he": "ג'ט 14",
+   "en": "Jet 14",
+   "category": "scooter",
+   "codes": [
+    "XCA3",
+    "XCA5",
+    "XC12",
+    "XC20"
+   ],
+   "trims": [
+    "125",
+    "200"
+   ]
+  },
+  {
+   "make": "kymco",
+   "slug": "movie",
+   "he": "מובי",
+   "en": "Movie",
+   "category": "scooter",
+   "patterns": [
+    "MOVIE"
+   ]
+  },
+  {
+   "make": "kymco",
+   "slug": "downtown",
+   "he": "דאונטאון",
+   "en": "Downtown",
+   "category": "scooter",
+   "patterns": [
+    "D\\.? ?TOWN(?!.*X360)",
+    "DOWNTOWN",
+    "\\.TOWN GT",
+    "WNTOWNGT"
+   ],
+   "trims": [
+    "250",
+    "350"
+   ]
+  },
+  {
+   "make": "kymco",
+   "slug": "dtx-360",
+   "he": "DTX 360",
+   "en": "DTX 360",
+   "category": "scooter",
+   "patterns": [
+    "X360"
+   ]
+  },
+  {
+   "make": "kymco",
+   "slug": "dink",
+   "he": "דינק",
+   "en": "Dink",
+   "category": "scooter",
+   "patterns": [
+    "DINK"
+   ],
+   "trims": [
+    "125",
+    "250"
+   ]
+  },
+  {
+   "make": "kymco",
+   "slug": "x-town",
+   "he": "X-Town",
+   "en": "X-Town",
+   "category": "scooter",
+   "patterns": [
+    "X-?TOWN"
+   ],
+   "trims": [
+    "125",
+    "250"
+   ]
+  },
+  {
+   "make": "kymco",
+   "slug": "agility",
+   "he": "אג'יליטי",
+   "en": "Agility",
+   "category": "scooter",
+   "patterns": [
+    "AGILITY"
+   ]
+  },
+  {
+   "make": "kymco",
+   "slug": "ak-550",
+   "he": "AK 550",
+   "en": "AK 550",
+   "category": "scooter",
+   "patterns": [
+    "AK ?550"
+   ]
+  },
+  {
+   "make": "kymco",
+   "slug": "xciting",
+   "he": "אקסייטינג",
+   "en": "Xciting",
+   "category": "scooter",
+   "patterns": [
+    "XC(I)?TING"
+   ]
+  },
+  {
+   "make": "ktm",
+   "slug": "exc",
+   "he": "EXC",
+   "en": "EXC",
+   "category": "offroad",
+   "codes": [
+    "GSA20",
+    "EXA40"
+   ],
+   "recall": [
+    "EXC"
+   ],
+   "trims": [
+    "250",
+    "300",
+    "350",
+    "450"
+   ]
+  },
+  {
+   "make": "ktm",
+   "slug": "390-adventure",
+   "he": "390 אדוונצ'ר",
+   "en": "390 Adventure",
+   "category": "adventure",
+   "codes": [
+    "JGJ4"
+   ],
+   "recall": [
+    "ADVENTURE390",
+    "390ADVENTURE"
+   ]
+  },
+  {
+   "make": "ktm",
+   "slug": "390-duke",
+   "he": "390 דיוק",
+   "en": "390 Duke",
+   "category": "naked",
+   "codes": [
+    "JPJ40"
+   ],
+   "recall": [
+    "DUKE390",
+    "390DUKE"
+   ]
+  },
+  {
+   "make": "ktm",
+   "slug": "890-adventure",
+   "he": "890 אדוונצ'ר",
+   "en": "890 Adventure",
+   "category": "adventure",
+   "codes": [
+    "TR640"
+   ],
+   "recall": [
+    "890ADVENTURE",
+    "ADVENTURE890"
+   ]
+  },
+  {
+   "make": "ktm",
+   "slug": "1290-super-adventure",
+   "he": "1290 סופר אדוונצ'ר",
+   "en": "1290 Super Adventure",
+   "category": "adventure",
+   "codes": [
+    "V7940"
+   ],
+   "recall": [
+    "1290SUPERADVENTURE",
+    "SUPERADVENTURE"
+   ]
+  },
+  {
+   "make": "piaggio",
+   "slug": "mp3",
+   "he": "MP3",
+   "en": "MP3",
+   "category": "scooter",
+   "patterns": [
+    "MP3"
+   ],
+   "recall": [
+    "MP3"
+   ]
+  },
+  {
+   "make": "piaggio",
+   "slug": "x-evo",
+   "he": "X-Evo",
+   "en": "X-Evo",
+   "category": "scooter",
+   "patterns": [
+    "X-?EVO"
+   ],
+   "recall": [
+    "XEVO"
+   ]
+  },
+  {
+   "make": "piaggio",
+   "slug": "beverly",
+   "he": "בברלי",
+   "en": "Beverly",
+   "category": "scooter",
+   "patterns": [
+    "BEVERLY"
+   ],
+   "recall": [
+    "BEVERLY"
+   ]
+  },
+  {
+   "make": "vespa",
+   "slug": "primavera",
+   "he": "פרימוורה",
+   "en": "Primavera",
+   "category": "scooter",
+   "patterns": [
+    "PRIMAVERA"
+   ],
+   "recall": [
+    "PRIMAVERA"
+   ]
+  },
+  {
+   "make": "vespa",
+   "slug": "gts",
+   "he": "GTS",
+   "en": "GTS",
+   "category": "scooter",
+   "patterns": [
+    "GTS(?!.*CARGO)"
+   ],
+   "recall": [
+    "GTS"
+   ]
+  },
+  {
+   "make": "vespa",
+   "slug": "sprint",
+   "he": "ספרינט",
+   "en": "Sprint",
+   "category": "scooter",
+   "patterns": [
+    "SPRINT"
+   ],
+   "recall": [
+    "SPRINT"
+   ]
+  },
+  {
+   "make": "bmw",
+   "slug": "r-1250-gs",
+   "he": "R 1250 GS",
+   "en": "R 1250 GS",
+   "category": "adventure",
+   "patterns": [
+    "R ?1250 ?GS"
+   ],
+   "recall": [
+    "R1250GS"
+   ]
+  },
+  {
+   "make": "bmw",
+   "slug": "r-1300-gs",
+   "he": "R 1300 GS",
+   "en": "R 1300 GS",
+   "category": "adventure",
+   "patterns": [
+    "R ?1300 ?GS"
+   ],
+   "recall": [
+    "R1300,?GS"
+   ]
+  },
+  {
+   "make": "bmw",
+   "slug": "r-1200-gs",
+   "he": "R 1200 GS",
+   "en": "R 1200 GS",
+   "category": "adventure",
+   "patterns": [
+    "R ?1200 ?GS"
+   ],
+   "recall": [
+    "R1200GS"
+   ]
+  },
+  {
+   "make": "bmw",
+   "slug": "f-850-gs",
+   "he": "F 850 GS",
+   "en": "F 850 GS",
+   "category": "adventure",
+   "patterns": [
+    "F ?850 ?GS"
+   ],
+   "recall": [
+    "F850GS"
+   ]
+  },
+  {
+   "make": "bmw",
+   "slug": "f-750-gs",
+   "he": "F 750 GS",
+   "en": "F 750 GS",
+   "category": "adventure",
+   "patterns": [
+    "F ?750 ?GS"
+   ],
+   "recall": [
+    "F750GS"
+   ]
+  },
+  {
+   "make": "bmw",
+   "slug": "c-400",
+   "he": "C 400",
+   "en": "C 400 GT / X",
+   "category": "scooter",
+   "patterns": [
+    "C ?400"
+   ],
+   "recall": [
+    "C400"
+   ]
+  },
+  {
+   "make": "kawasaki",
+   "slug": "z900",
+   "he": "Z900",
+   "en": "Z900",
+   "category": "naked",
+   "patterns": [
+    "^ZR900"
+   ],
+   "recall": [
+    "(^|,)Z900",
+    "ZR900"
+   ]
+  },
+  {
+   "make": "kawasaki",
+   "slug": "z650",
+   "he": "Z650",
+   "en": "Z650",
+   "category": "naked",
+   "patterns": [
+    "^ER650"
+   ],
+   "recall": [
+    "(^|,)Z650",
+    "ER650"
+   ]
+  },
+  {
+   "make": "kawasaki",
+   "slug": "ninja-650",
+   "he": "נינג'ה 650",
+   "en": "Ninja 650",
+   "category": "sport",
+   "patterns": [
+    "^EX650"
+   ],
+   "recall": [
+    "NINJA650",
+    "EX650"
+   ]
+  },
+  {
+   "make": "kawasaki",
+   "slug": "versys-650",
+   "he": "ורסיס 650",
+   "en": "Versys 650",
+   "category": "adventure",
+   "patterns": [
+    "^LE650"
+   ],
+   "recall": [
+    "VERSYS650",
+    "LE650"
+   ]
+  },
+  {
+   "make": "kawasaki",
+   "slug": "versys-1000",
+   "he": "ורסיס 1000",
+   "en": "Versys 1000",
+   "category": "adventure",
+   "patterns": [
+    "^LZT00"
+   ],
+   "recall": [
+    "VERSYS1000"
+   ]
+  },
+  {
+   "make": "kawasaki",
+   "slug": "vulcan-s",
+   "he": "וולקן S",
+   "en": "Vulcan S",
+   "category": "cruiser",
+   "patterns": [
+    "^EN650"
+   ],
+   "recall": [
+    "VULCANS",
+    "EN650"
+   ]
+  },
+  {
+   "make": "suzuki",
+   "slug": "v-strom-650",
+   "he": "V-Strom 650",
+   "en": "V-Strom 650",
+   "category": "adventure",
+   "patterns": [
+    "DL650"
+   ],
+   "recall": [
+    "DL650",
+    "VSTROM650"
+   ]
+  },
+  {
+   "make": "suzuki",
+   "slug": "v-strom-250",
+   "he": "V-Strom 250",
+   "en": "V-Strom 250",
+   "category": "adventure",
+   "patterns": [
+    "DL250"
+   ],
+   "recall": [
+    "DL250"
+   ]
+  },
+  {
+   "make": "suzuki",
+   "slug": "burgman-400",
+   "he": "בורגמן 400",
+   "en": "Burgman 400",
+   "category": "scooter",
+   "patterns": [
+    "AN400",
+    "BURGMAN ?400"
+   ],
+   "recall": [
+    "AN400",
+    "BURGMAN"
+   ]
+  },
+  {
+   "make": "cfmoto",
+   "slug": "450mt",
+   "he": "450MT",
+   "en": "450MT",
+   "category": "adventure",
+   "patterns": [
+    "450 ?MT"
+   ],
+   "recall": [
+    "450MT"
+   ]
+  },
+  {
+   "make": "cfmoto",
+   "slug": "700mt",
+   "he": "700MT",
+   "en": "700MT",
+   "category": "adventure",
+   "patterns": [
+    "700 ?MT"
+   ],
+   "recall": [
+    "700MT"
+   ]
+  },
+  {
+   "make": "cfmoto",
+   "slug": "800mt",
+   "he": "800MT",
+   "en": "800MT",
+   "category": "adventure",
+   "patterns": [
+    "800 ?MT"
+   ],
+   "recall": [
+    "800MT"
+   ]
+  },
+  {
+   "make": "royal-enfield",
+   "slug": "himalayan",
+   "he": "הימלאיין",
+   "en": "Himalayan",
+   "category": "adventure",
+   "codes": [
+    "DMEFT",
+    "TKKGT"
+   ]
+  },
+  {
+   "make": "benelli",
+   "slug": "trk-502",
+   "he": "TRK 502",
+   "en": "TRK 502",
+   "category": "adventure",
+   "patterns": [
+    "TRK ?502"
+   ]
+  },
+  {
+   "make": "zontes",
+   "slug": "368",
+   "he": "368",
+   "en": "368",
+   "category": "scooter",
+   "patterns": [
+    "^368"
+   ]
+  },
+  {
+   "make": "sur-ron",
+   "slug": "ultra-bee",
+   "he": "אולטרה בי",
+   "en": "Ultra Bee",
+   "category": "electric",
+   "patterns": [
+    "ULTRA ?BEE",
+    "EEB ARTLU"
+   ]
+  }
+ ]
+}

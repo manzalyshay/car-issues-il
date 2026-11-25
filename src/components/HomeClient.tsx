@@ -14,7 +14,7 @@ import type { HomeIssue } from '@/lib/homeIssues';
 /* ── Types ──────────────────────────────────────────────── */
 interface Make { slug: string; nameHe: string; nameEn: string; logoUrl: string; country: string; models: { slug: string; nameHe: string; nameEn: string }[]; }
 interface TopCar { makeSlug: string; modelSlug: string; makeHe: string; modelHe: string; makeEn: string; modelEn: string; logoUrl: string; aiScore: number; aiConfidence: 'high' | 'medium' | 'low'; avgRating: number | null; reviewCount: number; imageUrl?: string | null; }
-interface Review { id: string; make_slug: string; model_slug: string; year: number | null; rating: number; title: string; body: string; title_en?: string | null; body_en?: string | null; author: string; created_at: string; makeHe: string; modelHe: string; makeEn: string; modelEn: string; logoUrl: string; }
+interface Review { id: string; make_slug: string; model_slug: string; year: number | null; rating: number; title: string; body: string; title_en?: string | null; body_en?: string | null; author: string; created_at: string; href?: string; makeHe: string; modelHe: string; makeEn: string; modelEn: string; logoUrl: string; }
 interface ComparePair { href: string; aHe: string; aEn: string; bHe: string; bEn: string; }
 interface TickerItem { code: string; isRecall: boolean; textHe: string; textEn: string; color: string; }
 interface NewsItem { id: string; title_he: string | null; title_en: string | null; body_he: string | null; body_en: string | null; image_url: string | null; image_author?: string | null; image_license?: string | null; image_source_url?: string | null; published_at: string | null; original_url: string; source: string; }
@@ -517,7 +517,7 @@ export default function HomeClient({ allMakes, topRanked, recentReviews, tickerI
                 return (
                   <Link
                     key={rv.id}
-                    href={`/cars/${rv.make_slug}/${rv.model_slug}`}
+                    href={rv.href ?? `/cars/${rv.make_slug}/${rv.model_slug}`}
                     style={{ background: '#fff', border: '1px solid #e4e9f2', borderRadius: 16, padding: '16px 20px', display: 'flex', gap: 16, textDecoration: 'none', alignItems: 'flex-start' }}
                     className="ci-card-hover"
                   >
