@@ -167,7 +167,7 @@ async function getTickerItems(): Promise<TickerItem[]> {
     ).catch(() => []),
     getValidatedRepairReports(20).catch(() => []),
     dbAll<{ make: string; model: string; component_he: string }>(
-      "SELECT make, model, component_he FROM recalls_cache WHERE component_he IS NOT NULL AND component_he NOT LIKE '%:%' ORDER BY ROWID DESC LIMIT 4",
+      "SELECT make, model, component_he FROM recalls_cache WHERE component_he IS NOT NULL AND component_he NOT LIKE '%:%' AND make NOT LIKE 'moto-%' ORDER BY ROWID DESC LIMIT 4",
     ).catch(() => []),
   ]);
 
