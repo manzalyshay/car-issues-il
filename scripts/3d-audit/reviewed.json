@@ -11,7 +11,9 @@
     "117a4b23752a4659bf6db90522c4b262": "nissan/micra 2004-2009: under the crude face count but looks right in the preview. Kept 2026-11-23.",
     "0fda9e9048524ddba8f13e64de958f70": "suzuki/alto 2017-2019: under the crude face count but looks right in the preview. Kept 2026-11-23.",
     "f58d0d4861e24dba90720f2862b17b58": "bmw/x3 2011-2017: under the crude face count but looks right in the preview. Kept 2026-11-23.",
-    "23ef38b95ebb4d6fb679248817e8b211": "land-rover/range-rover-evoque 2015: under the crude face count but looks right in the preview. Kept 2026-11-23."
+    "23ef38b95ebb4d6fb679248817e8b211": "land-rover/range-rover-evoque 2015: under the crude face count but looks right in the preview. Kept 2026-11-23.",
+    "5dc9fd1a7d81449e853c12f4f8858972": "moto-yamaha/mt-07: 33k faces and untextured colours, but the bike looks right (motorcycles need fewer faces). Kept 2026-11-25.",
+    "a0fcb1b23e6948639a09d804939f7c70": "moto-kawasaki/ninja-650: photo scan with a small street patch, but the right bike, good quality (75 likes) and the only usable Ninja 650 model. Kept 2026-11-25."
   },
   "missing_ok": {
     "hyundai/i25": "Owner chose to skip (Accent 2013 model was offered). 2026-11-05.",
@@ -21,7 +23,8 @@
     "mg/ehs": "MG HS 2020 / 2026 models only show tiny in the preview; 2026 is the next generation. 2026-11-07.",
     "geely/geometry-c": "No Geometry C model on Sketchfab. 2026-11-07.",
     "xpeng/g6": "No Xpeng G6 car model on Sketchfab (only a wheel scan). 2026-11-07.",
-    "mg/mgs9": "No MG S9 model on Sketchfab. 2026-11-07."
+    "mg/mgs9": "No MG S9 model on Sketchfab. 2026-11-07.",
+    "chevrolet/trailblazer": "Only two models on Sketchfab: the one hidden on 2026-11-23 for crashing the page (1.37M faces) and a 2007 photo scan of the old US Trailblazer (wrong car). 2026-11-25."
   },
   "seen": {
     "6d7d34ee42734d1ab28a6b1f1c5fc4fc": "toyota/corolla 2020-: looked OK in the 2026-11-23 preview check.",
@@ -580,6 +583,21 @@
     "c05fa878b58245b68f289c30625b54cc": "haval/h6 2023-2024: looked OK in the 2026-11-23 preview check.",
     "b19442c3095d48e3b2deb8a1f6830fbe": "nissan/kicks 2019-2020: looked OK in the 2026-11-23 preview check.",
     "942244be457745678c54a7ff5330ba8d": "nissan/kicks 2021-2024: looked OK in the 2026-11-23 preview check.",
-    "717752a19f954e3284081f1d114260d3": "toyota/verso 2013-: Toyota Verso MPV (niev), checked 2026-11-23."
+    "717752a19f954e3284081f1d114260d3": "toyota/verso 2013-: Toyota Verso MPV (niev), checked 2026-11-23.",
+    "bdba6498433045fd85db5da69d71098b": "moto-honda/nc750x: looked OK in the 2026-11-25 preview check.",
+    "c2e1bff4afa34fc0b1957a5c418d666a": "moto-honda/cb500x: looked OK in the 2026-11-25 preview check.",
+    "21d1679f7d7449bc8d38da537cbaf72d": "moto-honda/africa-twin: looked OK in the 2026-11-25 preview check.",
+    "b56cc19ac3e0471c9493c323ed2bc8c8": "moto-yamaha/tmax: looked OK in the 2026-11-25 preview check.",
+    "b7d39c7621ef4dd283b41ef2aa0e5537": "moto-yamaha/xmax-125: looked OK in the 2026-11-25 preview check.",
+    "5b40f7499be94166ad6c538dd7391352": "moto-yamaha/tricity-125: looked OK in the 2026-11-25 preview check.",
+    "5dc9fd1a7d81449e853c12f4f8858972": "moto-yamaha/mt-07: looked OK in the 2026-11-25 preview check.",
+    "6788f65220a248c0aa4c4bfa7c5f1843": "moto-kymco/agility: looked OK in the 2026-11-25 preview check.",
+    "d4a99a39c0ff48378ba47af8f8b74dea": "moto-ktm/exc: looked OK in the 2026-11-25 preview check.",
+    "8bbb612ea19f45f8912e56474655938a": "moto-piaggio/beverly: looked OK in the 2026-11-25 preview check.",
+    "af8ac4301cb64469803de2cf7da18c43": "moto-vespa/primavera: looked OK in the 2026-11-25 preview check.",
+    "9333a77de1c946ab830a5def2f5799f6": "moto-vespa/gts: looked OK in the 2026-11-25 preview check.",
+    "2d11344214434d5aa79452d1a15e90c4": "moto-bmw/r-1200-gs: looked OK in the 2026-11-25 preview check.",
+    "ffde1136537448178fbd82d4066b4704": "moto-kawasaki/z900: looked OK in the 2026-11-25 preview check.",
+    "a0fcb1b23e6948639a09d804939f7c70": "moto-kawasaki/ninja-650: street patch under the bike; kept (see uids). 2026-11-25."
   }
 }
