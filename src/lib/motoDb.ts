@@ -8,6 +8,7 @@
 import { dbAll } from './db';
 import type { Recall } from '@/app/api/recalls/route';
 import { buildWindowOverlaps } from './israeliRecallsDb';
+import { getRecallsFromCache } from './recallsDb';
 
 export type MotoCategory = 'scooter' | 'adventure' | 'naked' | 'sport' | 'offroad' | 'cruiser' | 'electric';
 
@@ -119,8 +120,42 @@ export function ccLabel(mo: Pick<MotoModel, 'ccMin' | 'ccMax'>, locale: string =
 
 const norm = (s: string) => s.toUpperCase().replace(/[\s-]+/g, '');
 
-/** Israeli recall notices (Ministry of Transport) for a bike, matched by the model's recall patterns. */
+/**
+ * Recalls for a bike: Israeli notices (Ministry of Transport) first, then US (NHTSA) recalls
+ * of the same bike sold in the US. Both are limited to the model years the site covers.
+ */
 export async function getMotoRecalls(make: MotoMake, model: MotoModel): Promise<Recall[]> {
+  const [il, us] = await Promise.all([getMotoIsraeliRecalls(make, model), getMotoUsRecalls(make, model)]);
+  return [...il, ...us];
+}
+
+const lastSegment = (raw: string | null | undefined) => (raw ?? '').split(':').pop()!.trim();
+
+/**
+ * US recalls, loaded into recalls_cache by scripts/moto/load_nhtsa.py and linked to the bike
+ * in recalls_cache_models under the 'moto-<make>' key. Text is in Hebrew.
+ */
+async function getMotoUsRecalls(make: MotoMake, model: MotoModel): Promise<Recall[]> {
+  const rows = await getRecallsFromCache(MOTO_KEY_PREFIX + make.slug, model.slug);
+  const [newest, oldest] = [model.years[0], model.years[model.years.length - 1]];
+  return rows
+    .filter((c) => !newest || c.recall_year == null || (c.recall_year >= oldest && c.recall_year <= newest))
+    .map((c) => ({
+      id: c.id,
+      year: c.recall_year ?? null,
+      date: c.date ?? '',
+      component: lastSegment(c.component_he) || lastSegment(c.component_en),
+      componentEn: lastSegment(c.component_en),
+      summary: c.summary_he || c.summary_en || '',
+      consequence: c.consequence_he || c.consequence_en || '',
+      remedy: c.remedy_he || c.remedy_en || '',
+      manufacturer: c.manufacturer ?? '',
+      source: 'us' as const,
+    }));
+}
+
+/** Israeli recall notices (Ministry of Transport) for a bike, matched by the model's recall patterns. */
+async function getMotoIsraeliRecalls(make: MotoMake, model: MotoModel): Promise<Recall[]> {
   if (!make.recallMakes.length || !model.recallPatterns.length) return [];
   const patterns = model.recallPatterns.map((p) => new RegExp(p));
   const rows = await dbAll<{

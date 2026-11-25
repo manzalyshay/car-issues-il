@@ -55,3 +55,21 @@ DELETE FROM car_3d_models WHERE make_slug LIKE 'moto-%';
 DELETE FROM expert_reviews WHERE make_slug LIKE 'moto-%';
 UPDATE moto_models SET leading_image_url = NULL;
 ```
+
+## US recalls (NHTSA), 2026-11-25
+
+- 73 US recall campaigns added to `recalls_cache` (make `moto-<make>`), linked to 28 bikes through
+  80 `recalls_cache_models` rows. Source: NHTSA `recallsByVehicle`, by the US names in
+  `scripts/moto/nhtsa_map.json` (only the same bike: MT-07 = FZ-07, MT-09 = FZ-09, 800MT = Ibex 800),
+  for the model years the site covers. Fetched with `scripts/moto/nhtsa.py`, raw data in
+  `scripts/moto/nhtsa_recalls.json`.
+- Hebrew text written by Claude from NHTSA's English (`scripts/moto/nhtsa_he.json`); English kept in the `_en` columns.
+- Left out: 06V104000 and 18V830000 and 20V165000 (bikes never reached owners), 20E013000 (accessory
+  duplicate of 20V166000), 08E052000 (aftermarket brake lever).
+- Loaded with `scripts/moto/load_nhtsa.py` (`INSERT ... ON CONFLICT DO NOTHING`).
+
+Rollback:
+```sql
+DELETE FROM recalls_cache_models WHERE make LIKE 'moto-%';
+DELETE FROM recalls_cache WHERE make LIKE 'moto-%';
+```

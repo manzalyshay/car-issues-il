@@ -1,0 +1,1192 @@
+{
+ "campaigns": {
+  "14V056000": {
+   "id": "14V056000",
+   "date": "14/02/2014",
+   "component": "ENGINE AND ENGINE COOLING",
+   "summary": "Honda is recalling certain model year 2013 CB500 (FA, F, XA, X) and CBR500 (RA, R) motorcycles.  The rocker arm shaft retaining bolts may have been manufactured incorrectly resulting in the bolts loosening during engine operation.  A loose bolt will initially result in a slow leak of engine oil, but if not addressed, the bolt can come out of the cylinder head entirely.",
+   "consequence": "Without a bolt, the engine will have reduced power which may result in a stall, increasing the risk of a crash.",
+   "remedy": "Honda will notify owners, and dealers will replace the rocker arm shaft retaining bolts, free of charge.  The recall began on March 11, 2014.  Owners may contact Honda Customer Service at 1-866-784-1870.",
+   "manufacturer": "Honda (American Honda Motor Co.)",
+   "years": [
+    2013
+   ]
+  },
+  "15V439000": {
+   "id": "15V439000",
+   "date": "02/07/2015",
+   "component": "ELECTRICAL SYSTEM:STARTER ASSEMBLY:RELAY",
+   "summary": "Honda (American Honda Motor Co.) is recalling certain model year 2013-2015 ST1300PA, 2014-2015 CB500, CBR500, CRF250L, CBR650, CTX700, NSS300, VT750, VT1300, 2015 CB300F, CBR300, CBR600, and 2014-2016 NC700 motorcycles.  In the affected motorcycles, sealant may have been incorrectly applied to the starter relay switch, and as a result, the electrical system may have a loss of power.",
+   "consequence": "A loss of electrical power may cause an engine stall, increasing the risk of a crash.",
+   "remedy": "Honda will notify owners, and dealers will replace any affected starter relay switch, free of charge.  The recall began on August 31, 2015.  Owners may contact Honda customer service at 1-866-784-1870.  Honda's number for this recall is JS9 and JT0.",
+   "manufacturer": "Honda (American Honda Motor Co.)",
+   "years": [
+    2014,
+    2015
+   ]
+  },
+  "15V475000": {
+   "id": "15V475000",
+   "date": "27/07/2015",
+   "component": "FUEL SYSTEM, GASOLINE",
+   "summary": "Honda (American Honda Motor Co.) is recalling certain model year 2013-2015 Honda CBR500 motorcycles manufactured January 24, 2013, to May 14, 2015, and 2013-2015 CB500 motorcycles manufactured January 31, 2013, to May 16, 2015. The affected motorcycles may experience the fuel level sensor float arm becoming deformed due to exposure to environmental and roadway conditions. This deformation can cause the float arm to separate from the fuel level sensor body.",
+   "consequence": "If the float arm separates from the sensor body, it can give the fuel meter inaccurate information, or in some cases the float may contact the positive and negative terminals causing an electrical short. Either condition may cause the vehicle to stall, increasing the risk of a crash.",
+   "remedy": "Honda will notify owners, and dealers will replace the fuel level sensor assembly, free of charge. The recall began on September 15, 2015. Owners may contact Honda customer service at 1-310-783-2000. Honda's number for this recall is JT1.",
+   "manufacturer": "Honda (American Honda Motor Co.)",
+   "years": [
+    2014,
+    2015
+   ]
+  },
+  "21V690000": {
+   "id": "21V690000",
+   "date": "02/09/2021",
+   "component": "SERVICE BRAKES, HYDRAULIC",
+   "summary": "Honda (American Honda Motor Co.) is recalling certain 2019-2020 CB500X and CBR500R ABS motorcycles.  Excessive grease in the ABS modulator may collect debris, which can get stuck in the check valve and cause a brake fluid leak.",
+   "consequence": "A brake fluid leak can reduce braking performance and increase the risk of a crash.",
+   "remedy": "Dealers will inspect the lot number on the ABS modulator, and replace the modulator as necessary, free of charge.  Owner notification letters were mailed November 12, 2021.  Owners may contact Honda Powersports customer service at 1-866-784-1870.  Honda's number for this recall is KM6.",
+   "manufacturer": "Honda (American Honda Motor Co.)",
+   "years": [
+    2019,
+    2020
+   ]
+  },
+  "21V382000": {
+   "id": "21V382000",
+   "date": "24/05/2021",
+   "component": "EXTERIOR LIGHTING",
+   "summary": "Honda (American Honda Motor Co.) is recalling certain 2020-2021 Super Cub C125, CB500X, CB650R, CBR300R, CBR500R, CBR650R, Rebel 300, Rebel 500, Monkey, 2020 CRF250L, GROM, 2021 CRF300L, and CB500F motorcycles.  The rear reflector lens may not reflect brightly enough.  As such, these vehicles fail to comply with the requirements of Federal Motor Vehicle Safety Standard (FMVSS) number 108, \"Lamps, Reflective Devices, and Associated Equipment.\"",
+   "consequence": "A dim rear reflector may reduce the visibility of the motorcycle to other drivers, increasing the risk of a crash or injury.",
+   "remedy": "Dealers will replace the rear reflector, free of charge.  Owner notification letters were mailed July 7, 2021.  Owners may contact Honda customer service at 1-866-784-1870.  Honda's number for this recall is KM3.",
+   "manufacturer": "Honda (American Honda Motor Co.)",
+   "years": [
+    2020,
+    2021
+   ]
+  },
+  "25V435000": {
+   "id": "25V435000",
+   "date": "27/06/2025",
+   "component": "TIRES",
+   "summary": "Honda (American Honda Motor Co.) is recalling certain 2024 Honda NC750X motorcycles. Due to an improper manufacturing process, the inner structure of the front tire may loosen and unravel, which can result in a loss of vehicle handling and control. As such, these vehicles fail to comply with the requirements of Federal Motor Vehicle Safety Standard number 119, \"New Pneumatic Tires - Other Than Passenger Cars.\"",
+   "consequence": "A loss of vehicle handling and control increases the risk of a crash or injury.",
+   "remedy": "Dealers will replace the front tire, free of charge. Owner notification letters were mailed August 4, 2025. Owners may contact Honda customer service at 1-866-784-1870. Honda's number for this recall is KS4.",
+   "manufacturer": "Honda (American Honda Motor Co.)",
+   "years": [
+    2024
+   ]
+  },
+  "20V797000": {
+   "id": "20V797000",
+   "date": "18/12/2020",
+   "component": "FUEL SYSTEM, GASOLINE:STORAGE:TANK ASSEMBLY",
+   "summary": "Honda (American Honda Motor Co.) is recalling certain 2018-2019 Africa Twin Adventure Sports (CRF1000L) and 2020 Africa Twin Adventure Sports (CRF1100L) motorcycles.  Contaminants inside the fuel tank may cause the fuel filter to clog, possibly resulting in an engine stall.",
+   "consequence": "An engine stall can increase the risk of a crash or injury.",
+   "remedy": "Honda will notify owners, and dealers will drain and clean the fuel tank, and replace the fuel filter assembly, free of charge.  The recall began on February 4, 2021.  Owners may contact Honda customer service at 1-866-784-1870.  Honda's number for this recall is KL4.",
+   "manufacturer": "Honda (American Honda Motor Co.)",
+   "years": [
+    2019,
+    2020
+   ]
+  },
+  "22V662000": {
+   "id": "22V662000",
+   "date": "01/09/2022",
+   "component": "ENGINE AND ENGINE COOLING:ENGINE:ENGINE CONTROL MODULE (ECU/ECM):SOFTWARE",
+   "summary": "Honda (American Honda Motor Co.) is recalling certain 2020-2021 CRF1100 Africa Twin motorcycles equipped with a dual-clutch transmission (DCT).  A software error in the engine control unit (ECU), may disconnect the controller area network (CAN) communication and release the clutch, which can result in an engine stall or a loss of drive power.",
+   "consequence": "An engine stall or a loss of drive power can increase the risk of a crash or injury.",
+   "remedy": "Dealers will update the ECU software, free of charge.  Owner notification letters were mailed October 6, 2022.  Owners may contact Honda customer service at 1-866-784-1870.  Honda's number for this recall is KNB.",
+   "manufacturer": "Honda (American Honda Motor Co.)",
+   "years": [
+    2020,
+    2021
+   ]
+  },
+  "25V583000": {
+   "id": "25V583000",
+   "date": "05/09/2025",
+   "component": "ELECTRICAL SYSTEM:MOTORCYCLE HANDLEBAR SWITCH POD LEFT/RIGHT",
+   "summary": "Honda (American Honda Motor Co.) is recalling certain 2020-2022 and 2024-2025 CRF1100 Africa Twin motorcycles. The left handlebar switch harness may corrode due to oxidation, resulting in the loss of horn function or the ability to switch the headlight from low beam to high beam. As such, these motorcycles fail to comply with the requirements of Federal Motor Vehicle Safety Standard number 108, \"Lamps, Reflective Devices, and Associated Equipment.\"",
+   "consequence": "The inability to use the horn or switch the headlight from low beam to high beam can increase the risk of a crash or injury.",
+   "remedy": "Dealers will replace the left handlebar switch assembly, free of charge. Owner letters were mailed January 20, 2026. Owners may contact Honda's customer service at 1-866-784-1870. Honda's number for this recall is KS8. Vehicle Identification Numbers (VINs) involved in this recall will be searchable on NHTSA.gov beginning September 12, 2025.",
+   "manufacturer": "Honda (American Honda Motor Co.)",
+   "years": [
+    2020,
+    2021,
+    2022,
+    2024
+   ]
+  },
+  "24V882000": {
+   "id": "24V882000",
+   "date": "21/11/2024",
+   "component": "FUEL SYSTEM, GASOLINE:FUEL INJECTION SYSTEM",
+   "summary": "Honda (American Honda Motor Co.) is recalling certain 2022 and 2024-2025 CRF1100 Africa Twin motorcycles.  A software error in the fuel injection electronic control unit (FI-ECU) may cause an engine stall or a loss of power when the Wheelie Control feature is activated.",
+   "consequence": "An engine stall or loss of power can increase the risk of a crash or injury.",
+   "remedy": "Dealers will reprogram the FI-ECU software, free of charge.  Owner notification letters were mailed January 15, 2025.  Owners may contact Honda customer service at 1-866-784-1870.  Honda's number for this recall is KR1.",
+   "manufacturer": "Honda (American Honda Motor Co.)",
+   "years": [
+    2020,
+    2021,
+    2022,
+    2024
+   ]
+  },
+  "25V107000": {
+   "id": "25V107000",
+   "date": "20/02/2025",
+   "component": "POWER TRAIN:CLUTCH ASSEMBLY:PEDAL/HAND LEVER(MOTORCYCLE)",
+   "summary": "Honda (American Honda Motor Co.) is recalling certain 2024 CB650R and CBR650R motorcycles.  The fasteners of the gear shift arm may loosen and detach, resulting in the inability to shift gears.",
+   "consequence": "The inability to shift gears while riding increases the risk of a crash.",
+   "remedy": "Dealers will replace the gear shift arm, free of charge.  Owner notification letters were mailed April 31, 2025.  Owners may contact Honda's customer service at 866-784-1870.  Honda's number for this recall is KR7.",
+   "manufacturer": "Honda (American Honda Motor Co.)",
+   "years": [
+    2024
+   ]
+  },
+  "25V911000": {
+   "id": "25V911000",
+   "date": "24/12/2025",
+   "component": "ELECTRICAL SYSTEM:WIRING",
+   "summary": "Honda (American Honda Motor Co.) is recalling certain 2024-2025 CBR650R motorcycles. Engine vibration may cause the turn signal switch wire harness to become damaged, which can cause an electrical short circuit and blown fuse. As such, these vehicles fail to comply with the requirements of Federal Motor Vehicle Safety Standard number 108, \"Lamps, Reflective Devices, and Associated Equipment.\"",
+   "consequence": "A blown fuse will cause a loss of turn signal, brake light, speedometer, and horn function, increasing the risk of a crash or injury.",
+   "remedy": "Dealers will inspect and repair the turn signal switch wire harness as necessary, free of charge. Owner notification letters were mailed February 9, 2026. Owners may contact Honda's customer service at 1-866-784-1870. Honda's number for this recall is KT7. Vehicle Identification Numbers (VINs) involved in this recall became searchable on NHTSA.gov on January 8, 2026.",
+   "manufacturer": "Honda (American Honda Motor Co.)",
+   "years": [
+    2024,
+    2025
+   ]
+  },
+  "20V611000": {
+   "id": "20V611000",
+   "date": "05/10/2020",
+   "component": "VISIBILITY",
+   "summary": "Yamaha Motor Corporation, USA (Yamaha) is recalling certain 2015-2020 YZF-R3, 2020 MT03 and 2018-2020 XMAX scooters.  Condensation or other contaminates may adhere to the rear reflector lens reducing its effectiveness.",
+   "consequence": "A less reflective rear reflector increases the risk of crash.",
+   "remedy": "Yamaha will notify owners, and dealers will replace the rear reflector, free of charge.  The recall began October 20, 2020.  Owners may contact Yamaha customer service at 1-888-266-3085.  Yamaha's number for this recall is 990139.",
+   "manufacturer": "Yamaha Motor Corporation, USA",
+   "years": [
+    2018,
+    2019,
+    2020
+   ]
+  },
+  "25V778000": {
+   "id": "25V778000",
+   "date": "13/11/2025",
+   "component": "ENGINE AND ENGINE COOLING:CRITICAL FASTENERS",
+   "summary": "Yamaha Motor Company, Ltd. (Yamaha) is recalling certain 2018-2022 XMAX scooters. The camshaft retainer bolt may loosen and not properly secure the camshaft, resulting in an engine stall.",
+   "consequence": "An engine stall can cause a loss of control, increasing the risk of a crash or injury.",
+   "remedy": "Owners are advised not to ride their scooter until the remedy has been completed.  Dealers will install a new camshaft plate kit, free of charge. Owner notification letters are expected to be mailed November 20, 2025.  Owners may contact Yamaha's customer service at 1-800-962-7926.  Yamaha's number for this recall is 990184. Vehicle Identification Numbers (VINs) involved in this recall will be searchable on NHTSA.gov beginning November 24, 2025.",
+   "manufacturer": "Yamaha Motor Corporation, USA",
+   "years": [
+    2018,
+    2019,
+    2020,
+    2021,
+    2022
+   ]
+  },
+  "14V657000": {
+   "id": "14V657000",
+   "date": "20/10/2014",
+   "component": "ELECTRICAL SYSTEM:12V/24V/48V BATTERY:CABLES",
+   "summary": "Yamaha Motor Corporation, USA (Yamaha) is recalling certain model year 2015 FZ07 motorcycles manufactured May 1, 2014, to September 30, 2014.  In the affected motorcycles, the positive battery cable may be pinched between the seat base and seat bracket.",
+   "consequence": "If the battery cable is pinched, it may chafe and short-circuit, increasing the risk of a fire.",
+   "remedy": "Yamaha has notified owners, and dealers will replace the positive battery cable and seat bracket, free of charge.  The recall began on October 31, 2014.  Owners may contact Yamaha customer service at 1-800-962-7926.  Yamaha's number for this recall is 990089.",
+   "manufacturer": "Yamaha Motor Corporation, USA",
+   "years": [
+    2015
+   ]
+  },
+  "18V483000": {
+   "id": "18V483000",
+   "date": "19/07/2018",
+   "component": "POWER TRAIN:DRIVELINE",
+   "summary": "Yamaha Motor Corporation, USA (Yamaha) is recalling certain 2018 Yamaha MT-07J, MT-07JC, XSR700J, and XSR700JC motorcycles.  The bolts that connect the drive chain guard to the swingarm may loosen, possibly causing the chain guard to contact the drive chain and break.",
+   "consequence": "If the chain guard breaks, it may fall onto the road, creating a road hazard and increasing the risk of a crash.",
+   "remedy": "Yamaha will notify owners, and dealers will replace both chain guard mounting bolts, free of charge.  The recall began on August 3, 2018.  Owners may contact Yamaha customer service at 1-800-962-7926.  Yamaha's number for this recall is 990120.",
+   "manufacturer": "Yamaha Motor Corporation, USA",
+   "years": [
+    2018
+   ]
+  },
+  "17V221000": {
+   "id": "17V221000",
+   "date": "31/03/2017",
+   "component": "STEERING: STEERING WHEEL/HANDLE BAR",
+   "summary": "Yamaha Motor Corporation, USA (Yamaha) is recalling certain 2015-2017 FJ-09, FZ-09, and XSR900 motorcycles.  The lower handlebar holder may loosen due to a painting issue and the inadequate application of the thread-locking agent.",
+   "consequence": "If the handlebars are not properly secured to the motorcycle, a loss of vehicle control may result, increasing the risk of a crash.",
+   "remedy": "Yamaha will notify owners, and dealers will replace the lower handlebar holder, free of charge.  The recall began April 13, 2017.  Owners may contact Yamaha customer service at 1-800-962-7926.  Yamaha's number for this recall is 990114.",
+   "manufacturer": "Yamaha Motor Corporation, USA",
+   "years": [
+    2015,
+    2016,
+    2017
+   ]
+  },
+  "15V176000": {
+   "id": "15V176000",
+   "date": "25/03/2015",
+   "component": "POWER TRAIN:MANUAL TRANSMISSION",
+   "summary": "Yamaha Motor Corporation, USA (Yamaha) is recalling certain model year 2015 FJ-09 (FJ09F/FC), FZ-09 (FZ09F/FC), FZ6R (FZ6RF/FC), Super Tenere (XTZ12F/FC), Super Tenere ES (XTZ12EF/EFC), and R6 (YZF-R6) motorcycles manufactured September 1, 2014, to November 17, 2014.  The affected motorcycles may have an incorrectly manufactured shift cam segment stopper, having a sharp edge on the inside of the bend instead of a smooth radius.  As a result, the stopper can crack and possibly fracture at this sharp edge.",
+   "consequence": "If the stopper fractures, the transmission may not shift properly, increasing the risk of a crash.",
+   "remedy": "Yamaha will notify owners, and dealers will replace the shift shaft assembly with a new one, free of charge. The recall began on April 6, 2015.  Owners may contact Yamaha customer service at 1-800-962-7926.",
+   "manufacturer": "Yamaha Motor Corporation, USA",
+   "years": [
+    2015
+   ]
+  },
+  "23V472000": {
+   "id": "23V472000",
+   "date": "10/07/2023",
+   "component": "SERVICE BRAKES, HYDRAULIC:FOUNDATION COMPONENTS:DISC:CALIPER",
+   "summary": "Yamaha Motor Corporation, USA (Yamaha) is recalling certain 2022 Tenere 700 (XTZ7N) motorcycles.  The front brake calipers may have been assembled with bolts that have an incorrect thread length, which can damage the mounting hole threads in the brake caliper.",
+   "consequence": "Damaged brake calipers can detach and cause a loss of braking ability, increasing the risk of a crash.",
+   "remedy": "Owners should not operate their motorcycle, other than take it to a dealer, until the remedy is performed.  Dealers will inspect the length of the front brake caliper bolts and replace them, if necessary.  If the caliper mounting-hole threads are damaged, the caliper will be replaced.  Repairs will be performed free of charge.  Owner notification letters are expected to be mailed July 20, 2023.  Owners may contact Yamaha's customer service at 1-800-962-7926.  Yamaha's number for this recall is 990168.",
+   "manufacturer": "Yamaha Motor Corporation, USA",
+   "years": [
+    2022
+   ]
+  },
+  "12V081000": {
+   "id": "12V081000",
+   "date": "01/03/2012",
+   "component": "STRUCTURE",
+   "summary": "KAWASAKI IS RECALLING CERTAIN MODEL YEAR 2012 EX250JCF/A/AL/L NINJA 250, EX650ECF/L NINJA 650 AND KLE650CCF/L VERSYS MOTORCYCLES MANUFACTURED FROM SEPTEMBER 13, 2011 THROUGH OCTOBER 25, 2011.  DUE TO ENGINE VIBRATION AND DAMAGE DURING ASSEMBLY, THE CIRCLIPS ON THE FOOTPEG MOUNTING PINS CAN BREAK AND FALL OFF AND CAUSE THE FOOTPEG TO DETACH FROM THE MOTORCYCLE.",
+   "consequence": "IF THE FOOT PEG DETACHES, IT COULD CREATE A ROAD HAZARD FOR OTHER VEHICLE TRAFFIC AND POSSIBLY DISTRACT THE RIDER, INCREASING THE RISK OF A CRASH.",
+   "remedy": "KAWASAKI WILL NOTIFY OWNERS, AND DEALERS WILL REPLACE THE PASSENGER FOOTPEG PIN CIRCLIPS, FREE OF CHARGE.  THE SAFETY RECALL BEGAN ON MARCH 5, 2012.  OWNERS MAY CONTACT KAWASAKI AT 1-866-802-9381.",
+   "manufacturer": "KAWASAKI MOTORS CORP., U.S.A.",
+   "years": [
+    2012
+   ]
+  },
+  "19V083000": {
+   "id": "19V083000",
+   "date": "08/02/2019",
+   "component": "SERVICE BRAKES, HYDRAULIC:ANTILOCK/TRACTION CONTROL/ELECTRONIC LIMITED SLIP",
+   "summary": "Kawasaki Motors Corp., U.S.A. (Kawasaki) is recalling certain 2019 Z900 ABS, Z900 RS ABS & Z900 RS CAFE ABS motorcycles.  The ABS hydraulic unit (ABS unit) may have been contaminated with debris during the manufacturing process, possibly resulting in the front or rear wheel locking up when braking while riding.",
+   "consequence": "If the front or rear wheel locks up while braking, there would be an increased risk of a crash.",
+   "remedy": "Kawasaki has notified owners, and dealers will inspect the ABS unit, replacing it as necessary, free of charge.  The recall began February 15, 2019.  Owners may contact Kawasaki Customer Care at 1-866-802-9381.  Kawasaki's number for this recall is MC19-01.",
+   "manufacturer": "Kawasaki Motors Corp., U.S.A.",
+   "years": [
+    2019
+   ]
+  },
+  "15V141000": {
+   "id": "15V141000",
+   "date": "11/03/2015",
+   "component": "WHEELS:LUGS/NUTS/BOLTS/STUDS",
+   "summary": "BMW of North America, LLC (BMW) is recalling certain model year 2005-2010 R1200GS and R1200RT, 2006-2010 R1200GS Adventure, 2007-2010 R1200R, 2007 R1200S and K1200R Sport, 2005-2007 R1200ST, 2008-2009 HP2 Megamoto, 2006 HP2 Enduro, 2008-2010 HP2 Sport, 2005-2008 K1200S, 2006-2008 K1200R, K1200GT, 2009-2011 K1300S, 2010-2011 K1300R, and 2009-2010 K1300GT motorcycles.  In the affected motorcycles, the rear wheel mounting flange may crack if the rear wheel mounting bolts are over tightened.",
+   "consequence": "If the rear wheel mounting flange cracks, the mounting bolts may loosen and the rear wheel may not remain secured to the motorcycle, causing a loss of stability and increasing the risk of a crash.",
+   "remedy": "BMW will notify owners, and dealers will replace the existing aluminum rear wheel flange with a steel one, free of charge.  The recall began on May 7, 2015.  Owners may contact BMW customer service at 1-800-525-7417.",
+   "manufacturer": "BMW of North America, LLC",
+   "years": [
+    2005,
+    2006,
+    2007,
+    2008,
+    2009,
+    2010
+   ]
+  },
+  "13V617000": {
+   "id": "13V617000",
+   "date": "12/12/2013",
+   "component": "FUEL SYSTEM, GASOLINE:DELIVERY:FUEL PUMP",
+   "summary": "BMW of North America, LLC (BMW) is recalling certain model year 2005-2011 model year R-model motorcycles, model year 2005-2012 K-model motorcycles, model year 2010-2011 S 1000 model motorcycles, and model year 2006-2010 HP2 motorcycles.  In the affected motorcycles, the fuel pump flange (and the auxiliary fuel pump flange if equipped) could develop cracks and leak fuel.",
+   "consequence": "A fuel leak in the presence of an ignition source may result in a fire.",
+   "remedy": "BMW will notify owners, and dealers will either reinforce the fuel pump flange or replace the pump, as necessary, free of charge.  The recall began on April 16, 2014.  Owners may contact BMW customer relations at 1-800-525-7417 or email BMW at CustomerRelations@bmwusa.com.",
+   "manufacturer": "BMW of North America, LLC",
+   "years": [
+    2005,
+    2006,
+    2007,
+    2008,
+    2009,
+    2010,
+    2011
+   ]
+  },
+  "10V276000": {
+   "id": "10V276000",
+   "date": "18/06/2010",
+   "component": "SERVICE BRAKES, HYDRAULIC",
+   "summary": "BMW IS RECALLING CERTAIN MODEL YEAR 2007 THROUGH 2009 R 1200 AND K 1200 SERIES MOTORCYCLES MANUFACTURED FROM AUGUST 2006 THROUGH MAY 2009.  DUE TO THE CURRENT ROUTING OF THE FRONT BRAKE LINES, IT IS POSSIBLE THAT DURING RIDING, AND THEREFORE ASSOCIATED VIBRATION. THE BRAKE LINES COULD BE UNDER STRAIN.  IF THE VIBRATION/STRAIN IS SIGNIFICANT, THE BRAKE LINE COULD SPLIT AND START TO DEVELOP A LEAK.",
+   "consequence": "IF THIS GOES UNNOTICED, AND THE BRAKE FLUID RESERVOIR RUNS EMPTY, THE FRONT BRAKES COULD FAIL, INCREASING THE RISK OF A CRASH.",
+   "remedy": "BMW WILL NOTIFY OWNERS AND DEALERS WILL INSTALL NEW BRAKE LINES, CONTAINING A \"SLEEVE\" ALONG A PORTION OF THE LINES FREE OF CHARGE.  THE SAFETY RECALL BEGAN ON SEPTEMBER 20, 2010.  OWNERS MAY CONTACT BMW AT 1-800-525-7417.",
+   "manufacturer": "BMW OF NORTH AMERICA, LLC",
+   "years": [
+    2007,
+    2008,
+    2009
+   ]
+  },
+  "21V060000": {
+   "id": "21V060000",
+   "date": "08/02/2021",
+   "component": "FUEL SYSTEM, GASOLINE:DELIVERY:FUEL PUMP",
+   "summary": "BMW of North America, LLC (BMW) is recalling certain 2011-2014 S 1000 RR/R/ HP4, R 1200 GS/GS Adventure/R/RT, K 1300 S, K 1600 GT/GTL/GTL Exclusive and 2014 R nine T motorcycles.  The fuel pump, and auxiliary fuel pump in certain models, may crack and leak fuel during vehicle operation.",
+   "consequence": "A fuel leak, in the presence of an ignition source, may result in a fire.",
+   "remedy": "BMW will notify owners, and dealers will replace the fuel pump, free of charge.  The recall began March 17, 2021.  Owners may contact BMW customer service at 1-800-525-7417.",
+   "manufacturer": "BMW of North America, LLC",
+   "years": [
+    2011,
+    2012,
+    2013,
+    2014
+   ]
+  },
+  "17E052000": {
+   "id": "17E052000",
+   "date": "21/08/2017",
+   "component": "EXTERIOR LIGHTING:TURN SIGNAL",
+   "summary": "BMW of North America, LLC (BMW) is recalling certain accessory turn signals manufactured for 2006-2017 R1200GS, 2007-2008 and 2010-2017 R1200GS Adventure, 2017 F700GS and F800GS, 2013-2017 F800GT, 2015-2016 F800R, 2014-2017 F800GS Adventure, 2014-2016 S1000R, 2015-2017 R1200R, 2016-2017 R1200RS, and 2010-2017 S1000RR motorcycles.  As designed, these accessory turn signals may be insufficiently visible to other drivers, and, as such, fail to comply with the requirements of Federal Motor Vehicle Safety Standard (FMVSS) number 108, \"Lamps, Reflective Devices, and Associated Equipment.\"",
+   "consequence": "If other drivers cannot easily see the turn signals, there would be an increased risk of a crash.",
+   "remedy": "BMW will notify owners, and dealers will replace the turn signals, free of charge.  The recall began October 25, 2017.  Owners may contact BMW customer service at 1-800-525-7417.",
+   "manufacturer": "BMW of North America, LLC",
+   "years": [
+    2012,
+    2006,
+    2007,
+    2008,
+    2009,
+    2010,
+    2011,
+    2013,
+    2014,
+    2015,
+    2016,
+    2017
+   ]
+  },
+  "14V211000": {
+   "id": "14V211000",
+   "date": "18/04/2014",
+   "component": "POWER TRAIN:MANUAL TRANSMISSION",
+   "summary": "BMW of North America, LLC (BMW) is recalling certain model year 2013 R 1200 GS motorcycles manufactured November 2012 through August 2013.  Pressure inside the transmission may cause the transmission output seal to be pushed out of place.",
+   "consequence": "If the output seal ring is pushed out of its proper position, oil may leak from the transmission onto the rear tire, increasing the risk of a crash.",
+   "remedy": "BMW will notify owners, and dealers will fit a bracket to prevent the transmission seal from being pushed out of position, free of charge.  The recall began on June 17, 2014.  Owners may contact BMW customer service at 1-800-525-7417.",
+   "manufacturer": "BMW of North America, LLC",
+   "years": [
+    2013
+   ]
+  },
+  "20V471000": {
+   "id": "20V471000",
+   "date": "10/08/2020",
+   "component": "FUEL SYSTEM, GASOLINE:DELIVERY:FUEL PUMP",
+   "summary": "BMW of North America, LLC (BMW) is recalling certain 2009-2011 K1300 (S, GT), 2010-2011 S1000 RR, 2005-2011 R1200 (GS, GS Adventure, R, RT, S, ST), 2006-2010 HP2 (Enduro, Megamoto, Sport), 2005-2008 K1200 (R, R Sport, S, GT), and 2012 K1600 (GT, GTL) motorcycles that were repaired under recall 13V-617 with the support ring remedy and where the fuel pump was not replaced at a later date.  This recall involves the fuel pump, and also the auxiliary fuel pump as applicable.  The affected motorcycles have a fuel pump flange that may crack, possibly resulting in a fuel leak while the engine is running.",
+   "consequence": "A fuel leak in the presence of an ignition source can increase the risk of a fire.",
+   "remedy": "BMW will notify owners, and dealers will replace the fuel pump(s) with an improved version, free of charge.  The recall began January 18, 2021.  Owners may contact BMW customer service at 1-800-525-7417.",
+   "manufacturer": "BMW of North America, LLC",
+   "years": [
+    2005,
+    2006,
+    2007,
+    2008,
+    2009,
+    2010,
+    2011
+   ]
+  },
+  "05V172000": {
+   "id": "05V172000",
+   "date": "27/04/2005",
+   "component": "ENGINE AND ENGINE COOLING",
+   "summary": "ON CERTAIN MOTORCYCLES, EXPOSURE OF THE THROTTLE HOUSING TO ROAD DEBRIS COULD FALL AND BECOME CAUGHT BETWEEN THE THROTTLE-BODY AND THE ENGINE BLOCK.",
+   "consequence": "THIS COULD RESTRICT MOVEMENT OF THE THROTTLE-CABLE PULLEY THAT, IN TURN, COULD AFFECT THROTTLE OPERATION AND INCREASE THE RISK OF A CRASH.",
+   "remedy": "DEALERS WILL INSTALL A COVER OVER THE THROTTLE-CABLE PULLEY FREE OF CHARGE.  THE RECALL BEGAN ON MAY 10, 2005.  OWNERS MAY CONTACT BMW AT 1-800-831-1117.",
+   "manufacturer": "BMW OF NORTH AMERICA, LLC",
+   "years": [
+    2005
+   ]
+  },
+  "06V164000": {
+   "id": "06V164000",
+   "date": "15/05/2006",
+   "component": "SERVICE BRAKES, HYDRAULIC:ANTILOCK/TRACTION CONTROL/ELECTRONIC LIMITED SLIP",
+   "summary": "ON CERTAIN MOTORCYCLES, UNDER RAPID, REPEATED, AND UNUSUALLY HARSH BRAKING, LOSS OF ABS CAPABILITY COULD TEMPORARILY OCCUR.",
+   "consequence": "TEMPORARY LOSS OF ABS BRAKING COULD INCREASE THE RISK OF A CRASH.",
+   "remedy": "DEALERS WILL ADD A PHYSICAL RESTRICTION, IN THE FORM OF A BANJO BOLT WITH A FLOW RESTRICTOR TO THE BRAKE LINE, AND ON CERTAIN MODELS DEALERS WILL INSTALL NEW FRONT BRAKE DISCS OF A SLIGHTLY LARGER THICKNESS FREE OF CHARGE.  THE RECALL BEGAN ON JUNE 5, 2006, AND WILL BE A PHASED MAILING THROUGH OCTOBER 2006.   OWNERS MAY CONTACT BMW AT 1-800-831-1117.",
+   "manufacturer": "BMW OF NORTH AMERICA, LLC",
+   "years": [
+    2005,
+    2006
+   ]
+  },
+  "05V082000": {
+   "id": "05V082000",
+   "date": "03/03/2005",
+   "component": "FUEL SYSTEM, GASOLINE:DELIVERY:FUEL PUMP",
+   "summary": "ON CERTAIN MOTORCYCLES, THE DEFECT INVOLVES A WATER LEAK AROUND THE FUEL PUMP THAT IS INTEGRATED WITHIN THE FUEL TANK.  AN O-RING SEAL ATTACHED TO THE PUMP'S ELECTRONIC HOUSING DOES NOT MEET SPECIFICATIONS AND WATER CAN BYPASS THIS SEAL AND CONTACT THE PUMP ELECTRONICS.",
+   "consequence": "ENGINE STALLING, OR A FAILURE TO START, COULD OCCUR WITHOUT PRIOR WARNING.   IF STALLING WERE TO OCCUR WHILE THE MOTORCYCLE WAS BEING DRIVEN, THE RIDER WOULD BE UNABLE TO MAINTAIN SPEED OR ACCELERATE AND A CRASH COULD OCCUR WITHOUT PRIOR WARNING.",
+   "remedy": "DEALERS WILL REPLACE A SEALING RING.  IF THE FUEL PUMP ELECTRONIC UNIT IS CORRODED, IT WILL BE REPLACED FREE OF CHARGE.  THE RECALL BEGAN MAY 9, 2005.  ADDITIONAL MY 2005 R1200 GS MOTORCYCLES WERE ADDED TO THIS RECALL IN DECEMBER 2005.  OWNERS OF MY 2005 MOTORCYCLES WILL RECEIVE A NOTIFICATION DURING FEBRUARY 2006 THROUGH AUGUST 2006.    OWNERS MAY CONTACT BMW AT 1-800-831-1117.",
+   "manufacturer": "BMW OF NORTH AMERICA, LLC",
+   "years": [
+    2005
+   ]
+  },
+  "04V576000": {
+   "id": "04V576000",
+   "date": "06/12/2004",
+   "component": "SERVICE BRAKES, HYDRAULIC:FOUNDATION COMPONENTS:HOSES, LINES/PIPING, AND FITTINGS",
+   "summary": "ON CERTAIN MOTORCYCLES,  AN ADAPTER IN THE REAR BRAKE LINE CONNECTS A RIGID SECTION TO A FLEXIBLE SECTION.  IF THE RIGID SECTION IS NOT PROPERLY ENGAGED IN THE ADAPTER, IT IS POSSIBLE FOR A LEAK TO DEVELOP.",
+   "consequence": "BRAKE FLUID LOSS COULD RESULT.  THE REAR BRAKING CAPABILITY WOULD NOT BE POSSIBLE, INCREASING THE RISK OF A CRASH.",
+   "remedy": "DEALERS WILL INSPECT THE REAR BRAKE LINE AND ADAPTER.  IF THE INSPECTION REVEALS THAT THE RIGID SECTION OF THE BRAKE LINE IS NOT PROPERLY ENGAGED IN THE ADAPTER, THEN THE ENTIRE ADAPTER WILL BE REPLACED.  THE RECALL BEGAN DECEMBER 15, 2004.  OWNERS SHOULD CONTACT BMW AT 1-800-831-1117.",
+   "manufacturer": "BMW OF NORTH AMERICA, LLC",
+   "years": [
+    2005
+   ]
+  },
+  "06V134000": {
+   "id": "06V134000",
+   "date": "24/04/2006",
+   "component": "SERVICE BRAKES, HYDRAULIC",
+   "summary": "ON CERTAIN MOTORCYCLES, IF CERTAIN PROCEDURES ARE PERFORMED THAT INVOLVES REMOVAL OF THE FRONT LEFT BRAKE CALIPER, THE ABS SENSOR CABLE CAN BE ROUTED INCORRECTLY AND WHEN THE CALIPER IS REINSTALLED, THE SENSOR CABLE CAN COME INTO CONTACT AND RUB AGAINST THE FRONT BRAKE DISC.  OVERTIME, IF THE CHAFING BECOMES SEVERE, IT IS POSSIBLE TO LOSE THE ABS FUNCTION.",
+   "consequence": "LOSS OF ABS FUNCTION COULD INCREASE THE RISK OF A CRASH DURING CERTAIN RIDING CONDITIONS.",
+   "remedy": "DEALERS WILL ATTACH ADDITIONAL RETAINING CLIPS FREE OF CHARGE TO THE ABS SENSOR CABLE, WHICH WILL PROVIDE A MORE SECURE CONNECTION TO THE WHEEL CARRIER.  THE RECALL BEGAN ON JUNE 5, 2006, AND WILL BE A PHASED MAILING THROUGH OCTOBER 2006.    OWNERS MAY CONTACT BMW AT 1-800-831-1117.",
+   "manufacturer": "BMW OF NORTH AMERICA, LLC",
+   "years": [
+    2005,
+    2006
+   ]
+  },
+  "04V297000": {
+   "id": "04V297000",
+   "date": "22/06/2004",
+   "component": "SERVICE BRAKES, HYDRAULIC:ANTILOCK/TRACTION CONTROL/ELECTRONIC LIMITED SLIP",
+   "summary": "ON CERTAIN MOTORCYCLES, THE INTEGRAL ANTI-LOCK BRAKE SYSTEM (IABS) SENSOR SEALING O-RING CONNECTION AT THE REAR AXLE HOUSING MAY BE DAMAGED.   AN OIL LEAK MAY DEVELOP.",
+   "consequence": "IF THIS HAPPENS, OIL COULD CONTACT THE REAR WHEEL AND THE REAR WHEEL BRAKE DISK, AND THE RIDER MAY NOT BE ABLE TO CONTROL THE MOTORCYCLE.  A CRASH COULD OCCUR.",
+   "remedy": "DEALERS WILL REPLACE THE REAR WHEEL IABS SENSOR SEALING O-RING.  THE RECALL BEGAN JULY 14, 2004.  OWNERS SHOULD CONTACT BMW  AT 1-800-831-1117.",
+   "manufacturer": "BAYERISCHE MOTOREN WERKE",
+   "years": [
+    2005
+   ]
+  },
+  "08V254000": {
+   "id": "08V254000",
+   "date": "05/06/2008",
+   "component": "SERVICE BRAKES, HYDRAULIC:FOUNDATION COMPONENTS:HOSES, LINES/PIPING, AND FITTINGS",
+   "summary": "BMW IS RECALLING 4,922 MY 2007-2008 R1200R, MY 2006-2007 R1200 GS, MY 2007 R1200 ST, AND MY 2008 R1200 GS ADVENTURE MOTORCYCLES.  DUE TO THE CURRENT ROUTING OF THE FRONT BRAKE LINES, IT IS POSSIBLE THAT DURING RIDING, THE BRAKE LINES COULD BE UNDER STRAIN. IF THE VIBRATION/STRAIN IS SIGNIFICANT, THE BRAKE LINES COULD SPLIT AND START TO DEVELOP A LEAK.  IF THE LEAK BECAME SIGNIFICANT, BRAKE FLUID COULD ESCAPE.  IF THIS HAPPENED, THE LEVEL OF FLUID IN THE RESERVOIR OF THE FRONT BRAKE SYSTEM COULD DROP.",
+   "consequence": "IF FLUID LEVEL DROPS SIGNIFICANTLY, THE FRONT BRAKES COULD FAIL INCREASING THE RISK OF A CRASH.",
+   "remedy": "DEALERS WILL INSPECT AND INSTALL NEW BRAKE LINES WITH A MODIFIED ROUTING FREE OF CHARGE.  THE RECALL BEGAN DURING AUGUST 2008.  OWNERS MAY CONTACT BMW AT 1-800-831-1117.",
+   "manufacturer": "BMW OF NORTH AMERICA, LLC",
+   "years": [
+    2006,
+    2007,
+    2008
+   ]
+  },
+  "09V319000": {
+   "id": "09V319000",
+   "date": "07/08/2009",
+   "component": "FUEL SYSTEM, GASOLINE:DELIVERY:FUEL PUMP",
+   "summary": "BMW IS RECALLING CERTAIN MODEL YEAR 2006 THROUGH 2008 R1200 GS MOTORCYCLES MANUFACTURED BETWEEN AUGUST 2006 AND JANUARY 2008.  THE SEALING OF THE FUEL PUMP CONTROL UNIT HOUSING MIGHT BE INSUFFICIENT AND WATER COULD INTRUDE INTO THE CONTROL UNIT HOUSING CREATING A HUMID ATMOSPHERE.  UNDER SUCH CONDITIONS, THE FUEL PUMP COULD CORRODE AND THEN FAIL.",
+   "consequence": "FAILURE OF THE FUEL PUMP WILL CAUSE INADEQUATE FUEL TO REACH THE ENGINE AND CAUSE THE ENGINE TO STOP RUNNING.  A LOSS OF ENGINE POWER WITHOUT WARNING COULD INCREASE THE RISK OF A CRASH.",
+   "remedy": "BMW WILL NOTIFY OWNERS AND REPLACE THE FUEL PUMP CONTROL UNIT FREE OF CHARGE.    THE SAFETY RECALL BEGAN ON NOVEMBER 9, 2009.   OWNERS MAY CONTACT BMW AT 1-800-831-1117.",
+   "manufacturer": "BMW OF NORTH AMERICA, LLC",
+   "years": [
+    2006,
+    2007,
+    2008
+   ]
+  },
+  "06V104000": {
+   "id": "06V104000",
+   "date": "04/04/2006",
+   "component": "POWER TRAIN:CLUTCH ASSEMBLY",
+   "summary": "ON CERTAIN MOTORCYCLES, THE CLUTCH COMPONENTS COULD BECOME LOOSE WHILE THE MOTORCYCLE IS BEING OPERATED.",
+   "consequence": "IF THIS HAPPENED, THE COMPONENTS COULD EXIT THROUGH THE ENGINE CASTING INCREASING THE RISK OF A CRASH.",
+   "remedy": "DEALERS WILL INSTALL NEW CLUTCH COMPONENTS FREE OF CHARGE.  ALL MOTORCYCLES ARE LOCATED AT DEALERS.  NO MOTORCYCLES HAVE BEEN SOLD TO CUSTOMERS.",
+   "manufacturer": "BMW OF NORTH AMERICA, LLC",
+   "years": [
+    2006
+   ]
+  },
+  "06V486000": {
+   "id": "06V486000",
+   "date": "21/12/2006",
+   "component": "TIRES:VALVE",
+   "summary": "ON CERTAIN MOTORCYCLES, THE TIRE INFLATION VALVE HOLE IN THE RIM OF THE CROSS-SPOKE WHEEL WHICH IS EQUIPPED WITH THE OPTIONAL TIRE PRESSURE MONITORING SYSTEM (TPM) WAS INCORRECTLY MANUFACTURED.  A LEAK MAY DEVELOP AT THIS LOCATION POSSIBLY CAUSING SUDDEN DEFLATION OF THE TIRE.",
+   "consequence": "IF THIS HAPPENED, MOTORCYCLE HANDLING AND CONTROL WOULD BE COMPROMISED, INCREASING THE RISK OF A CRASH.",
+   "remedy": "DEALERS WILL TEMPORARILY DEACTIVATE THE TPM SYSTEM, REMOVE THE CORRESPONDING VALVES AND INTEGRAL TPM SENSORS, AND THEN REPLACE THEM WITH STANDARD VALVES.  WHEN A PERMANENT REPAIR IS AVAILABLE, OWNERS WILL BE NOTIFIED TO BRING THEIR VEHICLES IN FOR REACTIVATION OF THE TPM SYSTEM AND REPLACEMENT OF THE INTEGRAL TPM SENSORS AND VALVES.  THE RECALL BEGAN ON JANUARY 12, 2007.  OWNERS MAY CONTACT BMW AT 1-800-331-1117.",
+   "manufacturer": "BMW OF NORTH AMERICA, LLC",
+   "years": [
+    2006
+   ]
+  },
+  "08V290000": {
+   "id": "08V290000",
+   "date": "01/07/2008",
+   "component": "POWER TRAIN:MANUAL TRANSMISSION",
+   "summary": "BMW IS RECALLING 46 MY 2008 R1200 R, R1200 GS, AND R1200 GS ADVENTURE MOTORCYCLES.  DUE TO A MATERIAL DEFECT IN THE INTERMEDIATE SHAFT OF THE TRANSMISSION, THE SHAFT COULD BREAK.  IF THIS OCCURRED, IT IS POSSIBLE FOR THE TRANSMISSION TO SEIZE.",
+   "consequence": "IF THIS HAPPENED, LOCK-UP OF THE REAR TIRE COULD OCCUR.  IT IS ALSO POSSIBLE FOR THE TRANSMISSION HOUSING TO BREAK.  IF THIS HAPPENED, OIL COULD LEAK ONTO THE REAR WHEE, INCREASING THE RISK OF A CRASH.",
+   "remedy": "DEALERS WILL REPLACE THE GEARBOX.  THE RECALL BEGAN DURING AUGUST 2008.  OWNERS SHOULD CONTACT BMW AT 1-800-331-1117.",
+   "manufacturer": "BMW OF NORTH AMERICA, LLC",
+   "years": [
+    2008
+   ]
+  },
+  "09V129000": {
+   "id": "09V129000",
+   "date": "17/04/2009",
+   "component": "ELECTRICAL SYSTEM",
+   "summary": "BMW IS RECALLING MODEL YEAR 2008 R1200 GS AND R1200 GS ADVENTURE MOTORCYCLES.  IN CERTAIN SITUATIONS, SUCH AS HIGH GENERATOR SPEEDS COMBINED WITH LARGE DEMANDS FOR ELECTRICAL CURRENT, SPURIOUS SIGNALS COULD EMERGE WITHIN THE MOTORCYCLE'S ELECTRICAL SYSTEM.  IF THIS WERE TO OCCUR, IT COULD AFFECT THE PRESSURE SENSOR SIGNALS OF THE ANTI-LOCK BRAKE SYSTEM (ABS) CONTROL UNIT.  IF THIS HAPPENED, THE ABS COULD SWITCH OFF; HOWEVER, IN SUCH A SITUATION, A WARNING LAMP WOULD ILLUMINATE.  NORMAL BRAKING WOULD STILL BE AVAILABLE TO SLOW AND STOP THE MOTORCYCLE.",
+   "consequence": "ANY TIME VEHICLE CONTROL IS COMPROMISED A CRASH MAY OCCUR.",
+   "remedy": "DEALERS WILL INSPECT AND REPAIR OR REPLACE THE NECESSARY COMPONENTS FREE OF CHARGE.  THE RECALL BEGAN ON OCTOBER 26, 2009.  OWNERS MAY CONTACT BMW AT 1-800-831-1117.",
+   "manufacturer": "BMW OF NORTH AMERICA, LLC",
+   "years": [
+    2008
+   ]
+  },
+  "18E016000": {
+   "id": "18E016000",
+   "date": "21/03/2018",
+   "component": "EQUIPMENT",
+   "summary": "BMW of North America, LLC (BMW) is recalling certain Accessory Windscreens, sold for installation on various motorcycles.  Specifically being recalled is Windscreen model number 8531917, sold for use on model year 2012-2018 F700GS motorcycles, Windscreen model number 8544629, sold for use on model year 2015-2018 R1200R motorcycles, Windscreen model number 8546224, sold for use on model year 2014-2018 S1000R motorcycles, Windscreen model number 8551929, sold for use on model year 2015-2018 S1000XR motorcycles, Windscreen model number 8554726, sold for use on model year 2013-2018 R1200GS motorcycles, Windscreen model number 8554727 sold for use on model year 2014-2018 R1200GS Adventure motorcycles, Windscreen model number 8556927, sold for use on model year 2015-2018 R1200RS motorcycles, Windscreen model number 8559548, sold for use on model year 2017-2018 R1200GS motorcycles and Windscreen model number 8561755, sold for use on model year 2012-2018 F800GS motorcycles.  These windscreens have extra tinting on them that may reduce the rider's visibility.  As such, these vehicles fail to comply with the requirements of Federal Motor Vehicle Safety Standard (FMVSS) number 205, \"Glazing Materials.\"",
+   "consequence": "The darker windscreen can inhibit the driver's visibility, increasing the risk of a crash.",
+   "remedy": "BMW will notify owners, and dealers will replace the windscreen, free of charge.  The recall is expected to begin May 10, 2018.  Owners may contact BMW customer service at 1-800-525-7417.",
+   "manufacturer": "BMW of North America, LLC",
+   "years": [
+    2013,
+    2014,
+    2015,
+    2016,
+    2017,
+    2018
+   ]
+  },
+  "14V065000": {
+   "id": "14V065000",
+   "date": "19/02/2014",
+   "component": "ELECTRICAL SYSTEM",
+   "summary": "BMW of North America, LLC (BMW) is recalling certain model year 2013 C 600 Sport, C 650 GT, F 700 GS, F 800 GS, F 800 GS Adventure, F 800 GT, R 1200 R and R1200 GS motorcycles.  Water may enter the side-stand switch preventing the motorcycle from starting or potentially shutting off the motorcycle while it is being ridden.",
+   "consequence": "An unexpected shutdown increases the risk of a crash.",
+   "remedy": "BMW will notify owners, and dealers will replace the side-stand switch, free of charge. The recall began on April 8, 2014.  Owners may contact BMW at 1-800-831-1117.",
+   "manufacturer": "BMW of North America, LLC",
+   "years": [
+    2013
+   ]
+  },
+  "13V154000": {
+   "id": "13V154000",
+   "date": "22/04/2013",
+   "component": "SUSPENSION:FRONT",
+   "summary": "BMW is recalling certain model year 2013 R1200 GS motorcycles manufactured January 9, 2013, through February 8, 2013.  Due to an insufficient torque of a locking bolt, the front fork tube may loosen.",
+   "consequence": "If the fork loosens it may hinder the rider's ability to control the motorcycle, increasing the risk of a crash.",
+   "remedy": "BMW will notify owners and dealers will reinforce the affected fork locking bolt connections, free of charge.  Owners were notified of the safety recall by telephone on April 22 and April 23, 2013.  Therefore, an owner notification letter will not be issued for this campaign.  Owners may call BMW at 1-800-525-7417 or email BMW at CustomerRelations@bmwusa.com.",
+   "manufacturer": "BMW of North America, LLC",
+   "years": [
+    2013
+   ]
+  },
+  "17V438000": {
+   "id": "17V438000",
+   "date": "10/07/2017",
+   "component": "SUSPENSION:FRONT",
+   "summary": "BMW of North America, LLC (BMW) is recalling certain 2014-2017 BMW R1200GS and BMW R1200GS Adventure motorcycles.   The motorcycle fixed fork tube may separate from the pressed in seal plug that secures the tube to the upper triple clamp.",
+   "consequence": "If the fork tube detaches from the sealing plug, the handling and stability of the motorcycle will be affected, increasing the risk of a crash.",
+   "remedy": "BMW will notify owners, and dealers will add an additional fixed fork tube bush.  A fork that is sufficiently damaged will be replaced with a modified new part.  These repairs will be made free of charge.  The recall began August 31, 2017.  Owners may contact BMW customer service at 1-800-525-7417.",
+   "manufacturer": "BMW of North America, LLC",
+   "years": [
+    2014,
+    2015,
+    2016,
+    2017
+   ]
+  },
+  "17V481000": {
+   "id": "17V481000",
+   "date": "28/07/2017",
+   "component": "EQUIPMENT",
+   "summary": "BMW of North America, LLC (BMW) is recalling certain 2013-2017 F800R and F800GT motorcycles, 2014-2018 R1200GS and R1200GS Adventure motorcycles, 2016-2017 S1000XR motorcycles and 2015-2017 R1200R and R1200RS, 2008-2012 F650GS, 2008-2018 F800GS, and 2014-2017 F800GS Adventure motorcycles.  When equipped with the optional aluminum luggage cases, the rear reflex reflectors may be partially blocked.  The aluminum case mounts for the R1200GS and R1200GS Adventure may also partially block the reflectors.  As such, these vehicles fail to comply with the requirements of Federal Motor Vehicle Safety Standard (FMVSS) number 108, \"Lamps, Reflective Devices, and Associated Equipment.\"",
+   "consequence": "If the rear reflex reflectors are obscured from view, it can increase the risk of a crash.",
+   "remedy": "BMW will notify owners, and dealers will install reflectors on the cases or for the case mounts, an additional bracket with rear reflex reflectors, free of charge.  The recall began October 16, 2017.  Owners may contact BMW customer service at 1-800-525-7417.",
+   "manufacturer": "BMW of North America, LLC",
+   "years": [
+    2014,
+    2015,
+    2016,
+    2017,
+    2018
+   ]
+  },
+  "10V275000": {
+   "id": "10V275000",
+   "date": "16/06/2010",
+   "component": "FUEL SYSTEM, GASOLINE:STORAGE:TANK ASSEMBLY",
+   "summary": "BMW IS RECALLING CERTAIN 2005 THROUGH 2007 R 1200 GS ADVENTURE MOTORCYCLES MANUFACTURED FROM DECEMBER 7, 2005 THROUGH SEPTEMBER 26, 2007.  THE FUEL TANK FRONT ATTACHMENT BOLTS CAN WORK LOOSE ALLOWING THE BOLTS TO COME INTO CONTACT WITH THE FORK LEG IF THE HANDLEBAR IS TURNED A SIGNIFICANT AMOUNT.",
+   "consequence": "THIS COULD LIMIT THE TRAVEL RANGE OF THE HANDLEBARS WHICH COULD AFFECT HANDLING AND MANEUVERABILITY OF THE MOTORCYCLE, INCREASING THE RISK OF A CRASH.",
+   "remedy": "BMW WILL NOTIFY OWNERS AND DEALERS WILL REPAIR MOTORCYCLES BY FURTHER SECURING THE BOLTS USING LOCTITE.  THE REPAIR WILL BE PERFORMED FREE OF CHARGE.  THE SAFETY RECALL BEGAN ON AUGUST 30, 2010.  OWNERS MAY CONTACT BMW AT 1-800-525-7417.",
+   "manufacturer": "BMW OF NORTH AMERICA, LLC",
+   "years": [
+    2005,
+    2006,
+    2007
+   ]
+  },
+  "20V476000": {
+   "id": "20V476000",
+   "date": "13/08/2020",
+   "component": "SERVICE BRAKES, HYDRAULIC:FOUNDATION COMPONENTS:DISC:CALIPER",
+   "summary": "BMW of North America, LLC (BMW) is recalling certain 2019-2020 R 1250 GS, GS Adventure and R 1250 RT, 2020 S 1000 RR and S 1000 XR motorcycles.  The front brake calipers may leak brake fluid when parked.  As such, these motorcycles fail to comply with the requirements of the Federal Motor Vehicle Safety Standard number 122, \"Motorcycle Brake Systems.\"",
+   "consequence": "Overtime, a leaking front brake caliper can reduce the amount of brake fluid in the reservoir.  Low volume could affect brake performance, increasing the risk of crash.",
+   "remedy": "BMW will notify owners, and dealers will inspect and if necessary, replace the front brake calipers with an improved version, free of charge.  BMW issued owners an interim notification on October 12, 2020.  As of January 19, 2021, a remedy was still not available.  The recall began March 8, 2021.  Owners may contact BMW customer service at 1-800-525-7417.",
+   "manufacturer": "BMW of North America, LLC",
+   "years": [
+    2019,
+    2020
+   ]
+  },
+  "20V166000": {
+   "id": "20V166000",
+   "date": "19/03/2020",
+   "component": "SERVICE BRAKES, HYDRAULIC:FLUID",
+   "summary": "BMW of North America, LLC (BMW) is recalling certain 2018-2020 RnineT Scrambler and RnineT, 2020 R1250R and R1250RS, 2019-2020 Rnine T Pure, R1250GS,R1250GS Adventure and R1250RT and 2018 RnineT Racer motorcycles.  The brake fluid reservoir cap may not clearly state the required type of brake fluid and the process for filling the reservoir, possibly leading to an improper maintenance procedure.  As such, these vehicles fail to comply with the requirements of Federal Motor Vehicle Safety Standard (FMVSS) number 122, \"Motorcycle Brake Systems.\"",
+   "consequence": "Improper brake system maintenance could affect braking performance and increase the risk of a crash.",
+   "remedy": "BMW will notify owners, and dealers will replace the brake fluid reservoir cap, free of charge.  The recall began December 23, 2020.  Owners may contact BMW customer service at 1-800-525-7417.",
+   "manufacturer": "BMW of North America, LLC",
+   "years": [
+    2019,
+    2020
+   ]
+  },
+  "20E013000": {
+   "id": "20E013000",
+   "date": "19/03/2020",
+   "component": "SERVICE BRAKES, HYDRAULIC:FLUID",
+   "summary": "BMW of North America, LLC (BMW) is recalling certain Motorcycle Accessory Brake Fluid Reservoir Covers, part numbers 8405-752, 8405-753, 8405-754 and 9829547 designed to fit certain 2019-2020 BMW R 1250 motorcycles, and part numbers 8404-098, 8405-100, 8405-102, and 1542056 designed to fit certain 2018-2020 BMW Rnine T motorcycles.  The brake fluid reservoir cap may not clearly state the required type of brake fluid and the process for filling the reservoir, possibly leading to an improper maintenance procedure.  As such, these caps fail to comply with the requirements of Federal Motor Vehicle Safety Standard (FMVSS) number 122, \"Motorcycle Brake Systems.\"",
+   "consequence": "Improper brake system maintenance could affect braking performance and increase the risk of a crash.",
+   "remedy": "BMW will notify owners, and dealers will replace the brake fluid reservoir cap, free of charge.  The recall began December 14, 2020.  Parts will be available in mid-September 2020 for the recall repairs.  Owners may contact BMW customer service at 1-800-525-7417.",
+   "manufacturer": "BMW of North America, LLC",
+   "years": [
+    2019,
+    2020
+   ]
+  },
+  "23V011000": {
+   "id": "23V011000",
+   "date": "18/01/2023",
+   "component": "POWER TRAIN:MANUAL TRANSMISSION:INTERNAL:SHAFT:INPUT",
+   "summary": "BMW of North America, LLC (BMW) is recalling certain 2019-2023 R1250GS, R1250GS Adventure, and R1250RTP motorcycles.  In certain engine operating and riding conditions, the gearbox input shaft may become damaged or break, possibly resulting in a blocked rear wheel.",
+   "consequence": "A damaged gearbox input shaft or a blocked rear wheel can increase the risk of a crash.",
+   "remedy": "Dealers will update the engine control unit software, free of charge.  Owner notification letters were mailed February 22, 2023.  Owners may contact BMW customer service at 1-800-525-7417.",
+   "manufacturer": "BMW of North America, LLC",
+   "years": [
+    2019,
+    2020,
+    2021,
+    2022,
+    2023
+   ]
+  },
+  "20V146000": {
+   "id": "20V146000",
+   "date": "12/03/2020",
+   "component": "EXTERIOR LIGHTING:BRAKE LIGHTS",
+   "summary": "BMW of North America, LLC  (BMW) is recalling certain 2020 F900R, F900XR, S1000RR, F750GS, F850GS, F850GS Adventure, R1250GS, R1250GS Adventure, R1250RS, R1250R, RnineT, RnineT Pure and RnineT Scrambler and 2019-2020 S1000R motorcycles.  The brake light may flash instead of remain steady during emergency braking.  As such, these vehicles fail to comply with the requirements of Federal Motor Vehicle Safety Standard (FMVSS) number 108, \"Lamps, Reflective Devices, and Associated Equipment.\"",
+   "consequence": "A flashing brake light can cause confusion to other drivers on the road, increasing the risk of a crash.",
+   "remedy": "BMW will notify owner, and dealers will reprogram the emergency stop signal function, free of charge.  The recall began May 11, 2020.  Owners may contact BMW customer service at 1-800-525-7417.",
+   "manufacturer": "BMW of North America, LLC",
+   "years": [
+    2020
+   ]
+  },
+  "20V165000": {
+   "id": "20V165000",
+   "date": "19/03/2020",
+   "component": "POWER TRAIN:DRIVELINE",
+   "summary": "BMW of North America, LLC (BMW) is recalling certain 2020 R1250GS and R1250RT motorcycles.  The pivot pin that connects the final drive to the swing arm may be damaged, causing the connection between the final drive and swing arm to loosen.",
+   "consequence": "A loose connection between the final drive and swing arm will reduce stability and control, increasing the risk of a crash.",
+   "remedy": "Dealers will replace the pivot pin, free of charge.  The motorcycles are not with owners at this time. The recall began April 28, 2020.  Please contact BMW customer service number 1-800-525-7417.",
+   "manufacturer": "BMW of North America, LLC",
+   "years": [
+    2020
+   ]
+  },
+  "20V495000": {
+   "id": "20V495000",
+   "date": "20/08/2020",
+   "component": "EQUIPMENT:OTHER:LABELS",
+   "summary": "BMW of North America, LLC (BMW) is recalling certain 2021 R 1250 RT, R 1250 R, R 1250 RS, R 1250 GS and R 1250 GS Adventure motorcycles.  The tire pressure labels may not remain affixed to the motorcycle frame.  As a result, these motorcycles fail to comply with the requirements of Federal Motor Vehicle Safety Standard number 120, \"Wheels and Rims-Other Than Passenger Cars.\"",
+   "consequence": "If the label detaches from the motorcycle, proper tire pressure information may not be readily available.  This could result in the rider improperly filling the tires which may affect motorcycle handling and control, increasing the risk of a crash.",
+   "remedy": "BMW will notify owners, and dealers will replace the tire pressure label, free of charge.  The recall began October 19, 2020.  Owners may contact BMW customer service at 1-800-525-7417.",
+   "manufacturer": "BMW of North America, LLC",
+   "years": [
+    2021
+   ]
+  },
+  "24V557000": {
+   "id": "24V557000",
+   "date": "26/07/2024",
+   "component": "ELECTRICAL SYSTEM:STARTER ASSEMBLY:RELAY",
+   "summary": "BMW of North America, LLC (BMW) is recalling certain 2024 R 1300 GS motorcycles.  The housing for the starter motor relay may have been manufactured incorrectly, which can result in a damaged relay that can overheat.",
+   "consequence": "An overheated electrical relay increases the risk of a fire.",
+   "remedy": "Dealers will replace the starter relay and update the software, free of charge.  Owner notification letters were mailed September 23, 2024.  Owners may contact BMW customer service at 1-800-525-7417.",
+   "manufacturer": "BMW of North America, LLC",
+   "years": [
+    2024
+   ]
+  },
+  "25V480000": {
+   "id": "25V480000",
+   "date": "25/07/2025",
+   "component": "COMMUNICATION: AUTO CRASH NOTIFICATION",
+   "summary": "BMW of North America, LLC (BMW) is recalling certain 2025 F 900 GS, F 800 GS, R 1300 GS Adventure, R 1300 GS, S 1000 RR, S 1000 R, and K 1600 GT vehicles equipped with the optional emergency call system. The emergency call system (eCall) may have been deactivated due to a software programming error.",
+   "consequence": "In an emergency, first responders may not receive notification of the crash or emergency location, increasing the risk of injury to riders.",
+   "remedy": "The electronic control unit software will be updated over-the-air (OTA) or by a dealer, free of charge. Owner notification letters are scheduled to be mailed September 12, 2025.  Owners may contact BMW customer service at 1-800-525-7417.",
+   "manufacturer": "BMW of North America, LLC",
+   "years": [
+    2025
+   ]
+  },
+  "18V830000": {
+   "id": "18V830000",
+   "date": "26/11/2018",
+   "component": "ENGINE AND ENGINE COOLING:ENGINE",
+   "summary": "BMW of North America, LLC (BMW) is recalling one 2019 F850GS motorcycle.  The engine connecting rods may not have been installed properly, possibly causing them to become loose and disconnect over time.",
+   "consequence": "Loose engine connecting rods can damage the engine, causing a loss of engine power, increasing the risk of a crash.",
+   "remedy": "The motorcycle has not yet been sold, and the dealer will replace the engine, free of charge, prior to sale.  The recall began December 7, 2018.  Owners may contact BMW customer service at 1-800-525-7417.",
+   "manufacturer": "BMW of North America, LLC",
+   "years": [
+    2019
+   ]
+  },
+  "12V531000": {
+   "id": "12V531000",
+   "date": "09/11/2012",
+   "component": "FUEL SYSTEM, GASOLINE:DELIVERY:HOSES, LINES/PIPING, AND FITTINGS",
+   "summary": "KTM North America, Inc.'s (KTM) is recalling certain model year 2012 and 2013 350 EXC-F and 500 EXC motorcycles manufactured from September 2011 through August 2012.  Due to the supplier's manufacturing inconsistencies, the preformed fuel hoses may develop cracks or holes at either end.  During use, the fuel hoses, located between the fuel tank and the throttle body fuel rail, may allowing fuel to leak.",
+   "consequence": "The fuel may leak onto the rear tire while the motorcycle is being ridden, increasing the risk of a crash.  It is also possible that, in the presence of an ignition source, a fire can occur.",
+   "remedy": "KTM will notify owners, and dealers will replace the defective fuel hoses free of charge.  The safety recall began on December 11, 2012.  Owners may contact KTM Customer relations at 1-888-985-6090.",
+   "manufacturer": "KTM NORTH AMERICA, INC",
+   "years": [
+    2012,
+    2013
+   ]
+  },
+  "22V588000": {
+   "id": "22V588000",
+   "date": "05/08/2022",
+   "component": "TIRES:TREAD/BELT",
+   "summary": "KTM North America, Inc. (KTM) is recalling certain 2019-2023 Husqvarna and KTM motorcycles with equipped with TKC80 tires.  Please refer to KTM's recall report for specific model details.  Cracks longer than 3/16 inch may develop in the tread grooves.  As such, these vehicles fail to comply with the requirements of Federal Motor Vehicle Safety Standard number 119, \"New Pneumatic Tires-Other Than Passenger Cars.\"",
+   "consequence": "Cracks in the tread can lead to tread separation, increasing the risk of a crash.",
+   "remedy": "Dealers will replace the affected tires, free of charge.  Owner notification letters were mailed September 16, 2022.  Owners may contact KTM's customer service at 1-888-985-6090.  KTM's numbers for this recall are KTB2208 and HTB2207.",
+   "manufacturer": "KTM North America, Inc.",
+   "years": [
+    2019,
+    2020,
+    2021,
+    2022,
+    2023
+   ]
+  },
+  "11V300000": {
+   "id": "11V300000",
+   "date": "25/05/2011",
+   "component": "STEERING: STEERING WHEEL/HANDLE BAR",
+   "summary": "KTM IS RECALLING CERTAIN MODEL YEAR 2010 AND 2011 MOTORCYCLES MANUFACTURED FROM NOVEMBER 2009 THROUGH NOVEMBER 23, 2010.  DUE TO IMPROPER HEAT TREATMENT, THE HANDLEBAR CLAMPS CAN DEVELOP CRACKS, ALLOWING THE HANDLEBAR TO MOVE FROM ITS SET POSITION.",
+   "consequence": "UNEXPECTED MOVEMENT OF THE HANDLEBAR MAY CAUSE THE DRIVER TO CRASH, POSSIBLY RESULTING IN INJURY OR DEATH TO THE RIDER OR OTHERS.",
+   "remedy": "AUTHORIZED KTM DEALERS WILL REPLACE THE DEFECTIVE CLAMPS FREE OF CHARGE.  THE SAFETY RECALL BEGAN ON MAY 25, 2011.  OWNERS MAY CONTACT KTM CUSTOMER SERVICE AT 1-888-985-6090 FOR ASSISTANCE.",
+   "manufacturer": "KTM NORTH AMERICA, INC",
+   "years": [
+    2011
+   ]
+  },
+  "26V196000": {
+   "id": "26V196000",
+   "date": "27/03/2026",
+   "component": "VEHICLE SPEED CONTROL:THROTTLE",
+   "summary": "KTM North America, Inc. is recalling certain 2022-2023 390 Duke and 2022-2024 RC 390 motorcycles. Water may enter the throttle (e-throttle) control unit and cause it to fail, resulting in loss of drive power while riding.",
+   "consequence": "Loss of drive power while riding increases the risk of a crash or injury.",
+   "remedy": "KTM will inspect and replace the e-throttle control, free of charge. Owner notification letters were mailed April 30, 2026. Owners may contact KTM customer service at 1-888-985-6090. Vehicle Identification Numbers (VINs) involved in this recall will become searchable on NHTSA.gov March 31, 2026. KTM's number for this recall is KTB2606 & HTB2603. This recall expands previous NHTSA recall number 25V598.",
+   "manufacturer": "KTM North America, Inc.",
+   "years": [
+    2022,
+    2023
+   ]
+  },
+  "25V740000": {
+   "id": "25V740000",
+   "date": "30/10/2025",
+   "component": "FUEL SYSTEM, GASOLINE:STORAGE:TANK ASSEMBLY:FILLER PIPE AND CAP",
+   "summary": "KTM North America, Inc. is recalling certain 2024 390 Duke, 250 Duke, 990 Duke, Husqvarna Vitpilen 401, and Husqvarna Svartpilen 401 motorcycles. The seal on the fuel filler cap may develop cracks and leak fuel.",
+   "consequence": "A fuel leak increases the risk of fire or injury.",
+   "remedy": "Dealers will inspect and replace the fuel cap gasket, free of charge. Owner notification letters were mailed December 15, 2025. Owners may contact KTM customer service at 1-888-985-6090. Vehicle Identification Numbers (VINs) involved in this recall will become searchable on NHTSA.gov March 31, 2026.",
+   "manufacturer": "KTM North America, Inc.",
+   "years": [
+    2024
+   ]
+  },
+  "25V825000": {
+   "id": "25V825000",
+   "date": "01/12/2025",
+   "component": "ENGINE AND ENGINE COOLING:ENGINE:ENGINE CONTROL MODULE (ECU/ECM):SOFTWARE",
+   "summary": "KTM North America, Inc. (KTM) is recalling certain 2024 Husqvarna Vitpilen 401, Husqvarna Svartpilen 401, 2024-2025 390 Duke, 2025 390 SMC R, 390 Enduro R, 390 Adventure X, and 390 Adventure R motorcycles. The engine control software may cause the engine to stall at low rpms, resulting in a loss of power.",
+   "consequence": "A loss of drive power increases the risk of a crash or injury.",
+   "remedy": "KTM and Husqvarna dealers will inspect the motorcycles and update the electronic control unit engine management system (ECU EMS) software, free of charge. Owner notification letters were mailed January 23, 2026.  Owners may contact KTM customer service at 1-888-985-6090. The manufacturer's numbers for this recall are KTB2513 & HTB2508.",
+   "manufacturer": "KTM North America, Inc.",
+   "years": [
+    2024,
+    2025
+   ]
+  },
+  "25V598000": {
+   "id": "25V598000",
+   "date": "12/09/2025",
+   "component": "VEHICLE SPEED CONTROL:THROTTLE",
+   "summary": "KTM North America, Inc. is recalling certain 2022-2023 Husqvarna Svartpilen 401, Husqvarna Vitpilen 401, and 2022-2024 KTM 390 Adventure motorcycles. Water could enter the throttle (e-throttle) control unit and cause it to fail, resulting in loss of drive power.",
+   "consequence": "Loss of drive power while riding increases the risk of a crash or injury.",
+   "remedy": "KTM and Husqvarna dealers will inspect and replace the e-throttle control, free of charge. Owner notification letters were mailed April 30, 2026. Owners may contact KTM customer service at 1-888-985-6090. KTM's number for this recall is KTB2606 and HTB2603. The VINs involved in this recall became searchable on March 31, 2026.",
+   "manufacturer": "KTM North America, Inc.",
+   "years": [
+    2022,
+    2023,
+    2024
+   ]
+  },
+  "14V278000": {
+   "id": "14V278000",
+   "date": "23/05/2014",
+   "component": "POWER TRAIN:DRIVELINE",
+   "summary": "Suzuki Motor of America, Inc. (Suzuki) is recalling certain model year 2014 DL650A V-Strom motorcycles manufactured January 20, 2014, through January 21, 2014.  In the affected vehicles, a drive chain link may not have been riveted by the supplier when being manufactured.",
+   "consequence": "If the drive chain link was not riveted, the chain may come off, increasing the risk of a vehicle crash.",
+   "remedy": "Suzuki will notify owners, and dealers will inspect the drive chains of the affected motorcycles. For any unsold motorcycles with a drive chain link that is not riveted, Suzuki dealers will replace the non-riveted link with a drive chain joint set.  For any motorcycles that have been sold to retail customers with a drive chain link that is not riveted, Suzuki dealers will replace the drive chain and the front and rear sprockets, free of charge.  The recall began on May 27, 2014.  Owners may contact Suzuki at 1-800-572-1490.  Suzuki's number for this recall is 2A39.",
+   "manufacturer": "Suzuki Motor of America, Inc.",
+   "years": [
+    2014
+   ]
+  },
+  "08E052000": {
+   "id": "08E052000",
+   "date": "15/08/2008",
+   "component": "EQUIPMENT",
+   "summary": "MOTION PRO IS RECALLING 10,000 AFTERMARKET BRAKE LEVERS, MODEL NO. 14-0415, SOLD FOR USE ON CERTAIN MY 1999 THROUGH 2008 SUZUKI AND MY 1998 THROUGH 2003 YAMAHA MOTORCYCLES.  THE LOBE HEIGHT ON SOME OF THESE LEVERS ARE SMALLER AND DO NOT PROPERLY ENGAGE THE STOMP LAMP SWITCH WHICH WILL NOT DEACTIVATE WHEN THE DRIVER RELEASES THE BRAKE LEVER.  THE LEVER CAN BE IDENTIFIED BY THE MARKING \"JY 378\" AT THE BASE OF THE LEVER NEAR THE PIVOT BUSHING.",
+   "consequence": "IF THIS OCCURS, THE STOP LAMP WILL REMAIN ON WHICH COULD POSSIBLY RESULT IN A CRASH.",
+   "remedy": "MOTION PRO WILL NOTIFY OWNERS AND PROVIDE A FREE REMEDY.  THE RECALL BEGAN ON SEPTEMBER 11, 2008.  OWNERS MAY CONTACT MOTION PRO AT 1-877-438-7831.",
+   "manufacturer": "MOTION PRO, INC.",
+   "years": [
+    2005,
+    2006,
+    2007
+   ]
+  },
+  "16V878000": {
+   "id": "16V878000",
+   "date": "06/12/2016",
+   "component": "ELECTRICAL SYSTEM:ALTERNATOR/GENERATOR/REGULATOR",
+   "summary": "Suzuki Motor of America, Inc. (Suzuki) is recalling certain model year 2012-2016 DL650 motorcycles manufactured August 30, 2011, to October 12, 2015.  In the affected motorcycles, the alternator stator may have insufficient heat resistance, resulting in a short circuit of the stator wires.",
+   "consequence": "A short circuit of the stator wires may prevent the battery from properly charging, causing an engine stall and increasing the risk of a crash.",
+   "remedy": "Suzuki will notify owners, and dealers will replace the stator, free of charge.  The recall began on January 6, 2017.  Owners may contact Suzuki customer service at 1-714-572-1490.  Suzuki's number for this recall is 2A67.",
+   "manufacturer": "Suzuki Motor of America, Inc.",
+   "years": [
+    2012,
+    2013,
+    2014,
+    2015,
+    2016
+   ]
+  },
+  "15V852000": {
+   "id": "15V852000",
+   "date": "18/12/2015",
+   "component": "ENGINE AND ENGINE COOLING:ENGINE",
+   "summary": "Suzuki Motor of America, Inc. (Suzuki) is recalling certain model year 2013-2014 SFV650 and AN650A, and 2012-2014 DL650A motorcycles.  Contamination from component production and storage combined with manufacturing variations may result in excessive tappet and camshaft wear within the engines of the affected motorcycles.",
+   "consequence": "The excessive wear may result in an engine stall, increasing the risk of a crash.",
+   "remedy": "Suzuki will notify owners, and dealers will inspect the tappet clearance, replacing the tappets and camshafts, as necessary.  All motorcycles that have less than 2500 miles will have their tappets and camshafts replaced since wear may not be evident.  These repairs will be performed free of charge.  The recall began on February 5, 2016.  Owners may contact Suzuki customer service at 1-714-996-7040.  Suzuki's number for this recall is 2A50, 2A51, and 2A52.",
+   "manufacturer": "Suzuki Motor of America, Inc.",
+   "years": [
+    2012,
+    2013,
+    2014
+   ]
+  },
+  "12V038000": {
+   "id": "12V038000",
+   "date": "03/02/2012",
+   "component": "EXTERIOR LIGHTING:BRAKE LIGHTS:SWITCH",
+   "summary": "SUZUKI IS RECALLING CERTAIN MODEL YEAR 2012 AN400, AN650, AND DL650 SCOOTERS AND MOTORCYCLES MANUFACTURED PRIOR TO DECEMBER 17, 2011, BECAUSE THE LEVER-MOUNTED BRAKE LIGHT ACTUATING SWITCH(ES) MAY FAIL.",
+   "consequence": "ON THE AN400 AND AN650 MODELS, FAILURE OF THE SWITCHES WILL PREVENT THE SCOOTERS FROM STARTING.  ON ALL OF THE AFFECTED MODELS, FAILURE OF THE BRAKE LIGHT SWITCH(ES) MAY CAUSE THE BRAKE LIGHTS TO NOT ILLUMINATE WHEN A SCOOTER OR MOTORCYCLE IS BRAKING, THEREBY INCREASING THE RISK OF A CRASH WITH A TRAILING VEHICLE.",
+   "remedy": "SUZUKI WILL NOTIFY OWNERS, AND SUZUKI DISTRIBUTORS WILL REPLACE THE BRAKE LIGHT ACTUATING SWITCH, FREE OF CHARGE.  THE SAFETY RECALL BEGAN ON FEBRUARY 13, 2011.  OWNERS MAY CONTACT SUZUKI AT 1-714-996-7040.",
+   "manufacturer": "AMERICAN SUZUKI MOTOR CORP.",
+   "years": [
+    2012
+   ]
+  },
+  "18V694000": {
+   "id": "18V694000",
+   "date": "04/10/2018",
+   "component": "FUEL SYSTEM, GASOLINE:DELIVERY:FUEL PUMP",
+   "summary": "Suzuki Motor of America, Inc. (Suzuki) is recalling certain 2017-2018 Suzuki DL650A, DL650XA, GSX-R1000, GSX-R1000R, and 2018 GSX-S750 motorcycles.  During installation, the fuel pump O-ring may have been twisted, reducing the sealing performance and possibly resulting in a fuel leak.",
+   "consequence": "A fuel leak in the presence of an ignition source can increase the risk of a fire.",
+   "remedy": "Suzuki will notify owners, and dealers will replace the fuel pump O-ring and the fuel tank inner vessel, free of charge.  The recall began October 31, 2018.  Owners may contact Suzuki customer service at 1-800-934-0934.  Suzuki's numbers for this recall are 2A86-2A88.",
+   "manufacturer": "Suzuki Motor of America, Inc.",
+   "years": [
+    2017,
+    2018
+   ]
+  },
+  "16V018000": {
+   "id": "16V018000",
+   "date": "19/01/2016",
+   "component": "ELECTRICAL SYSTEM",
+   "summary": "Suzuki Motor of America, Inc. (Suzuki) is recalling certain model year 2008-2012 AN400, AN400A, DL1000, GSX1300R, 2008-2009 GSF1250S and GSF1250SA, 2008 GSX1300BK and GSX1300BKA, 2008-2010 GSX650F, GSX-R600, GSX-R750, VLR1800, VLR1800T, and 2009-2010 SFV650 and VZ1500 motorcycles. Due to a problem with the circuit board for the regulator/rectifier power module, the motorcycle may not sufficiently charge the battery and the motorcycle may stall.",
+   "consequence": "If the engine stalls while riding, there would be an increased risk of a crash.",
+   "remedy": "Suzuki will notify owners, and dealers will replace the regulator/rectifier, free of charge.  The recall is expected to begin March 4, 2016.  Owners may contact Suzuki customer service at 1-800-444-5077.  Suzuki's number for this recall is 2A56 to 2A64.",
+   "manufacturer": "Suzuki Motor of America, Inc.",
+   "years": [
+    2008,
+    2009,
+    2010,
+    2011,
+    2012
+   ]
+  },
+  "11V108000": {
+   "id": "11V108000",
+   "date": "23/02/2011",
+   "component": "ELECTRICAL SYSTEM:ALTERNATOR/GENERATOR/REGULATOR",
+   "summary": "SUZUKI IS RECALLING CERTAIN MODEL YEAR 2008 THROUGH 2010 MOTORCYCLES MANUFACTURED FROM JULY 2007 THROUGH SEPTEMBER 2009, EQUIPPED WITH REGULATOR/RECTIFIER ASSEMBLIES, SUZUKI PART NUMBERS 32800-41F11, 32800-15H10, 32800-05H11, 32800-41G10, 32800-15H00, 32800-18H00, 32800-05G10, 32800-10G10, 32800-05H20, OR 32800-06G01.  SOME REGULATOR/RECTIFIER ASSEMBLIES WERE PRODUCED WITH INSUFFICIENT ADHESION BETWEEN THE POWER MODULE (CIRCUIT BOARD) AND THE RECTIFIER CASE THAT CONTAINS A HEAT SINK TO DISSIPATE HEAT.  DUE TO INSUFFICIENT ADHESION, HEAT GENERATED ON THE POWER MODULE CIRCUIT BOARD CAN CAUSE THE CIRCUIT BOARD TO DEFORM, AND LIFT OF THE CASE.",
+   "consequence": "THIS CONDITION CAUSES EXCESSIVE HEAT ON THE CIRCUIT BOARD AND UNCONTROLLED ELECTRIC CURRENT OUTPUT, WHICH CAN RESULT IN INSUFFICIENT CHARGING CURRENT BEING PROVIDED TO THE MOTORCYCLE BATTERY.  THIS CAN CAUSE DISCHARGE OF THE BATTERY AND CAN LEAD TO ENGINE STALLING AND/OR A NO-START CONDITION.  ENGINE STALLING WHILE RIDING CAN INCREASE THE RISK OF A CRASH.",
+   "remedy": "SUZUKI WILL NOTIFY OWNERS AND SUZUKI DISTRIBUTORS WILL REPLACE THE REGULATOR/RECTIFIER WITH AN IMPROVED PART FREE OF CHARGE.  THE SAFETY RECALL BEGAN ON MARCH 2, 2011.  OWNERS MAY CONTACT SUZUKI AT 1-714-572-1490.",
+   "manufacturer": "AMERICAN SUZUKI MOTOR CORP.",
+   "years": [
+    2008,
+    2009
+   ]
+  },
+  "26V302000": {
+   "id": "26V302000",
+   "date": "13/05/2026",
+   "component": "VISIBILITY:REARVIEW MIRRORS/DEVICES:EXTERIOR",
+   "summary": "Piaggio Group Americas, Inc. (PGA) is recalling certain 2026 Vespa GTV 310, Vespa Primavera 150, and Vespa Primavera 50 motorcycles in the color Officina 8. The convex mirror warning \"objects in mirror are closer than they appear,\" is missing.",
+   "consequence": "Without the convex mirror warning, riders may misjudge the distance of other vehicles, resulting in unsafe lane changes or maneuvers, increasing the risk of a crash.",
+   "remedy": "PGA will install new mirrors with the warning message, free of charge. Owner notification letters were mailed May 18, 2026. Owners may contact PGA's customer service at 212-380-4400, or customercare@us.piaggio.com. Vehicle Identification Numbers (VINs) involved in this recall will be searchable on NHTSA.gov beginning May 18, 2026.",
+   "manufacturer": "Piaggio Group Americas, Inc.",
+   "years": [
+    2026
+   ]
+  },
+  "20V524000": {
+   "id": "20V524000",
+   "date": "28/08/2020",
+   "component": "SERVICE BRAKES, HYDRAULIC",
+   "summary": "Piaggio Group Americas, Inc. (Piaggio) is recalling certain 2019-2020 MP3 500 motorcycles.  The brake lines may have been improperly galvanized, allowing hydrogen to be released into the brake fluid.",
+   "consequence": "Hydrogen in the braking system can reduce the brake lever's ability to activate the brakes, increasing the risk of a crash.",
+   "remedy": "Piaggio will notify owners, and dealers will perform a complete brake system flush, free of charge.  The recall began September 10, 2020.  Owners may contact Piaggio customer service at 1-212-380-4433.  Piaggio's number for this recall is PP2ZZQ1904_MP3.",
+   "manufacturer": "Piaggio Group Americas. Inc.",
+   "years": [
+    2019,
+    2020
+   ]
+  },
+  "22V217000": {
+   "id": "22V217000",
+   "date": "01/04/2022",
+   "component": "SERVICE BRAKES, HYDRAULIC:FLUID",
+   "summary": "Piaggio Group Americas, Inc. (Piaggio) is recalling certain 2020-2021 MP3 500 HPE scooters.  The brake hose terminal fittings zinc plating may contaminate the brake fluid, decreasing brake performance.",
+   "consequence": "Brakes that do not perform as expected, and require the driver to apply more force to the brake levers or pedals, increase the risk of a crash.",
+   "remedy": "Dealers will perform a complete brake system flush, free of charge.  Owner notification letters were mailed April 18, 2022.  Owners may contact Piaggio customer service at 1-212-380-4400.",
+   "manufacturer": "Piaggio Group Americas, Inc.",
+   "years": [
+    2020,
+    2021
+   ]
+  },
+  "15V066000": {
+   "id": "15V066000",
+   "date": "04/02/2015",
+   "component": "FUEL SYSTEM, GASOLINE:DELIVERY:FUEL PUMP",
+   "summary": "Piaggio Group Americas Inc. (Piaggio) is recalling certain model year 2008-2010 Vespa GTS 250, GTV 250, GTS Super 250, 2011 Vespa LX 150, LXV 150, S 150, 2010-2011 Vespa GTS 300, GTV 300, GTS Super 300, 2009-2010 Piaggio MP3 250, BV 250 Tourer, and 2010 BV 300 Tourer motorcycles.  Due to a defective fuel pump, the affected motorcycles may stall while being operated or may fail to restart after being shut off for 15-20 minutes.",
+   "consequence": "If the motorcycle stalls, there is an increased risk of a crash.",
+   "remedy": "Piaggio will notify owners, and dealers will replace the defective fuel pump, free of charge. The recall began March 16, 2015. Owners may contact Piaggio customer service at 1-212-380-4433.",
+   "manufacturer": "Piaggio Group Americas. Inc.",
+   "years": [
+    2010
+   ]
+  },
+  "24V609000": {
+   "id": "24V609000",
+   "date": "14/08/2024",
+   "component": "VEHICLE SPEED CONTROL:THROTTLE",
+   "summary": "CFMOTO Powersports, Inc. (CFMOTO) is recalling certain 2023 Ibex 800 S and Ibex 800 T motorcycles.  The throttle wire may bend excessively and break, resulting in a loss of throttle response and an engine stall.",
+   "consequence": "An engine stall increases the risk of a crash.",
+   "remedy": "Dealers will reposition the rubber claps, rerouting the throttle wire, free of charge.  Owner notification letters were mailed August 28, 2024.  Owners may contact CFMOTO customer service at 1-763-398-2690.  CFMOTO's number for this recall is SAF-2024-03.",
+   "manufacturer": "CFMOTO Powersports, Inc.",
+   "years": [
+    2023
+   ]
+  },
+  "23V129000": {
+   "id": "23V129000",
+   "date": "27/02/2023",
+   "component": "SERVICE BRAKES, HYDRAULIC:FOUNDATION COMPONENTS:DISC:CALIPER",
+   "summary": "Royal Enfield North America Limited (Royal Enfield) is recalling certain 2017-2021 Himalayan motorcycles.  The salt used to treat the roads in the winter may corrode the brake calipers, causing a decrease or total loss of brake function.",
+   "consequence": "A loss of brake function can increase the risk of a crash.",
+   "remedy": "Dealers will replace the front and rear brake calipers, free of charge.  The manufacturer has not yet provided a schedule for recall notification.  Owners may contact Royal Enfield's customer service at 1-866-600-1122.  Royal Enfield's number for this recall is SC-31.",
+   "manufacturer": "Royal Enfield North America Limited",
+   "years": [
+    2018,
+    2019,
+    2020,
+    2021
+   ]
+  },
+  "24V713000": {
+   "id": "24V713000",
+   "date": "27/09/2024",
+   "component": "EXTERIOR LIGHTING",
+   "summary": "Royal Enfield North America Limited (Royal Enfield) is recalling certain 2023 Himalayan, Classic 350, Meteor 350, Hunter 350, Super Meteor 650, Int 650, and Continental GT 650 motorcycles.  The side and rear reflectors are not sufficient.  As such, these lights fail to comply with the requirements of Federal Motor Vehicle Safety Standard number 108, \"Lamps, Reflective Devices, and Associated Equipment.\"",
+   "consequence": "Without the proper reflective equipment, it may be difficult for other road users to see the motorcycle from the rear or side, increasing the risk of a crash.",
+   "remedy": "Dealers will replace the side and rear reflectors, free of charge.  Owner notification letters are expected to be mailed October 30, 2024.  Owners may contact Royal Enfield's customer service at 1-866-600-1122.  Royal Enfield's number for this recall is SC-43.",
+   "manufacturer": "Royal Enfield North America Limited",
+   "years": [
+    2023
+   ]
+  }
+ },
+ "links": {
+  "honda/cb500x": [
+   "14V056000",
+   "15V439000",
+   "15V475000",
+   "21V690000",
+   "21V382000"
+  ],
+  "honda/nc750x": [
+   "25V435000"
+  ],
+  "honda/africa-twin": [
+   "20V797000",
+   "22V662000",
+   "25V583000",
+   "24V882000"
+  ],
+  "honda/crf300l": [
+   "21V382000"
+  ],
+  "honda/cbr650r": [
+   "21V382000",
+   "25V107000",
+   "25V911000"
+  ],
+  "yamaha/xmax-300": [
+   "20V611000",
+   "25V778000"
+  ],
+  "yamaha/mt-07": [
+   "14V657000",
+   "18V483000"
+  ],
+  "yamaha/mt-09": [
+   "17V221000",
+   "15V176000"
+  ],
+  "yamaha/tenere-700": [
+   "23V472000"
+  ],
+  "kawasaki/versys-650": [
+   "12V081000"
+  ],
+  "kawasaki/z900": [
+   "19V083000"
+  ],
+  "bmw/r-1200-gs": [
+   "15V141000",
+   "13V617000",
+   "10V276000",
+   "21V060000",
+   "17E052000",
+   "14V211000",
+   "20V471000",
+   "05V172000",
+   "06V164000",
+   "05V082000",
+   "04V576000",
+   "06V134000",
+   "04V297000",
+   "08V254000",
+   "09V319000",
+   "06V104000",
+   "06V486000",
+   "08V290000",
+   "09V129000",
+   "18E016000",
+   "14V065000",
+   "13V154000",
+   "17V438000",
+   "17V481000",
+   "10V275000"
+  ],
+  "bmw/r-1250-gs": [
+   "20V476000",
+   "20V166000",
+   "20E013000",
+   "23V011000",
+   "20V146000",
+   "20V165000",
+   "20V495000"
+  ],
+  "bmw/r-1300-gs": [
+   "24V557000",
+   "25V480000"
+  ],
+  "bmw/f-850-gs": [
+   "20V146000",
+   "18V830000"
+  ],
+  "bmw/f-750-gs": [
+   "20V146000"
+  ],
+  "ktm/exc": [
+   "12V531000",
+   "22V588000",
+   "11V300000"
+  ],
+  "ktm/390-duke": [
+   "26V196000",
+   "25V740000",
+   "25V825000"
+  ],
+  "ktm/390-adventure": [
+   "25V598000"
+  ],
+  "ktm/890-adventure": [
+   "22V588000"
+  ],
+  "ktm/1290-super-adventure": [
+   "22V588000"
+  ],
+  "suzuki/v-strom-650": [
+   "14V278000",
+   "08E052000",
+   "16V878000",
+   "15V852000",
+   "12V038000",
+   "18V694000"
+  ],
+  "suzuki/burgman-400": [
+   "16V018000",
+   "11V108000",
+   "12V038000"
+  ],
+  "vespa/primavera": [
+   "26V302000"
+  ],
+  "piaggio/mp3": [
+   "20V524000",
+   "22V217000"
+  ],
+  "piaggio/beverly": [
+   "15V066000"
+  ],
+  "cfmoto/800mt": [
+   "24V609000"
+  ],
+  "royal-enfield/himalayan": [
+   "23V129000",
+   "24V713000"
+  ]
+ }
+}

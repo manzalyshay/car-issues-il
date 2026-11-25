@@ -58,6 +58,8 @@ export default async function MotoModelPage({ params }: Props) {
   const avg = reviews.length ? reviews.reduce((s, r) => s + r.rating, 0) / reviews.length : null;
   const yearRange = model.years.length ? `${model.years[model.years.length - 1]}–${model.years[0]}` : null;
   const cc = ccLabel(model);
+  const ilRecalls = recalls.filter((r) => r.source === 'il').length;
+  const usRecalls = recalls.length - ilRecalls;
   const stats = [
     model.activeVehiclesIl ? { label: 'על הכביש בישראל', value: model.activeVehiclesIl.toLocaleString('he-IL') } : null,
     yearRange ? { label: 'שנות ייצור', value: yearRange, ltr: true } : null,
@@ -108,7 +110,8 @@ export default async function MotoModelPage({ params }: Props) {
                   <span>{reviews.length} ביקורות בעלים</span>
                 </>
               ) : <span>עדיין אין ביקורות בעלים - שתפו את הניסיון שלכם</span>}
-              <span>· {recalls.length ? `${recalls.length} קריאות שירות בישראל` : 'לא נמצאו קריאות שירות בישראל'}</span>
+              <span>· {ilRecalls ? `${ilRecalls} קריאות שירות בישראל` : 'לא נמצאו קריאות שירות בישראל'}</span>
+              {usRecalls > 0 && <span>· {usRecalls} ריקולים בארה״ב</span>}
             </div>
 
             <div className="hero-actions" style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
@@ -155,7 +158,7 @@ export default async function MotoModelPage({ params }: Props) {
             years={model.years}
             initialRecalls={recalls}
             hideDiagram
-            intro={`קריאות שירות שפרסם משרד התחבורה ל${name}. כדי לבדוק אופנוע מסוים, הזינו את מספר הרישוי שלו בבדיקת האופנוע.`}
+            intro={`קריאות שירות שפרסם משרד התחבורה ל${name}${usRecalls ? ', וריקולים של אותו דגם בארה״ב (רשות הבטיחות בדרכים האמריקאית, NHTSA). ריקול בארה״ב לא תמיד חל על אופנועים שנמכרו בישראל, כדאי לבדוק מול היבואן' : ''}. כדי לבדוק אופנוע מסוים, הזינו את מספר הרישוי שלו בבדיקת האופנוע.`}
           />
           <Link href="/motorcycle-check" style={{ display: 'inline-block', marginTop: 12, fontWeight: 700, color: 'var(--accent)', textDecoration: 'none' }}>
             🔎 בדיקת אופנוע לפי מספר רישוי ←
