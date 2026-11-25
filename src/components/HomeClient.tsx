@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useState, useEffect, useRef, useMemo } from 'react';
 import { useLocale } from '@/lib/localeContext';
 import { searchCars } from '@/lib/carSearch';
+import { useMotoSearchIndex, toSearchable, searchHitHref } from '@/lib/motoSearch';
 import { newsPath } from '@/lib/newsSlug';
 import NewsImage from '@/components/NewsImage';
 import { sizedImageUrl } from '@/lib/imageSizing';
@@ -132,6 +133,8 @@ export default function HomeClient({ allMakes, topRanked, recentReviews, tickerI
   /* Search + autocomplete */
   const router = useRouter();
   const [searchQ, setSearchQ] = useState('');
+  const motoIndex = useMotoSearchIndex(locale);
+  const motoMakes = useMemo(() => toSearchable(motoIndex), [motoIndex]);
   const [acOpen, setAcOpen] = useState(false);
   const [acIdx, setAcIdx] = useState(-1);
   const searchWrapRef = useRef<HTMLDivElement>(null);
@@ -140,18 +143,24 @@ export default function HomeClient({ allMakes, topRanked, recentReviews, tickerI
   const suggestions = useMemo(() => {
     const q = searchQ.trim();
     if (!q || /^[\d\-\s]+$/.test(q)) return []; // plate numbers aren't car names
-    return searchCars(allMakes, q, 8).map(({ make, model }) => model
-      ? {
-          label: isHe ? `${make.nameHe} ${model.nameHe}` : `${make.nameEn} ${model.nameEn}`,
-          sub:   isRu ? 'страница на иврите' : isHe ? `${make.nameEn} ${model.nameEn}` : `${make.nameHe} ${model.nameHe}`,
-          href:  `/cars/${make.slug}/${model.slug}`,
-        }
-      : {
-          label: isHe ? make.nameHe : make.nameEn,
-          sub:   isRu ? 'страница на иврите' : isHe ? make.nameEn : make.nameHe,
-          href:  `/cars/${make.slug}`,
-        });
-  }, [searchQ, allMakes, isHe, isRu]);
+    // Bikes (Hebrew pages only) are searched with the cars; their brands are keyed 'moto-<make>'.
+    const searchable: { slug: string; nameHe: string; nameEn: string; motoSlug?: string; models: { slug: string; nameHe: string; nameEn: string }[] }[] =
+      [...allMakes, ...motoMakes];
+    return searchCars(searchable, q, 8).map(({ make, model }) => {
+      const bike = make.motoSlug ? (isRu ? ' · мотоцикл' : isHe ? ' · אופנוע' : '') : '';
+      return model
+        ? {
+            label: isHe ? `${make.nameHe} ${model.nameHe}` : `${make.nameEn} ${model.nameEn}`,
+            sub:   (isRu ? 'страница на иврите' : isHe ? `${make.nameEn} ${model.nameEn}` : `${make.nameHe} ${model.nameHe}`) + bike,
+            href:  searchHitHref(make, model.slug),
+          }
+        : {
+            label: isHe ? make.nameHe : make.nameEn,
+            sub:   (isRu ? 'страница на иврите' : isHe ? make.nameEn : make.nameHe) + bike,
+            href:  searchHitHref(make),
+          };
+    });
+  }, [searchQ, allMakes, motoMakes, isHe, isRu]);
 
   // Close on outside click
   useEffect(() => {
