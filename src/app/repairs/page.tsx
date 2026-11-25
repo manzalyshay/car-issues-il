@@ -91,9 +91,6 @@ export default async function RepairsPage() {
         {/* Market repair prices */}
         <section style={{ marginBottom: 40 }}>
           <h2 style={{ fontSize: '1.1rem', fontWeight: 700, marginBottom: 12 }}>{rp.commonTitle}</h2>
-          <ul style={{ margin: '0 0 20px', paddingInlineStart: 18, fontSize: '0.8rem', color: 'var(--text-muted)', lineHeight: 1.6 }}>
-            {(isEn ? REPAIR_PRICES_NOTES.en : REPAIR_PRICES_NOTES.he).map(n => <li key={n}>{n}</li>)}
-          </ul>
           {REPAIR_PRICE_CATEGORY_ORDER.map(cat => {
             const items = REPAIR_PRICES.filter(p => p.category === cat);
             if (!items.length) return null;
@@ -187,6 +184,11 @@ export default async function RepairsPage() {
         <div style={{ marginTop: 32, padding: '14px 18px', background: 'var(--bg-muted)', borderRadius: 10, fontSize: '0.78rem', color: 'var(--text-muted)', lineHeight: 1.6 }}>
           <strong>{rp.laborNote}</strong>
         </div>
+
+        {/* Price data disclaimer */}
+        <ul style={{ margin: '16px 0 0', paddingInlineStart: 18, fontSize: '0.75rem', color: 'var(--text-muted)', lineHeight: 1.6 }}>
+          {(isEn ? REPAIR_PRICES_NOTES.en : REPAIR_PRICES_NOTES.he).map(n => <li key={n}>{n}</li>)}
+        </ul>
       </div>
     </div>
   );
