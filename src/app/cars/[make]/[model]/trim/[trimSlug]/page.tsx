@@ -123,26 +123,37 @@ export default async function TrimPage({ params }: Props) {
   const pageUrl = isEn
     ? `https://carissues.net/cars/${makeSlug}/${modelSlug}/trim/${trimSlug}`
     : `https://carissues.co.il/cars/${makeSlug}/${modelSlug}/trim/${trimSlug}`;
-  const jsonLd = {
-    '@context': 'https://schema.org',
-    '@type': 'Product',
-    name: `${make.nameEn} ${model.nameEn} ${trimName} ${year}`,
-    brand: { '@type': 'Brand', name: make.nameEn },
-    url: pageUrl,
-    description: isEn
-      ? `${make.nameEn} ${model.nameEn} ${trimName} ${year} - specs, features and equipment`
-      : `${make.nameHe} ${model.nameHe} גימור ${trimName} ${year} - מפרט ציוד ומחיר`,
-    ...(!isEn && trim.priceIls && {
-      offers: {
-        '@type': 'Offer',
-        priceCurrency: 'ILS',
-        price: trim.priceIls,
-        priceValidUntil: `${year + 1}-12-31`,
-        availability: 'https://schema.org/InStock',
+  // Google rejects a Product without offers, review or aggregateRating (Search Console
+  // "product snippets" critical issue). Trims have no owner reviews, so a Product is only
+  // emitted when the trim has a sourced list price; otherwise the page is a plain WebPage.
+  const trimTitle = `${make.nameEn} ${model.nameEn} ${trimName} ${year}`;
+  const trimDescription = isEn
+    ? `${make.nameEn} ${model.nameEn} ${trimName} ${year} - specs, features and equipment`
+    : `${make.nameHe} ${model.nameHe} גימור ${trimName} ${year} - מפרט ציוד ומחיר`;
+  const jsonLd = !isEn && trim.priceIls
+    ? {
+        '@context': 'https://schema.org',
+        '@type': 'Product',
+        name: trimTitle,
+        brand: { '@type': 'Brand', name: make.nameEn },
         url: pageUrl,
-      },
-    }),
-  };
+        description: trimDescription,
+        offers: {
+          '@type': 'Offer',
+          priceCurrency: 'ILS',
+          price: trim.priceIls,
+          priceValidUntil: `${year + 1}-12-31`,
+          availability: 'https://schema.org/InStock',
+          url: pageUrl,
+        },
+      }
+    : {
+        '@context': 'https://schema.org',
+        '@type': 'WebPage',
+        name: trimTitle,
+        url: pageUrl,
+        description: trimDescription,
+      };
 
   const specs: { label: string; value: string }[] = [];
   if (isEn) {
